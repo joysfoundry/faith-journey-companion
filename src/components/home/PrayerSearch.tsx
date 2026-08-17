@@ -1,25 +1,28 @@
+import { Link } from "@tanstack/react-router";
 import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { prayerLibrary } from "@/domain/placeholderData";
+import { useApp } from "@/lib/prayer/store";
 
-/** Minimal prayer-library search: type, see matches, pray one. */
+/** Minimal prayer-library search: type, see matches, open one. */
 export function PrayerSearch() {
+  const { db } = useApp();
   const [query, setQuery] = useState("");
 
   const matches = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return [];
-    return prayerLibrary
+    return db.prayers
       .filter(
         (p) =>
           p.title.toLowerCase().includes(q) ||
-          p.tags.some((t) => t.toLowerCase().includes(q)),
+          p.tags.some((t) => t.toLowerCase().includes(q)) ||
+          p.category.includes(q),
       )
-      .slice(0, 5);
-  }, [query]);
+      .slice(0, 6);
+  }, [db.prayers, query]);
 
   return (
     <div className="rounded-lg border border-border/70 bg-muted/30">
@@ -37,24 +40,28 @@ export function PrayerSearch() {
         <ul className="divide-y divide-border/70 border-t border-border/70">
           {matches.length > 0 ? (
             matches.map((prayer) => (
-              <li
-                key={prayer.id}
-                className="flex items-center justify-between gap-3 px-3 py-2.5"
-              >
+              <li key={prayer.id} className="flex items-center justify-between gap-3 px-3 py-2.5">
                 <div className="min-w-0">
                   <p className="truncate text-sm text-foreground">{prayer.title}</p>
                   <p className="truncate text-xs text-muted-foreground">
-                    {prayer.tags.join(" · ")}
+                    {[prayer.category, ...prayer.tags].join(" · ")}
                   </p>
                 </div>
-                <Button size="sm" variant="ghost">
-                  Pray
+                <Button asChild size="sm" variant="ghost">
+                  <Link to="/prayer/$prayerId" params={{ prayerId: prayer.id }}>
+                    Open
+                  </Link>
                 </Button>
               </li>
             ))
           ) : (
-            <li className="px-3 py-2.5 text-xs text-muted-foreground">
-              No prayer found. You can add it to your prayers.
+            <li className="flex items-center justify-between gap-3 px-3 py-2.5">
+              <span className="text-xs text-muted-foreground">No prayer found.</span>
+              <Button asChild size="sm" variant="ghost">
+                <Link to="/prayer/$prayerId" params={{ prayerId: "new" }}>
+                  Add prayer
+                </Link>
+              </Button>
             </li>
           )}
         </ul>

@@ -1,39 +1,7 @@
 /**
- * Phase 1 placeholder data. Replaced by Cloud queries in phase 2+.
- * Shapes intentionally match src/domain/types.ts.
+ * Phase 1 placeholder data for Word, Formation, and Reflections.
+ * Prayers, templates, sessions, and novenas live in src/lib/prayer.
  */
-
-import type { DailySessionView } from "./dailyRosary";
-
-/** A — Prayer or Devotion: sessions planned for today (empty ⇒ Daily Rosary default). */
-export const plannedSessions: DailySessionView[] = [
-  {
-    id: "placeholder-session-novena",
-    title: "54-Day Rosary Novena",
-    templateTitle: "54-Day Novena template · Day 12, petition phase",
-    mystery: "Joyful",
-    itemCount: 64,
-    completedCount: 21,
-    isDefault: false,
-  },
-];
-
-/** Prayer library entries, searchable from Home. */
-export interface LibraryPrayer {
-  id: string;
-  title: string;
-  tags: string[];
-}
-
-export const prayerLibrary: LibraryPrayer[] = [
-  { id: "prayer-memorare", title: "Memorare", tags: ["Marian", "healing", "intercession"] },
-  { id: "prayer-st-michael", title: "St. Michael the Archangel", tags: ["protection"] },
-  { id: "prayer-anima-christi", title: "Anima Christi", tags: ["Eucharistic", "after communion"] },
-  { id: "prayer-divine-mercy", title: "Chaplet of Divine Mercy", tags: ["mercy", "chaplet"] },
-  { id: "prayer-litany-loreto", title: "Litany of Loreto", tags: ["Marian", "litany"] },
-  { id: "prayer-act-contrition", title: "Act of Contrition", tags: ["repentance"] },
-];
-
 
 /** C — Word: daily Mass readings, lived-experience metadata, and a reading program. */
 export interface WordEntry {

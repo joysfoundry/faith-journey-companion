@@ -157,3 +157,23 @@
   line-height: 1.75;
   letter-spacing: 0.01em;
 }
+
+@utility page-title {
+  font-family: var(--font-display);
+  font-size: 1.9rem;
+  line-height: 1.15;
+  font-weight: 600;
+}
+
+@utility eyebrow {
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
+}
+
+@utility soft-card {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+}

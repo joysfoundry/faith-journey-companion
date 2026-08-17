@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   BookOpen,
   ChevronDown,
@@ -8,10 +8,10 @@ import {
   Mic,
   NotebookPen,
   Plus,
+  Sparkles,
 } from "lucide-react";
 import { useState } from "react";
 
-import { AddSessionDialog } from "@/components/home/AddSessionDialog";
 import { PrayerSearch } from "@/components/home/PrayerSearch";
 import { ReflectionComposer } from "@/components/home/ReflectionComposer";
 import { AppShell } from "@/components/layout/AppShell";
@@ -25,15 +25,16 @@ import {
 } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { defaultDailyRosarySession } from "@/domain/dailyRosary";
 import {
   learnItems,
-  plannedSessions,
   readingPrograms,
   todaysReflections,
   todaysWord,
   type LinkableItem,
 } from "@/domain/placeholderData";
+import { defaultContext, resolveMysterySet, todayISO } from "@/lib/prayer/compiler";
+import { useApp } from "@/lib/prayer/store";
+
 
 
 export const Route = createFileRoute("/")({
@@ -76,70 +77,110 @@ function SectionHeading({ children, action }: { children: string; action?: React
 }
 
 function Index() {
-  const today = new Date();
-  const sessions =
-    plannedSessions.length > 0 ? plannedSessions : [defaultDailyRosarySession(today)];
+  const { db, startSession } = useApp();
+  const navigate = useNavigate();
+  const today = todayISO();
   const [massOpen, setMassOpen] = useState(false);
   const [journalLinkId, setJournalLinkId] = useState<string | null>(null);
+
+  const setId = resolveMysterySet(db, defaultContext({ date: today }));
+  const setName = db.mystery_sets.find((s) => s.id === setId)?.name ?? "Mysteries";
+  const rosary = db.templates.find((t) => t.id === "tpl-rosary") ?? db.templates[0];
+  const openSessions = db.sessions.filter((s) => !s.completed_at);
 
   function openJournal(linkId: string) {
     setJournalLinkId(linkId);
     document.getElementById("reflection")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  const linkables: LinkableItem[] = [
-    ...sessions.map((s) => ({ id: s.id, label: s.title, group: "Prayer & devotion" })),
-    { id: todaysWord.id, label: todaysWord.liturgicalTitle, group: "Word" },
-    ...learnItems.map((l) => ({ id: l.id, label: l.title, group: "Library" })),
-  ];
+  function begin() {
+    if (!rosary) return;
+    const session = startSession(rosary.id, { date: today, progress_mode: "scroll" });
+    if (session) navigate({ to: "/session/$sessionId", params: { sessionId: session.id } });
+  }
 
+  const linkables: LinkableItem[] = [
+    { id: rosary?.id ?? "rosary", label: `Daily Rosary · ${setName}`, group: "Prayer & devotion" },
+    { id: todaysWord.id, label: todaysWord.liturgicalTitle, group: "Word" },
+    ...learnItems.map((l) => ({ id: l.id, label: l.title, group: "Formation" })),
+  ];
 
   return (
     <AppShell>
       <section className="mb-8">
         <h1 className="font-display text-3xl leading-tight text-foreground">Come, let us pray.</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Your devotion, your need, the Word, and what you're learning today.
+          Your devotion, the Word, and what is forming you today.
         </p>
       </section>
 
-      {/* A — Prayer & Devotion: today's sessions + prayer search */}
+      {/* A — Prayer & Devotion: today's session + prayer search */}
       <section className="mb-9">
-        <SectionHeading action={<AddSessionDialog />}>Prayer &amp; Devotion</SectionHeading>
-        <div className="space-y-3">
-          {sessions.map((session) => (
-            <Card key={session.id} className="border-border/70 shadow-devotional">
-              <CardHeader className="pb-2">
-                <div className="flex items-start justify-between gap-3">
-                  <CardTitle className="font-display text-xl font-normal">
-                    {session.title}
-                    {session.mystery ? ` · ${session.mystery} Mysteries` : ""}
-                  </CardTitle>
-                  {session.isDefault && (
-                    <Badge variant="secondary" className="font-normal">
-                      Standard
-                    </Badge>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground">{session.templateTitle}</p>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button size="sm">{session.completedCount > 0 ? "Continue" : "Start"}</Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => openJournal(session.id)}
-                    aria-label={`Write a reflection about ${session.title}`}
-                  >
-                    <NotebookPen className="size-4" aria-hidden />
-                    Reflect
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <SectionHeading
+          action={
+            <Button asChild size="sm" variant="ghost">
+              <Link to="/pray">
+                <Plus className="size-4" aria-hidden />
+                Session
+              </Link>
+            </Button>
+          }
+        >
+          Prayer &amp; Devotion
+        </SectionHeading>
+
+        <Card className="border-border/70 shadow-devotional">
+          <CardHeader className="pb-2">
+            <div className="flex items-start justify-between gap-3">
+              <CardTitle className="font-display text-xl font-normal">
+                Daily Rosary · {setName}
+              </CardTitle>
+              <Badge variant="secondary" className="font-normal">
+                Standard
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {rosary?.name ?? "Rosary template"} · prepared in order, nothing to count
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button size="sm" onClick={begin}>
+                <Sparkles className="size-4" aria-hidden />
+                Begin prayer
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => openJournal(rosary?.id ?? "rosary")}
+                aria-label="Write a reflection about today's Rosary"
+              >
+                <NotebookPen className="size-4" aria-hidden />
+                Reflect
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {openSessions.length > 0 ? (
+          <ul className="mt-3 space-y-2">
+            {openSessions.map((session) => (
+              <li key={session.id}>
+                <Link
+                  to="/session/$sessionId"
+                  params={{ sessionId: session.id }}
+                  className="soft-card flex items-center justify-between p-4"
+                >
+                  <span>
+                    <span className="eyebrow block">Continue</span>
+                    <span className="font-display text-lg">{session.title}</span>
+                  </span>
+                  <ChevronRight className="size-5 text-muted-foreground" aria-hidden />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : null}
 
         <div className="mt-4">
           <h3 className="mb-2 text-xs uppercase tracking-[0.16em] text-muted-foreground">
@@ -148,6 +189,7 @@ function Index() {
           <PrayerSearch />
         </div>
       </section>
+
 
 
       {/* C — Word */}
@@ -255,18 +297,19 @@ function Index() {
         </div>
       </section>
 
-      {/* D — Learn */}
+      {/* D — Formation */}
       <section className="mb-9">
         <SectionHeading
           action={
-            <Button size="sm" variant="ghost">
-              <Plus className="size-4" aria-hidden />
-              Add item
+            <Button asChild size="sm" variant="ghost">
+              <Link to="/formation">
+                <Plus className="size-4" aria-hidden />
+                Add item
+              </Link>
             </Button>
           }
         >
-          Library
-
+          Formation
         </SectionHeading>
         <Card className="border-border/70">
           <CardContent className="divide-y divide-border/70 p-0">
@@ -298,9 +341,11 @@ function Index() {
               <span className="text-xs text-muted-foreground">
                 Books, articles, videos, sermons, shows
               </span>
-              <Button size="sm" variant="ghost">
-                <BookOpen className="size-4" aria-hidden />
-                Finished list
+              <Button asChild size="sm" variant="ghost">
+                <Link to="/formation">
+                  <BookOpen className="size-4" aria-hidden />
+                  All &amp; finished
+                </Link>
               </Button>
             </div>
           </CardContent>
