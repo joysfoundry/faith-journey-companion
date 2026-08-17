@@ -297,18 +297,19 @@ function Index() {
         </div>
       </section>
 
-      {/* D — Learn */}
+      {/* D — Formation */}
       <section className="mb-9">
         <SectionHeading
           action={
-            <Button size="sm" variant="ghost">
-              <Plus className="size-4" aria-hidden />
-              Add item
+            <Button asChild size="sm" variant="ghost">
+              <Link to="/formation">
+                <Plus className="size-4" aria-hidden />
+                Add item
+              </Link>
             </Button>
           }
         >
-          Library
-
+          Formation
         </SectionHeading>
         <Card className="border-border/70">
           <CardContent className="divide-y divide-border/70 p-0">
@@ -340,9 +341,11 @@ function Index() {
               <span className="text-xs text-muted-foreground">
                 Books, articles, videos, sermons, shows
               </span>
-              <Button size="sm" variant="ghost">
-                <BookOpen className="size-4" aria-hidden />
-                Finished list
+              <Button asChild size="sm" variant="ghost">
+                <Link to="/formation">
+                  <BookOpen className="size-4" aria-hidden />
+                  All &amp; finished
+                </Link>
               </Button>
             </div>
           </CardContent>
