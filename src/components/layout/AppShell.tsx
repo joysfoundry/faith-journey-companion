@@ -1,14 +1,15 @@
 import { Link } from "@tanstack/react-router";
-import { BookOpen, CalendarDays, Home, Images, NotebookPen } from "lucide-react";
+import { BookOpen, Heart, Home, NotebookPen, Sun } from "lucide-react";
 import type { ReactNode } from "react";
 
 const navItems = [
   { key: "home", label: "Today", icon: Home, to: "/" as const },
-  { key: "library", label: "Prayers", icon: BookOpen, to: null },
-  { key: "calendar", label: "Calendar", icon: CalendarDays, to: null },
+  { key: "devotion", label: "Devotion", icon: Heart, to: null },
+  { key: "word", label: "Word", icon: Sun, to: null },
+  { key: "learn", label: "Learn", icon: BookOpen, to: null },
   { key: "reflect", label: "Reflect", icon: NotebookPen, to: null },
-  { key: "gallery", label: "Gallery", icon: Images, to: null },
 ];
+
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
