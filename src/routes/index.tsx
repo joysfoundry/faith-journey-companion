@@ -13,6 +13,7 @@ import {
 import { useState } from "react";
 
 import { PrayerSearch } from "@/components/home/PrayerSearch";
+import { WordSection } from "@/components/home/WordSection";
 import { ReflectionComposer } from "@/components/home/ReflectionComposer";
 import { AppShell } from "@/components/layout/AppShell";
 import { Badge } from "@/components/ui/badge";
