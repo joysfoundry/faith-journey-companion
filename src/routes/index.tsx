@@ -1,16 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import {
-  BookOpen,
-  ChevronDown,
-  ChevronRight,
-  ExternalLink,
-  FileText,
-  Mic,
-  NotebookPen,
-  Plus,
-  Sparkles,
-} from "lucide-react";
-import { useState } from "react";
+import { BookOpen, ChevronRight, NotebookPen, Plus, Sparkles } from "lucide-react";
 
 import { PrayerSearch } from "@/components/home/PrayerSearch";
 import { WordSection } from "@/components/home/WordSection";
@@ -19,13 +8,7 @@ import { AppShell } from "@/components/layout/AppShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useState } from "react";
 import {
   learnItems,
   readingPrograms,
