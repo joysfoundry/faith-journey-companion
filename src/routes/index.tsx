@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   BookOpen,
   ChevronDown,
@@ -8,10 +8,10 @@ import {
   Mic,
   NotebookPen,
   Plus,
+  Sparkles,
 } from "lucide-react";
 import { useState } from "react";
 
-import { AddSessionDialog } from "@/components/home/AddSessionDialog";
 import { PrayerSearch } from "@/components/home/PrayerSearch";
 import { ReflectionComposer } from "@/components/home/ReflectionComposer";
 import { AppShell } from "@/components/layout/AppShell";
@@ -25,15 +25,16 @@ import {
 } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { defaultDailyRosarySession } from "@/domain/dailyRosary";
 import {
   learnItems,
-  plannedSessions,
   readingPrograms,
   todaysReflections,
   todaysWord,
   type LinkableItem,
 } from "@/domain/placeholderData";
+import { defaultContext, resolveMysterySet, todayISO } from "@/lib/prayer/compiler";
+import { useApp } from "@/lib/prayer/store";
+
 
 
 export const Route = createFileRoute("/")({
