@@ -17,6 +17,8 @@ import { Route as MoreRouteImport } from './routes/more'
 import { Route as NovenasRouteImport } from './routes/novenas'
 import { Route as PrayRouteImport } from './routes/pray'
 import { Route as PrayersRouteImport } from './routes/prayers'
+import { Route as ReflectionsRouteImport } from './routes/reflections'
+import { Route as WordRouteImport } from './routes/word'
 import { Route as HowtoHowToIdRouteImport } from './routes/howto.$howToId'
 import { Route as PrayerPrayerIdRouteImport } from './routes/prayer.$prayerId'
 import { Route as SessionSessionIdRouteImport } from './routes/session.$sessionId'
@@ -62,6 +64,16 @@ const PrayersRoute = PrayersRouteImport.update({
   path: '/prayers',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReflectionsRoute = ReflectionsRouteImport.update({
+  id: '/reflections',
+  path: '/reflections',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WordRoute = WordRouteImport.update({
+  id: '/word',
+  path: '/word',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HowtoHowToIdRoute = HowtoHowToIdRouteImport.update({
   id: '/howto/$howToId',
   path: '/howto/$howToId',
@@ -92,6 +104,8 @@ export interface FileRoutesByFullPath {
   '/novenas': typeof NovenasRoute
   '/pray': typeof PrayRoute
   '/prayers': typeof PrayersRoute
+  '/reflections': typeof ReflectionsRoute
+  '/word': typeof WordRoute
   '/howto/$howToId': typeof HowtoHowToIdRoute
   '/prayer/$prayerId': typeof PrayerPrayerIdRoute
   '/session/$sessionId': typeof SessionSessionIdRoute
@@ -106,6 +120,8 @@ export interface FileRoutesByTo {
   '/novenas': typeof NovenasRoute
   '/pray': typeof PrayRoute
   '/prayers': typeof PrayersRoute
+  '/reflections': typeof ReflectionsRoute
+  '/word': typeof WordRoute
   '/howto/$howToId': typeof HowtoHowToIdRoute
   '/prayer/$prayerId': typeof PrayerPrayerIdRoute
   '/session/$sessionId': typeof SessionSessionIdRoute
@@ -121,6 +137,8 @@ export interface FileRoutesById {
   '/novenas': typeof NovenasRoute
   '/pray': typeof PrayRoute
   '/prayers': typeof PrayersRoute
+  '/reflections': typeof ReflectionsRoute
+  '/word': typeof WordRoute
   '/howto/$howToId': typeof HowtoHowToIdRoute
   '/prayer/$prayerId': typeof PrayerPrayerIdRoute
   '/session/$sessionId': typeof SessionSessionIdRoute
@@ -137,6 +155,8 @@ export interface FileRouteTypes {
     | '/novenas'
     | '/pray'
     | '/prayers'
+    | '/reflections'
+    | '/word'
     | '/howto/$howToId'
     | '/prayer/$prayerId'
     | '/session/$sessionId'
@@ -151,6 +171,8 @@ export interface FileRouteTypes {
     | '/novenas'
     | '/pray'
     | '/prayers'
+    | '/reflections'
+    | '/word'
     | '/howto/$howToId'
     | '/prayer/$prayerId'
     | '/session/$sessionId'
@@ -165,6 +187,8 @@ export interface FileRouteTypes {
     | '/novenas'
     | '/pray'
     | '/prayers'
+    | '/reflections'
+    | '/word'
     | '/howto/$howToId'
     | '/prayer/$prayerId'
     | '/session/$sessionId'
@@ -180,6 +204,8 @@ export interface RootRouteChildren {
   NovenasRoute: typeof NovenasRoute
   PrayRoute: typeof PrayRoute
   PrayersRoute: typeof PrayersRoute
+  ReflectionsRoute: typeof ReflectionsRoute
+  WordRoute: typeof WordRoute
   HowtoHowToIdRoute: typeof HowtoHowToIdRoute
   PrayerPrayerIdRoute: typeof PrayerPrayerIdRoute
   SessionSessionIdRoute: typeof SessionSessionIdRoute
@@ -244,6 +270,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrayersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reflections': {
+      id: '/reflections'
+      path: '/reflections'
+      fullPath: '/reflections'
+      preLoaderRoute: typeof ReflectionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/word': {
+      id: '/word'
+      path: '/word'
+      fullPath: '/word'
+      preLoaderRoute: typeof WordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/howto/$howToId': {
       id: '/howto/$howToId'
       path: '/howto/$howToId'
@@ -284,6 +324,8 @@ const rootRouteChildren: RootRouteChildren = {
   NovenasRoute: NovenasRoute,
   PrayRoute: PrayRoute,
   PrayersRoute: PrayersRoute,
+  ReflectionsRoute: ReflectionsRoute,
+  WordRoute: WordRoute,
   HowtoHowToIdRoute: HowtoHowToIdRoute,
   PrayerPrayerIdRoute: PrayerPrayerIdRoute,
   SessionSessionIdRoute: SessionSessionIdRoute,

@@ -1,30 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import {
-  BookOpen,
-  ChevronDown,
-  ChevronRight,
-  ExternalLink,
-  FileText,
-  Mic,
-  NotebookPen,
-  Plus,
-  Sparkles,
-} from "lucide-react";
-import { useState } from "react";
+import { BookOpen, ChevronRight, NotebookPen, Plus, Sparkles } from "lucide-react";
 
 import { PrayerSearch } from "@/components/home/PrayerSearch";
+import { WordSection } from "@/components/home/WordSection";
 import { ReflectionComposer } from "@/components/home/ReflectionComposer";
 import { AppShell } from "@/components/layout/AppShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useState } from "react";
 import {
   learnItems,
   readingPrograms,
@@ -80,7 +64,6 @@ function Index() {
   const { db, startSession } = useApp();
   const navigate = useNavigate();
   const today = todayISO();
-  const [massOpen, setMassOpen] = useState(false);
   const [journalLinkId, setJournalLinkId] = useState<string | null>(null);
 
   const setId = resolveMysterySet(db, defaultContext({ date: today }));
@@ -102,6 +85,7 @@ function Index() {
   const linkables: LinkableItem[] = [
     { id: rosary?.id ?? "rosary", label: `Daily Rosary · ${setName}`, group: "Prayer & devotion" },
     { id: todaysWord.id, label: todaysWord.liturgicalTitle, group: "Word" },
+    ...readingPrograms.map((p) => ({ id: p.id, label: p.title, group: "Word" })),
     ...learnItems.map((l) => ({ id: l.id, label: l.title, group: "Formation" })),
   ];
 
@@ -144,7 +128,7 @@ function Index() {
             </p>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <Button size="sm" onClick={begin}>
                 <Sparkles className="size-4" aria-hidden />
                 Begin prayer
@@ -194,107 +178,19 @@ function Index() {
 
       {/* C — Word */}
       <section className="mb-9">
-        <SectionHeading>Word</SectionHeading>
-        <div className="space-y-3">
-          <Card className="border-border/70">
-            <CardHeader className="pb-2">
-              <CardTitle className="font-display text-lg font-normal">
-                {todaysWord.liturgicalTitle}
-              </CardTitle>
-              <p className="text-xs text-muted-foreground">
-                {todaysWord.readings.join(" · ")}
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <a
-                  href={todaysWord.readingsUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 text-sm text-primary underline-offset-4 hover:underline"
-                >
-                  Read today's Mass readings
-                  <ExternalLink className="size-3.5" aria-hidden />
-                </a>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => openJournal(todaysWord.id)}
-                  aria-label="Write a reflection about today's readings"
-                >
-                  <NotebookPen className="size-4" aria-hidden />
-                  Reflect
-                </Button>
-              </div>
-
-              <Collapsible open={massOpen} onOpenChange={setMassOpen}>
-                <CollapsibleTrigger className="flex w-full items-center gap-1.5 border-t border-border/60 pt-2 text-left text-xs text-muted-foreground transition-colors hover:text-foreground">
-                  Mass (if applicable)
-                  <ChevronDown
-                    className={`size-3.5 shrink-0 transition-transform ${
-                      massOpen ? "rotate-180" : ""
-                    }`}
-                    aria-hidden
-                  />
-                </CollapsibleTrigger>
-                <CollapsibleContent className="space-y-2.5 pt-3">
-                  <div className="grid gap-2.5 sm:grid-cols-2">
-                    <div className="space-y-1">
-                      <Label htmlFor="mass-church" className="text-xs text-muted-foreground">
-                        Church
-                      </Label>
-                      <Input id="mass-church" className="h-9" placeholder="Where did you attend?" />
-                    </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="mass-priest" className="text-xs text-muted-foreground">
-                        Priest
-                      </Label>
-                      <Input id="mass-priest" className="h-9" placeholder="Who celebrated?" />
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Button size="sm" variant="outline">
-                      <Mic className="size-4" aria-hidden />
-                      Homily audio
-                    </Button>
-                    <Button size="sm" variant="outline">
-                      <FileText className="size-4" aria-hidden />
-                      Homily transcript
-                    </Button>
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-
-
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/70">
-            <CardContent className="divide-y divide-border/70 p-0">
-              {readingPrograms.map((program) => (
-                <a
-                  key={program.id}
-                  href={program.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center justify-between px-5 py-4 hover:bg-accent/40"
-                >
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{program.title}</p>
-                    <p className="text-xs text-muted-foreground">{program.detail}</p>
-                  </div>
-                  <ExternalLink className="size-4 text-muted-foreground" aria-hidden />
-                </a>
-              ))}
-              <div className="px-5 py-3">
-                <Button size="sm" variant="ghost">
-                  <Plus className="size-4" aria-hidden />
-                  Add a reading program
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <SectionHeading
+          action={
+            <Button asChild size="sm" variant="ghost">
+              <Link to="/word">
+                <Plus className="size-4" aria-hidden />
+                Program
+              </Link>
+            </Button>
+          }
+        >
+          Word
+        </SectionHeading>
+        <WordSection onReflect={openJournal} />
       </section>
 
       {/* D — Formation */}
