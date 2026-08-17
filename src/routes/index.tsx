@@ -280,7 +280,18 @@ function Index() {
                     {item.source ? ` · ${item.source}` : ""}
                   </p>
                 </div>
-                <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                <div className="flex shrink-0 items-center gap-1">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => openJournal(item.id)}
+                    aria-label={`Write a reflection about ${item.title}`}
+                  >
+                    <NotebookPen className="size-4" aria-hidden />
+                    Reflect
+                  </Button>
+                  <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
+                </div>
               </div>
             ))}
             <div className="flex items-center justify-between px-5 py-3">
