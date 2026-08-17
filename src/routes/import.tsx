@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { AppShell } from "@/components/app-shell";
+import { AppShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -98,7 +98,7 @@ function ImportPage() {
     setDraft(null);
     setRaw("");
     toast.success("Imported into your library");
-    navigate({ to: "/library" });
+    navigate({ to: "/prayers" });
   };
 
   return (

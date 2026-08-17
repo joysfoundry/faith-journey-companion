@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { AppShell } from "@/components/app-shell";
+import { AppShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -68,13 +68,13 @@ function PrayerDetail() {
       },
     );
     toast.success(isNew ? "Prayer added" : "Prayer saved");
-    navigate({ to: "/library" });
+    navigate({ to: "/prayers" });
   };
 
   return (
     <AppShell
       title={isNew ? "Add a prayer" : (prayer?.title ?? "Prayer")}
-      back={{ to: "/library", label: "Library" }}
+      back={{ to: "/prayers", label: "Library" }}
       subtitle={isNew ? "Reusable prayer content" : undefined}
     >
       <div className="space-y-4">
@@ -197,7 +197,7 @@ function PrayerDetail() {
               onClick={() => {
                 deletePrayer(prayer.id);
                 toast.success("Prayer removed");
-                navigate({ to: "/library" });
+                navigate({ to: "/prayers" });
               }}
             >
               Delete prayer

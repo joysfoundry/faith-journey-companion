@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowDown, ArrowUp, Minus, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { AppShell } from "@/components/app-shell";
+import { AppShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -129,14 +129,14 @@ function TemplateBuilder() {
       items.map((it, index) => ({ ...it, template_id: id, position: index })),
     );
     toast.success("Template saved");
-    navigate({ to: "/library" });
+    navigate({ to: "/prayers" });
   };
 
   return (
     <AppShell
       title={isNew ? "New template" : (existing?.name ?? "Template")}
       subtitle="Repetition counts stay compact here and expand during prayer."
-      back={{ to: "/library", label: "Library" }}
+      back={{ to: "/prayers", label: "Library" }}
     >
       <div className="space-y-4">
         {isNew ? (
@@ -323,7 +323,7 @@ function TemplateBuilder() {
             onClick={() => {
               deleteTemplate(existing.id);
               toast.success("Template deleted");
-              navigate({ to: "/library" });
+              navigate({ to: "/prayers" });
             }}
           >
             Delete template

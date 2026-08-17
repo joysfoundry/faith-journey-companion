@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Heart, Plus, Search, Trash2 } from "lucide-react";
-import { AppShell } from "@/components/app-shell";
+import { AppShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,16 +9,16 @@ import { useApp } from "@/lib/prayer/store";
 import { toast } from "sonner";
 import { templateOutline } from "@/lib/prayer/compiler";
 
-export const Route = createFileRoute("/library")({
+export const Route = createFileRoute("/prayers")({
   head: () => ({
     meta: [
-      { title: "Prayer Library — Prayer Companion" },
+      { title: "Prayer Library — Faith Journey" },
       {
         name: "description",
         content:
           "Browse, search, and edit your prayers, reusable templates, and How To guides in one library.",
       },
-      { property: "og:title", content: "Prayer Library — Prayer Companion" },
+      { property: "og:title", content: "Prayer Library — Faith Journey" },
       {
         property: "og:description",
         content: "Your prayers, templates, and instructions, kept together and ready to pray.",

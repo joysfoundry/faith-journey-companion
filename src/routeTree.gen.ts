@@ -10,33 +10,154 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CalendarRouteImport } from './routes/calendar'
+import { Route as ImportRouteImport } from './routes/import'
+import { Route as LibraryRouteImport } from './routes/library'
+import { Route as NovenasRouteImport } from './routes/novenas'
+import { Route as PrayRouteImport } from './routes/pray'
+import { Route as HowtoHowToIdRouteImport } from './routes/howto.$howToId'
+import { Route as PrayerPrayerIdRouteImport } from './routes/prayer.$prayerId'
+import { Route as SessionSessionIdRouteImport } from './routes/session.$sessionId'
+import { Route as TemplateTemplateIdRouteImport } from './routes/template.$templateId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CalendarRoute = CalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ImportRoute = ImportRouteImport.update({
+  id: '/import',
+  path: '/import',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LibraryRoute = LibraryRouteImport.update({
+  id: '/library',
+  path: '/library',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NovenasRoute = NovenasRouteImport.update({
+  id: '/novenas',
+  path: '/novenas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrayRoute = PrayRouteImport.update({
+  id: '/pray',
+  path: '/pray',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HowtoHowToIdRoute = HowtoHowToIdRouteImport.update({
+  id: '/howto/$howToId',
+  path: '/howto/$howToId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrayerPrayerIdRoute = PrayerPrayerIdRouteImport.update({
+  id: '/prayer/$prayerId',
+  path: '/prayer/$prayerId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SessionSessionIdRoute = SessionSessionIdRouteImport.update({
+  id: '/session/$sessionId',
+  path: '/session/$sessionId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TemplateTemplateIdRoute = TemplateTemplateIdRouteImport.update({
+  id: '/template/$templateId',
+  path: '/template/$templateId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/calendar': typeof CalendarRoute
+  '/import': typeof ImportRoute
+  '/library': typeof LibraryRoute
+  '/novenas': typeof NovenasRoute
+  '/pray': typeof PrayRoute
+  '/howto/$howToId': typeof HowtoHowToIdRoute
+  '/prayer/$prayerId': typeof PrayerPrayerIdRoute
+  '/session/$sessionId': typeof SessionSessionIdRoute
+  '/template/$templateId': typeof TemplateTemplateIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/calendar': typeof CalendarRoute
+  '/import': typeof ImportRoute
+  '/library': typeof LibraryRoute
+  '/novenas': typeof NovenasRoute
+  '/pray': typeof PrayRoute
+  '/howto/$howToId': typeof HowtoHowToIdRoute
+  '/prayer/$prayerId': typeof PrayerPrayerIdRoute
+  '/session/$sessionId': typeof SessionSessionIdRoute
+  '/template/$templateId': typeof TemplateTemplateIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/calendar': typeof CalendarRoute
+  '/import': typeof ImportRoute
+  '/library': typeof LibraryRoute
+  '/novenas': typeof NovenasRoute
+  '/pray': typeof PrayRoute
+  '/howto/$howToId': typeof HowtoHowToIdRoute
+  '/prayer/$prayerId': typeof PrayerPrayerIdRoute
+  '/session/$sessionId': typeof SessionSessionIdRoute
+  '/template/$templateId': typeof TemplateTemplateIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/calendar'
+    | '/import'
+    | '/library'
+    | '/novenas'
+    | '/pray'
+    | '/howto/$howToId'
+    | '/prayer/$prayerId'
+    | '/session/$sessionId'
+    | '/template/$templateId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/calendar'
+    | '/import'
+    | '/library'
+    | '/novenas'
+    | '/pray'
+    | '/howto/$howToId'
+    | '/prayer/$prayerId'
+    | '/session/$sessionId'
+    | '/template/$templateId'
+  id:
+    | '__root__'
+    | '/'
+    | '/calendar'
+    | '/import'
+    | '/library'
+    | '/novenas'
+    | '/pray'
+    | '/howto/$howToId'
+    | '/prayer/$prayerId'
+    | '/session/$sessionId'
+    | '/template/$templateId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CalendarRoute: typeof CalendarRoute
+  ImportRoute: typeof ImportRoute
+  LibraryRoute: typeof LibraryRoute
+  NovenasRoute: typeof NovenasRoute
+  PrayRoute: typeof PrayRoute
+  HowtoHowToIdRoute: typeof HowtoHowToIdRoute
+  PrayerPrayerIdRoute: typeof PrayerPrayerIdRoute
+  SessionSessionIdRoute: typeof SessionSessionIdRoute
+  TemplateTemplateIdRoute: typeof TemplateTemplateIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +169,83 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/calendar': {
+      id: '/calendar'
+      path: '/calendar'
+      fullPath: '/calendar'
+      preLoaderRoute: typeof CalendarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/import': {
+      id: '/import'
+      path: '/import'
+      fullPath: '/import'
+      preLoaderRoute: typeof ImportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/library': {
+      id: '/library'
+      path: '/library'
+      fullPath: '/library'
+      preLoaderRoute: typeof LibraryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/novenas': {
+      id: '/novenas'
+      path: '/novenas'
+      fullPath: '/novenas'
+      preLoaderRoute: typeof NovenasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pray': {
+      id: '/pray'
+      path: '/pray'
+      fullPath: '/pray'
+      preLoaderRoute: typeof PrayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/howto/$howToId': {
+      id: '/howto/$howToId'
+      path: '/howto/$howToId'
+      fullPath: '/howto/$howToId'
+      preLoaderRoute: typeof HowtoHowToIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/prayer/$prayerId': {
+      id: '/prayer/$prayerId'
+      path: '/prayer/$prayerId'
+      fullPath: '/prayer/$prayerId'
+      preLoaderRoute: typeof PrayerPrayerIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/session/$sessionId': {
+      id: '/session/$sessionId'
+      path: '/session/$sessionId'
+      fullPath: '/session/$sessionId'
+      preLoaderRoute: typeof SessionSessionIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/template/$templateId': {
+      id: '/template/$templateId'
+      path: '/template/$templateId'
+      fullPath: '/template/$templateId'
+      preLoaderRoute: typeof TemplateTemplateIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CalendarRoute: CalendarRoute,
+  ImportRoute: ImportRoute,
+  LibraryRoute: LibraryRoute,
+  NovenasRoute: NovenasRoute,
+  PrayRoute: PrayRoute,
+  HowtoHowToIdRoute: HowtoHowToIdRoute,
+  PrayerPrayerIdRoute: PrayerPrayerIdRoute,
+  SessionSessionIdRoute: SessionSessionIdRoute,
+  TemplateTemplateIdRoute: TemplateTemplateIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

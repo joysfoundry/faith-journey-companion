@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Sparkles } from "lucide-react";
-import { AppShell } from "@/components/app-shell";
+import { AppShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
 import { useApp } from "@/lib/prayer/store";
 import { todayISO } from "@/lib/prayer/compiler";
@@ -34,14 +34,14 @@ function HowToPage() {
 
   if (!howTo) {
     return (
-      <AppShell title="Not found" back={{ to: "/library", label: "Library" }}>
+      <AppShell title="Not found" back={{ to: "/prayers", label: "Library" }}>
         <p className="text-sm text-muted-foreground">That guide is no longer available.</p>
       </AppShell>
     );
   }
 
   return (
-    <AppShell title={howTo.title} subtitle={linkedTemplate ? `How to pray ${linkedTemplate.name}` : howTo.summary} back={{ to: "/library", label: "Library" }}>
+    <AppShell title={howTo.title} subtitle={linkedTemplate ? `How to pray ${linkedTemplate.name}` : howTo.summary} back={{ to: "/prayers", label: "Library" }}>
       <ol className="space-y-4">
         {howTo.steps.map((step, i) => (
           <li key={step.id} className="soft-card flex gap-3 p-4">
