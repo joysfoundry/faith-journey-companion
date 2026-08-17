@@ -16,6 +16,8 @@ import type { LinkableItem, ReflectionEntry } from "@/domain/placeholderData";
 interface Props {
   linkables: LinkableItem[];
   entries: ReflectionEntry[];
+  /** Item id to pre-link when the user arrives via a "Reflect" icon (provenance). */
+  prefillLinkId?: string | null;
 }
 
 /**
