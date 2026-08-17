@@ -133,7 +133,7 @@ function Index() {
           <CardHeader className="pb-2">
             <div className="flex items-start justify-between gap-3">
               <CardTitle className="font-display text-xl font-normal">
-                Daily Rosary · {setName} Mysteries
+                Daily Rosary · {setName}
               </CardTitle>
               <Badge variant="secondary" className="font-normal">
                 Standard
