@@ -37,8 +37,8 @@ export const readingPrograms: ReadingProgram[] = [
   {
     id: "placeholder-program-biay",
     title: "Bible in a Year",
-    detail: "Day 41 — reference only",
-    url: "https://ascensionpress.com/pages/biay-registration",
+    detail: "With Fr. Mike Schmitz · podcast",
+    url: "https://podcasts.apple.com/us/podcast/the-bible-in-a-year-with-fr-mike-schmitz/id1539568321",
   },
 ];
 

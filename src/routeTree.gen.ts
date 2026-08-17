@@ -17,6 +17,7 @@ import { Route as MoreRouteImport } from './routes/more'
 import { Route as NovenasRouteImport } from './routes/novenas'
 import { Route as PrayRouteImport } from './routes/pray'
 import { Route as PrayersRouteImport } from './routes/prayers'
+import { Route as ReflectionsRouteImport } from './routes/reflections'
 import { Route as WordRouteImport } from './routes/word'
 import { Route as HowtoHowToIdRouteImport } from './routes/howto.$howToId'
 import { Route as PrayerPrayerIdRouteImport } from './routes/prayer.$prayerId'
@@ -63,6 +64,11 @@ const PrayersRoute = PrayersRouteImport.update({
   path: '/prayers',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReflectionsRoute = ReflectionsRouteImport.update({
+  id: '/reflections',
+  path: '/reflections',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WordRoute = WordRouteImport.update({
   id: '/word',
   path: '/word',
@@ -98,6 +104,7 @@ export interface FileRoutesByFullPath {
   '/novenas': typeof NovenasRoute
   '/pray': typeof PrayRoute
   '/prayers': typeof PrayersRoute
+  '/reflections': typeof ReflectionsRoute
   '/word': typeof WordRoute
   '/howto/$howToId': typeof HowtoHowToIdRoute
   '/prayer/$prayerId': typeof PrayerPrayerIdRoute
@@ -113,6 +120,7 @@ export interface FileRoutesByTo {
   '/novenas': typeof NovenasRoute
   '/pray': typeof PrayRoute
   '/prayers': typeof PrayersRoute
+  '/reflections': typeof ReflectionsRoute
   '/word': typeof WordRoute
   '/howto/$howToId': typeof HowtoHowToIdRoute
   '/prayer/$prayerId': typeof PrayerPrayerIdRoute
@@ -129,6 +137,7 @@ export interface FileRoutesById {
   '/novenas': typeof NovenasRoute
   '/pray': typeof PrayRoute
   '/prayers': typeof PrayersRoute
+  '/reflections': typeof ReflectionsRoute
   '/word': typeof WordRoute
   '/howto/$howToId': typeof HowtoHowToIdRoute
   '/prayer/$prayerId': typeof PrayerPrayerIdRoute
@@ -146,6 +155,7 @@ export interface FileRouteTypes {
     | '/novenas'
     | '/pray'
     | '/prayers'
+    | '/reflections'
     | '/word'
     | '/howto/$howToId'
     | '/prayer/$prayerId'
@@ -161,6 +171,7 @@ export interface FileRouteTypes {
     | '/novenas'
     | '/pray'
     | '/prayers'
+    | '/reflections'
     | '/word'
     | '/howto/$howToId'
     | '/prayer/$prayerId'
@@ -176,6 +187,7 @@ export interface FileRouteTypes {
     | '/novenas'
     | '/pray'
     | '/prayers'
+    | '/reflections'
     | '/word'
     | '/howto/$howToId'
     | '/prayer/$prayerId'
@@ -192,6 +204,7 @@ export interface RootRouteChildren {
   NovenasRoute: typeof NovenasRoute
   PrayRoute: typeof PrayRoute
   PrayersRoute: typeof PrayersRoute
+  ReflectionsRoute: typeof ReflectionsRoute
   WordRoute: typeof WordRoute
   HowtoHowToIdRoute: typeof HowtoHowToIdRoute
   PrayerPrayerIdRoute: typeof PrayerPrayerIdRoute
@@ -257,6 +270,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrayersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reflections': {
+      id: '/reflections'
+      path: '/reflections'
+      fullPath: '/reflections'
+      preLoaderRoute: typeof ReflectionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/word': {
       id: '/word'
       path: '/word'
@@ -304,6 +324,7 @@ const rootRouteChildren: RootRouteChildren = {
   NovenasRoute: NovenasRoute,
   PrayRoute: PrayRoute,
   PrayersRoute: PrayersRoute,
+  ReflectionsRoute: ReflectionsRoute,
   WordRoute: WordRoute,
   HowtoHowToIdRoute: HowtoHowToIdRoute,
   PrayerPrayerIdRoute: PrayerPrayerIdRoute,
