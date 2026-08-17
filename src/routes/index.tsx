@@ -117,21 +117,17 @@ function Index() {
                 </div>
                 <p className="text-xs text-muted-foreground">{session.templateTitle}</p>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-1.5">
-                  <Progress value={(session.completedCount / session.itemCount) * 100} />
-                  <p className="text-xs text-muted-foreground">
-                    {session.completedCount} of {session.itemCount} prayers marked done
-                  </p>
-                </div>
+              <CardContent>
                 <div className="flex flex-wrap items-center gap-2">
                   <Button size="sm">{session.completedCount > 0 ? "Continue" : "Start"}</Button>
                   <Button
                     size="sm"
-                    variant="outline"
-                    onClick={() => setJournalPromptFor(session.title)}
+                    variant="ghost"
+                    onClick={() => openJournal(session.id)}
+                    aria-label={`Write a reflection about ${session.title}`}
                   >
-                    Mark done
+                    <NotebookPen className="size-4" aria-hidden />
+                    Reflect
                   </Button>
                 </div>
               </CardContent>
