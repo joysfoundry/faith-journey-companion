@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as ImportRouteImport } from './routes/import'
+import { Route as MoreRouteImport } from './routes/more'
 import { Route as NovenasRouteImport } from './routes/novenas'
 import { Route as PrayRouteImport } from './routes/pray'
 import { Route as PrayersRouteImport } from './routes/prayers'
@@ -33,6 +34,11 @@ const CalendarRoute = CalendarRouteImport.update({
 const ImportRoute = ImportRouteImport.update({
   id: '/import',
   path: '/import',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MoreRoute = MoreRouteImport.update({
+  id: '/more',
+  path: '/more',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NovenasRoute = NovenasRouteImport.update({
@@ -75,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/calendar': typeof CalendarRoute
   '/import': typeof ImportRoute
+  '/more': typeof MoreRoute
   '/novenas': typeof NovenasRoute
   '/pray': typeof PrayRoute
   '/prayers': typeof PrayersRoute
@@ -87,6 +94,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/calendar': typeof CalendarRoute
   '/import': typeof ImportRoute
+  '/more': typeof MoreRoute
   '/novenas': typeof NovenasRoute
   '/pray': typeof PrayRoute
   '/prayers': typeof PrayersRoute
@@ -100,6 +108,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/calendar': typeof CalendarRoute
   '/import': typeof ImportRoute
+  '/more': typeof MoreRoute
   '/novenas': typeof NovenasRoute
   '/pray': typeof PrayRoute
   '/prayers': typeof PrayersRoute
@@ -114,6 +123,7 @@ export interface FileRouteTypes {
     | '/'
     | '/calendar'
     | '/import'
+    | '/more'
     | '/novenas'
     | '/pray'
     | '/prayers'
@@ -126,6 +136,7 @@ export interface FileRouteTypes {
     | '/'
     | '/calendar'
     | '/import'
+    | '/more'
     | '/novenas'
     | '/pray'
     | '/prayers'
@@ -138,6 +149,7 @@ export interface FileRouteTypes {
     | '/'
     | '/calendar'
     | '/import'
+    | '/more'
     | '/novenas'
     | '/pray'
     | '/prayers'
@@ -151,6 +163,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CalendarRoute: typeof CalendarRoute
   ImportRoute: typeof ImportRoute
+  MoreRoute: typeof MoreRoute
   NovenasRoute: typeof NovenasRoute
   PrayRoute: typeof PrayRoute
   PrayersRoute: typeof PrayersRoute
@@ -181,6 +194,13 @@ declare module '@tanstack/react-router' {
       path: '/import'
       fullPath: '/import'
       preLoaderRoute: typeof ImportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/more': {
+      id: '/more'
+      path: '/more'
+      fullPath: '/more'
+      preLoaderRoute: typeof MoreRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/novenas': {
@@ -239,6 +259,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CalendarRoute: CalendarRoute,
   ImportRoute: ImportRoute,
+  MoreRoute: MoreRoute,
   NovenasRoute: NovenasRoute,
   PrayRoute: PrayRoute,
   PrayersRoute: PrayersRoute,
