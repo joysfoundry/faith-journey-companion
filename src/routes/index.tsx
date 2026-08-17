@@ -319,36 +319,14 @@ function Index() {
       </section>
 
       {/* Reflection / Journal */}
-      <section>
+      <section id="reflection">
         <SectionHeading>Reflection</SectionHeading>
-        <ReflectionComposer linkables={linkables} entries={todaysReflections} />
+        <ReflectionComposer
+          linkables={linkables}
+          entries={todaysReflections}
+          prefillLinkId={journalLinkId}
+        />
       </section>
-
-      <Dialog
-        open={journalPromptFor !== null}
-        onOpenChange={(open) => !open && setJournalPromptFor(null)}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="font-display text-2xl font-normal">
-              <Sun className="mr-2 inline size-5 text-gold" aria-hidden />
-              Add a journal entry?
-            </DialogTitle>
-            <DialogDescription>
-              {journalPromptFor} is complete. Would you like to write a reflection while it's fresh?
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setJournalPromptFor(null)}>
-              No
-            </Button>
-            <Button variant="outline" onClick={() => setJournalPromptFor(null)}>
-              Later
-            </Button>
-            <Button onClick={() => setJournalPromptFor(null)}>Now</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </AppShell>
   );
 }
