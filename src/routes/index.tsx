@@ -263,7 +263,8 @@ function Index() {
             </Button>
           }
         >
-          Learn
+          Library
+
         </SectionHeading>
         <Card className="border-border/70">
           <CardContent className="divide-y divide-border/70 p-0">
