@@ -103,7 +103,7 @@ function Index() {
         </p>
       </section>
 
-      {/* A — Prayer or Devotion */}
+      {/* A — Prayer & Devotion: today's sessions + prayer search */}
       <section className="mb-9">
         <SectionHeading action={<AddSessionDialog />}>Prayer &amp; Devotion</SectionHeading>
         <div className="space-y-3">
@@ -140,41 +140,15 @@ function Index() {
             </Card>
           ))}
         </div>
+
+        <div className="mt-4">
+          <h3 className="mb-2 text-xs uppercase tracking-[0.16em] text-muted-foreground">
+            Pray something else
+          </h3>
+          <PrayerSearch />
+        </div>
       </section>
 
-      {/* B — Need */}
-      <section className="mb-9">
-        <SectionHeading
-          action={
-            <Button size="sm" variant="ghost">
-              <Plus className="size-4" aria-hidden />
-              Add need
-            </Button>
-          }
-        >
-          Need
-        </SectionHeading>
-        <Card className="border-border/70">
-          <CardContent className="space-y-3 py-5">
-            {currentNeed ? (
-              <>
-                <div className="flex items-start gap-3">
-                  <Heart className="mt-0.5 size-4 text-primary" aria-hidden />
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{currentNeed.need}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Suggested prayer · {currentNeed.prayerTitle}
-                    </p>
-                  </div>
-                </div>
-                <Button size="sm">Pray now</Button>
-              </>
-            ) : (
-              <p className="text-sm text-muted-foreground">What's on your heart today?</p>
-            )}
-          </CardContent>
-        </Card>
-      </section>
 
       {/* C — Word */}
       <section className="mb-9">
