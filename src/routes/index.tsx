@@ -64,7 +64,6 @@ function Index() {
   const { db, startSession } = useApp();
   const navigate = useNavigate();
   const today = todayISO();
-  const [massOpen, setMassOpen] = useState(false);
   const [journalLinkId, setJournalLinkId] = useState<string | null>(null);
 
   const setId = resolveMysterySet(db, defaultContext({ date: today }));
@@ -86,6 +85,7 @@ function Index() {
   const linkables: LinkableItem[] = [
     { id: rosary?.id ?? "rosary", label: `Daily Rosary · ${setName}`, group: "Prayer & devotion" },
     { id: todaysWord.id, label: todaysWord.liturgicalTitle, group: "Word" },
+    ...readingPrograms.map((p) => ({ id: p.id, label: p.title, group: "Word" })),
     ...learnItems.map((l) => ({ id: l.id, label: l.title, group: "Formation" })),
   ];
 
