@@ -79,7 +79,13 @@ function Index() {
   const today = new Date();
   const sessions =
     plannedSessions.length > 0 ? plannedSessions : [defaultDailyRosarySession(today)];
-  const [journalPromptFor, setJournalPromptFor] = useState<string | null>(null);
+  const [massOpen, setMassOpen] = useState(false);
+  const [journalLinkId, setJournalLinkId] = useState<string | null>(null);
+
+  function openJournal(linkId: string) {
+    setJournalLinkId(linkId);
+    document.getElementById("reflection")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   const linkables: LinkableItem[] = [
     ...sessions.map((s) => ({ id: s.id, label: s.title, group: "Prayer & devotion" })),
