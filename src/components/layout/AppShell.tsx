@@ -1,13 +1,13 @@
 import { Link } from "@tanstack/react-router";
-import { BookOpen, Heart, Home, NotebookPen, Sun } from "lucide-react";
+import { BookOpen, Heart, Home, MoreHorizontal, Sun } from "lucide-react";
 import type { ReactNode } from "react";
 
 const navItems = [
   { key: "home", label: "Today", icon: Home, to: "/" as const },
-  { key: "prayers", label: "Prayers", icon: Heart, to: null },
+  { key: "pray", label: "Pray", icon: Heart, to: null },
   { key: "word", label: "Word", icon: Sun, to: null },
   { key: "library", label: "Library", icon: BookOpen, to: null },
-  { key: "reflect", label: "Reflect", icon: NotebookPen, to: null },
+  { key: "more", label: "More", icon: MoreHorizontal, to: null },
 ];
 
 

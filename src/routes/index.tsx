@@ -164,15 +164,26 @@ function Index() {
               </p>
             </CardHeader>
             <CardContent className="space-y-2">
-              <a
-                href={todaysWord.readingsUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1.5 text-sm text-primary underline-offset-4 hover:underline"
-              >
-                Read today's Mass readings
-                <ExternalLink className="size-3.5" aria-hidden />
-              </a>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <a
+                  href={todaysWord.readingsUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 text-sm text-primary underline-offset-4 hover:underline"
+                >
+                  Read today's Mass readings
+                  <ExternalLink className="size-3.5" aria-hidden />
+                </a>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => openJournal(todaysWord.id)}
+                  aria-label="Write a reflection about today's readings"
+                >
+                  <NotebookPen className="size-4" aria-hidden />
+                  Reflect
+                </Button>
+              </div>
 
               <Collapsible open={massOpen} onOpenChange={setMassOpen}>
                 <CollapsibleTrigger className="flex w-full items-center gap-1.5 border-t border-border/60 pt-2 text-left text-xs text-muted-foreground transition-colors hover:text-foreground">
@@ -208,19 +219,10 @@ function Index() {
                       <FileText className="size-4" aria-hidden />
                       Homily transcript
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="ml-auto"
-                      onClick={() => openJournal(todaysWord.id)}
-                      aria-label="Write a reflection about today's Mass"
-                    >
-                      <NotebookPen className="size-4" aria-hidden />
-                      Reflect
-                    </Button>
                   </div>
                 </CollapsibleContent>
               </Collapsible>
+
 
             </CardContent>
           </Card>
@@ -278,7 +280,18 @@ function Index() {
                     {item.source ? ` · ${item.source}` : ""}
                   </p>
                 </div>
-                <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                <div className="flex shrink-0 items-center gap-1">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => openJournal(item.id)}
+                    aria-label={`Write a reflection about ${item.title}`}
+                  >
+                    <NotebookPen className="size-4" aria-hidden />
+                    Reflect
+                  </Button>
+                  <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
+                </div>
               </div>
             ))}
             <div className="flex items-center justify-between px-5 py-3">
