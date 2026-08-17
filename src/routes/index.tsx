@@ -5,7 +5,6 @@ import {
   ChevronRight,
   ExternalLink,
   FileText,
-  Heart,
   Mic,
   NotebookPen,
   Plus,
@@ -13,6 +12,7 @@ import {
 import { useState } from "react";
 
 import { AddSessionDialog } from "@/components/home/AddSessionDialog";
+import { PrayerSearch } from "@/components/home/PrayerSearch";
 import { ReflectionComposer } from "@/components/home/ReflectionComposer";
 import { AppShell } from "@/components/layout/AppShell";
 import { Badge } from "@/components/ui/badge";
@@ -27,7 +27,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { defaultDailyRosarySession } from "@/domain/dailyRosary";
 import {
-  currentNeed,
   learnItems,
   plannedSessions,
   readingPrograms,
@@ -35,6 +34,7 @@ import {
   todaysWord,
   type LinkableItem,
 } from "@/domain/placeholderData";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -89,10 +89,10 @@ function Index() {
 
   const linkables: LinkableItem[] = [
     ...sessions.map((s) => ({ id: s.id, label: s.title, group: "Prayer & devotion" })),
-    ...(currentNeed ? [{ id: currentNeed.id, label: currentNeed.need, group: "Need" }] : []),
     { id: todaysWord.id, label: todaysWord.liturgicalTitle, group: "Word" },
-    ...learnItems.map((l) => ({ id: l.id, label: l.title, group: "Learn" })),
+    ...learnItems.map((l) => ({ id: l.id, label: l.title, group: "Library" })),
   ];
+
 
   return (
     <AppShell>
