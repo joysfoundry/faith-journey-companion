@@ -144,7 +144,7 @@ function Index() {
             </p>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <Button size="sm" onClick={begin}>
                 <Sparkles className="size-4" aria-hidden />
                 Begin prayer
