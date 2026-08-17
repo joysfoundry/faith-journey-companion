@@ -38,7 +38,7 @@ const cadences = [
 /** Clean, two-choice way to add a session: pick a template, pick how often. */
 export function AddSessionDialog() {
   const [open, setOpen] = useState(false);
-  const [template, setTemplate] = useState<string | undefined>();
+  const [template, setTemplate] = useState<string>("");
   const [cadence, setCadence] = useState<string>("once");
 
   return (
