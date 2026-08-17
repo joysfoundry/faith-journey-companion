@@ -163,7 +163,7 @@ function Index() {
                 {todaysWord.readings.join(" · ")}
               </p>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-2">
               <a
                 href={todaysWord.readingsUrl}
                 target="_blank"
@@ -174,35 +174,29 @@ function Index() {
                 <ExternalLink className="size-3.5" aria-hidden />
               </a>
 
-              <Collapsible
-                open={massOpen}
-                onOpenChange={setMassOpen}
-                className="rounded-lg border border-border/70 bg-muted/40"
-              >
-                <CollapsibleTrigger className="flex w-full items-center justify-between gap-3 p-4 text-left">
-                  <span className="font-display text-base text-foreground">
-                    Mass (if applicable)
-                  </span>
+              <Collapsible open={massOpen} onOpenChange={setMassOpen}>
+                <CollapsibleTrigger className="flex w-full items-center gap-1.5 border-t border-border/60 pt-2 text-left text-xs text-muted-foreground transition-colors hover:text-foreground">
+                  Mass (if applicable)
                   <ChevronDown
-                    className={`size-4 shrink-0 text-muted-foreground transition-transform ${
+                    className={`size-3.5 shrink-0 transition-transform ${
                       massOpen ? "rotate-180" : ""
                     }`}
                     aria-hidden
                   />
                 </CollapsibleTrigger>
-                <CollapsibleContent className="space-y-3 px-4 pb-4">
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-1.5">
+                <CollapsibleContent className="space-y-2.5 pt-3">
+                  <div className="grid gap-2.5 sm:grid-cols-2">
+                    <div className="space-y-1">
                       <Label htmlFor="mass-church" className="text-xs text-muted-foreground">
                         Church
                       </Label>
-                      <Input id="mass-church" placeholder="Where did you attend?" />
+                      <Input id="mass-church" className="h-9" placeholder="Where did you attend?" />
                     </div>
-                    <div className="space-y-1.5">
+                    <div className="space-y-1">
                       <Label htmlFor="mass-priest" className="text-xs text-muted-foreground">
                         Priest
                       </Label>
-                      <Input id="mass-priest" placeholder="Who celebrated?" />
+                      <Input id="mass-priest" className="h-9" placeholder="Who celebrated?" />
                     </div>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -227,6 +221,7 @@ function Index() {
                   </div>
                 </CollapsibleContent>
               </Collapsible>
+
             </CardContent>
           </Card>
 
