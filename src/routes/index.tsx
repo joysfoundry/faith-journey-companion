@@ -5,7 +5,6 @@ import {
   ChevronRight,
   ExternalLink,
   FileText,
-  Heart,
   Mic,
   NotebookPen,
   Plus,
@@ -13,6 +12,7 @@ import {
 import { useState } from "react";
 
 import { AddSessionDialog } from "@/components/home/AddSessionDialog";
+import { PrayerSearch } from "@/components/home/PrayerSearch";
 import { ReflectionComposer } from "@/components/home/ReflectionComposer";
 import { AppShell } from "@/components/layout/AppShell";
 import { Badge } from "@/components/ui/badge";
@@ -27,7 +27,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { defaultDailyRosarySession } from "@/domain/dailyRosary";
 import {
-  currentNeed,
   learnItems,
   plannedSessions,
   readingPrograms,
@@ -35,6 +34,7 @@ import {
   todaysWord,
   type LinkableItem,
 } from "@/domain/placeholderData";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -89,10 +89,10 @@ function Index() {
 
   const linkables: LinkableItem[] = [
     ...sessions.map((s) => ({ id: s.id, label: s.title, group: "Prayer & devotion" })),
-    ...(currentNeed ? [{ id: currentNeed.id, label: currentNeed.need, group: "Need" }] : []),
     { id: todaysWord.id, label: todaysWord.liturgicalTitle, group: "Word" },
-    ...learnItems.map((l) => ({ id: l.id, label: l.title, group: "Learn" })),
+    ...learnItems.map((l) => ({ id: l.id, label: l.title, group: "Library" })),
   ];
+
 
   return (
     <AppShell>
@@ -103,7 +103,7 @@ function Index() {
         </p>
       </section>
 
-      {/* A — Prayer or Devotion */}
+      {/* A — Prayer & Devotion: today's sessions + prayer search */}
       <section className="mb-9">
         <SectionHeading action={<AddSessionDialog />}>Prayer &amp; Devotion</SectionHeading>
         <div className="space-y-3">
@@ -140,41 +140,15 @@ function Index() {
             </Card>
           ))}
         </div>
+
+        <div className="mt-4">
+          <h3 className="mb-2 text-xs uppercase tracking-[0.16em] text-muted-foreground">
+            Pray something else
+          </h3>
+          <PrayerSearch />
+        </div>
       </section>
 
-      {/* B — Need */}
-      <section className="mb-9">
-        <SectionHeading
-          action={
-            <Button size="sm" variant="ghost">
-              <Plus className="size-4" aria-hidden />
-              Add need
-            </Button>
-          }
-        >
-          Need
-        </SectionHeading>
-        <Card className="border-border/70">
-          <CardContent className="space-y-3 py-5">
-            {currentNeed ? (
-              <>
-                <div className="flex items-start gap-3">
-                  <Heart className="mt-0.5 size-4 text-primary" aria-hidden />
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{currentNeed.need}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Suggested prayer · {currentNeed.prayerTitle}
-                    </p>
-                  </div>
-                </div>
-                <Button size="sm">Pray now</Button>
-              </>
-            ) : (
-              <p className="text-sm text-muted-foreground">What's on your heart today?</p>
-            )}
-          </CardContent>
-        </Card>
-      </section>
 
       {/* C — Word */}
       <section className="mb-9">
@@ -189,7 +163,7 @@ function Index() {
                 {todaysWord.readings.join(" · ")}
               </p>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-2">
               <a
                 href={todaysWord.readingsUrl}
                 target="_blank"
@@ -200,35 +174,29 @@ function Index() {
                 <ExternalLink className="size-3.5" aria-hidden />
               </a>
 
-              <Collapsible
-                open={massOpen}
-                onOpenChange={setMassOpen}
-                className="rounded-lg border border-border/70 bg-muted/40"
-              >
-                <CollapsibleTrigger className="flex w-full items-center justify-between gap-3 p-4 text-left">
-                  <span className="font-display text-base text-foreground">
-                    Mass (if applicable)
-                  </span>
+              <Collapsible open={massOpen} onOpenChange={setMassOpen}>
+                <CollapsibleTrigger className="flex w-full items-center gap-1.5 border-t border-border/60 pt-2 text-left text-xs text-muted-foreground transition-colors hover:text-foreground">
+                  Mass (if applicable)
                   <ChevronDown
-                    className={`size-4 shrink-0 text-muted-foreground transition-transform ${
+                    className={`size-3.5 shrink-0 transition-transform ${
                       massOpen ? "rotate-180" : ""
                     }`}
                     aria-hidden
                   />
                 </CollapsibleTrigger>
-                <CollapsibleContent className="space-y-3 px-4 pb-4">
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-1.5">
+                <CollapsibleContent className="space-y-2.5 pt-3">
+                  <div className="grid gap-2.5 sm:grid-cols-2">
+                    <div className="space-y-1">
                       <Label htmlFor="mass-church" className="text-xs text-muted-foreground">
                         Church
                       </Label>
-                      <Input id="mass-church" placeholder="Where did you attend?" />
+                      <Input id="mass-church" className="h-9" placeholder="Where did you attend?" />
                     </div>
-                    <div className="space-y-1.5">
+                    <div className="space-y-1">
                       <Label htmlFor="mass-priest" className="text-xs text-muted-foreground">
                         Priest
                       </Label>
-                      <Input id="mass-priest" placeholder="Who celebrated?" />
+                      <Input id="mass-priest" className="h-9" placeholder="Who celebrated?" />
                     </div>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -253,6 +221,7 @@ function Index() {
                   </div>
                 </CollapsibleContent>
               </Collapsible>
+
             </CardContent>
           </Card>
 
@@ -294,7 +263,8 @@ function Index() {
             </Button>
           }
         >
-          Learn
+          Library
+
         </SectionHeading>
         <Card className="border-border/70">
           <CardContent className="divide-y divide-border/70 p-0">
