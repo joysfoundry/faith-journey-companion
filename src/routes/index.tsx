@@ -194,31 +194,59 @@ function Index() {
                 <ExternalLink className="size-3.5" aria-hidden />
               </a>
 
-              <div className="rounded-lg border border-border/70 bg-muted/40 p-4">
-                <p className="text-sm text-foreground">Did you hear these at Mass?</p>
-                <div className="mt-2 flex gap-2">
-                  <Button size="sm" variant="outline">
-                    Yes
-                  </Button>
-                  <Button size="sm" variant="ghost">
-                    No
-                  </Button>
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <Button size="sm" variant="outline">
-                    <Plus className="size-4" aria-hidden />
-                    Church
-                  </Button>
-                  <Button size="sm" variant="outline">
-                    <Plus className="size-4" aria-hidden />
-                    Priest
-                  </Button>
-                  <Button size="sm" variant="outline">
-                    <Mic className="size-4" aria-hidden />
-                    Homily notes, audio or transcript
-                  </Button>
-                </div>
-              </div>
+              <Collapsible
+                open={massOpen}
+                onOpenChange={setMassOpen}
+                className="rounded-lg border border-border/70 bg-muted/40"
+              >
+                <CollapsibleTrigger className="flex w-full items-center justify-between gap-3 p-4 text-left">
+                  <span className="font-display text-base text-foreground">
+                    Mass (if applicable)
+                  </span>
+                  <ChevronDown
+                    className={`size-4 shrink-0 text-muted-foreground transition-transform ${
+                      massOpen ? "rotate-180" : ""
+                    }`}
+                    aria-hidden
+                  />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-3 px-4 pb-4">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="mass-church" className="text-xs text-muted-foreground">
+                        Church
+                      </Label>
+                      <Input id="mass-church" placeholder="Where did you attend?" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="mass-priest" className="text-xs text-muted-foreground">
+                        Priest
+                      </Label>
+                      <Input id="mass-priest" placeholder="Who celebrated?" />
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button size="sm" variant="outline">
+                      <Mic className="size-4" aria-hidden />
+                      Homily audio
+                    </Button>
+                    <Button size="sm" variant="outline">
+                      <FileText className="size-4" aria-hidden />
+                      Homily transcript
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="ml-auto"
+                      onClick={() => openJournal(todaysWord.id)}
+                      aria-label="Write a reflection about today's Mass"
+                    >
+                      <NotebookPen className="size-4" aria-hidden />
+                      Reflect
+                    </Button>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             </CardContent>
           </Card>
 
