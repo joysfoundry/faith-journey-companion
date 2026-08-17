@@ -1,4 +1,4 @@
-import { ChevronDown, ExternalLink, FileText, Mic, NotebookPen, Plus } from "lucide-react";
+import { ChevronDown, FileText, Mic, NotebookPen, Plus } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -184,13 +184,6 @@ export function WordSection({ onReflect }: { onReflect: (linkId: string) => void
                   <NotebookPen className="size-4" aria-hidden />
                   Reflect
                 </Button>
-                {program.url ? (
-                  <Button asChild size="sm" variant="ghost">
-                    <a href={program.url} target="_blank" rel="noreferrer">
-                      <ExternalLink className="size-4" aria-hidden />
-                    </a>
-                  </Button>
-                ) : null}
               </div>
             </div>
           </li>
