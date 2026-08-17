@@ -18,18 +18,22 @@ export const plannedSessions: DailySessionView[] = [
   },
 ];
 
-/** B — Need: a single prayer for what's on your heart right now. */
-export interface NeedPrayer {
+/** Prayer library entries, searchable from Home. */
+export interface LibraryPrayer {
   id: string;
-  need: string;
-  prayerTitle: string;
+  title: string;
+  tags: string[];
 }
 
-export const currentNeed: NeedPrayer | null = {
-  id: "placeholder-need-1",
-  need: "Healing in my family",
-  prayerTitle: "Memorare",
-};
+export const prayerLibrary: LibraryPrayer[] = [
+  { id: "prayer-memorare", title: "Memorare", tags: ["Marian", "healing", "intercession"] },
+  { id: "prayer-st-michael", title: "St. Michael the Archangel", tags: ["protection"] },
+  { id: "prayer-anima-christi", title: "Anima Christi", tags: ["Eucharistic", "after communion"] },
+  { id: "prayer-divine-mercy", title: "Chaplet of Divine Mercy", tags: ["mercy", "chaplet"] },
+  { id: "prayer-litany-loreto", title: "Litany of Loreto", tags: ["Marian", "litany"] },
+  { id: "prayer-act-contrition", title: "Act of Contrition", tags: ["repentance"] },
+];
+
 
 /** C — Word: daily Mass readings, lived-experience metadata, and a reading program. */
 export interface WordEntry {

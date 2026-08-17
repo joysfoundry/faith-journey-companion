@@ -4,11 +4,12 @@ import type { ReactNode } from "react";
 
 const navItems = [
   { key: "home", label: "Today", icon: Home, to: "/" as const },
-  { key: "devotion", label: "Devotion", icon: Heart, to: null },
+  { key: "prayers", label: "Prayers", icon: Heart, to: null },
   { key: "word", label: "Word", icon: Sun, to: null },
-  { key: "learn", label: "Learn", icon: BookOpen, to: null },
+  { key: "library", label: "Library", icon: BookOpen, to: null },
   { key: "reflect", label: "Reflect", icon: NotebookPen, to: null },
 ];
+
 
 
 export function AppShell({ children }: { children: ReactNode }) {
