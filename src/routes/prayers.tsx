@@ -49,8 +49,8 @@ function LibraryPage() {
 
   return (
     <AppShell
-      title="Library"
-      subtitle="Prayers, templates, and instructions"
+      title="Prayers"
+      subtitle="Prayers, templates, and how to pray them"
       action={
         <Button asChild size="sm" variant="secondary">
           <Link to="/prayer/$prayerId" params={{ prayerId: "new" }}>

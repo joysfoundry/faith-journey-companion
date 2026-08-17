@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CalendarRouteImport } from './routes/calendar'
+import { Route as FormationRouteImport } from './routes/formation'
 import { Route as ImportRouteImport } from './routes/import'
 import { Route as MoreRouteImport } from './routes/more'
 import { Route as NovenasRouteImport } from './routes/novenas'
@@ -29,6 +30,11 @@ const IndexRoute = IndexRouteImport.update({
 const CalendarRoute = CalendarRouteImport.update({
   id: '/calendar',
   path: '/calendar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FormationRoute = FormationRouteImport.update({
+  id: '/formation',
+  path: '/formation',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ImportRoute = ImportRouteImport.update({
@@ -80,6 +86,7 @@ const TemplateTemplateIdRoute = TemplateTemplateIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/calendar': typeof CalendarRoute
+  '/formation': typeof FormationRoute
   '/import': typeof ImportRoute
   '/more': typeof MoreRoute
   '/novenas': typeof NovenasRoute
@@ -93,6 +100,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/calendar': typeof CalendarRoute
+  '/formation': typeof FormationRoute
   '/import': typeof ImportRoute
   '/more': typeof MoreRoute
   '/novenas': typeof NovenasRoute
@@ -107,6 +115,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/calendar': typeof CalendarRoute
+  '/formation': typeof FormationRoute
   '/import': typeof ImportRoute
   '/more': typeof MoreRoute
   '/novenas': typeof NovenasRoute
@@ -122,6 +131,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/calendar'
+    | '/formation'
     | '/import'
     | '/more'
     | '/novenas'
@@ -135,6 +145,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/calendar'
+    | '/formation'
     | '/import'
     | '/more'
     | '/novenas'
@@ -148,6 +159,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/calendar'
+    | '/formation'
     | '/import'
     | '/more'
     | '/novenas'
@@ -162,6 +174,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CalendarRoute: typeof CalendarRoute
+  FormationRoute: typeof FormationRoute
   ImportRoute: typeof ImportRoute
   MoreRoute: typeof MoreRoute
   NovenasRoute: typeof NovenasRoute
@@ -187,6 +200,13 @@ declare module '@tanstack/react-router' {
       path: '/calendar'
       fullPath: '/calendar'
       preLoaderRoute: typeof CalendarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/formation': {
+      id: '/formation'
+      path: '/formation'
+      fullPath: '/formation'
+      preLoaderRoute: typeof FormationRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/import': {
@@ -258,6 +278,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CalendarRoute: CalendarRoute,
+  FormationRoute: FormationRoute,
   ImportRoute: ImportRoute,
   MoreRoute: MoreRoute,
   NovenasRoute: NovenasRoute,
