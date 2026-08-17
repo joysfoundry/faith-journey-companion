@@ -25,11 +25,16 @@ interface Props {
  * session, need, reading, or learning item that prompted it. Links are stored
  * with the reflection, never on the item that inspired it.
  */
-export function ReflectionComposer({ linkables, entries }: Props) {
+export function ReflectionComposer({ linkables, entries, prefillLinkId }: Props) {
   const [saved, setSaved] = useState<ReflectionEntry[]>(entries);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [linked, setLinked] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!prefillLinkId) return;
+    setLinked((prev) => (prev.includes(prefillLinkId) ? prev : [...prev, prefillLinkId]));
+  }, [prefillLinkId]);
 
   const groups = Array.from(new Set(linkables.map((l) => l.group)));
 
