@@ -1,12 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
   BookOpen,
+  ChevronDown,
   ChevronRight,
   ExternalLink,
+  FileText,
   Heart,
   Mic,
+  NotebookPen,
   Plus,
-  Sun,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -17,14 +19,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Progress } from "@/components/ui/progress";
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { defaultDailyRosarySession } from "@/domain/dailyRosary";
 import {
   currentNeed,
@@ -79,7 +79,13 @@ function Index() {
   const today = new Date();
   const sessions =
     plannedSessions.length > 0 ? plannedSessions : [defaultDailyRosarySession(today)];
-  const [journalPromptFor, setJournalPromptFor] = useState<string | null>(null);
+  const [massOpen, setMassOpen] = useState(false);
+  const [journalLinkId, setJournalLinkId] = useState<string | null>(null);
+
+  function openJournal(linkId: string) {
+    setJournalLinkId(linkId);
+    document.getElementById("reflection")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   const linkables: LinkableItem[] = [
     ...sessions.map((s) => ({ id: s.id, label: s.title, group: "Prayer & devotion" })),
@@ -117,21 +123,17 @@ function Index() {
                 </div>
                 <p className="text-xs text-muted-foreground">{session.templateTitle}</p>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-1.5">
-                  <Progress value={(session.completedCount / session.itemCount) * 100} />
-                  <p className="text-xs text-muted-foreground">
-                    {session.completedCount} of {session.itemCount} prayers marked done
-                  </p>
-                </div>
+              <CardContent>
                 <div className="flex flex-wrap items-center gap-2">
                   <Button size="sm">{session.completedCount > 0 ? "Continue" : "Start"}</Button>
                   <Button
                     size="sm"
-                    variant="outline"
-                    onClick={() => setJournalPromptFor(session.title)}
+                    variant="ghost"
+                    onClick={() => openJournal(session.id)}
+                    aria-label={`Write a reflection about ${session.title}`}
                   >
-                    Mark done
+                    <NotebookPen className="size-4" aria-hidden />
+                    Reflect
                   </Button>
                 </div>
               </CardContent>
@@ -198,31 +200,59 @@ function Index() {
                 <ExternalLink className="size-3.5" aria-hidden />
               </a>
 
-              <div className="rounded-lg border border-border/70 bg-muted/40 p-4">
-                <p className="text-sm text-foreground">Did you hear these at Mass?</p>
-                <div className="mt-2 flex gap-2">
-                  <Button size="sm" variant="outline">
-                    Yes
-                  </Button>
-                  <Button size="sm" variant="ghost">
-                    No
-                  </Button>
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <Button size="sm" variant="outline">
-                    <Plus className="size-4" aria-hidden />
-                    Church
-                  </Button>
-                  <Button size="sm" variant="outline">
-                    <Plus className="size-4" aria-hidden />
-                    Priest
-                  </Button>
-                  <Button size="sm" variant="outline">
-                    <Mic className="size-4" aria-hidden />
-                    Homily notes, audio or transcript
-                  </Button>
-                </div>
-              </div>
+              <Collapsible
+                open={massOpen}
+                onOpenChange={setMassOpen}
+                className="rounded-lg border border-border/70 bg-muted/40"
+              >
+                <CollapsibleTrigger className="flex w-full items-center justify-between gap-3 p-4 text-left">
+                  <span className="font-display text-base text-foreground">
+                    Mass (if applicable)
+                  </span>
+                  <ChevronDown
+                    className={`size-4 shrink-0 text-muted-foreground transition-transform ${
+                      massOpen ? "rotate-180" : ""
+                    }`}
+                    aria-hidden
+                  />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-3 px-4 pb-4">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="mass-church" className="text-xs text-muted-foreground">
+                        Church
+                      </Label>
+                      <Input id="mass-church" placeholder="Where did you attend?" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="mass-priest" className="text-xs text-muted-foreground">
+                        Priest
+                      </Label>
+                      <Input id="mass-priest" placeholder="Who celebrated?" />
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button size="sm" variant="outline">
+                      <Mic className="size-4" aria-hidden />
+                      Homily audio
+                    </Button>
+                    <Button size="sm" variant="outline">
+                      <FileText className="size-4" aria-hidden />
+                      Homily transcript
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="ml-auto"
+                      onClick={() => openJournal(todaysWord.id)}
+                      aria-label="Write a reflection about today's Mass"
+                    >
+                      <NotebookPen className="size-4" aria-hidden />
+                      Reflect
+                    </Button>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             </CardContent>
           </Card>
 
@@ -295,36 +325,14 @@ function Index() {
       </section>
 
       {/* Reflection / Journal */}
-      <section>
+      <section id="reflection">
         <SectionHeading>Reflection</SectionHeading>
-        <ReflectionComposer linkables={linkables} entries={todaysReflections} />
+        <ReflectionComposer
+          linkables={linkables}
+          entries={todaysReflections}
+          prefillLinkId={journalLinkId}
+        />
       </section>
-
-      <Dialog
-        open={journalPromptFor !== null}
-        onOpenChange={(open) => !open && setJournalPromptFor(null)}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="font-display text-2xl font-normal">
-              <Sun className="mr-2 inline size-5 text-gold" aria-hidden />
-              Add a journal entry?
-            </DialogTitle>
-            <DialogDescription>
-              {journalPromptFor} is complete. Would you like to write a reflection while it's fresh?
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setJournalPromptFor(null)}>
-              No
-            </Button>
-            <Button variant="outline" onClick={() => setJournalPromptFor(null)}>
-              Later
-            </Button>
-            <Button onClick={() => setJournalPromptFor(null)}>Now</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </AppShell>
   );
 }
