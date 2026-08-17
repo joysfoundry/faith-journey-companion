@@ -11,13 +11,13 @@ import type { SessionItem } from "@/lib/prayer/types";
 export const Route = createFileRoute("/session/$sessionId")({
   head: () => ({
     meta: [
-      { title: "Prayer Mode — Prayer Companion" },
+      { title: "Prayer Mode — Faith Journey" },
       {
         name: "description",
         content:
           "A distraction-free follow-along prayer session: every prayer, in order, with your place kept.",
       },
-      { property: "og:title", content: "Prayer Mode — Prayer Companion" },
+      { property: "og:title", content: "Prayer Mode — Faith Journey" },
       {
         property: "og:description",
         content: "Follow the full text of every prayer without searching or counting.",

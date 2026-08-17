@@ -12,13 +12,13 @@ import { newId, resolveNovenaDay, todayISO } from "@/lib/prayer/compiler";
 export const Route = createFileRoute("/novenas")({
   head: () => ({
     meta: [
-      { title: "Novenas — Prayer Companion" },
+      { title: "Novenas — Faith Journey" },
       {
         name: "description",
         content:
           "Start a novena with your own intention and dates. Each day's prayer session is generated from one reusable template.",
       },
-      { property: "og:title", content: "Novenas — Prayer Companion" },
+      { property: "og:title", content: "Novenas — Faith Journey" },
       {
         property: "og:description",
         content: "Configurable duration, phases, and rotating mysteries — no hard-coded nine days.",

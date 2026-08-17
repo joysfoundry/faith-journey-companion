@@ -8,13 +8,13 @@ import { todayISO } from "@/lib/prayer/compiler";
 export const Route = createFileRoute("/howto/$howToId")({
   head: () => ({
     meta: [
-      { title: "How To — Prayer Companion" },
+      { title: "How To — Faith Journey" },
       {
         name: "description",
         content:
           "Instructions for praying a devotion. Tap Start Prayer and the app expands the instructions into the full prayers.",
       },
-      { property: "og:title", content: "How To — Prayer Companion" },
+      { property: "og:title", content: "How To — Faith Journey" },
       {
         property: "og:description",
         content: "Instructional shorthand here; complete prayers in Prayer Mode.",

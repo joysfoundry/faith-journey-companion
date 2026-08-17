@@ -12,9 +12,9 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as ImportRouteImport } from './routes/import'
-import { Route as LibraryRouteImport } from './routes/library'
 import { Route as NovenasRouteImport } from './routes/novenas'
 import { Route as PrayRouteImport } from './routes/pray'
+import { Route as PrayersRouteImport } from './routes/prayers'
 import { Route as HowtoHowToIdRouteImport } from './routes/howto.$howToId'
 import { Route as PrayerPrayerIdRouteImport } from './routes/prayer.$prayerId'
 import { Route as SessionSessionIdRouteImport } from './routes/session.$sessionId'
@@ -35,11 +35,6 @@ const ImportRoute = ImportRouteImport.update({
   path: '/import',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LibraryRoute = LibraryRouteImport.update({
-  id: '/library',
-  path: '/library',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const NovenasRoute = NovenasRouteImport.update({
   id: '/novenas',
   path: '/novenas',
@@ -48,6 +43,11 @@ const NovenasRoute = NovenasRouteImport.update({
 const PrayRoute = PrayRouteImport.update({
   id: '/pray',
   path: '/pray',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrayersRoute = PrayersRouteImport.update({
+  id: '/prayers',
+  path: '/prayers',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HowtoHowToIdRoute = HowtoHowToIdRouteImport.update({
@@ -75,9 +75,9 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/calendar': typeof CalendarRoute
   '/import': typeof ImportRoute
-  '/library': typeof LibraryRoute
   '/novenas': typeof NovenasRoute
   '/pray': typeof PrayRoute
+  '/prayers': typeof PrayersRoute
   '/howto/$howToId': typeof HowtoHowToIdRoute
   '/prayer/$prayerId': typeof PrayerPrayerIdRoute
   '/session/$sessionId': typeof SessionSessionIdRoute
@@ -87,9 +87,9 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/calendar': typeof CalendarRoute
   '/import': typeof ImportRoute
-  '/library': typeof LibraryRoute
   '/novenas': typeof NovenasRoute
   '/pray': typeof PrayRoute
+  '/prayers': typeof PrayersRoute
   '/howto/$howToId': typeof HowtoHowToIdRoute
   '/prayer/$prayerId': typeof PrayerPrayerIdRoute
   '/session/$sessionId': typeof SessionSessionIdRoute
@@ -100,9 +100,9 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/calendar': typeof CalendarRoute
   '/import': typeof ImportRoute
-  '/library': typeof LibraryRoute
   '/novenas': typeof NovenasRoute
   '/pray': typeof PrayRoute
+  '/prayers': typeof PrayersRoute
   '/howto/$howToId': typeof HowtoHowToIdRoute
   '/prayer/$prayerId': typeof PrayerPrayerIdRoute
   '/session/$sessionId': typeof SessionSessionIdRoute
@@ -114,9 +114,9 @@ export interface FileRouteTypes {
     | '/'
     | '/calendar'
     | '/import'
-    | '/library'
     | '/novenas'
     | '/pray'
+    | '/prayers'
     | '/howto/$howToId'
     | '/prayer/$prayerId'
     | '/session/$sessionId'
@@ -126,9 +126,9 @@ export interface FileRouteTypes {
     | '/'
     | '/calendar'
     | '/import'
-    | '/library'
     | '/novenas'
     | '/pray'
+    | '/prayers'
     | '/howto/$howToId'
     | '/prayer/$prayerId'
     | '/session/$sessionId'
@@ -138,9 +138,9 @@ export interface FileRouteTypes {
     | '/'
     | '/calendar'
     | '/import'
-    | '/library'
     | '/novenas'
     | '/pray'
+    | '/prayers'
     | '/howto/$howToId'
     | '/prayer/$prayerId'
     | '/session/$sessionId'
@@ -151,9 +151,9 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CalendarRoute: typeof CalendarRoute
   ImportRoute: typeof ImportRoute
-  LibraryRoute: typeof LibraryRoute
   NovenasRoute: typeof NovenasRoute
   PrayRoute: typeof PrayRoute
+  PrayersRoute: typeof PrayersRoute
   HowtoHowToIdRoute: typeof HowtoHowToIdRoute
   PrayerPrayerIdRoute: typeof PrayerPrayerIdRoute
   SessionSessionIdRoute: typeof SessionSessionIdRoute
@@ -183,13 +183,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ImportRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/library': {
-      id: '/library'
-      path: '/library'
-      fullPath: '/library'
-      preLoaderRoute: typeof LibraryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/novenas': {
       id: '/novenas'
       path: '/novenas'
@@ -202,6 +195,13 @@ declare module '@tanstack/react-router' {
       path: '/pray'
       fullPath: '/pray'
       preLoaderRoute: typeof PrayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/prayers': {
+      id: '/prayers'
+      path: '/prayers'
+      fullPath: '/prayers'
+      preLoaderRoute: typeof PrayersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/howto/$howToId': {
@@ -239,9 +239,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CalendarRoute: CalendarRoute,
   ImportRoute: ImportRoute,
-  LibraryRoute: LibraryRoute,
   NovenasRoute: NovenasRoute,
   PrayRoute: PrayRoute,
+  PrayersRoute: PrayersRoute,
   HowtoHowToIdRoute: HowtoHowToIdRoute,
   PrayerPrayerIdRoute: PrayerPrayerIdRoute,
   SessionSessionIdRoute: SessionSessionIdRoute,

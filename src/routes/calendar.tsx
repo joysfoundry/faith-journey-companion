@@ -9,12 +9,12 @@ import { defaultContext, resolveMysterySet, resolveNovenaDay, todayISO } from "@
 export const Route = createFileRoute("/calendar")({
   head: () => ({
     meta: [
-      { title: "Prayer Calendar — Prayer Companion" },
+      { title: "Prayer Calendar — Faith Journey" },
       {
         name: "description",
         content: "See the mysteries for any date, your novena days, and the sessions you have prayed.",
       },
-      { property: "og:title", content: "Prayer Calendar — Prayer Companion" },
+      { property: "og:title", content: "Prayer Calendar — Faith Journey" },
       {
         property: "og:description",
         content: "Date-based mystery selection and novena day tracking at a glance.",

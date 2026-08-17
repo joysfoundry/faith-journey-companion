@@ -14,13 +14,13 @@ import type { ImportCandidate, ImportDraft, SourceType } from "@/lib/prayer/type
 export const Route = createFileRoute("/import")({
   head: () => ({
     meta: [
-      { title: "Import Prayers — Prayer Companion" },
+      { title: "Import Prayers — Faith Journey" },
       {
         name: "description",
         content:
           "Paste a booklet or prayer text and review each detected prayer, how-to, or mystery before it enters your library.",
       },
-      { property: "og:title", content: "Import Prayers — Prayer Companion" },
+      { property: "og:title", content: "Import Prayers — Faith Journey" },
       {
         property: "og:description",
         content: "Nothing is saved until you review it — duplicates are flagged automatically.",

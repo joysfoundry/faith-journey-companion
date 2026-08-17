@@ -17,13 +17,13 @@ import type { MysteryPresentation, ProgressMode } from "@/lib/prayer/types";
 export const Route = createFileRoute("/pray")({
   head: () => ({
     meta: [
-      { title: "Begin Prayer — Prayer Companion" },
+      { title: "Begin Prayer — Faith Journey" },
       {
         name: "description",
         content:
           "Choose a template, set the mysteries and progress mode, then begin a fully prepared prayer session.",
       },
-      { property: "og:title", content: "Begin Prayer — Prayer Companion" },
+      { property: "og:title", content: "Begin Prayer — Faith Journey" },
       {
         property: "og:description",
         content: "Templates expand into complete sessions — no counting, no page flipping.",

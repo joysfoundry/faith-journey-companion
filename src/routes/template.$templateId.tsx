@@ -14,13 +14,13 @@ import type { MysteryPresentation, PrayerTemplate, TemplateItem } from "@/lib/pr
 export const Route = createFileRoute("/template/$templateId")({
   head: () => ({
     meta: [
-      { title: "Template Builder — Prayer Companion" },
+      { title: "Template Builder — Faith Journey" },
       {
         name: "description",
         content:
           "Build a reusable prayer template: add prayers, set repetition counts, and place mystery placeholders.",
       },
-      { property: "og:title", content: "Template Builder — Prayer Companion" },
+      { property: "og:title", content: "Template Builder — Faith Journey" },
       {
         property: "og:description",
         content: "Compact templates expand into full prayer sessions when you begin praying.",

@@ -13,9 +13,9 @@ import type { PrayerCategory } from "@/lib/prayer/types";
 export const Route = createFileRoute("/prayer/$prayerId")({
   head: () => ({
     meta: [
-      { title: "Prayer — Prayer Companion" },
+      { title: "Prayer — Faith Journey" },
       { name: "description", content: "Read, edit, and manage versions of a prayer in your library." },
-      { property: "og:title", content: "Prayer — Prayer Companion" },
+      { property: "og:title", content: "Prayer — Faith Journey" },
       { property: "og:description", content: "Prayer text, alternate versions, and source lineage." },
     ],
   }),
