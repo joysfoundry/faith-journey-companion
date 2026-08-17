@@ -35,7 +35,6 @@ import {
   todaysWord,
   type LinkableItem,
 } from "@/domain/placeholderData";
-import { TAXONOMY_LABELS } from "@/domain/taxonomy";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -284,7 +283,6 @@ function Index() {
             ))}
             <div className="flex items-center justify-between px-5 py-3">
               <span className="text-xs text-muted-foreground">
-                {TAXONOMY_LABELS.reflection ? "" : ""}
                 Books, articles, videos, sermons, shows
               </span>
               <Button size="sm" variant="ghost">
