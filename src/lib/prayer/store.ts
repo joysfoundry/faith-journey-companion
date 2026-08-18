@@ -127,6 +127,11 @@ export interface AppStore {
   toggleFavorite: (prayerId: ID) => void;
   upsertPrayer: (prayer: Prayer, version: PrayerVersion) => void;
   addPrayerVersion: (version: PrayerVersion) => void;
+  addPrayerVariant: (
+    basePrayerId: ID,
+    variant: { label: string; body: string; makeDefault?: boolean },
+  ) => void;
+  setDefaultVariant: (prayerId: ID) => void;
   deletePrayer: (prayerId: ID) => void;
   saveTemplate: (template: PrayerTemplate, items: TemplateItem[]) => void;
   deleteTemplate: (templateId: ID) => void;
