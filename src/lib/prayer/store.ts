@@ -347,13 +347,17 @@ export const mutations = {
     const templateId = previous ? previous.id : newId("tmpl");
     const template: PrayerTemplate = {
       id: templateId,
-      name: howTo.title.replace(/^how to (pray|say|recite)\s*/i, "").trim() || howTo.title,
-      description: howTo.summary,
+      name:
+        previous?.name ||
+        howTo.title.replace(/^how to (pray|say|recite)\s*/i, "").trim() ||
+        howTo.title,
+      description: previous?.description ?? howTo.summary,
       kind: "standard",
-      mystery_presentation: "title_only",
+      mystery_presentation: previous?.mystery_presentation ?? "title_only",
       mystery_count: 0,
       built_in: false,
-      created_at: new Date().toISOString(),
+      created_at: previous?.created_at ?? new Date().toISOString(),
+      ...(previous?.notes ? { notes: previous.notes } : {}),
       ...(howTo.source_id ? { source_id: howTo.source_id } : {}),
     };
     let mysteryOrdinal = 0;
