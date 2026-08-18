@@ -20,9 +20,8 @@ import {
 import type { ImportCandidate, ImportDraft, SourceType } from "@/lib/prayer/types";
 
 export const Route = createFileRoute("/import")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    mode: search["mode"] === "devotion" ? ("devotion" as const) : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): { mode?: "devotion" } =>
+    search["mode"] === "devotion" ? { mode: "devotion" } : {},
   head: () => ({
     meta: [
       { title: "Add Prayers — Faith Journey" },
