@@ -5,6 +5,7 @@
 import { createContext, useContext } from "react";
 import type {
   Database,
+  HowTo,
   ID,
   ImportDraft,
   Intention,
