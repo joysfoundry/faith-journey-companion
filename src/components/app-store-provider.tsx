@@ -50,6 +50,9 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
         setDb((d) => mutations.saveTemplate(d, t, items)),
       deleteTemplate: (id: string) => setDb((d) => mutations.deleteTemplate(d, id)),
       deleteHowTo: (id: string) => setDb((d) => mutations.deleteHowTo(d, id)),
+      saveHowTo: (h: Parameters<typeof mutations.saveHowTo>[1]) =>
+        setDb((d) => mutations.saveHowTo(d, h)),
+      createTemplateFromHowTo,
       startSession,
       setCursor: (id: string, cursor: number) => setDb((d) => mutations.setCursor(d, id, cursor)),
       toggleItemDone: (id: string) => setDb((d) => mutations.toggleItemDone(d, id)),
