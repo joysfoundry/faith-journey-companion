@@ -93,6 +93,15 @@ function AddPrayersPage() {
       name: name.trim() || (isWritten ? "Written by me" : "Pasted text"),
       url: resolvedUrl,
       attribution: isWritten ? (attribution === "self" ? "self" : attribution) : attribution,
+      // MVP placeholder: photo previews are local; Cloud storage uploads them
+      // and files them into the Gallery under the "prayer_source" context.
+      metadata: photos.length
+        ? {
+            photo_count: String(photos.length),
+            photo_names: photos.map((p) => p.name).join(", "),
+            gallery_context: "prayer_source",
+          }
+        : undefined,
       created_at: new Date().toISOString(),
     };
     // One typed prayer skips block detection; a pasted bundle gets analyzed.
