@@ -53,13 +53,6 @@ function LibraryPage() {
     <AppShell
       title="Prayers"
       subtitle="Single prayers, devotions, and how to pray them"
-      action={
-        <Button asChild size="sm" variant="secondary">
-          <Link to="/import">
-            <Plus className="size-4" /> Add prayers
-          </Link>
-        </Button>
-      }
     >
       <Tabs defaultValue="prayers">
         <TabsList className="w-full">
@@ -75,6 +68,14 @@ function LibraryPage() {
         </TabsList>
 
         <TabsContent value="prayers" className="mt-4">
+          <Button asChild variant="secondary" className="mb-3 h-12 w-full">
+            <Link to="/import">
+              <Plus className="size-4" /> New prayer
+            </Link>
+          </Button>
+          <p className="mb-3 text-center text-xs text-muted-foreground">
+            Write it, paste it, or add a link to import from.
+          </p>
           <div className="relative mb-4">
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input

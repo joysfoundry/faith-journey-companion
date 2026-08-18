@@ -59,16 +59,16 @@ function AddPrayersPage() {
   const navigate = useNavigate();
   const { mode } = Route.useSearch();
   const [name, setName] = useState("");
-  const [asDevotion, setAsDevotion] = useState(mode === "devotion");
   const [devotionName, setDevotionName] = useState("");
   const [sourceType, setSourceType] = useState<SourceType>("written");
   const [title, setTitle] = useState("");
   const [raw, setRaw] = useState("");
   const [url, setUrl] = useState("");
-  const [prayerType, setPrayerType] = useState<PrayerType>("devotional");
+  const [prayerType, setPrayerType] = useState<PrayerType>("traditional_expression");
   const [expressionType, setExpressionType] = useState<ExpressionType>("vocal");
   const [draft, setDraft] = useState<ImportDraft | null>(null);
 
+  const asDevotion = mode === "devotion";
   const isWritten = sourceType === "written" && !asDevotion;
 
   const analyze = () => {
@@ -155,22 +155,6 @@ function AddPrayersPage() {
             </select>
           </div>
 
-          <label className="flex items-start gap-3 rounded-md border border-input bg-card/60 p-3">
-            <input
-              type="checkbox"
-              checked={asDevotion}
-              onChange={(e) => setAsDevotion(e.target.checked)}
-              className="mt-1 size-4"
-            />
-            <span className="text-sm">
-              <span className="font-medium">Also create a devotion</span>
-              <span className="block text-xs text-muted-foreground">
-                Bundles the prayers below, in order, into one devotion you can pray. The prayers stay
-                in your library as single expressions.
-              </span>
-            </span>
-          </label>
-
           {asDevotion ? (
             <div>
               <Label htmlFor="dname">Devotion name</Label>
@@ -229,22 +213,21 @@ function AddPrayersPage() {
             </p>
           ) : null}
 
-          {!isWritten ? (
-            <div>
-              <Label htmlFor="surl">Source URL (optional)</Label>
-              <Input
-                id="surl"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder="https://… (leave blank and we look in the text)"
-                className="mt-1 h-12"
-              />
-              <p className="mt-1 text-xs text-muted-foreground">
-                If no URL is given or printed in the document, we look for the publisher who printed
-                it. When neither exists the source is recorded as “self”.
-              </p>
-            </div>
-          ) : null}
+          <div>
+            <Label htmlFor="surl">Source URL (optional)</Label>
+            <Input
+              id="surl"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://…"
+              className="mt-1 h-12"
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              Paste a link to import from, or keep it as the source of the text below. If none is
+              given we look for a URL or publisher printed in the text, otherwise the source is
+              recorded as “self”.
+            </p>
+          </div>
 
           <div>
             <Label htmlFor="raw">{isWritten ? "Prayer text" : "Text"}</Label>
@@ -324,7 +307,7 @@ function AddPrayersPage() {
                 {isPrayer && c.decision === "save_new" ? (
                   <div className="mt-3 grid gap-2 sm:grid-cols-2">
                     <select
-                      value={c.prayer_type ?? "devotional"}
+                      value={c.prayer_type ?? "traditional_expression"}
                       aria-label={`Prayer type for ${c.title}`}
                       onChange={(e) =>
                         patchCandidate(c.id, { prayer_type: e.target.value as PrayerType })
