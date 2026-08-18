@@ -8,9 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { useApp } from "@/lib/prayer/store";
+import { useApp, variantsOf } from "@/lib/prayer/store";
+import { distinctivePhrase, lengthHint } from "@/lib/prayer/variantDiff";
 import { newId } from "@/lib/prayer/compiler";
-import type { MysteryPresentation, PrayerTemplate, TemplateItem } from "@/lib/prayer/types";
+import type { MysteryPresentation, Prayer, PrayerTemplate, TemplateItem } from "@/lib/prayer/types";
 
 export const Route = createFileRoute("/template/$templateId")({
   head: () => ({
@@ -120,6 +121,46 @@ function TemplateBuilder() {
     ]);
 
   const mysteryCount = items.filter((i) => i.kind === "mystery_placeholder").length;
+
+  /** Default wording of a prayer record — what the devotion will actually pray. */
+  const bodyOf = (prayer: Prayer) =>
+    db.prayer_versions.find((v) => v.id === prayer.default_version_id)?.body ?? "";
+
+  /**
+   * Every wording of a prayer plus the line that sets it apart, so choosing a
+   * version in a devotion isn't guesswork.
+   */
+  const versionsOf = (prayer: Prayer) => {
+    const siblings = variantsOf(db, prayer);
+    if (siblings.length < 2) return [];
+    return siblings.map((sibling) => {
+      const body = bodyOf(sibling);
+      const others = siblings.filter((s) => s.id !== sibling.id).map(bodyOf);
+      return {
+        prayer: sibling,
+        label: sibling.variant_label ?? (sibling.is_default_variant ? "Default" : "Alternate"),
+        difference: distinctivePhrase(body, others),
+        hint: lengthHint(body, others[0] ?? body),
+      };
+    });
+  };
+
+  /** One row per prayer group for the picker: the default first, versions nested. */
+  const pickerGroups = useMemo(() => {
+    const seen = new Set<string>();
+    const groups: Array<{ primary: Prayer; versions: ReturnType<typeof versionsOf> }> = [];
+    for (const prayer of db.prayers) {
+      const group = prayer.variant_group_id ?? prayer.id;
+      if (seen.has(group)) continue;
+      seen.add(group);
+      const siblings = variantsOf(db, prayer);
+      const primary = siblings.find((s) => s.is_default_variant) ?? siblings[0] ?? prayer;
+      groups.push({ primary, versions: versionsOf(primary) });
+    }
+    return groups;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [db.prayers, db.prayer_versions]);
+
 
   const save = () => {
     if (!name.trim()) {
@@ -266,6 +307,36 @@ function TemplateBuilder() {
                           ? (item.label ?? "Intention")
                           : (prayer?.title ?? "Prayer")}
                     </p>
+                    {item.kind === "prayer" && prayer ? (
+                      (() => {
+                        const versions = versionsOf(prayer);
+                        if (versions.length < 2) return null;
+                        const current = versions.find((v) => v.prayer.id === prayer.id);
+                        return (
+                          <div className="mt-1">
+                            <select
+                              aria-label="Version used in this devotion"
+                              value={prayer.id}
+                              onChange={(e) => update(index, { prayer_id: e.target.value })}
+                              className="h-9 w-full rounded-md border border-input bg-card px-2 text-xs"
+                            >
+                              {versions.map((v) => (
+                                <option key={v.prayer.id} value={v.prayer.id}>
+                                  {v.label}
+                                  {v.prayer.is_default_variant ? " (default)" : ""} — {v.difference}
+                                </option>
+                              ))}
+                            </select>
+                            {current ? (
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                Differs here: “{current.difference}”
+                                {current.hint ? ` · ${current.hint}` : ""}
+                              </p>
+                            ) : null}
+                          </div>
+                        );
+                      })()
+                    ) : null}
                     {item.optional ? (
                       <p className="text-xs text-muted-foreground">Optional</p>
                     ) : null}
@@ -360,26 +431,62 @@ function TemplateBuilder() {
 
         {pickerOpen ? (
           <ul className="soft-card max-h-72 divide-y divide-border overflow-auto">
-            {db.prayers.map((p) => (
-              <li key={p.id}>
-                <button
-                  type="button"
-                  className="w-full px-4 py-3 text-left"
-                  onClick={() => {
-                    addItem({ kind: "prayer", prayer_id: p.id });
-                    setPickerOpen(false);
-                  }}
-                >
-                  {p.title}
-                </button>
+            {pickerGroups.map(({ primary, versions }) => (
+              <li key={primary.id} className="p-1">
+                {versions.length < 2 ? (
+                  <button
+                    type="button"
+                    className="w-full px-3 py-2 text-left"
+                    onClick={() => {
+                      addItem({ kind: "prayer", prayer_id: primary.id });
+                      setPickerOpen(false);
+                    }}
+                  >
+                    {primary.title}
+                  </button>
+                ) : (
+                  <div className="px-3 py-2">
+                    <p className="text-sm font-medium">{primary.title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {versions.length} versions — pick the wording this devotion should pray.
+                    </p>
+                    <ul className="mt-1 space-y-1">
+                      {versions.map((v) => (
+                        <li key={v.prayer.id}>
+                          <button
+                            type="button"
+                            className="w-full rounded-md border border-input px-2 py-2 text-left"
+                            onClick={() => {
+                              addItem({ kind: "prayer", prayer_id: v.prayer.id });
+                              setPickerOpen(false);
+                            }}
+                          >
+                            <span className="text-xs font-medium">
+                              {v.label}
+                              {v.prayer.is_default_variant ? " · default" : ""}
+                            </span>
+                            <span className="block text-xs text-muted-foreground">
+                              “{v.difference}”{v.hint ? ` · ${v.hint}` : ""}
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </li>
             ))}
           </ul>
         ) : null}
 
-        <Button className="h-12 w-full" onClick={save}>
-          Save template
-        </Button>
+        <div className="grid grid-cols-2 gap-2">
+          <Button variant="outline" className="h-12" onClick={() => navigate({ to: "/prayers" })}>
+            Cancel
+          </Button>
+          <Button className="h-12" onClick={save}>
+            Save devotion
+          </Button>
+        </div>
         {existing && !existing.built_in ? (
           <Button
             variant="ghost"
@@ -390,7 +497,7 @@ function TemplateBuilder() {
               navigate({ to: "/prayers" });
             }}
           >
-            Delete template
+            Delete devotion
           </Button>
         ) : null}
       </div>
