@@ -188,18 +188,7 @@ function AddPrayersPage() {
             </div>
           ) : null}
 
-          {isWritten ? (
-            <div>
-              <Label htmlFor="ptitle">Prayer title</Label>
-              <Input
-                id="ptitle"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Hail, Holy Queen"
-                className="mt-1 h-12"
-              />
-            </div>
-          ) : (
+          {!isWritten && !asDevotion ? (
             <div>
               <Label htmlFor="sname">Source name</Label>
               <Input
@@ -210,7 +199,7 @@ function AddPrayersPage() {
                 className="mt-1 h-12"
               />
             </div>
-          )}
+          ) : null}
 
           <TaxonomySelect
             id="prayer-type"
