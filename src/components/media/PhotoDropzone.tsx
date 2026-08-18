@@ -18,8 +18,8 @@ interface PhotoDropzoneProps {
 
 /**
  * Add or drop photos (a printed page, a holy card, a moment during prayer).
- * MVP placeholder: previews stay local; on Cloud they upload to storage and
- * flow into the single Gallery.
+ * Previews stay local until Cloud storage is on; reading text from a photo
+ * needs the AI connector. Both are planned next.
  */
 export function PhotoDropzone({ label = "Photos", hint, photos, onChange }: PhotoDropzoneProps) {
   const inputRef = useRef<HTMLInputElement>(null);

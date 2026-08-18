@@ -48,12 +48,6 @@ const DECISIONS: Array<{ value: ImportCandidate["decision"]; label: string }> = 
   { value: "skip", label: "Skip" },
 ];
 
-const SOURCE_TYPES: Array<{ value: SourceType; label: string }> = [
-  { value: "written", label: "Written by me" },
-  { value: "text", label: "Pasted text" },
-  { value: "document", label: "Document / PDF text" },
-  { value: "web", label: "Web page" },
-];
 
 function AddPrayersPage() {
   const { db, saveImportDraft, applyImportDraft } = useApp();
@@ -159,22 +153,45 @@ function AddPrayersPage() {
     >
       {!draft ? (
         <div className="soft-card space-y-3 p-4">
-          <div>
-            <Label htmlFor="stype">Where it comes from</Label>
-            <select
-              id="stype"
-              value={sourceType}
-              onChange={(e) => setSourceType(e.target.value as SourceType)}
-              className="mt-1 h-12 w-full rounded-md border border-input bg-card px-3"
-            >
-              {SOURCE_TYPES.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* How you're adding it — one clear choice instead of four near-identical options */}
+          {!asDevotion ? (
+            <div>
+              <Label>How are you adding this?</Label>
+              <div className="mt-1 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSourceType("written")}
+                  className={
+                    "flex h-12 items-center justify-center gap-2 rounded-md border px-3 text-sm font-medium transition-colors " +
+                    (isWritten
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-input bg-card text-muted-foreground")
+                  }
+                >
+                  ✍️ Write one prayer
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSourceType("text")}
+                  className={
+                    "flex h-12 items-center justify-center gap-2 rounded-md border px-3 text-sm font-medium transition-colors " +
+                    (!isWritten
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-input bg-card text-muted-foreground")
+                  }
+                >
+                  📖 Paste a booklet
+                </button>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {isWritten
+                  ? "You're typing a single prayer yourself."
+                  : "You're pasting text from a booklet, devotion, PDF, or web page — each titled block becomes its own prayer."}
+              </p>
+            </div>
+          ) : null}
 
+          {/* The one name field — labelled for what it actually is */}
           {asDevotion ? (
             <div>
               <Label htmlFor="dname">Devotion name</Label>
@@ -199,14 +216,17 @@ function AddPrayersPage() {
             </div>
           ) : (
             <div>
-              <Label htmlFor="sname">Source name</Label>
+              <Label htmlFor="sname">Source</Label>
               <Input
                 id="sname"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Caro Family Rosary Booklet"
+                placeholder="Grandmother's booklet, Magnificat, a website…"
                 className="mt-1 h-12"
               />
+              <p className="mt-1 text-xs text-muted-foreground">
+                The booklet or collection these prayers come from.
+              </p>
             </div>
           )}
 
@@ -232,7 +252,7 @@ function AddPrayersPage() {
           ) : null}
 
           <div>
-            <Label htmlFor="surl">Source URL (optional)</Label>
+            <Label htmlFor="surl">Link to the source (optional)</Label>
             <Input
               id="surl"
               value={url}
@@ -241,15 +261,14 @@ function AddPrayersPage() {
               className="mt-1 h-12"
             />
             <p className="mt-1 text-xs text-muted-foreground">
-              Paste a link to import from, or keep it as the source of the text below. If none is
-              given we look for a URL or publisher printed in the text, otherwise the source is
-              recorded as “self”.
+              A link to where the text comes from. If you leave it blank we'll look for a URL or
+              publisher printed in the text, otherwise the source is recorded as "self".
             </p>
           </div>
 
           <PhotoDropzone
             label="Source photos (optional)"
-            hint="Snap or drop pages of a booklet, holy card, or prayer sheet. Photos stay with the source and flow into your Gallery; reading text from a photo arrives with Cloud, so paste the wording below for now."
+            hint="Snap or drop pages of a booklet, holy card, or prayer sheet. They're saved with this source and added to your Gallery. Photo-to-text reading needs the AI connector, so paste the wording below for now."
             photos={photos}
             onChange={setPhotos}
           />
