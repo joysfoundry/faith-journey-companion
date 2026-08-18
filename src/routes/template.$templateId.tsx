@@ -399,7 +399,7 @@ function TemplateBuilder() {
                       </p>
                     ) : null}
                   </div>
-                  {item.kind === "prayer" ? (
+                  {item.kind === "prayer" || item.kind === "salutation" ? (
                     <div className="flex items-center gap-1">
                       <Button
                         size="icon"
