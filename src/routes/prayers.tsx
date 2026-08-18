@@ -17,12 +17,12 @@ export const Route = createFileRoute("/prayers")({
       {
         name: "description",
         content:
-          "Browse, search, and edit your prayers, reusable templates, and How To guides in one library.",
+          "Browse, search, and edit single prayers, devotions, and How To guides in one library.",
       },
       { property: "og:title", content: "Prayer Library — Faith Journey" },
       {
         property: "og:description",
-        content: "Your prayers, templates, and instructions, kept together and ready to pray.",
+        content: "Your prayers, devotions, and instructions, kept together and ready to pray.",
       },
     ],
   }),
@@ -52,7 +52,7 @@ function LibraryPage() {
   return (
     <AppShell
       title="Prayers"
-      subtitle="Prayers, templates, and how to pray them"
+      subtitle="Single prayers, devotions, and how to pray them"
       action={
         <Button asChild size="sm" variant="secondary">
           <Link to="/import">
@@ -67,7 +67,7 @@ function LibraryPage() {
             Prayers
           </TabsTrigger>
           <TabsTrigger value="templates" className="flex-1">
-            Templates
+            Devotions
           </TabsTrigger>
           <TabsTrigger value="howto" className="flex-1">
             How To
@@ -137,7 +137,7 @@ function LibraryPage() {
         <TabsContent value="templates" className="mt-4 space-y-3">
           <Button asChild variant="secondary" className="h-12 w-full">
             <Link to="/template/$templateId" params={{ templateId: "new" }}>
-              <Plus className="size-4" /> New template
+              <Plus className="size-4" /> New devotion
             </Link>
           </Button>
           {db.templates.map((template) => {
@@ -164,9 +164,9 @@ function LibraryPage() {
               <button
                 type="button"
                 onClick={() => {
-                  if (!window.confirm(`Delete template “${template.name}”?`)) return;
+                  if (!window.confirm(`Delete devotion “${template.name}”?`)) return;
                   deleteTemplate(template.id);
-                  toast.success("Template deleted");
+                  toast.success("Devotion deleted");
                 }}
                 aria-label={`Delete ${template.name}`}
                 className="px-4 py-5 text-muted-foreground"

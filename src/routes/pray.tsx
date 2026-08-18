@@ -21,12 +21,12 @@ export const Route = createFileRoute("/pray")({
       {
         name: "description",
         content:
-          "Choose a template, set the mysteries and progress mode, then begin a fully prepared prayer session.",
+          "Choose a prayer or devotion, set the mysteries and progress mode, then begin a fully prepared prayer session.",
       },
       { property: "og:title", content: "Begin Prayer — Faith Journey" },
       {
         property: "og:description",
-        content: "Templates expand into complete sessions — no counting, no page flipping.",
+        content: "Devotions expand into complete sessions — no counting, no page flipping.",
       },
     ],
   }),
@@ -144,7 +144,7 @@ function PrayPage() {
                 onChange={(e) => setPresentation(e.target.value as MysteryPresentation | "template")}
                 className="mt-2 h-12 w-full rounded-md border border-input bg-card px-3"
               >
-                <option value="template">As saved in the template</option>
+                <option value="template">As saved in the devotion</option>
                 <option value="title_only">Title only</option>
                 <option value="title_and_description">Title and description</option>
                 <option value="choose_during_session">Ask me during the session</option>

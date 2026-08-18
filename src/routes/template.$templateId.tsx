@@ -14,16 +14,16 @@ import type { MysteryPresentation, PrayerTemplate, TemplateItem } from "@/lib/pr
 export const Route = createFileRoute("/template/$templateId")({
   head: () => ({
     meta: [
-      { title: "Template Builder — Faith Journey" },
+      { title: "Devotion Builder — Faith Journey" },
       {
         name: "description",
         content:
-          "Build a reusable prayer template: add prayers, set repetition counts, and place mystery placeholders.",
+          "Build a devotion: bundle traditional prayers, set repetition counts, and place mystery placeholders.",
       },
-      { property: "og:title", content: "Template Builder — Faith Journey" },
+      { property: "og:title", content: "Devotion Builder — Faith Journey" },
       {
         property: "og:description",
-        content: "Compact templates expand into full prayer sessions when you begin praying.",
+        content: "Devotions expand into full prayer sessions when you begin praying.",
       },
     ],
   }),
@@ -107,7 +107,7 @@ function TemplateBuilder() {
 
   const save = () => {
     if (!name.trim()) {
-      toast.error("Give the template a name.");
+      toast.error("Give the devotion a name.");
       return;
     }
     const template: PrayerTemplate = {
@@ -128,15 +128,15 @@ function TemplateBuilder() {
       template,
       items.map((it, index) => ({ ...it, template_id: id, position: index })),
     );
-    toast.success("Template saved");
+    toast.success("Devotion saved");
     navigate({ to: "/prayers" });
   };
 
   return (
     <AppShell
-      title={isNew ? "New template" : (existing?.name ?? "Template")}
+      title={isNew ? "New devotion" : (existing?.name ?? "Devotion")}
       subtitle="Repetition counts stay compact here and expand during prayer."
-      back={{ to: "/prayers", label: "Library" }}
+      back={{ to: "/prayers", label: "Prayers" }}
     >
       <div className="space-y-4">
         {isNew ? (
@@ -148,7 +148,7 @@ function TemplateBuilder() {
               onChange={(e) => applyBase(e.target.value)}
               className="mt-1 h-12 w-full rounded-md border border-input bg-card px-3"
             >
-              <option value="">Blank template</option>
+              <option value="">Blank devotion</option>
               {db.templates.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.name}
@@ -156,7 +156,7 @@ function TemplateBuilder() {
               ))}
             </select>
             <p className="mt-1 text-xs text-muted-foreground">
-              Copies that template's prayers, repetitions, and mystery placeholders so you can edit
+              Copies that devotion's prayers, repetitions, and mystery placeholders so you can edit
               instead of rebuilding.
             </p>
           </div>
@@ -322,7 +322,7 @@ function TemplateBuilder() {
             className="w-full text-destructive"
             onClick={() => {
               deleteTemplate(existing.id);
-              toast.success("Template deleted");
+              toast.success("Devotion deleted");
               navigate({ to: "/prayers" });
             }}
           >

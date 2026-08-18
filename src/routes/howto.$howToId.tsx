@@ -34,14 +34,14 @@ function HowToPage() {
 
   if (!howTo) {
     return (
-      <AppShell title="Not found" back={{ to: "/prayers", label: "Library" }}>
+      <AppShell title="Not found" back={{ to: "/prayers", label: "Prayers" }}>
         <p className="text-sm text-muted-foreground">That guide is no longer available.</p>
       </AppShell>
     );
   }
 
   return (
-    <AppShell title={howTo.title} subtitle={linkedTemplate ? `How to pray ${linkedTemplate.name}` : howTo.summary} back={{ to: "/prayers", label: "Library" }}>
+    <AppShell title={howTo.title} subtitle={linkedTemplate ? `How to pray ${linkedTemplate.name}` : howTo.summary} back={{ to: "/prayers", label: "Prayers" }}>
       <ol className="space-y-4">
         {howTo.steps.map((step, i) => (
           <li key={step.id} className="soft-card flex gap-3 p-4">
