@@ -97,8 +97,16 @@ export function ReflectionComposer({ linkables, entries, prefillLinkId }: Props)
           {linked.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {linked.map((id) => (
-                <Badge key={id} variant="secondary" className="font-normal">
+                <Badge key={id} variant="secondary" className="gap-1 pr-1.5 font-normal">
                   {linkables.find((l) => l.id === id)?.label ?? id}
+                  <button
+                    type="button"
+                    onClick={() => toggleLink(id)}
+                    className="ml-0.5 rounded-full p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                    aria-label={`Remove ${linkables.find((l) => l.id === id)?.label ?? id}`}
+                  >
+                    <X className="size-3" aria-hidden />
+                  </button>
                 </Badge>
               ))}
             </div>
