@@ -210,39 +210,94 @@ function AddPrayersPage() {
           {!asDevotion ? (
             <div>
               <Label>How are you adding this?</Label>
-              <div className="mt-1 grid grid-cols-2 gap-2">
+              <div className="mt-1 grid grid-cols-3 gap-2">
                 <button
                   type="button"
-                  onClick={() => setSourceType("written")}
+                  onClick={() => {
+                    setAsHowTo(false);
+                    setSourceType("written");
+                  }}
                   className={
-                    "flex h-12 items-center justify-center gap-2 rounded-md border px-3 text-sm font-medium transition-colors " +
+                    "flex h-12 items-center justify-center gap-1 rounded-md border px-2 text-xs font-medium transition-colors sm:text-sm " +
                     (isWritten
                       ? "border-primary bg-primary text-primary-foreground"
                       : "border-input bg-card text-muted-foreground")
                   }
                 >
-                  ✍️ Write one prayer
+                  ✍️ Write a prayer
                 </button>
                 <button
                   type="button"
-                  onClick={() => setSourceType("text")}
+                  onClick={() => {
+                    setAsHowTo(false);
+                    setSourceType("text");
+                  }}
                   className={
-                    "flex h-12 items-center justify-center gap-2 rounded-md border px-3 text-sm font-medium transition-colors " +
-                    (!isWritten
+                    "flex h-12 items-center justify-center gap-1 rounded-md border px-2 text-xs font-medium transition-colors sm:text-sm " +
+                    (!isWritten && !asHowTo
                       ? "border-primary bg-primary text-primary-foreground"
                       : "border-input bg-card text-muted-foreground")
                   }
                 >
                   📖 Paste a booklet
                 </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAsHowTo(true);
+                    setSourceType("text");
+                  }}
+                  className={
+                    "flex h-12 items-center justify-center gap-1 rounded-md border px-2 text-xs font-medium transition-colors sm:text-sm " +
+                    (asHowTo
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-input bg-card text-muted-foreground")
+                  }
+                >
+                  📋 How to guide
+                </button>
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
-                {isWritten
-                  ? "You're typing a single prayer yourself."
-                  : "You're pasting text from a booklet, devotion, PDF, or web page — each titled block becomes its own prayer."}
+                {asHowTo
+                  ? "This page or text is instructions only — every line becomes a numbered step. No prayers are created from it."
+                  : isWritten
+                    ? "You're typing a single prayer yourself."
+                    : "You're pasting text from a booklet, devotion, PDF, or web page — each titled block becomes its own prayer. Instruction lines stay with the prayer; add a How To guide separately."}
               </p>
             </div>
           ) : null}
+
+          {asHowTo ? (
+            <>
+              <div>
+                <Label htmlFor="htitle">Guide title</Label>
+                <Input
+                  id="htitle"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="How to pray the Chaplet of St. Michael"
+                  className="mt-1 h-12"
+                />
+              </div>
+              <div>
+                <Label htmlFor="htpl">These instructions are for</Label>
+                <select
+                  id="htpl"
+                  value={howToTemplateId}
+                  onChange={(e) => setHowToTemplateId(e.target.value)}
+                  className="mt-1 h-12 w-full rounded-md border border-input bg-card px-3 text-sm"
+                >
+                  <option value="">No specific devotion</option>
+                  {db.templates.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </>
+          ) : null}
+
 
           {/* The one name field — labelled for what it actually is */}
           {asDevotion ? (
