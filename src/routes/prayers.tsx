@@ -19,14 +19,17 @@ function BulkBar({
   setSelected,
   onDelete,
   noun,
+  active,
+  setActive,
 }: {
   ids: string[];
   selected: Set<string>;
   setSelected: (next: Set<string>) => void;
   onDelete: (ids: string[]) => void;
   noun: string;
+  active: boolean;
+  setActive: (next: boolean) => void;
 }) {
-  const [active, setActive] = useState(false);
   if (!ids.length) return null;
 
   if (!active)
