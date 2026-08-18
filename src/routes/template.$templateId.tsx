@@ -32,6 +32,17 @@ export const Route = createFileRoute("/template/$templateId")({
   component: TemplateBuilder,
 });
 
+/** The components a devotion is built from. */
+const KIND_LABELS: Record<TemplateItem["kind"], string> = {
+  prayer: "Prayer",
+  salutation: "Salutation",
+  mystery_placeholder: "Mystery",
+  intention: "Intention / petition",
+  custom: "Component",
+  heading: "Section",
+};
+
+
 function TemplateBuilder() {
   const { templateId } = Route.useParams();
   const { db, saveTemplate, deleteTemplate } = useApp();
