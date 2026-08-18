@@ -90,7 +90,15 @@ function AddPrayersPage() {
     const source = {
       id: newId("source"),
       source_type: resolvedUrl && !isWritten ? ("web" as SourceType) : sourceType,
-      name: name.trim() || (isWritten ? "Written by me" : "Pasted text"),
+      // In devotion mode the devotion name doubles as the source name,
+      // so we don't show a separate, confusing "Source name" field.
+      name:
+        name.trim() ||
+        (asDevotion
+          ? devotionName.trim()
+          : isWritten
+            ? "Written by me"
+            : "Pasted text"),
       url: resolvedUrl,
       attribution: isWritten ? (attribution === "self" ? "self" : attribution) : attribution,
       // MVP placeholder: photo previews are local; Cloud storage uploads them
@@ -178,9 +186,7 @@ function AddPrayersPage() {
                 className="mt-1 h-12"
               />
             </div>
-          ) : null}
-
-          {isWritten ? (
+          ) : isWritten ? (
             <div>
               <Label htmlFor="ptitle">Prayer title</Label>
               <Input
