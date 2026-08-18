@@ -308,7 +308,14 @@ export interface ImportDraft {
    * bundles every saved prayer in document order. The prayers themselves are
    * still stored as single expressions in the library.
    */
-  devotion?: { name: string; description?: string | undefined } | undefined;
+  devotion?:
+    | {
+        name: string;
+        description?: string | undefined;
+        /** Notes from the source about the devotion (promises, when to pray it, context). */
+        notes?: string | undefined;
+      }
+    | undefined;
   created_at: string;
 }
 
