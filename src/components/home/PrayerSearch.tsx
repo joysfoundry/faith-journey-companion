@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useApp } from "@/lib/prayer/store";
+import { TAXONOMY_LABELS } from "@/domain/taxonomy";
 
 /** Minimal prayer-library search: type, see matches, open one. */
 export function PrayerSearch() {
@@ -19,7 +20,8 @@ export function PrayerSearch() {
         (p) =>
           p.title.toLowerCase().includes(q) ||
           p.tags.some((t) => t.toLowerCase().includes(q)) ||
-          p.category.includes(q),
+          p.prayer_type.includes(q) ||
+          p.expression_type.includes(q),
       )
       .slice(0, 6);
   }, [db.prayers, query]);
@@ -44,7 +46,7 @@ export function PrayerSearch() {
                 <div className="min-w-0">
                   <p className="truncate text-sm text-foreground">{prayer.title}</p>
                   <p className="truncate text-xs text-muted-foreground">
-                    {[prayer.category, ...prayer.tags].join(" · ")}
+                    {[TAXONOMY_LABELS[prayer.prayer_type], ...prayer.tags].join(" · ")}
                   </p>
                 </div>
                 <Button asChild size="sm" variant="ghost">
