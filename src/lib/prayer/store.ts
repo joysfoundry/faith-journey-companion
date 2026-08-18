@@ -355,6 +355,17 @@ export const mutations = {
     /** Prayers saved by this draft, in document order — used to build the devotion. */
     const bundle: Array<{ prayer_id: ID; repetition_count: number }> = [];
     const headings: Array<{ index: number; label: string }> = [];
+    /**
+     * Notes the source carries about the devotion. Explicit notes win; otherwise
+     * the prose blocks detected in the document (common for imported URLs).
+     */
+    const sourceNotes =
+      draft.devotion?.notes?.trim() ||
+      draft.candidates
+        .filter((c) => c.classification === "source_material")
+        .map((c) => `${c.title}\n${c.body}`.trim())
+        .join("\n\n")
+        .trim();
     for (const c of draft.candidates) {
       if (c.decision === "skip") continue;
       const repetition_count = detectRepetitionCount(c.title, c.body);
