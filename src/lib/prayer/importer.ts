@@ -169,7 +169,7 @@ export function splitBlocks(raw: string): Array<{ title: string; body: string }>
   }
 
   return blocks
-    .map((b) => ({ title: titleCase(b.title), body: b.body.join("\n").trim() }))
+    .map((b) => ({ title: titleCase(b.title).replace(/\s+/g, " ").trim(), body: b.body.join("\n").trim() }))
     .filter((b) => b.body.length > 0);
 }
 
