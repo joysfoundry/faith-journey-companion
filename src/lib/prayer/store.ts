@@ -364,16 +364,39 @@ export const mutations = {
         continue;
       }
       if (c.decision === "save_alternate_version" && c.duplicate_of_prayer_id) {
-        next = mutations.addPrayerVersion(next, {
-          id: newId("ver"),
-          prayer_id: c.duplicate_of_prayer_id,
-          label: `From ${draft.source.name}`,
-          body: c.body,
-          language: "en",
-          source_id: draft.source.id,
-          created_at: new Date().toISOString(),
-        });
-        bundle.push({ prayer_id: c.duplicate_of_prayer_id, repetition_count });
+        // Alternate wordings are their own prayer record inside the same group,
+        // so the imported devotion can use this exact wording.
+        const base = next.prayers.find((p) => p.id === c.duplicate_of_prayer_id);
+        const variantId = newId("prayer");
+        const variantVersionId = newId("ver");
+        if (base) {
+          next = mutations.upsertPrayer(
+            next,
+            {
+              ...base,
+              id: variantId,
+              variant_group_id: variantGroupId(base),
+              variant_label: `From ${draft.source.name}`,
+              is_default_variant: false,
+              favorite: false,
+              default_version_id: variantVersionId,
+              source_id: draft.source.id,
+              created_at: new Date().toISOString(),
+            },
+            {
+              id: variantVersionId,
+              prayer_id: variantId,
+              label: `From ${draft.source.name}`,
+              body: c.body,
+              language: "en",
+              source_id: draft.source.id,
+              created_at: new Date().toISOString(),
+            },
+          );
+          bundle.push({ prayer_id: variantId, repetition_count });
+        } else {
+          bundle.push({ prayer_id: c.duplicate_of_prayer_id, repetition_count });
+        }
         continue;
       }
       if (c.classification === "prayer" || c.classification === "prayer_version") {
@@ -390,6 +413,9 @@ export const mutations = {
             tags: ["imported"],
             favorite: false,
             default_version_id: versionId,
+            variant_group_id: prayerId,
+            variant_label: "Imported",
+            is_default_variant: true,
             source_id: draft.source.id,
             created_at: new Date().toISOString(),
           },
