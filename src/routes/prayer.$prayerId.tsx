@@ -11,7 +11,6 @@ import {
   type PrayerDraft,
 } from "@/components/prayer/PrayerFields";
 import { useApp, variantsOf } from "@/lib/prayer/store";
-import { newId } from "@/lib/prayer/compiler";
 
 export const Route = createFileRoute("/prayer/$prayerId")({
   head: () => ({
