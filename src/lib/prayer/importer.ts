@@ -98,6 +98,7 @@ const RUBRIC_LINE = [
   /^in honou?r of\b/i,
   /^\(?\d{2,3} days,/i,
   /^(repeat|say|then (pray|say)|pray)\b.{0,80}$/i,
+  /^(one|two|three|five|seven|ten|twelve)\s+.{0,60}\b(our father|hail mar|glory be|pater|ave|gloria)\b/i,
 ];
 
 function isNoise(line: string): boolean {
@@ -138,6 +139,8 @@ export function splitBlocks(raw: string): Array<{ title: string; body: string }>
     const t = line.trim();
     if (!t) return false;
     if (/^#{1,6}\s+/.test(t)) return true;
+    // "How to pray the Chaplet of St. Michael" heads an instruction section.
+    if (t.length <= 90 && isExplicitHowTo(t)) return true;
     if (t.length > 80) return false;
     if (/^\d+$/.test(t)) return false;
     if (/^[->*|]/.test(t)) return false;
