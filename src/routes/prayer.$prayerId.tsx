@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { Link, createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { AppShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import {
   buildPrayerRecords,
   type PrayerDraft,
 } from "@/components/prayer/PrayerFields";
-import { useApp } from "@/lib/prayer/store";
+import { useApp, variantsOf } from "@/lib/prayer/store";
 import { newId } from "@/lib/prayer/compiler";
 
 export const Route = createFileRoute("/prayer/$prayerId")({
