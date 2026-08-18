@@ -261,18 +261,30 @@ function AddPrayersPage() {
 
           <div>
             <Label htmlFor="surl">Link to the source (optional)</Label>
-            <Input
-              id="surl"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://…"
-              className="mt-1 h-12"
-            />
+            <div className="mt-1 flex gap-2">
+              <Input
+                id="surl"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="https://…"
+                className="h-12"
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                className="h-12 shrink-0"
+                disabled={fetching}
+                onClick={fetchFromUrl}
+              >
+                {fetching ? "Fetching…" : "Fetch text"}
+              </Button>
+            </div>
             <p className="mt-1 text-xs text-muted-foreground">
-              A link to where the text comes from. If you leave it blank we'll look for a URL or
-              publisher printed in the text, otherwise the source is recorded as "self".
+              Paste a link and tap “Fetch text” to pull the prayers off the page — you can edit the
+              text before reviewing. If the page blocks us, copy and paste the text instead.
             </p>
           </div>
+
 
           {asDevotion ? (
             <div>
