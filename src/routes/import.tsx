@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { TaxonomySelect } from "@/components/prayer/PrayerFields";
+import { PhotoDropzone, type LocalPhoto } from "@/components/media/PhotoDropzone";
 import { useApp } from "@/lib/prayer/store";
 import { analyzeText, draftFromWrittenPrayer, resolveAttribution } from "@/lib/prayer/importer";
 import { newId } from "@/lib/prayer/compiler";
