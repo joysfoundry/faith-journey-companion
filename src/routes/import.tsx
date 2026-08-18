@@ -64,6 +64,33 @@ function AddPrayersPage() {
   const [prayerType, setPrayerType] = useState<PrayerType>("other");
   const [expressionType, setExpressionType] = useState<ExpressionType>("vocal");
   const [photos, setPhotos] = useState<LocalPhoto[]>([]);
+  const [fetching, setFetching] = useState(false);
+  const loadSource = useServerFn(fetchSourceText);
+
+  /** Pulls the prayer text off a linked page so it can be reviewed like pasted text. */
+  const fetchFromUrl = async () => {
+    const target = url.trim();
+    if (!/^https?:\/\//i.test(target)) {
+      toast.error("Add a full link starting with https://");
+      return;
+    }
+    setFetching(true);
+    try {
+      const result = await loadSource({ data: { url: target } });
+      if (!result.ok || !result.text.trim()) {
+        toast.error(result.error ?? "Nothing readable came back — paste the text instead.");
+        return;
+      }
+      setRaw(result.text);
+      if (sourceType === "written") setSourceType("text");
+      toast.success("Text fetched — check it, then review the prayers.");
+    } catch {
+      toast.error("That page couldn't be read. Copy and paste the text instead.");
+    } finally {
+      setFetching(false);
+    }
+  };
+
   const [draft, setDraft] = useState<ImportDraft | null>(null);
 
   const asDevotion = mode === "devotion";
