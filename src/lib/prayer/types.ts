@@ -152,6 +152,11 @@ export interface PrayerTemplate {
   description?: string | undefined;
   kind: TemplateKind;
   mystery_presentation: MysteryPresentation;
+  /**
+   * Notes the source itself gives about the devotion — promises, when to pray it,
+   * instructions printed alongside the prayers, or context copied from a URL.
+   */
+  notes?: string | undefined;
   /** Rosary/Novena helper: how many mystery placeholders the template expects. */
   mystery_count: number;
   /** Novena config — duration is never assumed to be nine days. */
