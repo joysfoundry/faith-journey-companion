@@ -6,7 +6,7 @@
  * devotion_type, and the way it is prayed is an expression_type.
  */
 
-export const PRAYER_TYPES = ["liturgical", "devotional", "traditional_expression"] as const;
+export const PRAYER_TYPES = ["liturgical", "devotional", "traditional_expression", "other"] as const;
 export type PrayerType = (typeof PRAYER_TYPES)[number];
 
 export const DEVOTION_TYPES = [
@@ -50,6 +50,7 @@ export const TAXONOMY_LABELS: Record<string, string> = {
   liturgical: "Liturgical",
   devotional: "Devotional",
   traditional_expression: "Traditional expression",
+  other: "Other",
   rosary: "Rosary",
   novena: "Novena",
   chaplet: "Chaplet",
