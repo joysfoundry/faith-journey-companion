@@ -1,6 +1,8 @@
 import { Camera, Link2, Plus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { todayISO } from "@/lib/prayer/compiler";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -52,6 +54,7 @@ export function ReflectionComposer({ linkables, entries, prefillLinkId }: Props)
         body: body.trim(),
         linkedItemIds: linked,
         photoCount: 0,
+        date: todayISO(),
       },
     ]);
     setTitle("");
@@ -64,7 +67,9 @@ export function ReflectionComposer({ linkables, entries, prefillLinkId }: Props)
       {saved.map((entry) => (
         <Card key={entry.id} className="border-border/70">
           <CardContent className="space-y-2 py-5">
-            <p className="font-display text-lg text-foreground">{entry.title}</p>
+            <p className="font-display text-lg text-foreground">
+              <span className="text-muted-foreground">{entry.date}</span> {entry.title}
+            </p>
             <p className="text-sm text-muted-foreground">{entry.body}</p>
             {entry.linkedItemIds.length > 0 && (
               <div className="flex flex-wrap gap-1.5 pt-1">

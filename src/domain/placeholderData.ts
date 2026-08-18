@@ -99,6 +99,8 @@ export interface ReflectionEntry {
   body: string;
   linkedItemIds: string[];
   photoCount: number;
+  /** ISO date (YYYY-MM-DD) the entry was saved. */
+  date: string;
 }
 
 export const todaysReflections: ReflectionEntry[] = [];
