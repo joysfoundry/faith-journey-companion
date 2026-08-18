@@ -338,26 +338,31 @@ function AddPrayersPage() {
             </div>
           )}
 
-          <TaxonomySelect
-            id="prayer-type"
-            label="Prayer type"
-            value={prayerType}
-            options={PRAYER_TYPES}
-            onChange={(v) => setPrayerType(v as PrayerType)}
-          />
-          <TaxonomySelect
-            id="expression-type"
-            label="How it is prayed"
-            value={expressionType}
-            options={EXPRESSION_TYPES}
-            onChange={(v) => setExpressionType(v as ExpressionType)}
-          />
-          {!isWritten ? (
-            <p className="-mt-1 text-xs text-muted-foreground">
-              Used as the starting point for each detected prayer — you can change any of them on the
-              next screen.
-            </p>
+          {!asHowTo ? (
+            <>
+              <TaxonomySelect
+                id="prayer-type"
+                label="Prayer type"
+                value={prayerType}
+                options={PRAYER_TYPES}
+                onChange={(v) => setPrayerType(v as PrayerType)}
+              />
+              <TaxonomySelect
+                id="expression-type"
+                label="How it is prayed"
+                value={expressionType}
+                options={EXPRESSION_TYPES}
+                onChange={(v) => setExpressionType(v as ExpressionType)}
+              />
+              {!isWritten ? (
+                <p className="-mt-1 text-xs text-muted-foreground">
+                  Used as the starting point for each detected prayer — you can change any of them on
+                  the next screen.
+                </p>
+              ) : null}
+            </>
           ) : null}
+
 
           <div>
             <Label htmlFor="surl">Link to the source (optional)</Label>
