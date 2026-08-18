@@ -211,6 +211,36 @@ export function generatePrayerSession(
       continue;
     }
 
+    // Salutations are prayed like prayers, but their text is the V/R pair.
+    if (item.kind === "salutation") {
+      const body = [
+        item.versicle ? `V. ${item.versicle}` : "",
+        item.response ? `R. ${item.response}` : "",
+      ]
+        .filter(Boolean)
+        .join("\n");
+      const total = Math.max(1, item.repetition_count);
+      for (let n = 1; n <= total; n++) {
+        push({
+          kind: "prayer",
+          title: item.label ?? "Salutation",
+          body,
+          repetition_index: total > 1 ? n : undefined,
+          repetition_total: total > 1 ? total : undefined,
+        });
+      }
+      continue;
+    }
+
+    if (item.kind === "custom") {
+      push({
+        kind: "prayer",
+        title: item.label ?? "Component",
+        body: item.body ?? "",
+      });
+      continue;
+    }
+
     if (item.kind === "intention") {
       const intention = db.intentions.find((i) => i.id === item.prayer_id);
       push({
