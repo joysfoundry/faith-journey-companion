@@ -59,6 +59,8 @@ function AddPrayersPage() {
   const [title, setTitle] = useState("");
   const [raw, setRaw] = useState("");
   const [url, setUrl] = useState("");
+  /** Notes the source gives about the devotion — promises, when to pray it, context. */
+  const [notes, setNotes] = useState("");
   const [prayerType, setPrayerType] = useState<PrayerType>("other");
   const [expressionType, setExpressionType] = useState<ExpressionType>("vocal");
   const [photos, setPhotos] = useState<LocalPhoto[]>([]);
