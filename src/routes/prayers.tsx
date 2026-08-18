@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Heart, Plus, Search, Trash2 } from "lucide-react";
+import { Heart, Plus, Search, Trash2, X } from "lucide-react";
 import { AppShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useApp, variantGroupId } from "@/lib/prayer/store";
@@ -10,6 +11,77 @@ import type { Prayer } from "@/lib/prayer/types";
 import { toast } from "sonner";
 import { templateOutline } from "@/lib/prayer/compiler";
 import { TAXONOMY_LABELS } from "@/domain/taxonomy";
+
+/** Shared bulk-selection toolbar: enter select mode, select all, delete many. */
+function BulkBar({
+  ids,
+  selected,
+  setSelected,
+  onDelete,
+  noun,
+  active,
+  setActive,
+}: {
+  ids: string[];
+  selected: Set<string>;
+  setSelected: (next: Set<string>) => void;
+  onDelete: (ids: string[]) => void;
+  noun: string;
+  active: boolean;
+  setActive: (next: boolean) => void;
+}) {
+  if (!ids.length) return null;
+
+  if (!active)
+    return (
+      <button
+        type="button"
+        onClick={() => setActive(true)}
+        className="ml-auto block text-sm text-primary underline"
+      >
+        Select
+      </button>
+    );
+
+  const allSelected = selected.size === ids.length;
+  return (
+    <div className="flex items-center gap-2 rounded-md border border-border bg-card p-2">
+      <Checkbox
+        checked={allSelected}
+        onCheckedChange={(v) => setSelected(v ? new Set(ids) : new Set())}
+        aria-label={`Select all ${noun}`}
+      />
+      <span className="text-sm text-muted-foreground">
+        {selected.size} selected
+      </span>
+      <Button
+        variant="destructive"
+        size="sm"
+        className="ml-auto"
+        disabled={!selected.size}
+        onClick={() => {
+          if (!window.confirm(`Delete ${selected.size} ${noun}?`)) return;
+          onDelete([...selected]);
+          setSelected(new Set());
+          toast.success(`Deleted ${noun}`);
+        }}
+      >
+        <Trash2 className="size-4" /> Delete
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => {
+          setSelected(new Set());
+          setActive(false);
+        }}
+      >
+        <X className="size-4" />
+      </Button>
+    </div>
+  );
+}
+
 
 export const Route = createFileRoute("/prayers")({
   head: () => ({
@@ -33,6 +105,25 @@ export const Route = createFileRoute("/prayers")({
 function LibraryPage() {
   const { db, toggleFavorite, deletePrayer, deleteTemplate, deleteHowTo } = useApp();
   const [query, setQuery] = useState("");
+  const [pickPrayers, setPickPrayers] = useState(false);
+  const [selPrayers, setSelPrayers] = useState<Set<string>>(new Set());
+  const [pickTemplates, setPickTemplates] = useState(false);
+  const [selTemplates, setSelTemplates] = useState<Set<string>>(new Set());
+  const [pickHowTos, setPickHowTos] = useState(false);
+  const [selHowTos, setSelHowTos] = useState<Set<string>>(new Set());
+
+  const toggle = (
+    set: Set<string>,
+    setter: (next: Set<string>) => void,
+    id: string,
+    on: boolean,
+  ) => {
+    const next = new Set(set);
+    if (on) next.add(id);
+    else next.delete(id);
+    setter(next);
+  };
+
 
   // Every wording is its own record; the library groups them and shows the
   // default wording at the top of each group.
@@ -98,7 +189,7 @@ function LibraryPage() {
           <p className="mb-3 text-center text-xs text-muted-foreground">
             Write it, paste it, or add a link to import from.
           </p>
-          <div className="relative mb-4">
+          <div className="relative mb-3">
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={query}
@@ -108,10 +199,35 @@ function LibraryPage() {
               aria-label="Search prayers"
             />
           </div>
+          <div className="mb-3">
+            <BulkBar
+              noun="prayers"
+              ids={groups.flatMap(({ primary, others }) => [
+                primary.id,
+                ...others.map((o) => o.id),
+              ])}
+              selected={selPrayers}
+              setSelected={setSelPrayers}
+              active={pickPrayers}
+              setActive={setPickPrayers}
+              onDelete={(ids) => ids.forEach(deletePrayer)}
+            />
+          </div>
           <ul className="space-y-3">
             {groups.map(({ key, primary, others }) => (
               <li key={key} className="soft-card">
                 <div className="flex items-center">
+                  {pickPrayers ? (
+                    <span className="pl-4">
+                      <Checkbox
+                        checked={selPrayers.has(primary.id)}
+                        onCheckedChange={(v) =>
+                          toggle(selPrayers, setSelPrayers, primary.id, Boolean(v))
+                        }
+                        aria-label={`Select ${primary.title}`}
+                      />
+                    </span>
+                  ) : null}
                   <Link
                     to="/prayer/$prayerId"
                     params={{ prayerId: primary.id }}
@@ -151,6 +267,17 @@ function LibraryPage() {
                   <ul className="border-t border-border/60 px-4 py-2">
                     {others.map((variant) => (
                       <li key={variant.id} className="flex items-center">
+                        {pickPrayers ? (
+                          <span className="pr-3">
+                            <Checkbox
+                              checked={selPrayers.has(variant.id)}
+                              onCheckedChange={(v) =>
+                                toggle(selPrayers, setSelPrayers, variant.id, Boolean(v))
+                              }
+                              aria-label={`Select ${variant.variant_label ?? "version"} of ${primary.title}`}
+                            />
+                          </span>
+                        ) : null}
                         <Link
                           to="/prayer/$prayerId"
                           params={{ prayerId: variant.id }}
@@ -158,6 +285,7 @@ function LibraryPage() {
                         >
                           {variant.variant_label ?? "Alternate wording"}
                         </Link>
+
                         <button
                           type="button"
                           onClick={() => {
@@ -205,10 +333,30 @@ function LibraryPage() {
               Build one by hand
             </Link>
           </p>
+          <BulkBar
+            noun="devotions"
+            ids={db.templates.map((t) => t.id)}
+            selected={selTemplates}
+            setSelected={setSelTemplates}
+            active={pickTemplates}
+            setActive={setPickTemplates}
+            onDelete={(ids) => ids.forEach(deleteTemplate)}
+          />
           {db.templates.map((template) => {
             const outline = templateOutline(db, template);
             return (
               <div key={template.id} className="soft-card flex items-start">
+              {pickTemplates ? (
+                <span className="self-center pl-4">
+                  <Checkbox
+                    checked={selTemplates.has(template.id)}
+                    onCheckedChange={(v) =>
+                      toggle(selTemplates, setSelTemplates, template.id, Boolean(v))
+                    }
+                    aria-label={`Select ${template.name}`}
+                  />
+                </span>
+              ) : null}
               <Link
                 to="/template/$templateId"
                 params={{ templateId: template.id }}
@@ -244,10 +392,39 @@ function LibraryPage() {
         </TabsContent>
 
         <TabsContent value="howto" className="mt-4 space-y-3">
+          <Button asChild variant="secondary" className="h-12 w-full">
+            <Link to="/import" search={{ mode: "howto" }}>
+              <Plus className="size-4" /> New How To guide
+            </Link>
+          </Button>
+          <p className="text-center text-xs text-muted-foreground">
+            Paste a page that explains how a devotion is prayed. Every line becomes a step — guides
+            are only created here, never guessed from prayer text.
+          </p>
+          <BulkBar
+            noun="guides"
+            ids={db.how_tos.map((h) => h.id)}
+            selected={selHowTos}
+            setSelected={setSelHowTos}
+            active={pickHowTos}
+            setActive={setPickHowTos}
+            onDelete={(ids) => ids.forEach(deleteHowTo)}
+          />
           {db.how_tos.map((howTo) => {
             const linked = db.templates.find((t) => t.id === howTo.template_id);
             return (
               <div key={howTo.id} className="soft-card flex items-start">
+                {pickHowTos ? (
+                  <span className="self-center pl-4">
+                    <Checkbox
+                      checked={selHowTos.has(howTo.id)}
+                      onCheckedChange={(v) =>
+                        toggle(selHowTos, setSelHowTos, howTo.id, Boolean(v))
+                      }
+                      aria-label={`Select ${howTo.title}`}
+                    />
+                  </span>
+                ) : null}
                 <Link
                   to="/howto/$howToId"
                   params={{ howToId: howTo.id }}
@@ -275,6 +452,7 @@ function LibraryPage() {
             );
           })}
         </TabsContent>
+
       </Tabs>
     </AppShell>
   );

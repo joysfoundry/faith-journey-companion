@@ -98,6 +98,7 @@ const RUBRIC_LINE = [
   /^in honou?r of\b/i,
   /^\(?\d{2,3} days,/i,
   /^(repeat|say|then (pray|say)|pray)\b.{0,80}$/i,
+  /^(one|two|three|five|seven|ten|twelve)\s+.{0,60}\b(our father|hail mar|glory be|pater|ave|gloria)\b/i,
 ];
 
 function isNoise(line: string): boolean {
@@ -138,6 +139,8 @@ export function splitBlocks(raw: string): Array<{ title: string; body: string }>
     const t = line.trim();
     if (!t) return false;
     if (/^#{1,6}\s+/.test(t)) return true;
+    // "How to pray the Chaplet of St. Michael" heads an instruction section.
+    if (t.length <= 90 && isExplicitHowTo(t)) return true;
     if (t.length > 80) return false;
     if (/^\d+$/.test(t)) return false;
     if (/^[->*|]/.test(t)) return false;
@@ -210,64 +213,127 @@ export function proposeTaxonomy(
   return { prayer_type, expression_type };
 }
 
-export function analyzeText(db: Database, raw: string, source: Source): ImportDraft {
+/**
+ * Explicit "how to" wording. Without AI we never guess: a block becomes a How To
+ * only when it literally announces itself as instructions.
+ */
+const EXPLICIT_HOW_TO = [
+  /\bhow to (pray|say|recite|use)\b/i,
+  /\bhow the .{0,30}is prayed\b/i,
+  /\b(instructions|directions)\b/i,
+  /\b(manner|method|order|way) of (praying|saying|reciting)\b/i,
+  /\bto pray (this|the) (chaplet|novena|rosary|devotion)\b/i,
+  /\bpraying the .{0,30}\b(step|steps)\b/i,
+];
+
+export function isExplicitHowTo(title: string, body = ""): boolean {
+  const head = `${title}\n${body.split("\n").slice(0, 3).join("\n")}`;
+  return EXPLICIT_HOW_TO.some((r) => r.test(head));
+}
+
+/** Comment timestamps, dates, and other page furniture that isn't prayer text. */
+const JUNK_TITLE = [
+  /^\d{1,2}(st|nd|rd|th)?\s+\w+\s+\d{4}\b/i,
+  /\bat \d{1,2}:\d{2}\s*(am|pm)\b/i,
+  /^(leave a (reply|comment)|comments?|reply|posted (on|by)|categories|tags|search)$/i,
+];
+
+function isJunkBlock(title: string, body: string): boolean {
+  return JUNK_TITLE.some((r) => r.test(title)) || body.replace(/\s/g, "").length < 12;
+}
+
+export function analyzeText(
+  db: Database,
+  raw: string,
+  source: Source,
+  options?: { asHowTo?: boolean },
+): ImportDraft {
   const candidates: ImportCandidate[] = [];
+
+  // The whole document was declared to be a How To guide: one candidate, steps
+  // in order, nothing guessed.
+  if (options?.asHowTo) {
+    const steps = raw
+      .split("\n")
+      .map((l) => l.replace(/^#{1,6}\s+/, "").trim())
+      .filter((l) => l && !isNoise(l));
+    const firstLine = steps[0] ?? "How to pray";
+    const looksLikeTitle = firstLine.length <= 80;
+    candidates.push({
+      id: newId("cand"),
+      classification: "how_to",
+      title: looksLikeTitle ? titleCase(firstLine) : source.name,
+      body: (looksLikeTitle ? steps.slice(1) : steps).join("\n"),
+      confidence: 1,
+      decision: "save_new",
+    });
+    return {
+      id: newId("draft"),
+      source,
+      raw_text: raw,
+      candidates,
+      created_at: new Date().toISOString(),
+    };
+  }
+
   for (const block of splitBlocks(raw)) {
-    // Rubrics (V/. R/. versicles, "Our Father … (3x)") are instructions, not
-    // wording — they become a how-to so the prayer body stays clean.
-    const { prose, rubric } = splitRubric(block.body);
-    const body = prose || block.body;
-    const { classification, confidence } = classify(block.title, body);
+    if (isJunkBlock(block.title, block.body)) continue;
 
-    if (prose) {
-      // Duplicate detection against the existing library.
-      let bestId: string | undefined;
-      let best = 0;
-      for (const prayer of db.prayers) {
-        const version = db.prayer_versions.find((v) => v.id === prayer.default_version_id);
-        const score = Math.max(
-          similarity(body, version?.body ?? ""),
-          similarity(block.title, prayer.title) * 0.9,
-        );
-        if (score > best) {
-          best = score;
-          bestId = prayer.id;
-        }
-      }
-      const isDuplicate = best >= 0.45 && classification === "prayer";
-
-      const taxonomy = proposeTaxonomy(block.title, body, classification);
-      const candidate: ImportCandidate = {
-        id: newId("cand"),
-        classification,
-        ...taxonomy,
-        title: block.title,
-        body,
-        confidence,
-        decision: isDuplicate
-          ? "use_existing"
-          : classification === "source_material"
-            ? "skip"
-            : "save_new",
-      };
-      if (isDuplicate && bestId) {
-        candidate.duplicate_of_prayer_id = bestId;
-        candidate.similarity = Math.round(best * 100) / 100;
-      }
-      candidates.push(candidate);
-    }
-
-    if (rubric) {
+    // Explicit instruction blocks become How To guides. Everything else keeps
+    // its rubric lines (V/. R/. versicles, "Our Father (3x)") with the wording —
+    // we no longer invent a guide for every rubric we see.
+    if (isExplicitHowTo(block.title, block.body)) {
       candidates.push({
         id: newId("cand"),
         classification: "how_to",
-        title: prose ? `${block.title} — how to pray` : block.title,
-        body: rubric,
-        confidence: 0.8,
+        title: block.title,
+        body: block.body,
+        confidence: 0.9,
         decision: "save_new",
       });
+      continue;
     }
+
+    const body = block.body;
+    const { classification, confidence } = classify(block.title, body);
+
+    // Duplicate detection against the existing library.
+    let bestId: string | undefined;
+    let best = 0;
+    for (const prayer of db.prayers) {
+      const version = db.prayer_versions.find((v) => v.id === prayer.default_version_id);
+      const score = Math.max(
+        similarity(body, version?.body ?? ""),
+        similarity(block.title, prayer.title) * 0.9,
+      );
+      if (score > best) {
+        best = score;
+        bestId = prayer.id;
+      }
+    }
+    const isDuplicate = best >= 0.45 && classification === "prayer";
+
+    const taxonomy = proposeTaxonomy(block.title, body, classification);
+    const candidate: ImportCandidate = {
+      id: newId("cand"),
+      classification: classification === "how_to" ? "source_material" : classification,
+      ...taxonomy,
+      title: block.title,
+      body,
+      confidence,
+      decision: isDuplicate
+        ? "use_existing"
+        : classification === "source_material" || classification === "how_to"
+          ? "skip"
+          : "save_new",
+    };
+    if (isDuplicate && bestId) {
+      candidate.duplicate_of_prayer_id = bestId;
+      candidate.similarity = Math.round(best * 100) / 100;
+    }
+    candidates.push(candidate);
   }
+
 
 
   return {

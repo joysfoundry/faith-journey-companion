@@ -24,8 +24,12 @@ import {
 import type { ImportCandidate, ImportDraft, SourceType } from "@/lib/prayer/types";
 
 export const Route = createFileRoute("/import")({
-  validateSearch: (search: Record<string, unknown>): { mode?: "devotion" } =>
-    search["mode"] === "devotion" ? { mode: "devotion" } : {},
+  validateSearch: (search: Record<string, unknown>): { mode?: "devotion" | "howto" } =>
+    search["mode"] === "devotion"
+      ? { mode: "devotion" }
+      : search["mode"] === "howto"
+        ? { mode: "howto" }
+        : {},
   head: () => ({
     meta: [
       { title: "Add Prayers — Faith Journey" },
@@ -95,9 +99,12 @@ function AddPrayersPage() {
   };
 
   const [draft, setDraft] = useState<ImportDraft | null>(null);
+  /** Explicit: this text is instructions, not prayer wording. */
+  const [asHowTo, setAsHowTo] = useState(mode === "howto");
+  const [howToTemplateId, setHowToTemplateId] = useState("");
 
   const asDevotion = mode === "devotion";
-  const isWritten = sourceType === "written" && !asDevotion;
+  const isWritten = sourceType === "written" && !asDevotion && !asHowTo;
 
   const analyze = () => {
     if (!raw.trim()) {
@@ -122,9 +129,11 @@ function AddPrayersPage() {
         name.trim() ||
         (asDevotion
           ? devotionName.trim()
-          : isWritten
-            ? "Written by me"
-            : "Pasted text"),
+          : asHowTo
+            ? title.trim() || "How to pray"
+            : isWritten
+              ? "Written by me"
+              : "Pasted text"),
       url: resolvedUrl,
       attribution: isWritten ? (attribution === "self" ? "self" : attribution) : attribution,
       // MVP placeholder: photo previews are local; Cloud storage uploads them
@@ -139,12 +148,21 @@ function AddPrayersPage() {
       created_at: new Date().toISOString(),
     };
     // One typed prayer skips block detection; a pasted bundle gets analyzed.
-    const next = isWritten
-      ? draftFromWrittenPrayer(db, title.trim(), raw.trim(), source, {
-          prayer_type: prayerType,
-          expression_type: expressionType,
-        })
-      : analyzeText(db, raw, source);
+    const next = asHowTo
+      ? analyzeText(db, raw, source, { asHowTo: true })
+      : isWritten
+        ? draftFromWrittenPrayer(db, title.trim(), raw.trim(), source, {
+            prayer_type: prayerType,
+            expression_type: expressionType,
+          })
+        : analyzeText(db, raw, source);
+    if (asHowTo) {
+      next.candidates = next.candidates.map((c) => ({
+        ...c,
+        ...(title.trim() ? { title: title.trim() } : {}),
+        ...(howToTemplateId ? { link_template_id: howToTemplateId } : {}),
+      }));
+    }
     if (asDevotion)
       next.devotion = {
         name: devotionName.trim(),
@@ -154,6 +172,7 @@ function AddPrayersPage() {
     setDraft(next);
     saveImportDraft(next);
   };
+
 
   const patchCandidate = (candidateId: string, patch: Partial<ImportCandidate>) => {
     setDraft((current) => {
@@ -181,7 +200,7 @@ function AddPrayersPage() {
 
   return (
     <AppShell
-      title={asDevotion ? "New devotion" : "Add prayers"}
+      title={asDevotion ? "New devotion" : asHowTo ? "New How To guide" : "Add prayers"}
       subtitle={
         asDevotion
           ? "Paste the devotion. Each prayer is saved on its own, then bundled in order."
@@ -195,39 +214,94 @@ function AddPrayersPage() {
           {!asDevotion ? (
             <div>
               <Label>How are you adding this?</Label>
-              <div className="mt-1 grid grid-cols-2 gap-2">
+              <div className="mt-1 grid grid-cols-3 gap-2">
                 <button
                   type="button"
-                  onClick={() => setSourceType("written")}
+                  onClick={() => {
+                    setAsHowTo(false);
+                    setSourceType("written");
+                  }}
                   className={
-                    "flex h-12 items-center justify-center gap-2 rounded-md border px-3 text-sm font-medium transition-colors " +
+                    "flex h-12 items-center justify-center gap-1 rounded-md border px-2 text-xs font-medium transition-colors sm:text-sm " +
                     (isWritten
                       ? "border-primary bg-primary text-primary-foreground"
                       : "border-input bg-card text-muted-foreground")
                   }
                 >
-                  ✍️ Write one prayer
+                  ✍️ Write a prayer
                 </button>
                 <button
                   type="button"
-                  onClick={() => setSourceType("text")}
+                  onClick={() => {
+                    setAsHowTo(false);
+                    setSourceType("text");
+                  }}
                   className={
-                    "flex h-12 items-center justify-center gap-2 rounded-md border px-3 text-sm font-medium transition-colors " +
-                    (!isWritten
+                    "flex h-12 items-center justify-center gap-1 rounded-md border px-2 text-xs font-medium transition-colors sm:text-sm " +
+                    (!isWritten && !asHowTo
                       ? "border-primary bg-primary text-primary-foreground"
                       : "border-input bg-card text-muted-foreground")
                   }
                 >
                   📖 Paste a booklet
                 </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAsHowTo(true);
+                    setSourceType("text");
+                  }}
+                  className={
+                    "flex h-12 items-center justify-center gap-1 rounded-md border px-2 text-xs font-medium transition-colors sm:text-sm " +
+                    (asHowTo
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-input bg-card text-muted-foreground")
+                  }
+                >
+                  📋 How to guide
+                </button>
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
-                {isWritten
-                  ? "You're typing a single prayer yourself."
-                  : "You're pasting text from a booklet, devotion, PDF, or web page — each titled block becomes its own prayer."}
+                {asHowTo
+                  ? "This page or text is instructions only — every line becomes a numbered step. No prayers are created from it."
+                  : isWritten
+                    ? "You're typing a single prayer yourself."
+                    : "You're pasting text from a booklet, devotion, PDF, or web page — each titled block becomes its own prayer. Instruction lines stay with the prayer; add a How To guide separately."}
               </p>
             </div>
           ) : null}
+
+          {asHowTo ? (
+            <>
+              <div>
+                <Label htmlFor="htitle">Guide title</Label>
+                <Input
+                  id="htitle"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="How to pray the Chaplet of St. Michael"
+                  className="mt-1 h-12"
+                />
+              </div>
+              <div>
+                <Label htmlFor="htpl">These instructions are for</Label>
+                <select
+                  id="htpl"
+                  value={howToTemplateId}
+                  onChange={(e) => setHowToTemplateId(e.target.value)}
+                  className="mt-1 h-12 w-full rounded-md border border-input bg-card px-3 text-sm"
+                >
+                  <option value="">No specific devotion</option>
+                  {db.templates.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </>
+          ) : null}
+
 
           {/* The one name field — labelled for what it actually is */}
           {asDevotion ? (
@@ -268,26 +342,31 @@ function AddPrayersPage() {
             </div>
           )}
 
-          <TaxonomySelect
-            id="prayer-type"
-            label="Prayer type"
-            value={prayerType}
-            options={PRAYER_TYPES}
-            onChange={(v) => setPrayerType(v as PrayerType)}
-          />
-          <TaxonomySelect
-            id="expression-type"
-            label="How it is prayed"
-            value={expressionType}
-            options={EXPRESSION_TYPES}
-            onChange={(v) => setExpressionType(v as ExpressionType)}
-          />
-          {!isWritten ? (
-            <p className="-mt-1 text-xs text-muted-foreground">
-              Used as the starting point for each detected prayer — you can change any of them on the
-              next screen.
-            </p>
+          {!asHowTo ? (
+            <>
+              <TaxonomySelect
+                id="prayer-type"
+                label="Prayer type"
+                value={prayerType}
+                options={PRAYER_TYPES}
+                onChange={(v) => setPrayerType(v as PrayerType)}
+              />
+              <TaxonomySelect
+                id="expression-type"
+                label="How it is prayed"
+                value={expressionType}
+                options={EXPRESSION_TYPES}
+                onChange={(v) => setExpressionType(v as ExpressionType)}
+              />
+              {!isWritten ? (
+                <p className="-mt-1 text-xs text-muted-foreground">
+                  Used as the starting point for each detected prayer — you can change any of them on
+                  the next screen.
+                </p>
+              ) : null}
+            </>
           ) : null}
+
 
           <div>
             <Label htmlFor="surl">Link to the source (optional)</Label>
@@ -344,7 +423,7 @@ function AddPrayersPage() {
           />
 
           <div>
-            <Label htmlFor="raw">{isWritten ? "Prayer text" : "Text"}</Label>
+            <Label htmlFor="raw">{asHowTo ? "Instructions" : isWritten ? "Prayer text" : "Text"}</Label>
             <Textarea
               id="raw"
               value={raw}
@@ -365,7 +444,7 @@ function AddPrayersPage() {
             ) : null}
           </div>
           <Button className="h-12 w-full" onClick={analyze}>
-            {isWritten ? "Review prayer" : "Analyze text"}
+            {asHowTo ? "Review guide" : isWritten ? "Review prayer" : "Analyze text"}
           </Button>
         </div>
       ) : (
