@@ -5,7 +5,8 @@ import { AppShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useApp } from "@/lib/prayer/store";
+import { useApp, variantGroupId } from "@/lib/prayer/store";
+import type { Prayer } from "@/lib/prayer/types";
 import { toast } from "sonner";
 import { templateOutline } from "@/lib/prayer/compiler";
 import { TAXONOMY_LABELS } from "@/domain/taxonomy";
@@ -41,7 +42,7 @@ function LibraryPage() {
       !q ||
       p.title.toLowerCase().includes(q) ||
       (p.variant_label ?? "").toLowerCase().includes(q) ||
-      (p.tags ?? []).some((t) => t.includes(q)) ||
+      (p.tags ?? []).some((t: string) => t.includes(q)) ||
       (p.prayer_type ?? "").includes(q) ||
       (db.prayer_versions.find((v) => v.id === p.default_version_id)?.body ?? "")
         .toLowerCase()
@@ -108,47 +109,79 @@ function LibraryPage() {
             />
           </div>
           <ul className="space-y-3">
-            {prayers.map((prayer) => {
-              const versions = db.prayer_versions.filter((v) => v.prayer_id === prayer.id);
-              return (
-                <li key={prayer.id} className="soft-card flex items-center">
+            {groups.map(({ key, primary, others }) => (
+              <li key={key} className="soft-card">
+                <div className="flex items-center">
                   <Link
                     to="/prayer/$prayerId"
-                    params={{ prayerId: prayer.id }}
+                    params={{ prayerId: primary.id }}
                     className="flex-1 p-4"
                   >
-                    <p className="font-medium">{prayer.title}</p>
+                    <p className="font-medium">{primary.title}</p>
                     <p className="text-sm text-muted-foreground">
-                      {versions.length} version{versions.length === 1 ? "" : "s"} ·{" "}
-                      {TAXONOMY_LABELS[prayer.prayer_type]}
+                      {primary.variant_label ?? "Traditional"}
+                      {others.length ? " · default" : ""} ·{" "}
+                      {TAXONOMY_LABELS[primary.prayer_type]}
                     </p>
                   </Link>
                   <button
                     type="button"
-                    onClick={() => toggleFavorite(prayer.id)}
-                    aria-label={prayer.favorite ? "Remove favorite" : "Add favorite"}
+                    onClick={() => toggleFavorite(primary.id)}
+                    aria-label={primary.favorite ? "Remove favorite" : "Add favorite"}
                     className="px-4 py-5 text-muted-foreground"
                   >
                     <Heart
-                      className={`size-5 ${prayer.favorite ? "fill-primary text-primary" : ""}`}
+                      className={`size-5 ${primary.favorite ? "fill-primary text-primary" : ""}`}
                     />
                   </button>
                   <button
                     type="button"
                     onClick={() => {
-                      if (!window.confirm(`Delete “${prayer.title}”?`)) return;
-                      deletePrayer(prayer.id);
+                      if (!window.confirm(`Delete “${primary.title}”?`)) return;
+                      deletePrayer(primary.id);
                       toast.success("Prayer deleted");
                     }}
-                    aria-label={`Delete ${prayer.title}`}
+                    aria-label={`Delete ${primary.title}`}
                     className="pr-4 py-5 text-muted-foreground"
                   >
                     <Trash2 className="size-5" />
                   </button>
-                </li>
-              );
-            })}
-            {prayers.length === 0 ? (
+                </div>
+                {others.length ? (
+                  <ul className="border-t border-border/60 px-4 py-2">
+                    {others.map((variant) => (
+                      <li key={variant.id} className="flex items-center">
+                        <Link
+                          to="/prayer/$prayerId"
+                          params={{ prayerId: variant.id }}
+                          className="flex-1 py-2 text-sm text-muted-foreground"
+                        >
+                          {variant.variant_label ?? "Alternate wording"}
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (
+                              !window.confirm(
+                                `Delete the “${variant.variant_label ?? "alternate"}” wording?`,
+                              )
+                            )
+                              return;
+                            deletePrayer(variant.id);
+                            toast.success("Version deleted");
+                          }}
+                          aria-label={`Delete ${variant.variant_label ?? "version"} of ${primary.title}`}
+                          className="py-2 pl-3 text-muted-foreground"
+                        >
+                          <Trash2 className="size-4" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </li>
+            ))}
+            {groups.length === 0 ? (
               <li className="py-10 text-center text-sm text-muted-foreground">
                 No prayers match that search.
               </li>
