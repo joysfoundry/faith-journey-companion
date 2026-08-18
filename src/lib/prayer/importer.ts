@@ -7,6 +7,8 @@
  */
 import type {
   Database,
+  ExpressionType,
+  PrayerType,
   ImportCandidate,
   ImportClassification,
   ImportDraft,
@@ -122,6 +124,32 @@ function titleCase(text: string): string {
     .replace(/^\w/, (c) => c.toUpperCase());
 }
 
+/**
+ * Proposes the two taxonomy axes for a candidate. Purely deterministic hints —
+ * the user can change both on the review screen.
+ */
+export function proposeTaxonomy(
+  title: string,
+  body: string,
+  classification: ImportClassification,
+): { prayer_type: PrayerType; expression_type: ExpressionType } {
+  const blob = `${title}\n${body}`;
+  const expression_type: ExpressionType =
+    classification === "mystery_meditation" || classification === "mystery"
+      ? "meditation"
+      : /\b(psalm|gospel|reading|scripture|chapter \d+)\b/i.test(blob)
+        ? "scripture"
+        : "vocal";
+  const prayer_type: PrayerType = /\b(creed|our father|glory be|liturgy|mass|psalm|collect)\b/i.test(
+    blob,
+  )
+    ? "liturgical"
+    : /\b(hail mary|rosary|sign of the cross|angelus)\b/i.test(blob)
+      ? "traditional_expression"
+      : "devotional";
+  return { prayer_type, expression_type };
+}
+
 export function analyzeText(db: Database, raw: string, source: Source): ImportDraft {
   const candidates: ImportCandidate[] = splitBlocks(raw).map((block) => {
     const { classification, confidence } = classify(block.title, block.body);
@@ -142,9 +170,11 @@ export function analyzeText(db: Database, raw: string, source: Source): ImportDr
     }
     const isDuplicate = best >= 0.45 && classification === "prayer";
 
+    const taxonomy = proposeTaxonomy(block.title, block.body, classification);
     const candidate: ImportCandidate = {
       id: newId("cand"),
       classification,
+      ...taxonomy,
       title: block.title,
       body: block.body,
       confidence,
@@ -167,6 +197,50 @@ export function analyzeText(db: Database, raw: string, source: Source): ImportDr
     source,
     raw_text: raw,
     candidates,
+    created_at: new Date().toISOString(),
+  };
+}
+
+/**
+ * A prayer the user typed themselves: one candidate, no block splitting, no
+ * duplicate guessing beyond a straight library comparison.
+ */
+export function draftFromWrittenPrayer(
+  db: Database,
+  title: string,
+  body: string,
+  source: Source,
+  taxonomy?: { prayer_type: PrayerType; expression_type: ExpressionType },
+): ImportDraft {
+  let bestId: string | undefined;
+  let best = 0;
+  for (const prayer of db.prayers) {
+    const version = db.prayer_versions.find((v) => v.id === prayer.default_version_id);
+    const score = Math.max(similarity(body, version?.body ?? ""), similarity(title, prayer.title) * 0.9);
+    if (score > best) {
+      best = score;
+      bestId = prayer.id;
+    }
+  }
+  const duplicate = best >= 0.45;
+  const candidate: ImportCandidate = {
+    id: newId("cand"),
+    classification: "prayer",
+    title,
+    body,
+    confidence: 1,
+    decision: duplicate ? "save_alternate_version" : "save_new",
+    ...(taxonomy ?? proposeTaxonomy(title, body, "prayer")),
+  };
+  if (duplicate && bestId) {
+    candidate.duplicate_of_prayer_id = bestId;
+    candidate.similarity = Math.round(best * 100) / 100;
+  }
+  return {
+    id: newId("draft"),
+    source,
+    raw_text: body,
+    candidates: [candidate],
     created_at: new Date().toISOString(),
   };
 }
