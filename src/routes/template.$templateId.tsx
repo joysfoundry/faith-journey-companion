@@ -431,26 +431,62 @@ function TemplateBuilder() {
 
         {pickerOpen ? (
           <ul className="soft-card max-h-72 divide-y divide-border overflow-auto">
-            {db.prayers.map((p) => (
-              <li key={p.id}>
-                <button
-                  type="button"
-                  className="w-full px-4 py-3 text-left"
-                  onClick={() => {
-                    addItem({ kind: "prayer", prayer_id: p.id });
-                    setPickerOpen(false);
-                  }}
-                >
-                  {p.title}
-                </button>
+            {pickerGroups.map(({ primary, versions }) => (
+              <li key={primary.id} className="p-1">
+                {versions.length < 2 ? (
+                  <button
+                    type="button"
+                    className="w-full px-3 py-2 text-left"
+                    onClick={() => {
+                      addItem({ kind: "prayer", prayer_id: primary.id });
+                      setPickerOpen(false);
+                    }}
+                  >
+                    {primary.title}
+                  </button>
+                ) : (
+                  <div className="px-3 py-2">
+                    <p className="text-sm font-medium">{primary.title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {versions.length} versions — pick the wording this devotion should pray.
+                    </p>
+                    <ul className="mt-1 space-y-1">
+                      {versions.map((v) => (
+                        <li key={v.prayer.id}>
+                          <button
+                            type="button"
+                            className="w-full rounded-md border border-input px-2 py-2 text-left"
+                            onClick={() => {
+                              addItem({ kind: "prayer", prayer_id: v.prayer.id });
+                              setPickerOpen(false);
+                            }}
+                          >
+                            <span className="text-xs font-medium">
+                              {v.label}
+                              {v.prayer.is_default_variant ? " · default" : ""}
+                            </span>
+                            <span className="block text-xs text-muted-foreground">
+                              “{v.difference}”{v.hint ? ` · ${v.hint}` : ""}
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </li>
             ))}
           </ul>
         ) : null}
 
-        <Button className="h-12 w-full" onClick={save}>
-          Save template
-        </Button>
+        <div className="grid grid-cols-2 gap-2">
+          <Button variant="outline" className="h-12" onClick={() => navigate({ to: "/prayers" })}>
+            Cancel
+          </Button>
+          <Button className="h-12" onClick={save}>
+            Save devotion
+          </Button>
+        </div>
         {existing && !existing.built_in ? (
           <Button
             variant="ghost"
