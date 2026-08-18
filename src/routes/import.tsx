@@ -113,7 +113,12 @@ function AddPrayersPage() {
           expression_type: expressionType,
         })
       : analyzeText(db, raw, source);
-    if (asDevotion) next.devotion = { name: devotionName.trim() };
+    if (asDevotion)
+      next.devotion = {
+        name: devotionName.trim(),
+        // Explicit notes win; otherwise the prose blocks detected in the text are used.
+        ...(notes.trim() ? { notes: notes.trim() } : {}),
+      };
     setDraft(next);
     saveImportDraft(next);
   };
