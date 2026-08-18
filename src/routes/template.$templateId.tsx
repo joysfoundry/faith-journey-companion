@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ArrowDown, ArrowUp, Minus, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, GripVertical, Minus, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
@@ -49,6 +49,8 @@ function TemplateBuilder() {
       .map((i) => ({ ...i })),
   );
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [overIndex, setOverIndex] = useState<number | null>(null);
   const [baseId, setBaseId] = useState("");
   const [baseTemplate, setBaseTemplate] = useState<PrayerTemplate | null>(null);
 
@@ -87,6 +89,16 @@ function TemplateBuilder() {
       const a = next[index]!;
       next[index] = next[target]!;
       next[target] = a;
+      return next.map((it, i) => ({ ...it, position: i }));
+    });
+
+  /** Drag-and-drop reordering; the arrow buttons remain for keyboard/touch use. */
+  const reorder = (from: number, to: number) =>
+    setItems((list) => {
+      if (from === to || from < 0 || to < 0 || from >= list.length || to >= list.length) return list;
+      const next = [...list];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved!);
       return next.map((it, i) => ({ ...it, position: i }));
     });
 
@@ -192,8 +204,40 @@ function TemplateBuilder() {
           {items.map((item, index) => {
             const prayer = db.prayers.find((p) => p.id === item.prayer_id);
             return (
-              <li key={item.id} className="soft-card p-3">
+              <li
+                key={item.id}
+                draggable
+                onDragStart={(e) => {
+                  setDragIndex(index);
+                  e.dataTransfer.effectAllowed = "move";
+                }}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  if (dragIndex !== null && overIndex !== index) setOverIndex(index);
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (dragIndex !== null) reorder(dragIndex, index);
+                  setDragIndex(null);
+                  setOverIndex(null);
+                }}
+                onDragEnd={() => {
+                  setDragIndex(null);
+                  setOverIndex(null);
+                }}
+                className={`soft-card p-3 transition ${dragIndex === index ? "opacity-50" : ""} ${
+                  overIndex === index && dragIndex !== null && dragIndex !== index
+                    ? "ring-2 ring-primary"
+                    : ""
+                }`}
+              >
                 <div className="flex items-center gap-2">
+                  <span
+                    aria-hidden
+                    className="cursor-grab touch-none text-muted-foreground active:cursor-grabbing"
+                  >
+                    <GripVertical className="size-4" />
+                  </span>
                   <div className="flex-1">
                     <p className="font-medium">
                       {item.kind === "mystery_placeholder"
