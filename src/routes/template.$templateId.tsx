@@ -307,6 +307,36 @@ function TemplateBuilder() {
                           ? (item.label ?? "Intention")
                           : (prayer?.title ?? "Prayer")}
                     </p>
+                    {item.kind === "prayer" && prayer ? (
+                      (() => {
+                        const versions = versionsOf(prayer);
+                        if (versions.length < 2) return null;
+                        const current = versions.find((v) => v.prayer.id === prayer.id);
+                        return (
+                          <div className="mt-1">
+                            <select
+                              aria-label="Version used in this devotion"
+                              value={prayer.id}
+                              onChange={(e) => update(index, { prayer_id: e.target.value })}
+                              className="h-9 w-full rounded-md border border-input bg-card px-2 text-xs"
+                            >
+                              {versions.map((v) => (
+                                <option key={v.prayer.id} value={v.prayer.id}>
+                                  {v.label}
+                                  {v.prayer.is_default_variant ? " (default)" : ""} — {v.difference}
+                                </option>
+                              ))}
+                            </select>
+                            {current ? (
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                Differs here: “{current.difference}”
+                                {current.hint ? ` · ${current.hint}` : ""}
+                              </p>
+                            ) : null}
+                          </div>
+                        );
+                      })()
+                    ) : null}
                     {item.optional ? (
                       <p className="text-xs text-muted-foreground">Optional</p>
                     ) : null}
