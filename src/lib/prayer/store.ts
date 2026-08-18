@@ -497,6 +497,9 @@ export const mutations = {
           id: templateId,
           name: draft.devotion.name,
           description: draft.devotion.description ?? `Imported from ${draft.source.name}`,
+          // Notes the source gives about the devotion: whatever the user kept,
+          // otherwise the prose blocks detected in the document.
+          ...(sourceNotes ? { notes: sourceNotes } : {}),
           kind: "standard",
           mystery_presentation: "title_and_description",
           mystery_count: 0,
