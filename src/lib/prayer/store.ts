@@ -382,8 +382,13 @@ export const mutations = {
     return {
       db: {
         ...db,
-        templates: [...db.templates, template],
-        template_items: [...db.template_items, ...items],
+        templates: previous
+          ? db.templates.map((t) => (t.id === templateId ? template : t))
+          : [...db.templates, template],
+        template_items: [
+          ...db.template_items.filter((i) => i.template_id !== templateId),
+          ...items,
+        ],
         how_tos: db.how_tos.map((h) => (h.id === howToId ? { ...h, template_id: templateId } : h)),
       },
       templateId,
