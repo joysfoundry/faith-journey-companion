@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { fetchSourceText } from "@/lib/prayer/fetchSource.functions";
+
 import { toast } from "sonner";
 import { AppShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
@@ -64,6 +67,33 @@ function AddPrayersPage() {
   const [prayerType, setPrayerType] = useState<PrayerType>("other");
   const [expressionType, setExpressionType] = useState<ExpressionType>("vocal");
   const [photos, setPhotos] = useState<LocalPhoto[]>([]);
+  const [fetching, setFetching] = useState(false);
+  const loadSource = useServerFn(fetchSourceText);
+
+  /** Pulls the prayer text off a linked page so it can be reviewed like pasted text. */
+  const fetchFromUrl = async () => {
+    const target = url.trim();
+    if (!/^https?:\/\//i.test(target)) {
+      toast.error("Add a full link starting with https://");
+      return;
+    }
+    setFetching(true);
+    try {
+      const result = await loadSource({ data: { url: target } });
+      if (!result.ok || !result.text.trim()) {
+        toast.error(result.error ?? "Nothing readable came back — paste the text instead.");
+        return;
+      }
+      setRaw(result.text);
+      if (sourceType === "written") setSourceType("text");
+      toast.success("Text fetched — check it, then review the prayers.");
+    } catch {
+      toast.error("That page couldn't be read. Copy and paste the text instead.");
+    } finally {
+      setFetching(false);
+    }
+  };
+
   const [draft, setDraft] = useState<ImportDraft | null>(null);
 
   const asDevotion = mode === "devotion";
@@ -261,18 +291,30 @@ function AddPrayersPage() {
 
           <div>
             <Label htmlFor="surl">Link to the source (optional)</Label>
-            <Input
-              id="surl"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://…"
-              className="mt-1 h-12"
-            />
+            <div className="mt-1 flex gap-2">
+              <Input
+                id="surl"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="https://…"
+                className="h-12"
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                className="h-12 shrink-0"
+                disabled={fetching}
+                onClick={fetchFromUrl}
+              >
+                {fetching ? "Fetching…" : "Fetch text"}
+              </Button>
+            </div>
             <p className="mt-1 text-xs text-muted-foreground">
-              A link to where the text comes from. If you leave it blank we'll look for a URL or
-              publisher printed in the text, otherwise the source is recorded as "self".
+              Paste a link and tap “Fetch text” to pull the prayers off the page — you can edit the
+              text before reviewing. If the page blocks us, copy and paste the text instead.
             </p>
           </div>
+
 
           {asDevotion ? (
             <div>
