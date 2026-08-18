@@ -152,6 +152,11 @@ export interface PrayerTemplate {
   description?: string | undefined;
   kind: TemplateKind;
   mystery_presentation: MysteryPresentation;
+  /**
+   * Notes the source itself gives about the devotion — promises, when to pray it,
+   * instructions printed alongside the prayers, or context copied from a URL.
+   */
+  notes?: string | undefined;
   /** Rosary/Novena helper: how many mystery placeholders the template expects. */
   mystery_count: number;
   /** Novena config — duration is never assumed to be nine days. */
@@ -303,7 +308,14 @@ export interface ImportDraft {
    * bundles every saved prayer in document order. The prayers themselves are
    * still stored as single expressions in the library.
    */
-  devotion?: { name: string; description?: string | undefined } | undefined;
+  devotion?:
+    | {
+        name: string;
+        description?: string | undefined;
+        /** Notes from the source about the devotion (promises, when to pray it, context). */
+        notes?: string | undefined;
+      }
+    | undefined;
   created_at: string;
 }
 

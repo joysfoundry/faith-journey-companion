@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { useApp } from "@/lib/prayer/store";
 import { newId } from "@/lib/prayer/compiler";
 import type { MysteryPresentation, PrayerTemplate, TemplateItem } from "@/lib/prayer/types";
@@ -39,6 +40,8 @@ function TemplateBuilder() {
 
   const [name, setName] = useState(existing?.name ?? "");
   const [description, setDescription] = useState(existing?.description ?? "");
+  /** Notes the source gives about the devotion (promises, when to pray it, context). */
+  const [notes, setNotes] = useState(existing?.notes ?? "");
   const [presentation, setPresentation] = useState<MysteryPresentation>(
     existing?.mystery_presentation ?? "title_and_description",
   );
@@ -67,6 +70,7 @@ function TemplateBuilder() {
     setBaseTemplate(source);
     setName((current) => current || `${source.name} (copy)`);
     setDescription(source.description ?? "");
+    setNotes(source.notes ?? "");
     setPresentation(source.mystery_presentation);
     setItems(
       db.template_items
@@ -131,6 +135,7 @@ function TemplateBuilder() {
       built_in: false,
       created_at: existing?.created_at ?? new Date().toISOString(),
       ...(description.trim() ? { description: description.trim() } : {}),
+      ...(notes.trim() ? { notes: notes.trim() } : {}),
       ...(existing?.novena ?? baseTemplate?.novena
         ? { novena: existing?.novena ?? baseTemplate?.novena }
         : {}),
@@ -185,6 +190,21 @@ function TemplateBuilder() {
             onChange={(e) => setDescription(e.target.value)}
             className="mt-1 h-12"
           />
+        </div>
+        <div>
+          <Label htmlFor="notes">Notes from the source</Label>
+          <Textarea
+            id="notes"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={4}
+            placeholder="Promises, when to pray it, instructions printed with the prayers…"
+            className="mt-1"
+          />
+          <p className="mt-1 text-xs text-muted-foreground">
+            What the booklet or web page says about this devotion itself — kept alongside the
+            prayers, not prayed.
+          </p>
         </div>
         <div>
           <Label htmlFor="pres">Mystery presentation</Label>

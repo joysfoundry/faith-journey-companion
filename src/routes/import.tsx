@@ -59,6 +59,8 @@ function AddPrayersPage() {
   const [title, setTitle] = useState("");
   const [raw, setRaw] = useState("");
   const [url, setUrl] = useState("");
+  /** Notes the source gives about the devotion — promises, when to pray it, context. */
+  const [notes, setNotes] = useState("");
   const [prayerType, setPrayerType] = useState<PrayerType>("other");
   const [expressionType, setExpressionType] = useState<ExpressionType>("vocal");
   const [photos, setPhotos] = useState<LocalPhoto[]>([]);
@@ -113,7 +115,12 @@ function AddPrayersPage() {
           expression_type: expressionType,
         })
       : analyzeText(db, raw, source);
-    if (asDevotion) next.devotion = { name: devotionName.trim() };
+    if (asDevotion)
+      next.devotion = {
+        name: devotionName.trim(),
+        // Explicit notes win; otherwise the prose blocks detected in the text are used.
+        ...(notes.trim() ? { notes: notes.trim() } : {}),
+      };
     setDraft(next);
     saveImportDraft(next);
   };
@@ -137,6 +144,7 @@ function AddPrayersPage() {
     setRaw("");
     setTitle("");
     setPhotos([]);
+    setNotes("");
     toast.success(asDevotion ? "Devotion and prayers added" : "Added to your library");
     navigate({ to: "/prayers" });
   };
@@ -265,6 +273,26 @@ function AddPrayersPage() {
               publisher printed in the text, otherwise the source is recorded as "self".
             </p>
           </div>
+
+          {asDevotion ? (
+            <div>
+              <Label htmlFor="dnotes">Notes from the source (optional)</Label>
+              <Textarea
+                id="dnotes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={4}
+                placeholder="Our Lord's promises, when to pray it, instructions printed with the prayers…"
+                className="mt-1"
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                Anything the page or booklet says about the devotion itself. Leave it blank and
+                we'll keep the explanatory paragraphs found in the text.
+              </p>
+            </div>
+          ) : null}
+
+
 
           <PhotoDropzone
             label="Source photos (optional)"
