@@ -342,8 +342,9 @@ export const mutations = {
     const howTo = db.how_tos.find((h) => h.id === howToId);
     if (!howTo) return { db };
     /** Re-running rebuilds the devotion from the guide's current steps. */
-    const previous =
-      howTo.template_id && db.templates.find((t) => t.id === howTo.template_id);
+    const previous = howTo.template_id
+      ? db.templates.find((t) => t.id === howTo.template_id)
+      : undefined;
     const templateId = previous ? previous.id : newId("tmpl");
     const template: PrayerTemplate = {
       id: templateId,
