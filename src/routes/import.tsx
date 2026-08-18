@@ -6,6 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  PrayerFields,
+  buildPrayerRecords,
+  type PrayerDraft,
+} from "@/components/prayer/PrayerFields";
 import { useApp } from "@/lib/prayer/store";
 import { analyzeText, resolveAttribution } from "@/lib/prayer/importer";
 import { newId } from "@/lib/prayer/compiler";
@@ -14,20 +20,20 @@ import type { ImportCandidate, ImportDraft, SourceType } from "@/lib/prayer/type
 export const Route = createFileRoute("/import")({
   head: () => ({
     meta: [
-      { title: "Import Prayers — Faith Journey" },
+      { title: "Add Prayers — Faith Journey" },
       {
         name: "description",
         content:
-          "Paste a booklet or prayer text and review each detected prayer, how-to, or mystery before it enters your library.",
+          "Add prayers to your library by pasting a booklet for review or by typing a single prayer yourself.",
       },
-      { property: "og:title", content: "Import Prayers — Faith Journey" },
+      { property: "og:title", content: "Add Prayers — Faith Journey" },
       {
         property: "og:description",
         content: "Nothing is saved until you review it — duplicates are flagged automatically.",
       },
     ],
   }),
-  component: ImportPage,
+  component: AddPrayersPage,
 });
 
 const DECISIONS: Array<{ value: ImportCandidate["decision"]; label: string }> = [
@@ -37,14 +43,26 @@ const DECISIONS: Array<{ value: ImportCandidate["decision"]; label: string }> = 
   { value: "skip", label: "Skip" },
 ];
 
-function ImportPage() {
-  const { db, saveImportDraft, applyImportDraft } = useApp();
+function AddPrayersPage() {
+  const { db, saveImportDraft, applyImportDraft, upsertPrayer } = useApp();
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [sourceType, setSourceType] = useState<SourceType>("text");
   const [raw, setRaw] = useState("");
   const [url, setUrl] = useState("");
   const [draft, setDraft] = useState<ImportDraft | null>(null);
+  const [single, setSingle] = useState<PrayerDraft>({ title: "", body: "", category: "other" });
+
+  const saveSingle = () => {
+    if (!single.title.trim() || !single.body.trim()) {
+      toast.error("A prayer needs a title and text.");
+      return;
+    }
+    const { prayer, version } = buildPrayerRecords(single);
+    upsertPrayer(prayer, version);
+    toast.success("Prayer added");
+    navigate({ to: "/prayers" });
+  };
 
   const analyze = () => {
     if (!raw.trim()) {
@@ -103,13 +121,23 @@ function ImportPage() {
 
   return (
     <AppShell
-      title="Import"
-      subtitle="Review everything before it joins your library."
-      back={{ to: "/more", label: "More" }}
+      title="Add prayers"
+      subtitle="Paste a bundle to review, or type a single prayer."
+      back={{ to: "/prayers", label: "Prayers" }}
     >
       {!draft ? (
-        <div className="space-y-4">
-          <div className="soft-card space-y-3 p-4">
+        <Tabs defaultValue="paste">
+          <TabsList className="w-full">
+            <TabsTrigger value="paste" className="flex-1">
+              Paste or import
+            </TabsTrigger>
+            <TabsTrigger value="single" className="flex-1">
+              Type one prayer
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="paste" className="mt-4">
+            <div className="soft-card space-y-3 p-4">
             <div>
               <Label htmlFor="sname">Source name</Label>
               <Input
@@ -165,8 +193,18 @@ function ImportPage() {
             <Button className="h-12 w-full" onClick={analyze}>
               Analyze text
             </Button>
-          </div>
-        </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="single" className="mt-4">
+            <div className="soft-card space-y-4 p-4">
+              <PrayerFields draft={single} onChange={setSingle} idPrefix="single" />
+              <Button className="h-12 w-full" onClick={saveSingle}>
+                Save prayer
+              </Button>
+            </div>
+          </TabsContent>
+        </Tabs>
       ) : (
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">

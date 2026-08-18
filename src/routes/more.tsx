@@ -49,8 +49,8 @@ function MorePage() {
     {
       to: "/import",
       icon: Download,
-      title: "Import prayers",
-      desc: "From a booklet, a link, or pasted text",
+      title: "Add prayers",
+      desc: "Paste a booklet or type a single prayer",
     },
   ] as const;
 

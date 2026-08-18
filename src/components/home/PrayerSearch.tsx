@@ -58,7 +58,7 @@ export function PrayerSearch() {
             <li className="flex items-center justify-between gap-3 px-3 py-2.5">
               <span className="text-xs text-muted-foreground">No prayer found.</span>
               <Button asChild size="sm" variant="ghost">
-                <Link to="/prayer/$prayerId" params={{ prayerId: "new" }}>
+                <Link to="/import">
                   Add prayer
                 </Link>
               </Button>

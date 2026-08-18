@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Download, Heart, Plus, Search, Trash2 } from "lucide-react";
+import { Heart, Plus, Search, Trash2 } from "lucide-react";
 import { AppShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,18 +52,11 @@ function LibraryPage() {
       title="Prayers"
       subtitle="Prayers, templates, and how to pray them"
       action={
-        <div className="flex items-center gap-1.5">
-          <Button asChild size="sm" variant="ghost">
-            <Link to="/import">
-              <Download className="size-4" /> Import
-            </Link>
-          </Button>
-          <Button asChild size="sm" variant="secondary">
-            <Link to="/prayer/$prayerId" params={{ prayerId: "new" }}>
-              <Plus className="size-4" /> Prayer
-            </Link>
-          </Button>
-        </div>
+        <Button asChild size="sm" variant="secondary">
+          <Link to="/import">
+            <Plus className="size-4" /> Add prayers
+          </Link>
+        </Button>
       }
     >
       <Tabs defaultValue="prayers">
