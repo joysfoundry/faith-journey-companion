@@ -34,6 +34,11 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
         setDb((d) => mutations.upsertPrayer(d, p, v)),
       addPrayerVersion: (v: Parameters<typeof mutations.addPrayerVersion>[1]) =>
         setDb((d) => mutations.addPrayerVersion(d, v)),
+      addPrayerVariant: (
+        basePrayerId: string,
+        variant: Parameters<typeof mutations.addPrayerVariant>[2],
+      ) => setDb((d) => mutations.addPrayerVariant(d, basePrayerId, variant)),
+      setDefaultVariant: (id: string) => setDb((d) => mutations.setDefaultVariant(d, id)),
       deletePrayer: (id: string) => setDb((d) => mutations.deletePrayer(d, id)),
       saveTemplate: (t: Parameters<typeof mutations.saveTemplate>[1], items: Parameters<typeof mutations.saveTemplate>[2]) =>
         setDb((d) => mutations.saveTemplate(d, t, items)),

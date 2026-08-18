@@ -28,15 +28,90 @@ import {
 
 export const STORAGE_KEY = "prayer-companion-db-v1";
 
+/** Variant group a prayer belongs to. Standalone prayers are their own group. */
+export function variantGroupId(prayer: Prayer): ID {
+  return prayer.variant_group_id ?? prayer.id;
+}
+
+/** All wordings of the same prayer, default first, then alphabetical by label. */
+export function variantsOf(db: Database, prayer: Prayer): Prayer[] {
+  const group = variantGroupId(prayer);
+  return db.prayers
+    .filter((p) => variantGroupId(p) === group)
+    .sort(
+      (a, b) =>
+        Number(Boolean(b.is_default_variant)) - Number(Boolean(a.is_default_variant)) ||
+        (a.variant_label ?? "").localeCompare(b.variant_label ?? ""),
+    );
+}
+
+/**
+ * Backfills the variant model and splits legacy multi-version prayers so each
+ * wording is its own record. Safe to run on every load.
+ */
+export function normalizeVariants(db: Database): Database {
+  const prayers: Prayer[] = [];
+  const versions = [...db.prayer_versions];
+
+  for (const prayer of db.prayers) {
+    const group = variantGroupId(prayer);
+    const own = versions.filter((v) => v.prayer_id === prayer.id);
+    const primary =
+      own.find((v) => v.id === prayer.default_version_id) ?? own[0];
+    prayers.push({
+      ...prayer,
+      variant_group_id: group,
+      variant_label: prayer.variant_label ?? primary?.label ?? "Traditional",
+      is_default_variant: prayer.is_default_variant ?? true,
+      ...(primary ? { default_version_id: primary.id } : {}),
+    });
+
+    // Legacy shape: extra versions on one prayer become sibling records.
+    for (const extra of own.filter((v) => v.id !== primary?.id)) {
+      const cloneId = `${prayer.id}--${extra.id}`;
+      if (db.prayers.some((p) => p.id === cloneId)) continue;
+      prayers.push({
+        ...prayer,
+        id: cloneId,
+        variant_group_id: group,
+        variant_label: extra.label,
+        is_default_variant: false,
+        favorite: false,
+        default_version_id: extra.id,
+      });
+      const index = versions.findIndex((v) => v.id === extra.id);
+      if (index >= 0) versions[index] = { ...extra, prayer_id: cloneId };
+    }
+  }
+
+  // Guarantee exactly one default per group.
+  const seen = new Set<ID>();
+  const withDefaults = prayers.map((p) => {
+    const group = variantGroupId(p);
+    if (p.is_default_variant && !seen.has(group)) {
+      seen.add(group);
+      return p;
+    }
+    return { ...p, is_default_variant: false };
+  });
+  for (const group of new Set(withDefaults.map(variantGroupId))) {
+    if (seen.has(group)) continue;
+    const first = withDefaults.find((p) => variantGroupId(p) === group);
+    if (first) first.is_default_variant = true;
+  }
+
+  return { ...db, prayers: withDefaults, prayer_versions: versions };
+}
+
 export function loadDatabase(): Database {
-  if (typeof window === "undefined") return createSeedDatabase();
+  if (typeof window === "undefined") return normalizeVariants(createSeedDatabase());
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return createSeedDatabase();
+    if (!raw) return normalizeVariants(createSeedDatabase());
     const parsed = JSON.parse(raw) as Partial<Database>;
-    return { ...createSeedDatabase(), ...parsed };
+    return normalizeVariants({ ...createSeedDatabase(), ...parsed });
   } catch {
-    return createSeedDatabase();
+    return normalizeVariants(createSeedDatabase());
   }
 }
 
@@ -52,6 +127,11 @@ export interface AppStore {
   toggleFavorite: (prayerId: ID) => void;
   upsertPrayer: (prayer: Prayer, version: PrayerVersion) => void;
   addPrayerVersion: (version: PrayerVersion) => void;
+  addPrayerVariant: (
+    basePrayerId: ID,
+    variant: { label: string; body: string; makeDefault?: boolean },
+  ) => void;
+  setDefaultVariant: (prayerId: ID) => void;
   deletePrayer: (prayerId: ID) => void;
   saveTemplate: (template: PrayerTemplate, items: TemplateItem[]) => void;
   deleteTemplate: (templateId: ID) => void;
@@ -103,10 +183,75 @@ export const mutations = {
   addPrayerVersion(db: Database, version: PrayerVersion): Database {
     return { ...db, prayer_versions: [...db.prayer_versions, version] };
   },
-  deletePrayer(db: Database, prayerId: ID): Database {
+  /** Adds another wording of a prayer as its own record in the same group. */
+  addPrayerVariant(
+    db: Database,
+    basePrayerId: ID,
+    variant: { label: string; body: string; makeDefault?: boolean },
+  ): Database {
+    const base = db.prayers.find((p) => p.id === basePrayerId);
+    if (!base) return db;
+    const now = new Date().toISOString();
+    const prayerId = newId("prayer");
+    const versionId = newId("ver");
+    const group = variantGroupId(base);
+    const next: Database = {
+      ...db,
+      prayers: [
+        ...db.prayers,
+        {
+          ...base,
+          id: prayerId,
+          variant_group_id: group,
+          variant_label: variant.label,
+          is_default_variant: false,
+          favorite: false,
+          default_version_id: versionId,
+          created_at: now,
+        },
+      ],
+      prayer_versions: [
+        ...db.prayer_versions,
+        {
+          id: versionId,
+          prayer_id: prayerId,
+          label: variant.label,
+          body: variant.body,
+          language: "en",
+          created_at: now,
+        },
+      ],
+    };
+    return variant.makeDefault ? mutations.setDefaultVariant(next, prayerId) : next;
+  },
+  /** Makes one wording the default for its whole variant group. */
+  setDefaultVariant(db: Database, prayerId: ID): Database {
+    const target = db.prayers.find((p) => p.id === prayerId);
+    if (!target) return db;
+    const group = variantGroupId(target);
     return {
       ...db,
-      prayers: db.prayers.filter((p) => p.id !== prayerId),
+      prayers: db.prayers.map((p) =>
+        variantGroupId(p) === group ? { ...p, is_default_variant: p.id === prayerId } : p,
+      ),
+    };
+  },
+  deletePrayer(db: Database, prayerId: ID): Database {
+    const removed = db.prayers.find((p) => p.id === prayerId);
+    let prayers = db.prayers.filter((p) => p.id !== prayerId);
+    // Promote a sibling wording when the default one is deleted.
+    if (removed?.is_default_variant) {
+      const group = variantGroupId(removed);
+      const sibling = prayers.find((p) => variantGroupId(p) === group);
+      if (sibling) {
+        prayers = prayers.map((p) =>
+          p.id === sibling.id ? { ...p, is_default_variant: true } : p,
+        );
+      }
+    }
+    return {
+      ...db,
+      prayers,
       prayer_versions: db.prayer_versions.filter((v) => v.prayer_id !== prayerId),
       template_items: db.template_items.filter((i) => i.prayer_id !== prayerId),
     };
@@ -219,16 +364,39 @@ export const mutations = {
         continue;
       }
       if (c.decision === "save_alternate_version" && c.duplicate_of_prayer_id) {
-        next = mutations.addPrayerVersion(next, {
-          id: newId("ver"),
-          prayer_id: c.duplicate_of_prayer_id,
-          label: `From ${draft.source.name}`,
-          body: c.body,
-          language: "en",
-          source_id: draft.source.id,
-          created_at: new Date().toISOString(),
-        });
-        bundle.push({ prayer_id: c.duplicate_of_prayer_id, repetition_count });
+        // Alternate wordings are their own prayer record inside the same group,
+        // so the imported devotion can use this exact wording.
+        const base = next.prayers.find((p) => p.id === c.duplicate_of_prayer_id);
+        const variantId = newId("prayer");
+        const variantVersionId = newId("ver");
+        if (base) {
+          next = mutations.upsertPrayer(
+            next,
+            {
+              ...base,
+              id: variantId,
+              variant_group_id: variantGroupId(base),
+              variant_label: `From ${draft.source.name}`,
+              is_default_variant: false,
+              favorite: false,
+              default_version_id: variantVersionId,
+              source_id: draft.source.id,
+              created_at: new Date().toISOString(),
+            },
+            {
+              id: variantVersionId,
+              prayer_id: variantId,
+              label: `From ${draft.source.name}`,
+              body: c.body,
+              language: "en",
+              source_id: draft.source.id,
+              created_at: new Date().toISOString(),
+            },
+          );
+          bundle.push({ prayer_id: variantId, repetition_count });
+        } else {
+          bundle.push({ prayer_id: c.duplicate_of_prayer_id, repetition_count });
+        }
         continue;
       }
       if (c.classification === "prayer" || c.classification === "prayer_version") {
@@ -245,6 +413,9 @@ export const mutations = {
             tags: ["imported"],
             favorite: false,
             default_version_id: versionId,
+            variant_group_id: prayerId,
+            variant_label: "Imported",
+            is_default_variant: true,
             source_id: draft.source.id,
             created_at: new Date().toISOString(),
           },

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { Link, createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { AppShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
@@ -10,8 +10,7 @@ import {
   buildPrayerRecords,
   type PrayerDraft,
 } from "@/components/prayer/PrayerFields";
-import { useApp } from "@/lib/prayer/store";
-import { newId } from "@/lib/prayer/compiler";
+import { useApp, variantsOf } from "@/lib/prayer/store";
 
 export const Route = createFileRoute("/prayer/$prayerId")({
   head: () => ({
@@ -31,31 +30,47 @@ export const Route = createFileRoute("/prayer/$prayerId")({
 
 function PrayerDetail() {
   const { prayerId } = Route.useParams();
-  const { db, upsertPrayer, addPrayerVersion, deletePrayer, toggleFavorite } = useApp();
+  const {
+    db,
+    upsertPrayer,
+    addPrayerVariant,
+    setDefaultVariant,
+    deletePrayer,
+    toggleFavorite,
+  } = useApp();
   const navigate = useNavigate();
 
   const prayer = db.prayers.find((p) => p.id === prayerId);
-  const versions = db.prayer_versions.filter((v) => v.prayer_id === prayerId);
-  const defaultVersion = versions.find((v) => v.id === prayer?.default_version_id) ?? versions[0];
+  const version = db.prayer_versions.find((v) => v.prayer_id === prayerId);
+  // Each wording is its own prayer record; siblings share a variant group.
+  const siblings = prayer ? variantsOf(db, prayer) : [];
 
   const [draft, setDraft] = useState<PrayerDraft>({
     title: prayer?.title ?? "",
-    body: defaultVersion?.body ?? "",
+    body: version?.body ?? "",
     prayerType: prayer?.prayer_type ?? "devotional",
     expressionType: prayer?.expression_type ?? "vocal",
   });
   const [newVersionLabel, setNewVersionLabel] = useState("");
   const [newVersionBody, setNewVersionBody] = useState("");
 
-  const source = db.sources.find((s) => s.id === (prayer?.source_id ?? defaultVersion?.source_id));
+  const source = db.sources.find((s) => s.id === (prayer?.source_id ?? version?.source_id));
 
   const save = () => {
     if (!draft.title.trim() || !draft.body.trim()) {
       toast.error("A prayer needs a title and text.");
       return;
     }
-    const records = buildPrayerRecords(draft, { prayer, version: defaultVersion });
-    upsertPrayer(records.prayer, records.version);
+    const records = buildPrayerRecords(draft, { prayer, version });
+    upsertPrayer(
+      {
+        ...records.prayer,
+        ...(prayer?.variant_group_id ? { variant_group_id: prayer.variant_group_id } : {}),
+        ...(prayer?.variant_label ? { variant_label: prayer.variant_label } : {}),
+        is_default_variant: prayer?.is_default_variant ?? true,
+      },
+      records.version,
+    );
     toast.success("Prayer saved");
     navigate({ to: "/prayers" });
   };
@@ -66,6 +81,12 @@ function PrayerDetail() {
       back={{ to: "/prayers", label: "Prayers" }}
     >
       <div className="space-y-4">
+        {prayer?.variant_label ? (
+          <p className="text-sm text-muted-foreground">
+            Version: {prayer.variant_label}
+            {prayer.is_default_variant ? " · default" : ""}
+          </p>
+        ) : null}
         <PrayerFields draft={draft} onChange={setDraft} />
         <Button className="h-12 w-full" onClick={save}>
           Save prayer
@@ -83,36 +104,45 @@ function PrayerDetail() {
 
             <section className="soft-card p-4">
               <p className="eyebrow">Versions</p>
-              {versions.length > 1 ? (
-                <p className="mt-1 text-xs text-muted-foreground">
-                  The default version is the one used when you pray.
-                </p>
-              ) : null}
+              <p className="mt-1 text-xs text-muted-foreground">
+                Each version is its own record, so a devotion can use any wording. The
+                default one is used when you pray and sits at the top of the library.
+              </p>
               <ul className="mt-2 space-y-3">
-                {versions.map((v) => {
-                  const isDefault = v.id === (prayer.default_version_id ?? versions[0]?.id);
+                {siblings.map((v) => {
+                  const body =
+                    db.prayer_versions.find((x) => x.prayer_id === v.id)?.body ?? "";
                   return (
                     <li key={v.id} className="flex items-start gap-3">
-                      {versions.length > 1 ? (
+                      {siblings.length > 1 ? (
                         <input
                           type="radio"
                           name="default-version"
                           className="mt-1 size-4"
-                          checked={isDefault}
-                          aria-label={`Use ${v.label} as default`}
+                          checked={Boolean(v.is_default_variant)}
+                          aria-label={`Use ${v.variant_label ?? "this version"} as default`}
                           onChange={() => {
-                            upsertPrayer({ ...prayer, default_version_id: v.id }, v);
-                            setDraft((d) => ({ ...d, body: v.body }));
-                            toast.success(`“${v.label}” is now the default`);
+                            setDefaultVariant(v.id);
+                            toast.success(`“${v.variant_label ?? "Version"}” is now the default`);
                           }}
                         />
                       ) : null}
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium">
-                          {v.label}
-                          {isDefault ? " · default" : ""}
+                          {v.id === prayer.id ? (
+                            <>{v.variant_label ?? "Traditional"}</>
+                          ) : (
+                            <Link
+                              to="/prayer/$prayerId"
+                              params={{ prayerId: v.id }}
+                              className="underline"
+                            >
+                              {v.variant_label ?? "Alternate wording"}
+                            </Link>
+                          )}
+                          {v.is_default_variant ? " · default" : ""}
                         </p>
-                        <p className="line-clamp-3 text-sm text-muted-foreground">{v.body}</p>
+                        <p className="line-clamp-3 text-sm text-muted-foreground">{body}</p>
                       </div>
                     </li>
                   );
@@ -136,13 +166,9 @@ function PrayerDetail() {
                   className="w-full"
                   onClick={() => {
                     if (!newVersionLabel.trim() || !newVersionBody.trim()) return;
-                    addPrayerVersion({
-                      id: newId("ver"),
-                      prayer_id: prayer.id,
+                    addPrayerVariant(prayer.id, {
                       label: newVersionLabel.trim(),
                       body: newVersionBody.trim(),
-                      language: "en",
-                      created_at: new Date().toISOString(),
                     });
                     setNewVersionLabel("");
                     setNewVersionBody("");
@@ -153,6 +179,7 @@ function PrayerDetail() {
                 </Button>
               </div>
             </section>
+
 
             {source ? (
               <section className="soft-card p-4">
