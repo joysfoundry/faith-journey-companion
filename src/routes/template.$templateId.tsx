@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useApp, variantsOf } from "@/lib/prayer/store";
-import { distinctivePhrase, lengthHint } from "@/lib/prayer/variantDiff";
 import { newId } from "@/lib/prayer/compiler";
 import type { MysteryPresentation, Prayer, PrayerTemplate, TemplateItem } from "@/lib/prayer/types";
 
