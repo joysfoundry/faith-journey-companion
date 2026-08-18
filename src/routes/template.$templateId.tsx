@@ -81,7 +81,8 @@ function TemplateBuilder() {
     );
   };
 
-  const id = existing?.id ?? useMemo(() => newId("tpl"), []);
+  const fallbackId = useMemo(() => newId("tpl"), []);
+  const id = existing?.id ?? fallbackId;
 
   const update = (index: number, patch: Partial<TemplateItem>) =>
     setItems((list) => list.map((it, i) => (i === index ? { ...it, ...patch } : it)));
