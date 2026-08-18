@@ -18,6 +18,7 @@ import type {
   TemplateItem,
 } from "./types";
 import { createSeedDatabase } from "./seed";
+import { detectRepetitionCount, stripRepetition } from "./importer";
 import {
   completeSessionItem,
   generatePrayerSession,
@@ -206,8 +207,17 @@ export const mutations = {
     const draft = db.import_drafts.find((d) => d.id === draftId);
     if (!draft) return db;
     let next = db;
+    /** Prayers saved by this draft, in document order — used to build the devotion. */
+    const bundle: Array<{ prayer_id: ID; repetition_count: number }> = [];
+    const headings: Array<{ index: number; label: string }> = [];
     for (const c of draft.candidates) {
-      if (c.decision === "skip" || c.decision === "use_existing") continue;
+      if (c.decision === "skip") continue;
+      const repetition_count = detectRepetitionCount(c.title, c.body);
+      if (c.decision === "use_existing") {
+        if (c.duplicate_of_prayer_id)
+          bundle.push({ prayer_id: c.duplicate_of_prayer_id, repetition_count });
+        continue;
+      }
       if (c.decision === "save_alternate_version" && c.duplicate_of_prayer_id) {
         next = mutations.addPrayerVersion(next, {
           id: newId("ver"),
@@ -218,16 +228,18 @@ export const mutations = {
           source_id: draft.source.id,
           created_at: new Date().toISOString(),
         });
+        bundle.push({ prayer_id: c.duplicate_of_prayer_id, repetition_count });
         continue;
       }
       if (c.classification === "prayer" || c.classification === "prayer_version") {
         const prayerId = newId("prayer");
         const versionId = newId("ver");
+        const title = draft.devotion ? stripRepetition(c.title) || c.title : c.title;
         next = mutations.upsertPrayer(
           next,
           {
             id: prayerId,
-            title: c.title,
+            title,
             prayer_type: c.prayer_type ?? "devotional",
             expression_type: c.expression_type ?? "vocal",
             tags: ["imported"],
@@ -246,6 +258,10 @@ export const mutations = {
             created_at: new Date().toISOString(),
           },
         );
+        bundle.push({ prayer_id: prayerId, repetition_count });
+      }
+      if (c.classification === "mystery" || c.classification === "mystery_meditation") {
+        headings.push({ index: bundle.length, label: c.title });
       }
       if (c.classification === "how_to") {
         const howToId = newId("howto");
@@ -276,6 +292,60 @@ export const mutations = {
         };
       }
     }
+
+    // A devotion is a bundle over the same single prayers, never a copy of them.
+    if (draft.devotion && bundle.length > 0) {
+      const templateId = newId("template");
+      const items: TemplateItem[] = [];
+      bundle.forEach((entry, index) => {
+        const heading = headings.find((h) => h.index === index);
+        if (heading) {
+          items.push({
+            id: newId("titem"),
+            template_id: templateId,
+            kind: "heading",
+            position: items.length,
+            label: heading.label,
+            repetition_count: 1,
+            optional: false,
+          });
+        }
+        items.push({
+          id: newId("titem"),
+          template_id: templateId,
+          kind: "prayer",
+          position: items.length,
+          prayer_id: entry.prayer_id,
+          repetition_count: entry.repetition_count,
+          optional: false,
+        });
+      });
+      next = mutations.saveTemplate(
+        next,
+        {
+          id: templateId,
+          name: draft.devotion.name,
+          description: draft.devotion.description ?? `Imported from ${draft.source.name}`,
+          kind: "standard",
+          mystery_presentation: "title_and_description",
+          mystery_count: 0,
+          source_id: draft.source.id,
+          built_in: false,
+          created_at: new Date().toISOString(),
+        },
+        items,
+      );
+      // Imported how-to guides with no target belong to the devotion just created.
+      next = {
+        ...next,
+        how_tos: next.how_tos.map((h) =>
+          h.source_id === draft.source.id && !h.template_id
+            ? { ...h, template_id: templateId }
+            : h,
+        ),
+      };
+    }
+
     return {
       ...next,
       import_drafts: next.import_drafts.filter((d) => d.id !== draftId),
