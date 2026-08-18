@@ -83,16 +83,40 @@ function PrayerDetail() {
 
             <section className="soft-card p-4">
               <p className="eyebrow">Versions</p>
+              {versions.length > 1 ? (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  The default version is the one used when you pray.
+                </p>
+              ) : null}
               <ul className="mt-2 space-y-3">
-                {versions.map((v) => (
-                  <li key={v.id}>
-                    <p className="text-sm font-medium">
-                      {v.label}
-                      {v.id === prayer.default_version_id ? " · default" : ""}
-                    </p>
-                    <p className="line-clamp-3 text-sm text-muted-foreground">{v.body}</p>
-                  </li>
-                ))}
+                {versions.map((v) => {
+                  const isDefault = v.id === (prayer.default_version_id ?? versions[0]?.id);
+                  return (
+                    <li key={v.id} className="flex items-start gap-3">
+                      {versions.length > 1 ? (
+                        <input
+                          type="radio"
+                          name="default-version"
+                          className="mt-1 size-4"
+                          checked={isDefault}
+                          aria-label={`Use ${v.label} as default`}
+                          onChange={() => {
+                            upsertPrayer({ ...prayer, default_version_id: v.id }, v);
+                            setDraft((d) => ({ ...d, body: v.body }));
+                            toast.success(`“${v.label}” is now the default`);
+                          }}
+                        />
+                      ) : null}
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium">
+                          {v.label}
+                          {isDefault ? " · default" : ""}
+                        </p>
+                        <p className="line-clamp-3 text-sm text-muted-foreground">{v.body}</p>
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
               <div className="mt-4 space-y-2">
                 <Input
