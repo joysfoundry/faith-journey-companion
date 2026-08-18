@@ -20,6 +20,9 @@ import {
 import type { ImportCandidate, ImportDraft, SourceType } from "@/lib/prayer/types";
 
 export const Route = createFileRoute("/import")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    mode: search["mode"] === "devotion" ? ("devotion" as const) : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Add Prayers — Faith Journey" },
@@ -55,7 +58,10 @@ const SOURCE_TYPES: Array<{ value: SourceType; label: string }> = [
 function AddPrayersPage() {
   const { db, saveImportDraft, applyImportDraft } = useApp();
   const navigate = useNavigate();
+  const { mode } = Route.useSearch();
   const [name, setName] = useState("");
+  const [asDevotion, setAsDevotion] = useState(mode === "devotion");
+  const [devotionName, setDevotionName] = useState("");
   const [sourceType, setSourceType] = useState<SourceType>("written");
   const [title, setTitle] = useState("");
   const [raw, setRaw] = useState("");
@@ -64,7 +70,7 @@ function AddPrayersPage() {
   const [expressionType, setExpressionType] = useState<ExpressionType>("vocal");
   const [draft, setDraft] = useState<ImportDraft | null>(null);
 
-  const isWritten = sourceType === "written";
+  const isWritten = sourceType === "written" && !asDevotion;
 
   const analyze = () => {
     if (!raw.trim()) {
@@ -73,6 +79,10 @@ function AddPrayersPage() {
     }
     if (isWritten && !title.trim()) {
       toast.error("Give the prayer a title.");
+      return;
+    }
+    if (asDevotion && !devotionName.trim()) {
+      toast.error("Name the devotion.");
       return;
     }
     const { url: resolvedUrl, attribution } = resolveAttribution(raw, url);
@@ -91,6 +101,7 @@ function AddPrayersPage() {
           expression_type: expressionType,
         })
       : analyzeText(db, raw, source);
+    if (asDevotion) next.devotion = { name: devotionName.trim() };
     setDraft(next);
     saveImportDraft(next);
   };
@@ -113,14 +124,18 @@ function AddPrayersPage() {
     setDraft(null);
     setRaw("");
     setTitle("");
-    toast.success("Added to your library");
+    toast.success(asDevotion ? "Devotion and prayers added" : "Added to your library");
     navigate({ to: "/prayers" });
   };
 
   return (
     <AppShell
-      title="Add prayers"
-      subtitle="One prayer or a whole booklet — written or pasted."
+      title={asDevotion ? "New devotion" : "Add prayers"}
+      subtitle={
+        asDevotion
+          ? "Paste the devotion. Each prayer is saved on its own, then bundled in order."
+          : "One prayer or a whole booklet — written or pasted."
+      }
       back={{ to: "/prayers", label: "Prayers" }}
     >
       {!draft ? (
@@ -140,6 +155,35 @@ function AddPrayersPage() {
               ))}
             </select>
           </div>
+
+          <label className="flex items-start gap-3 rounded-md border border-input bg-card/60 p-3">
+            <input
+              type="checkbox"
+              checked={asDevotion}
+              onChange={(e) => setAsDevotion(e.target.checked)}
+              className="mt-1 size-4"
+            />
+            <span className="text-sm">
+              <span className="font-medium">Also create a devotion</span>
+              <span className="block text-xs text-muted-foreground">
+                Bundles the prayers below, in order, into one devotion you can pray. The prayers stay
+                in your library as single expressions.
+              </span>
+            </span>
+          </label>
+
+          {asDevotion ? (
+            <div>
+              <Label htmlFor="dname">Devotion name</Label>
+              <Input
+                id="dname"
+                value={devotionName}
+                onChange={(e) => setDevotionName(e.target.value)}
+                placeholder="Divine Mercy Chaplet"
+                className="mt-1 h-12"
+              />
+            </div>
+          ) : null}
 
           {isWritten ? (
             <div>
