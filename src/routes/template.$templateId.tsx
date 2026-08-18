@@ -134,27 +134,14 @@ function TemplateBuilder() {
 
   const mysteryCount = items.filter((i) => i.kind === "mystery_placeholder").length;
 
-  /** Default wording of a prayer record — what the devotion will actually pray. */
-  const bodyOf = (prayer: Prayer) =>
-    db.prayer_versions.find((v) => v.id === prayer.default_version_id)?.body ?? "";
-
-  /**
-   * Every wording of a prayer plus the line that sets it apart, so choosing a
-   * version in a devotion isn't guesswork.
-   */
+  /** Every wording of a prayer, labelled so a devotion can pick one. */
   const versionsOf = (prayer: Prayer) => {
     const siblings = variantsOf(db, prayer);
     if (siblings.length < 2) return [];
-    return siblings.map((sibling) => {
-      const body = bodyOf(sibling);
-      const others = siblings.filter((s) => s.id !== sibling.id).map(bodyOf);
-      return {
-        prayer: sibling,
-        label: sibling.variant_label ?? (sibling.is_default_variant ? "Default" : "Alternate"),
-        difference: distinctivePhrase(body, others),
-        hint: lengthHint(body, others[0] ?? body),
-      };
-    });
+    return siblings.map((sibling) => ({
+      prayer: sibling,
+      label: sibling.variant_label ?? (sibling.is_default_variant ? "Default" : "Alternate"),
+    }));
   };
 
   /** One row per prayer group for the picker: the default first, versions nested. */
