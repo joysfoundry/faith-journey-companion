@@ -178,10 +178,71 @@ export const mutations = {
   addPrayerVersion(db: Database, version: PrayerVersion): Database {
     return { ...db, prayer_versions: [...db.prayer_versions, version] };
   },
-  deletePrayer(db: Database, prayerId: ID): Database {
+  /** Adds another wording of a prayer as its own record in the same group. */
+  addPrayerVariant(
+    db: Database,
+    basePrayerId: ID,
+    variant: { label: string; body: string; makeDefault?: boolean },
+  ): Database {
+    const base = db.prayers.find((p) => p.id === basePrayerId);
+    if (!base) return db;
+    const now = new Date().toISOString();
+    const prayerId = newId("prayer");
+    const versionId = newId("ver");
+    const group = variantGroupId(base);
+    const next: Database = {
+      ...db,
+      prayers: [
+        ...db.prayers,
+        {
+          ...base,
+          id: prayerId,
+          variant_group_id: group,
+          variant_label: variant.label,
+          is_default_variant: false,
+          favorite: false,
+          default_version_id: versionId,
+          created_at: now,
+        },
+      ],
+      prayer_versions: [
+        ...db.prayer_versions,
+        {
+          id: versionId,
+          prayer_id: prayerId,
+          label: variant.label,
+          body: variant.body,
+          language: "en",
+          created_at: now,
+        },
+      ],
+    };
+    return variant.makeDefault ? mutations.setDefaultVariant(next, prayerId) : next;
+  },
+  /** Makes one wording the default for its whole variant group. */
+  setDefaultVariant(db: Database, prayerId: ID): Database {
+    const target = db.prayers.find((p) => p.id === prayerId);
+    if (!target) return db;
+    const group = variantGroupId(target);
     return {
       ...db,
-      prayers: db.prayers.filter((p) => p.id !== prayerId),
+      prayers: db.prayers.map((p) =>
+        variantGroupId(p) === group ? { ...p, is_default_variant: p.id === prayerId } : p,
+      ),
+    };
+  },
+  deletePrayer(db: Database, prayerId: ID): Database {
+    const removed = db.prayers.find((p) => p.id === prayerId);
+    const prayers = db.prayers.filter((p) => p.id !== prayerId);
+    // Promote a sibling wording when the default one is deleted.
+    if (removed?.is_default_variant) {
+      const group = variantGroupId(removed);
+      const sibling = prayers.find((p) => variantGroupId(p) === group);
+      if (sibling) sibling.is_default_variant = true;
+    }
+    return {
+      ...db,
+      prayers,
       prayer_versions: db.prayer_versions.filter((v) => v.prayer_id !== prayerId),
       template_items: db.template_items.filter((i) => i.prayer_id !== prayerId),
     };
