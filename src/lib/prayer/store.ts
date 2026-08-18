@@ -228,7 +228,8 @@ export const mutations = {
           {
             id: prayerId,
             title: c.title,
-            category: "other",
+            prayer_type: c.prayer_type ?? "devotional",
+            expression_type: c.expression_type ?? "vocal",
             tags: ["imported"],
             favorite: false,
             default_version_id: versionId,

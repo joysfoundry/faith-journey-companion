@@ -1,20 +1,29 @@
-import type { Database, Mystery, MysteryContent, TemplateItem } from "./types";
+import type {
+  Database,
+  ExpressionType,
+  Mystery,
+  MysteryContent,
+  PrayerType,
+  TemplateItem,
+} from "./types";
 
 const now = "2024-01-01T00:00:00.000Z";
 
 function prayer(
   id: string,
   title: string,
-  category: Database["prayers"][number]["category"],
+  prayerType: PrayerType,
   body: string,
   tags: string[] = [],
   sourceId = "src-tradition",
+  expressionType: ExpressionType = "vocal",
 ) {
   return {
     prayer: {
       id,
       title,
-      category,
+      prayer_type: prayerType,
+      expression_type: expressionType,
       tags,
       favorite: ["our-father", "hail-mary", "glory-be"].includes(id),
       default_version_id: `${id}-v1`,
@@ -37,7 +46,7 @@ const base = [
   prayer(
     "apostles-creed",
     "Apostles' Creed",
-    "core",
+    "liturgical",
     `I believe in God, the Father Almighty, Creator of heaven and earth; and in Jesus Christ, His only Son, our Lord; Who was conceived by the Holy Spirit, born of the Virgin Mary, suffered under Pontius Pilate, was crucified, died, and was buried. He descended into hell; the third day He rose again from the dead; He ascended into heaven, is seated at the right hand of God, the Father Almighty; from thence He shall come to judge the living and the dead.
 
 I believe in the Holy Spirit, the Holy Catholic Church, the communion of Saints, the forgiveness of sins, the resurrection of the body and life everlasting. Amen.`,
@@ -46,7 +55,7 @@ I believe in the Holy Spirit, the Holy Catholic Church, the communion of Saints,
   prayer(
     "our-father",
     "Our Father",
-    "core",
+    "liturgical",
     `Our Father, who art in heaven; hallowed be Thy name; Thy kingdom come; Thy will be done on earth as it is in heaven.
 
 Give us this day our daily bread; and forgive us our trespasses as we forgive those who trespass against us, and lead us not into temptation; but deliver us from evil. Amen.`,
@@ -55,7 +64,7 @@ Give us this day our daily bread; and forgive us our trespasses as we forgive th
   prayer(
     "hail-mary",
     "Hail Mary",
-    "marian",
+    "traditional_expression",
     `Hail Mary, full of grace, the Lord is with thee; blessed art thou among women, and blessed is the fruit of thy womb, Jesus.
 
 Holy Mary, Mother of God, pray for us sinners, now and at the hour of our death. Amen.`,
@@ -64,7 +73,7 @@ Holy Mary, Mother of God, pray for us sinners, now and at the hour of our death.
   prayer(
     "glory-be",
     "Glory Be",
-    "core",
+    "liturgical",
     `Glory be to the Father, and to the Son, and to the Holy Spirit.
 
 As it was in the beginning, is now, and ever shall be, world without end. Amen.`,
@@ -80,7 +89,7 @@ As it was in the beginning, is now, and ever shall be, world without end. Amen.`
   prayer(
     "hail-holy-queen",
     "Hail, Holy Queen",
-    "closing",
+    "devotional",
     `Hail, Holy Queen, Mother of Mercy; hail our life, our sweetness and our hope! To thee do we cry, poor banished children of Eve; to thee do we send up our sighs, mourning and weeping in this valley of tears.
 
 Turn then, most gracious advocate, your eyes of mercy towards us; and after this our exile, show to us the blessed fruit of your womb, Jesus. O clement, O loving, O sweet Virgin Mary!`,
@@ -89,7 +98,7 @@ Turn then, most gracious advocate, your eyes of mercy towards us; and after this
   prayer(
     "prayer-for-peace",
     "Prayer for Peace",
-    "family",
+    "devotional",
     `Lord Jesus Christ, Son of the Father, send now Your Spirit over the earth. Let the Holy Spirit live in the hearts of all nations, that they may be preserved from degeneration, disaster and war. May the Lady of All Nations, who once was Mary, be our Advocate. Amen.`,
     ["family", "peace"],
     "src-caro-booklet",
@@ -97,7 +106,7 @@ Turn then, most gracious advocate, your eyes of mercy towards us; and after this
   prayer(
     "sign-of-the-cross",
     "Sign of the Cross",
-    "core",
+    "traditional_expression",
     `In the name of the Father, and of the Son, and of the Holy Spirit. Amen.`,
     ["rosary"],
   ),
