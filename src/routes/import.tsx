@@ -288,6 +288,25 @@ function AddPrayersPage() {
               (draft.source.attribution ?? "self")
             )}
           </p>
+          {photos.length ? (
+            <div>
+              <p className="text-sm">
+                <span className="eyebrow">Source photos</span> {photos.length} — saved with this
+                source and added to your Gallery.
+              </p>
+              <ul className="mt-2 flex flex-wrap gap-2">
+                {photos.map((p) => (
+                  <li key={p.id}>
+                    <img
+                      src={p.previewUrl}
+                      alt={p.name}
+                      className="h-20 w-20 rounded-md border border-border object-cover"
+                    />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
           {draft.candidates.map((c) => {
             const duplicate = db.prayers.find((p) => p.id === c.duplicate_of_prayer_id);
             const isPrayer = c.classification === "prayer" || c.classification === "prayer_version";
