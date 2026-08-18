@@ -47,7 +47,14 @@ export interface Source {
  */
 export type { DevotionType, ExpressionType, PrayerType } from "@/domain/taxonomy";
 
-/** Reusable prayer content. Never carries completion state. */
+/**
+ * Reusable prayer content. Never carries completion state.
+ *
+ * Every wording of the same prayer is its own Prayer record. Records that are
+ * wordings of the same prayer share `variant_group_id`, and exactly one of them
+ * has `is_default_variant`. Devotions can therefore point at any wording while
+ * the library groups them and shows the default first.
+ */
 export interface Prayer {
   id: ID;
   title: string;
@@ -57,6 +64,12 @@ export interface Prayer {
   tags: string[];
   favorite: boolean;
   default_version_id: ID;
+  /** Shared by all wordings of the same prayer. Defaults to the record's own id. */
+  variant_group_id?: ID | undefined;
+  /** Human label for this wording ("Traditional", "Family wording", ...). */
+  variant_label?: string | undefined;
+  /** Exactly one record per variant group is the default. */
+  is_default_variant?: boolean | undefined;
   source_id?: ID | undefined;
   created_at: string;
 }
