@@ -159,6 +159,46 @@ export function useApp(): AppStore {
   return ctx;
 }
 
+/**
+ * Turns one how-to step into the devotion component it describes, so a guide
+ * populates a real template instead of a list of plain headings.
+ */
+function templateItemFromStep(db: Database, raw: string): Partial<TemplateItem> & { kind: TemplateItem["kind"] } {
+  const text = raw.trim();
+  const repetition = Number(/[(\s]x\s*(\d+)|\((\d+)\s*x\)/i.exec(text)?.[1] ?? /\((\d+)\s*x\)/i.exec(text)?.[1] ?? 1) || 1;
+  const clean = text.replace(/[(\s]x\s*\d+\)?/i, "").replace(/\(\d+\s*x\)/i, "").trim();
+
+  // Versicle / response pair, written on one or two lines.
+  const vr = /v[/.\s]*\.?\s*(.+?)\s*r[/.\s]*\.?\s*(.+)/is.exec(text);
+  if (/\bv\s*\/?\.\s*/i.test(text) && vr) {
+    return {
+      kind: "salutation",
+      label: clean.split(/[:\n]/)[0]?.slice(0, 60) || "Salutation",
+      versicle: vr[1]?.trim(),
+      response: vr[2]?.trim(),
+      repetition_count: repetition,
+    };
+  }
+
+  if (/\b(mystery|mysteries|decade)\b/i.test(clean)) {
+    return { kind: "mystery_placeholder", label: clean };
+  }
+
+  if (/\b(intention|petition)s?\b/i.test(clean)) {
+    return { kind: "intention", label: clean };
+  }
+
+  // Match a library prayer by title mentioned in the step.
+  const match = db.prayers
+    .filter((p) => p.is_default_variant !== false)
+    .find((p) => p.title.length > 3 && clean.toLowerCase().includes(p.title.toLowerCase()));
+  if (match) {
+    return { kind: "prayer", prayer_id: match.id, repetition_count: repetition };
+  }
+
+  return { kind: "heading", label: clean || text };
+}
+
 /* ---------------- pure reducers used by the provider ---------------- */
 
 export const mutations = {
