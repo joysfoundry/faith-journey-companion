@@ -78,26 +78,85 @@ function classify(title: string, body: string): { classification: ImportClassifi
   return { classification: "source_material", confidence: 0.3 };
 }
 
+/** Page furniture that carries no prayer text (audio players, bead markers, labels). */
+const NOISE_LINE = [
+  /^latin$/i,
+  /^english$/i,
+  /^[○●•◦*\-\s]+$/,
+  /^audio player$/i,
+  /^\d{1,2}:\d{2}$/,
+  /^use up\/down arrow keys/i,
+  /^(share|print|tweet|advertisement|comments?|related posts?)$/i,
+];
+
+/** Rubric / instruction lines: versicles, responses, and repetition shorthand. */
+const RUBRIC_LINE = [
+  /^[VR]\s*\/?\s*\.?\s*[:.]?\s+\S/,
+  /^(v|r)\/\.?/i,
+  /\(\s*\d{1,2}\s*x\s*\)/i,
+  /^(our father|hail mary|glory be|pater noster|ave maria|gloria patri)\b[^.]{0,80}$/i,
+  /^in honou?r of\b/i,
+  /^\(?\d{2,3} days,/i,
+  /^(repeat|say|then (pray|say)|pray)\b.{0,80}$/i,
+];
+
+function isNoise(line: string): boolean {
+  return !line || NOISE_LINE.some((r) => r.test(line));
+}
+
+function isRubricLine(line: string): boolean {
+  return RUBRIC_LINE.some((r) => r.test(line));
+}
+
+/**
+ * Separates a block's devotional wording from the rubric lines printed around it
+ * (V/. and R/. versicles, "Our Father … (3x)"). The rubric becomes a how-to so
+ * the prayer body stays clean.
+ */
+export function splitRubric(body: string): { prose: string; rubric: string } {
+  const lines = body.split("\n").map((l) => l.trim()).filter(Boolean);
+  const prose: string[] = [];
+  const rubric: string[] = [];
+  for (const line of lines) {
+    if (isRubricLine(line) && line.length <= 160) rubric.push(line);
+    else prose.push(line);
+  }
+  return { prose: prose.join("\n").trim(), rubric: rubric.join("\n").trim() };
+}
+
 /** Splits raw text into titled blocks using heading-ish lines (markdown aware). */
 export function splitBlocks(raw: string): Array<{ title: string; body: string }> {
   const lines = raw
     .replace(/\r/g, "")
     .split("\n")
-    .map((l) => l.replace(/\*\*/g, "").replace(/^\*|\*$/g, "").trimEnd())
-    .filter((l) => !/^\s*(-{3,}|={3,}|`{3,})\s*$/.test(l));
+    .map((l) => l.replace(/\*\*/g, "").replace(/^\*|\*$/g, "").trim())
+    .filter((l) => !/^\s*(-{3,}|={3,}|`{3,})\s*$/.test(l))
+    .filter((l) => !isNoise(l));
 
   const blocks: Array<{ title: string; body: string[] }> = [];
   const isHeading = (line: string) => {
     const t = line.trim();
     if (!t) return false;
     if (/^#{1,6}\s+/.test(t)) return true;
-    if (t.length > 60) return false;
+    if (t.length > 80) return false;
     if (/^\d+$/.test(t)) return false;
     if (/^[->*|]/.test(t)) return false;
+    if (isRubricLine(t)) return false;
     const letters = t.replace(/[^A-Za-z]/g, "");
     if (!letters) return false;
+    // Booklet-style label: "First Salutation:", "Concluding Prayer (on Medal):"
+    if (/:$/.test(t) && t.split(/\s+/).length <= 10) return true;
     const upperRatio = letters.split("").filter((c) => c === c.toUpperCase()).length / letters.length;
-    return upperRatio > 0.85;
+    if (upperRatio > 0.85) return true;
+    // Title-case headline with no sentence punctuation: "August Queen of Heaven Prayer"
+    if (!/[.!?;,]$/.test(t)) {
+      const words = t.split(/\s+/).filter((w) => /[A-Za-z]/.test(w));
+      if (words.length >= 2 && words.length <= 12) {
+        const capped = words.filter((w) => /^[A-Z0-9(“"']/.test(w)).length;
+        if (capped / words.length >= 0.7) return true;
+      }
+    }
+    return false;
   };
 
   for (const line of lines) {
@@ -110,9 +169,10 @@ export function splitBlocks(raw: string): Array<{ title: string; body: string }>
   }
 
   return blocks
-    .map((b) => ({ title: titleCase(b.title), body: b.body.join(" ").replace(/\s+/g, " ").trim() }))
+    .map((b) => ({ title: titleCase(b.title), body: b.body.join("\n").trim() }))
     .filter((b) => b.body.length > 0);
 }
+
 
 
 function titleCase(text: string): string {
