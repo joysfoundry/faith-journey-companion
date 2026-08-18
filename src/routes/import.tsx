@@ -95,9 +95,12 @@ function AddPrayersPage() {
   };
 
   const [draft, setDraft] = useState<ImportDraft | null>(null);
+  /** Explicit: this text is instructions, not prayer wording. */
+  const [asHowTo, setAsHowTo] = useState(false);
+  const [howToTemplateId, setHowToTemplateId] = useState("");
 
   const asDevotion = mode === "devotion";
-  const isWritten = sourceType === "written" && !asDevotion;
+  const isWritten = sourceType === "written" && !asDevotion && !asHowTo;
 
   const analyze = () => {
     if (!raw.trim()) {
@@ -122,9 +125,11 @@ function AddPrayersPage() {
         name.trim() ||
         (asDevotion
           ? devotionName.trim()
-          : isWritten
-            ? "Written by me"
-            : "Pasted text"),
+          : asHowTo
+            ? title.trim() || "How to pray"
+            : isWritten
+              ? "Written by me"
+              : "Pasted text"),
       url: resolvedUrl,
       attribution: isWritten ? (attribution === "self" ? "self" : attribution) : attribution,
       // MVP placeholder: photo previews are local; Cloud storage uploads them
@@ -139,12 +144,21 @@ function AddPrayersPage() {
       created_at: new Date().toISOString(),
     };
     // One typed prayer skips block detection; a pasted bundle gets analyzed.
-    const next = isWritten
-      ? draftFromWrittenPrayer(db, title.trim(), raw.trim(), source, {
-          prayer_type: prayerType,
-          expression_type: expressionType,
-        })
-      : analyzeText(db, raw, source);
+    const next = asHowTo
+      ? analyzeText(db, raw, source, { asHowTo: true })
+      : isWritten
+        ? draftFromWrittenPrayer(db, title.trim(), raw.trim(), source, {
+            prayer_type: prayerType,
+            expression_type: expressionType,
+          })
+        : analyzeText(db, raw, source);
+    if (asHowTo) {
+      next.candidates = next.candidates.map((c) => ({
+        ...c,
+        ...(title.trim() ? { title: title.trim() } : {}),
+        ...(howToTemplateId ? { link_template_id: howToTemplateId } : {}),
+      }));
+    }
     if (asDevotion)
       next.devotion = {
         name: devotionName.trim(),
@@ -154,6 +168,7 @@ function AddPrayersPage() {
     setDraft(next);
     saveImportDraft(next);
   };
+
 
   const patchCandidate = (candidateId: string, patch: Partial<ImportCandidate>) => {
     setDraft((current) => {
