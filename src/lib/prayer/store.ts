@@ -316,15 +316,24 @@ export const mutations = {
       created_at: new Date().toISOString(),
       ...(howTo.source_id ? { source_id: howTo.source_id } : {}),
     };
-    const items: TemplateItem[] = howTo.steps.map((step, index) => ({
-      id: newId("titem"),
-      template_id: templateId,
-      kind: "heading",
-      position: index,
-      label: step.text,
-      repetition_count: 1,
-      optional: false,
-    }));
+    let mysteryOrdinal = 0;
+    const items: TemplateItem[] = howTo.steps.map((step, index) => {
+      const parsed = templateItemFromStep(db, step.text);
+      if (parsed.kind === "mystery_placeholder") {
+        mysteryOrdinal += 1;
+        parsed.mystery_ordinal = mysteryOrdinal;
+      }
+      return {
+        id: newId("titem"),
+        template_id: templateId,
+        position: index,
+        repetition_count: 1,
+        optional: false,
+        ...parsed,
+      } as TemplateItem;
+    });
+    template.mystery_count = mysteryOrdinal;
+    if (mysteryOrdinal > 0) template.kind = "rosary";
     return {
       db: {
         ...db,
