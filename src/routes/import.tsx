@@ -144,6 +144,7 @@ function AddPrayersPage() {
     setRaw("");
     setTitle("");
     setPhotos([]);
+    setNotes("");
     toast.success(asDevotion ? "Devotion and prayers added" : "Added to your library");
     navigate({ to: "/prayers" });
   };
