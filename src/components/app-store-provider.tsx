@@ -24,6 +24,12 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     return result.session as PrayerSession | undefined;
   }, []);
 
+  const createTemplateFromHowTo = useCallback((howToId: string) => {
+    const result = mutations.createTemplateFromHowTo(dbRef.current, howToId);
+    setDb(result.db);
+    return result.templateId;
+  }, []);
+
   const value = useMemo(
     () => ({
       db,
@@ -44,6 +50,9 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
         setDb((d) => mutations.saveTemplate(d, t, items)),
       deleteTemplate: (id: string) => setDb((d) => mutations.deleteTemplate(d, id)),
       deleteHowTo: (id: string) => setDb((d) => mutations.deleteHowTo(d, id)),
+      saveHowTo: (h: Parameters<typeof mutations.saveHowTo>[1]) =>
+        setDb((d) => mutations.saveHowTo(d, h)),
+      createTemplateFromHowTo,
       startSession,
       setCursor: (id: string, cursor: number) => setDb((d) => mutations.setCursor(d, id, cursor)),
       toggleItemDone: (id: string) => setDb((d) => mutations.toggleItemDone(d, id)),
@@ -58,7 +67,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
         setDb((d) => mutations.saveImportDraft(d, draft)),
       applyImportDraft: (id: string) => setDb((d) => mutations.applyImportDraft(d, id)),
     }),
-    [db, ready, startSession],
+    [db, ready, startSession, createTemplateFromHowTo],
   );
 
   return <AppStoreContext.Provider value={value}>{children}</AppStoreContext.Provider>;

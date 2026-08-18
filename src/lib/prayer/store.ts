@@ -5,6 +5,7 @@
 import { createContext, useContext } from "react";
 import type {
   Database,
+  HowTo,
   ID,
   ImportDraft,
   Intention,
@@ -136,6 +137,8 @@ export interface AppStore {
   saveTemplate: (template: PrayerTemplate, items: TemplateItem[]) => void;
   deleteTemplate: (templateId: ID) => void;
   deleteHowTo: (howToId: ID) => void;
+  saveHowTo: (howTo: HowTo) => void;
+  createTemplateFromHowTo: (howToId: ID) => ID | undefined;
   startSession: (templateId: ID, ctx: Partial<SessionContext>) => PrayerSession | undefined;
   setCursor: (sessionId: ID, cursor: number) => void;
   toggleItemDone: (itemId: ID) => void;
@@ -278,6 +281,59 @@ export const mutations = {
   },
   deleteHowTo(db: Database, howToId: ID): Database {
     return { ...db, how_tos: db.how_tos.filter((h) => h.id !== howToId) };
+  },
+  saveHowTo(db: Database, howTo: HowTo): Database {
+    const exists = db.how_tos.some((h) => h.id === howTo.id);
+    return {
+      ...db,
+      how_tos: exists
+        ? db.how_tos.map((h) => (h.id === howTo.id ? howTo : h))
+        : [...db.how_tos, howTo],
+    };
+  },
+  /**
+   * Turns a guide into an editable devotion template. Each instruction becomes a
+   * heading item the user can replace with real prayers in the devotion editor.
+   */
+  createTemplateFromHowTo(
+    db: Database,
+    howToId: ID,
+  ): { db: Database; templateId?: ID } {
+    const howTo = db.how_tos.find((h) => h.id === howToId);
+    if (!howTo) return { db };
+    if (howTo.template_id && db.templates.some((t) => t.id === howTo.template_id))
+      return { db, templateId: howTo.template_id };
+
+    const templateId = newId("tmpl");
+    const template: PrayerTemplate = {
+      id: templateId,
+      name: howTo.title.replace(/^how to (pray|say|recite)\s*/i, "").trim() || howTo.title,
+      description: howTo.summary,
+      kind: "standard",
+      mystery_presentation: "title_only",
+      mystery_count: 0,
+      built_in: false,
+      created_at: new Date().toISOString(),
+      ...(howTo.source_id ? { source_id: howTo.source_id } : {}),
+    };
+    const items: TemplateItem[] = howTo.steps.map((step, index) => ({
+      id: newId("titem"),
+      template_id: templateId,
+      kind: "heading",
+      position: index,
+      label: step.text,
+      repetition_count: 1,
+      optional: false,
+    }));
+    return {
+      db: {
+        ...db,
+        templates: [...db.templates, template],
+        template_items: [...db.template_items, ...items],
+        how_tos: db.how_tos.map((h) => (h.id === howToId ? { ...h, template_id: templateId } : h)),
+      },
+      templateId,
+    };
   },
   startSession(
     db: Database,
