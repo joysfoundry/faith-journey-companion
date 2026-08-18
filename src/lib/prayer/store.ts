@@ -159,6 +159,46 @@ export function useApp(): AppStore {
   return ctx;
 }
 
+/**
+ * Turns one how-to step into the devotion component it describes, so a guide
+ * populates a real template instead of a list of plain headings.
+ */
+function templateItemFromStep(db: Database, raw: string): Partial<TemplateItem> & { kind: TemplateItem["kind"] } {
+  const text = raw.trim();
+  const repetition = Number(/[(\s]x\s*(\d+)|\((\d+)\s*x\)/i.exec(text)?.[1] ?? /\((\d+)\s*x\)/i.exec(text)?.[1] ?? 1) || 1;
+  const clean = text.replace(/[(\s]x\s*\d+\)?/i, "").replace(/\(\d+\s*x\)/i, "").trim();
+
+  // Versicle / response pair, written on one or two lines.
+  const vr = /v[/.\s]*\.?\s*(.+?)\s*r[/.\s]*\.?\s*(.+)/is.exec(text);
+  if (/\bv\s*\/?\.\s*/i.test(text) && vr) {
+    return {
+      kind: "salutation",
+      label: clean.split(/[:\n]/)[0]?.slice(0, 60) || "Salutation",
+      versicle: vr[1]?.trim(),
+      response: vr[2]?.trim(),
+      repetition_count: repetition,
+    };
+  }
+
+  if (/\b(mystery|mysteries|decade)\b/i.test(clean)) {
+    return { kind: "mystery_placeholder", label: clean };
+  }
+
+  if (/\b(intention|petition)s?\b/i.test(clean)) {
+    return { kind: "intention", label: clean };
+  }
+
+  // Match a library prayer by title mentioned in the step.
+  const match = db.prayers
+    .filter((p) => p.is_default_variant !== false)
+    .find((p) => p.title.length > 3 && clean.toLowerCase().includes(p.title.toLowerCase()));
+  if (match) {
+    return { kind: "prayer", prayer_id: match.id, repetition_count: repetition };
+  }
+
+  return { kind: "heading", label: clean || text };
+}
+
 /* ---------------- pure reducers used by the provider ---------------- */
 
 export const mutations = {
@@ -301,35 +341,54 @@ export const mutations = {
   ): { db: Database; templateId?: ID } {
     const howTo = db.how_tos.find((h) => h.id === howToId);
     if (!howTo) return { db };
-    if (howTo.template_id && db.templates.some((t) => t.id === howTo.template_id))
-      return { db, templateId: howTo.template_id };
-
-    const templateId = newId("tmpl");
+    /** Re-running rebuilds the devotion from the guide's current steps. */
+    const previous = howTo.template_id
+      ? db.templates.find((t) => t.id === howTo.template_id)
+      : undefined;
+    const templateId = previous ? previous.id : newId("tmpl");
     const template: PrayerTemplate = {
       id: templateId,
-      name: howTo.title.replace(/^how to (pray|say|recite)\s*/i, "").trim() || howTo.title,
-      description: howTo.summary,
+      name:
+        previous?.name ||
+        howTo.title.replace(/^how to (pray|say|recite)\s*/i, "").trim() ||
+        howTo.title,
+      description: previous?.description ?? howTo.summary,
       kind: "standard",
-      mystery_presentation: "title_only",
+      mystery_presentation: previous?.mystery_presentation ?? "title_only",
       mystery_count: 0,
       built_in: false,
-      created_at: new Date().toISOString(),
+      created_at: previous?.created_at ?? new Date().toISOString(),
+      ...(previous?.notes ? { notes: previous.notes } : {}),
       ...(howTo.source_id ? { source_id: howTo.source_id } : {}),
     };
-    const items: TemplateItem[] = howTo.steps.map((step, index) => ({
-      id: newId("titem"),
-      template_id: templateId,
-      kind: "heading",
-      position: index,
-      label: step.text,
-      repetition_count: 1,
-      optional: false,
-    }));
+    let mysteryOrdinal = 0;
+    const items: TemplateItem[] = howTo.steps.map((step, index) => {
+      const parsed = templateItemFromStep(db, step.text);
+      if (parsed.kind === "mystery_placeholder") {
+        mysteryOrdinal += 1;
+        parsed.mystery_ordinal = mysteryOrdinal;
+      }
+      return {
+        id: newId("titem"),
+        template_id: templateId,
+        position: index,
+        repetition_count: 1,
+        optional: false,
+        ...parsed,
+      } as TemplateItem;
+    });
+    template.mystery_count = mysteryOrdinal;
+    if (mysteryOrdinal > 0) template.kind = "rosary";
     return {
       db: {
         ...db,
-        templates: [...db.templates, template],
-        template_items: [...db.template_items, ...items],
+        templates: previous
+          ? db.templates.map((t) => (t.id === templateId ? template : t))
+          : [...db.templates, template],
+        template_items: [
+          ...db.template_items.filter((i) => i.template_id !== templateId),
+          ...items,
+        ],
         how_tos: db.how_tos.map((h) => (h.id === howToId ? { ...h, template_id: templateId } : h)),
       },
       templateId,
