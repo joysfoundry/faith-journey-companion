@@ -33,20 +33,41 @@ function LibraryPage() {
   const { db, toggleFavorite, deletePrayer, deleteTemplate, deleteHowTo } = useApp();
   const [query, setQuery] = useState("");
 
-  const prayers = useMemo(() => {
+  // Every wording is its own record; the library groups them and shows the
+  // default wording at the top of each group.
+  const groups = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return db.prayers
-      .filter(
-        (p) =>
-          !q ||
-          p.title.toLowerCase().includes(q) ||
-          (p.tags ?? []).some((t) => t.includes(q)) ||
-          (p.prayer_type ?? "").includes(q) ||
-          (db.prayer_versions.find((v) => v.id === p.default_version_id)?.body ?? "")
-            .toLowerCase()
-            .includes(q),
-      )
-      .sort((a, b) => Number(b.favorite) - Number(a.favorite) || a.title.localeCompare(b.title));
+    const matches = (p: Prayer) =>
+      !q ||
+      p.title.toLowerCase().includes(q) ||
+      (p.variant_label ?? "").toLowerCase().includes(q) ||
+      (p.tags ?? []).some((t) => t.includes(q)) ||
+      (p.prayer_type ?? "").includes(q) ||
+      (db.prayer_versions.find((v) => v.id === p.default_version_id)?.body ?? "")
+        .toLowerCase()
+        .includes(q);
+
+    const byGroup = new Map<string, Prayer[]>();
+    for (const prayer of db.prayers) {
+      const key = variantGroupId(prayer);
+      byGroup.set(key, [...(byGroup.get(key) ?? []), prayer]);
+    }
+
+    return [...byGroup.entries()]
+      .filter(([, members]) => members.some(matches))
+      .map(([key, members]) => {
+        const sorted = [...members].sort(
+          (a, b) =>
+            Number(Boolean(b.is_default_variant)) - Number(Boolean(a.is_default_variant)) ||
+            (a.variant_label ?? "").localeCompare(b.variant_label ?? ""),
+        );
+        return { key, primary: sorted[0]!, others: sorted.slice(1) };
+      })
+      .sort(
+        (a, b) =>
+          Number(b.primary.favorite) - Number(a.primary.favorite) ||
+          a.primary.title.localeCompare(b.primary.title),
+      );
   }, [db, query]);
 
   return (
