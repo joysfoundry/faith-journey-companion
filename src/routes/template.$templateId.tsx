@@ -532,9 +532,6 @@ function TemplateBuilder() {
                               {v.label}
                               {v.prayer.is_default_variant ? " · default" : ""}
                             </span>
-                            <span className="block text-xs text-muted-foreground">
-                              “{v.difference}”{v.hint ? ` · ${v.hint}` : ""}
-                            </span>
                           </button>
                         </li>
                       ))}
