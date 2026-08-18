@@ -229,6 +229,13 @@ function AddPrayersPage() {
             </p>
           </div>
 
+          <PhotoDropzone
+            label="Source photos (optional)"
+            hint="Snap or drop pages of a booklet, holy card, or prayer sheet. Photos stay with the source and flow into your Gallery; reading text from a photo arrives with Cloud, so paste the wording below for now."
+            photos={photos}
+            onChange={setPhotos}
+          />
+
           <div>
             <Label htmlFor="raw">{isWritten ? "Prayer text" : "Text"}</Label>
             <Textarea
