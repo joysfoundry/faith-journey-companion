@@ -19,9 +19,9 @@ export function PrayerSearch() {
       .filter(
         (p) =>
           p.title.toLowerCase().includes(q) ||
-          p.tags.some((t) => t.toLowerCase().includes(q)) ||
-          p.prayer_type.includes(q) ||
-          p.expression_type.includes(q),
+          (p.tags ?? []).some((t) => t.toLowerCase().includes(q)) ||
+          (p.prayer_type ?? "").includes(q) ||
+          (p.expression_type ?? "").includes(q),
       )
       .slice(0, 6);
   }, [db.prayers, query]);

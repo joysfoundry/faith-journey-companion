@@ -40,8 +40,8 @@ function LibraryPage() {
         (p) =>
           !q ||
           p.title.toLowerCase().includes(q) ||
-          p.tags.some((t) => t.includes(q)) ||
-          p.prayer_type.includes(q) ||
+          (p.tags ?? []).some((t) => t.includes(q)) ||
+          (p.prayer_type ?? "").includes(q) ||
           (db.prayer_versions.find((v) => v.id === p.default_version_id)?.body ?? "")
             .toLowerCase()
             .includes(q),
