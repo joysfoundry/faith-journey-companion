@@ -173,7 +173,7 @@ function LibraryPage() {
             Prayers
           </TabsTrigger>
           <TabsTrigger value="templates" className="flex-1">
-            Devotions
+            Devotion Template
           </TabsTrigger>
           <TabsTrigger value="howto" className="flex-1">
             How To
