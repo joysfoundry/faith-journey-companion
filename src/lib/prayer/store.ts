@@ -233,12 +233,16 @@ export const mutations = {
   },
   deletePrayer(db: Database, prayerId: ID): Database {
     const removed = db.prayers.find((p) => p.id === prayerId);
-    const prayers = db.prayers.filter((p) => p.id !== prayerId);
+    let prayers = db.prayers.filter((p) => p.id !== prayerId);
     // Promote a sibling wording when the default one is deleted.
     if (removed?.is_default_variant) {
       const group = variantGroupId(removed);
       const sibling = prayers.find((p) => variantGroupId(p) === group);
-      if (sibling) sibling.is_default_variant = true;
+      if (sibling) {
+        prayers = prayers.map((p) =>
+          p.id === sibling.id ? { ...p, is_default_variant: true } : p,
+        );
+      }
     }
     return {
       ...db,
