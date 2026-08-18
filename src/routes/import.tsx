@@ -6,15 +6,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  PrayerFields,
-  buildPrayerRecords,
-  type PrayerDraft,
-} from "@/components/prayer/PrayerFields";
+import { TaxonomySelect } from "@/components/prayer/PrayerFields";
 import { useApp } from "@/lib/prayer/store";
-import { analyzeText, resolveAttribution } from "@/lib/prayer/importer";
+import { analyzeText, draftFromWrittenPrayer, resolveAttribution } from "@/lib/prayer/importer";
 import { newId } from "@/lib/prayer/compiler";
+import {
+  EXPRESSION_TYPES,
+  PRAYER_TYPES,
+  TAXONOMY_LABELS,
+  type ExpressionType,
+  type PrayerType,
+} from "@/domain/taxonomy";
 import type { ImportCandidate, ImportDraft, SourceType } from "@/lib/prayer/types";
 
 export const Route = createFileRoute("/import")({
@@ -24,7 +26,7 @@ export const Route = createFileRoute("/import")({
       {
         name: "description",
         content:
-          "Add prayers to your library by pasting a booklet for review or by typing a single prayer yourself.",
+          "Add one prayer or a whole booklet: write it or paste it, then review every detected prayer, how-to, or mystery before it enters your library.",
       },
       { property: "og:title", content: "Add Prayers — Faith Journey" },
       {
@@ -43,67 +45,62 @@ const DECISIONS: Array<{ value: ImportCandidate["decision"]; label: string }> = 
   { value: "skip", label: "Skip" },
 ];
 
+const SOURCE_TYPES: Array<{ value: SourceType; label: string }> = [
+  { value: "written", label: "Written by me" },
+  { value: "text", label: "Pasted text" },
+  { value: "document", label: "Document / PDF text" },
+  { value: "web", label: "Web page" },
+];
+
 function AddPrayersPage() {
-  const { db, saveImportDraft, applyImportDraft, upsertPrayer } = useApp();
+  const { db, saveImportDraft, applyImportDraft } = useApp();
   const navigate = useNavigate();
   const [name, setName] = useState("");
-  const [sourceType, setSourceType] = useState<SourceType>("text");
+  const [sourceType, setSourceType] = useState<SourceType>("written");
+  const [title, setTitle] = useState("");
   const [raw, setRaw] = useState("");
   const [url, setUrl] = useState("");
+  const [prayerType, setPrayerType] = useState<PrayerType>("devotional");
+  const [expressionType, setExpressionType] = useState<ExpressionType>("vocal");
   const [draft, setDraft] = useState<ImportDraft | null>(null);
-  const [single, setSingle] = useState<PrayerDraft>({ title: "", body: "", category: "other" });
 
-  const saveSingle = () => {
-    if (!single.title.trim() || !single.body.trim()) {
-      toast.error("A prayer needs a title and text.");
-      return;
-    }
-    const { prayer, version } = buildPrayerRecords(single);
-    upsertPrayer(prayer, version);
-    toast.success("Prayer added");
-    navigate({ to: "/prayers" });
-  };
+  const isWritten = sourceType === "written";
 
   const analyze = () => {
     if (!raw.trim()) {
-      toast.error("Paste some text first.");
+      toast.error("Add some prayer text first.");
+      return;
+    }
+    if (isWritten && !title.trim()) {
+      toast.error("Give the prayer a title.");
       return;
     }
     const { url: resolvedUrl, attribution } = resolveAttribution(raw, url);
-    const next = analyzeText(db, raw, {
+    const source = {
       id: newId("source"),
-      source_type: resolvedUrl ? "web" : sourceType,
-      name: name.trim() || "Pasted text",
+      source_type: resolvedUrl && !isWritten ? ("web" as SourceType) : sourceType,
+      name: name.trim() || (isWritten ? "Written by me" : "Pasted text"),
       url: resolvedUrl,
-      attribution,
+      attribution: isWritten ? (attribution === "self" ? "self" : attribution) : attribution,
       created_at: new Date().toISOString(),
-    });
+    };
+    // One typed prayer skips block detection; a pasted bundle gets analyzed.
+    const next = isWritten
+      ? draftFromWrittenPrayer(db, title.trim(), raw.trim(), source, {
+          prayer_type: prayerType,
+          expression_type: expressionType,
+        })
+      : analyzeText(db, raw, source);
     setDraft(next);
     saveImportDraft(next);
   };
 
-  const setDecision = (candidateId: string, decision: ImportCandidate["decision"]) => {
+  const patchCandidate = (candidateId: string, patch: Partial<ImportCandidate>) => {
     setDraft((current) => {
       if (!current) return current;
       const next = {
         ...current,
-        candidates: current.candidates.map((c) =>
-          c.id === candidateId ? { ...c, decision } : c,
-        ),
-      };
-      saveImportDraft(next);
-      return next;
-    });
-  };
-
-  const setLinkedTemplate = (candidateId: string, templateId: string) => {
-    setDraft((current) => {
-      if (!current) return current;
-      const next = {
-        ...current,
-        candidates: current.candidates.map((c) =>
-          c.id === candidateId ? { ...c, link_template_id: templateId || undefined } : c,
-        ),
+        candidates: current.candidates.map((c) => (c.id === candidateId ? { ...c, ...patch } : c)),
       };
       saveImportDraft(next);
       return next;
@@ -115,29 +112,47 @@ function AddPrayersPage() {
     applyImportDraft(draft.id);
     setDraft(null);
     setRaw("");
-    toast.success("Imported into your library");
+    setTitle("");
+    toast.success("Added to your library");
     navigate({ to: "/prayers" });
   };
 
   return (
     <AppShell
       title="Add prayers"
-      subtitle="Paste a bundle to review, or type a single prayer."
+      subtitle="One prayer or a whole booklet — written or pasted."
       back={{ to: "/prayers", label: "Prayers" }}
     >
       {!draft ? (
-        <Tabs defaultValue="paste">
-          <TabsList className="w-full">
-            <TabsTrigger value="paste" className="flex-1">
-              Paste or import
-            </TabsTrigger>
-            <TabsTrigger value="single" className="flex-1">
-              Type one prayer
-            </TabsTrigger>
-          </TabsList>
+        <div className="soft-card space-y-3 p-4">
+          <div>
+            <Label htmlFor="stype">Where it comes from</Label>
+            <select
+              id="stype"
+              value={sourceType}
+              onChange={(e) => setSourceType(e.target.value as SourceType)}
+              className="mt-1 h-12 w-full rounded-md border border-input bg-card px-3"
+            >
+              {SOURCE_TYPES.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+          </div>
 
-          <TabsContent value="paste" className="mt-4">
-            <div className="soft-card space-y-3 p-4">
+          {isWritten ? (
+            <div>
+              <Label htmlFor="ptitle">Prayer title</Label>
+              <Input
+                id="ptitle"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Hail, Holy Queen"
+                className="mt-1 h-12"
+              />
+            </div>
+          ) : (
             <div>
               <Label htmlFor="sname">Source name</Label>
               <Input
@@ -148,19 +163,30 @@ function AddPrayersPage() {
                 className="mt-1 h-12"
               />
             </div>
-            <div>
-              <Label htmlFor="stype">Source type</Label>
-              <select
-                id="stype"
-                value={sourceType}
-                onChange={(e) => setSourceType(e.target.value as SourceType)}
-                className="mt-1 h-12 w-full rounded-md border border-input bg-card px-3"
-              >
-                <option value="text">Pasted text</option>
-                <option value="document">Document / PDF text</option>
-                <option value="web">Web page</option>
-              </select>
-            </div>
+          )}
+
+          <TaxonomySelect
+            id="prayer-type"
+            label="Prayer type"
+            value={prayerType}
+            options={PRAYER_TYPES}
+            onChange={(v) => setPrayerType(v as PrayerType)}
+          />
+          <TaxonomySelect
+            id="expression-type"
+            label="How it is prayed"
+            value={expressionType}
+            options={EXPRESSION_TYPES}
+            onChange={(v) => setExpressionType(v as ExpressionType)}
+          />
+          {!isWritten ? (
+            <p className="-mt-1 text-xs text-muted-foreground">
+              Used as the starting point for each detected prayer — you can change any of them on the
+              next screen.
+            </p>
+          ) : null}
+
+          {!isWritten ? (
             <div>
               <Label htmlFor="surl">Source URL (optional)</Label>
               <Input
@@ -171,45 +197,42 @@ function AddPrayersPage() {
                 className="mt-1 h-12"
               />
               <p className="mt-1 text-xs text-muted-foreground">
-                If no URL is given or printed in the document, we look for the publisher who
-                printed it. When neither exists the source is recorded as “self”.
+                If no URL is given or printed in the document, we look for the publisher who printed
+                it. When neither exists the source is recorded as “self”.
               </p>
             </div>
-            <div>
-              <Label htmlFor="raw">Text</Label>
-              <Textarea
-                id="raw"
-                value={raw}
-                onChange={(e) => setRaw(e.target.value)}
-                rows={12}
-                placeholder={"Hail Holy Queen\nHail, Holy Queen, Mother of Mercy…"}
-                className="mt-1"
-              />
-              <p className="mt-2 text-xs text-muted-foreground">
-                For a PDF, copy its text and paste it here. Each blank-line block with a short first
-                line is treated as a titled section.
-              </p>
-            </div>
-            <Button className="h-12 w-full" onClick={analyze}>
-              Analyze text
-            </Button>
-            </div>
-          </TabsContent>
+          ) : null}
 
-          <TabsContent value="single" className="mt-4">
-            <div className="soft-card space-y-4 p-4">
-              <PrayerFields draft={single} onChange={setSingle} idPrefix="single" />
-              <Button className="h-12 w-full" onClick={saveSingle}>
-                Save prayer
-              </Button>
-            </div>
-          </TabsContent>
-        </Tabs>
+          <div>
+            <Label htmlFor="raw">{isWritten ? "Prayer text" : "Text"}</Label>
+            <Textarea
+              id="raw"
+              value={raw}
+              onChange={(e) => setRaw(e.target.value)}
+              rows={isWritten ? 10 : 12}
+              placeholder={
+                isWritten
+                  ? "Hail, Holy Queen, Mother of Mercy…"
+                  : "Hail Holy Queen\nHail, Holy Queen, Mother of Mercy…"
+              }
+              className="mt-1"
+            />
+            {!isWritten ? (
+              <p className="mt-2 text-xs text-muted-foreground">
+                For a PDF, copy its text and paste it here. Each block with a short first line is
+                treated as a titled section.
+              </p>
+            ) : null}
+          </div>
+          <Button className="h-12 w-full" onClick={analyze}>
+            {isWritten ? "Review prayer" : "Analyze text"}
+          </Button>
+        </div>
       ) : (
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            {draft.candidates.length} sections detected in {draft.source.name}. Nothing is saved
-            until you confirm.
+            {draft.candidates.length} section{draft.candidates.length === 1 ? "" : "s"} detected in{" "}
+            {draft.source.name}. Nothing is saved until you confirm.
           </p>
           <p className="text-sm">
             <span className="eyebrow">Source</span>{" "}
@@ -223,13 +246,14 @@ function AddPrayersPage() {
           </p>
           {draft.candidates.map((c) => {
             const duplicate = db.prayers.find((p) => p.id === c.duplicate_of_prayer_id);
+            const isPrayer = c.classification === "prayer" || c.classification === "prayer_version";
             return (
               <article key={c.id} className="soft-card p-4">
                 <div className="flex items-start justify-between gap-2">
                   <p className="font-medium">{c.title}</p>
                   <span className="eyebrow shrink-0">{c.classification.replace(/_/g, " ")}</span>
                 </div>
-                <p className="mt-2 line-clamp-4 text-sm text-muted-foreground whitespace-pre-line">
+                <p className="mt-2 line-clamp-4 text-sm whitespace-pre-line text-muted-foreground">
                   {c.body}
                 </p>
                 {duplicate ? (
@@ -242,7 +266,9 @@ function AddPrayersPage() {
                   value={c.decision}
                   aria-label={`Decision for ${c.title}`}
                   onChange={(e) =>
-                    setDecision(c.id, e.target.value as ImportCandidate["decision"])
+                    patchCandidate(c.id, {
+                      decision: e.target.value as ImportCandidate["decision"],
+                    })
                   }
                   className="mt-3 h-11 w-full rounded-md border border-input bg-card px-3 text-sm"
                 >
@@ -252,6 +278,38 @@ function AddPrayersPage() {
                     </option>
                   ))}
                 </select>
+                {isPrayer && c.decision === "save_new" ? (
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    <select
+                      value={c.prayer_type ?? "devotional"}
+                      aria-label={`Prayer type for ${c.title}`}
+                      onChange={(e) =>
+                        patchCandidate(c.id, { prayer_type: e.target.value as PrayerType })
+                      }
+                      className="h-11 w-full rounded-md border border-input bg-card px-3 text-sm"
+                    >
+                      {PRAYER_TYPES.map((t) => (
+                        <option key={t} value={t}>
+                          {TAXONOMY_LABELS[t]}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      value={c.expression_type ?? "vocal"}
+                      aria-label={`How ${c.title} is prayed`}
+                      onChange={(e) =>
+                        patchCandidate(c.id, { expression_type: e.target.value as ExpressionType })
+                      }
+                      className="h-11 w-full rounded-md border border-input bg-card px-3 text-sm"
+                    >
+                      {EXPRESSION_TYPES.map((t) => (
+                        <option key={t} value={t}>
+                          {TAXONOMY_LABELS[t]}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : null}
                 {c.classification === "how_to" && c.decision !== "skip" ? (
                   <div className="mt-3">
                     <Label htmlFor={`tpl-${c.id}`} className="text-xs">
@@ -260,7 +318,9 @@ function AddPrayersPage() {
                     <select
                       id={`tpl-${c.id}`}
                       value={c.link_template_id ?? ""}
-                      onChange={(e) => setLinkedTemplate(c.id, e.target.value)}
+                      onChange={(e) =>
+                        patchCandidate(c.id, { link_template_id: e.target.value || undefined })
+                      }
                       className="mt-1 h-11 w-full rounded-md border border-input bg-card px-3 text-sm"
                     >
                       <option value="">No specific devotion</option>
