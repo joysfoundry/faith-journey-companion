@@ -59,7 +59,7 @@ function AddPrayersPage() {
   const [title, setTitle] = useState("");
   const [raw, setRaw] = useState("");
   const [url, setUrl] = useState("");
-  const [prayerType, setPrayerType] = useState<PrayerType>("traditional_expression");
+  const [prayerType, setPrayerType] = useState<PrayerType>("other");
   const [expressionType, setExpressionType] = useState<ExpressionType>("vocal");
   const [photos, setPhotos] = useState<LocalPhoto[]>([]);
   const [draft, setDraft] = useState<ImportDraft | null>(null);
