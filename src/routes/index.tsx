@@ -124,7 +124,7 @@ function Index() {
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground">
-              {rosary?.name ?? "Rosary template"} · prepared in order, nothing to count
+              {rosary?.name ?? "Rosary"} · prepared in order, nothing to count
             </p>
           </CardHeader>
           <CardContent>

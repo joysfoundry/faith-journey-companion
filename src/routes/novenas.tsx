@@ -16,7 +16,7 @@ export const Route = createFileRoute("/novenas")({
       {
         name: "description",
         content:
-          "Start a novena with your own intention and dates. Each day's prayer session is generated from one reusable template.",
+          "Start a novena with your own intention and dates. Each day's prayer session is generated from one devotion.",
       },
       { property: "og:title", content: "Novenas — Faith Journey" },
       {
@@ -67,7 +67,7 @@ function NovenasPage() {
   };
 
   return (
-    <AppShell title="Novenas" subtitle="One template, one session per day." back={{ to: "/more", label: "More" }}>
+    <AppShell title="Novenas" subtitle="One devotion, one session per day." back={{ to: "/more", label: "More" }}>
       <div className="space-y-4">
         <section className="soft-card space-y-3 p-4">
           <p className="eyebrow">Start a novena</p>
