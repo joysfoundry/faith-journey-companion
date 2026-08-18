@@ -9,7 +9,14 @@
 
 export type ID = string;
 
+import type {
+  DevotionType as DevotionTypeValue,
+  ExpressionType as ExpressionTypeValue,
+  PrayerType as PrayerTypeValue,
+} from "@/domain/taxonomy";
+
 export type SourceType =
+  | "written"
   | "manual"
   | "pdf"
   | "document"
@@ -31,19 +38,22 @@ export interface Source {
   created_at: string;
 }
 
-export type PrayerCategory =
-  | "core"
-  | "marian"
-  | "closing"
-  | "devotional"
-  | "family"
-  | "other";
+/**
+ * Prayers are classified on the three separate taxonomy axes defined in
+ * src/domain/taxonomy.ts. There is no single collapsed "category" field:
+ * - prayer_type: liturgical | devotional | traditional_expression
+ * - expression_type: how it is prayed (vocal, meditation, scripture, ...)
+ * - devotion_type: the devotion it belongs to, when it belongs to one
+ */
+export type { DevotionType, ExpressionType, PrayerType } from "@/domain/taxonomy";
 
 /** Reusable prayer content. Never carries completion state. */
 export interface Prayer {
   id: ID;
   title: string;
-  category: PrayerCategory;
+  prayer_type: PrayerTypeValue;
+  expression_type: ExpressionTypeValue;
+  devotion_type?: DevotionTypeValue | undefined;
   tags: string[];
   favorite: boolean;
   default_version_id: ID;
@@ -263,6 +273,9 @@ export interface ImportCandidate {
   duplicate_of_prayer_id?: ID | undefined;
   similarity?: number | undefined;
   decision: "save_new" | "use_existing" | "save_alternate_version" | "skip";
+  /** Proposed taxonomy for prayer candidates; editable during review. */
+  prayer_type?: PrayerTypeValue | undefined;
+  expression_type?: ExpressionTypeValue | undefined;
   /** For how_to candidates: the specific template/novena these instructions describe. */
   link_template_id?: ID | undefined;
 }

@@ -41,7 +41,8 @@ function PrayerDetail() {
   const [draft, setDraft] = useState<PrayerDraft>({
     title: prayer?.title ?? "",
     body: defaultVersion?.body ?? "",
-    category: prayer?.category ?? "other",
+    prayerType: prayer?.prayer_type ?? "devotional",
+    expressionType: prayer?.expression_type ?? "vocal",
   });
   const [newVersionLabel, setNewVersionLabel] = useState("");
   const [newVersionBody, setNewVersionBody] = useState("");

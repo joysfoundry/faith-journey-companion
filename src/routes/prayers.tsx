@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useApp } from "@/lib/prayer/store";
 import { toast } from "sonner";
 import { templateOutline } from "@/lib/prayer/compiler";
+import { TAXONOMY_LABELS } from "@/domain/taxonomy";
 
 export const Route = createFileRoute("/prayers")({
   head: () => ({
@@ -40,6 +41,7 @@ function LibraryPage() {
           !q ||
           p.title.toLowerCase().includes(q) ||
           p.tags.some((t) => t.includes(q)) ||
+          p.prayer_type.includes(q) ||
           (db.prayer_versions.find((v) => v.id === p.default_version_id)?.body ?? "")
             .toLowerCase()
             .includes(q),
@@ -96,7 +98,7 @@ function LibraryPage() {
                     <p className="font-medium">{prayer.title}</p>
                     <p className="text-sm text-muted-foreground">
                       {versions.length} version{versions.length === 1 ? "" : "s"} ·{" "}
-                      {prayer.category}
+                      {TAXONOMY_LABELS[prayer.prayer_type]}
                     </p>
                   </Link>
                   <button
