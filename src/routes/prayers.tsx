@@ -333,10 +333,30 @@ function LibraryPage() {
               Build one by hand
             </Link>
           </p>
+          <BulkBar
+            noun="devotions"
+            ids={db.templates.map((t) => t.id)}
+            selected={selTemplates}
+            setSelected={setSelTemplates}
+            active={pickTemplates}
+            setActive={setPickTemplates}
+            onDelete={(ids) => ids.forEach(deleteTemplate)}
+          />
           {db.templates.map((template) => {
             const outline = templateOutline(db, template);
             return (
               <div key={template.id} className="soft-card flex items-start">
+              {pickTemplates ? (
+                <span className="self-center pl-4">
+                  <Checkbox
+                    checked={selTemplates.has(template.id)}
+                    onCheckedChange={(v) =>
+                      toggle(selTemplates, setSelTemplates, template.id, Boolean(v))
+                    }
+                    aria-label={`Select ${template.name}`}
+                  />
+                </span>
+              ) : null}
               <Link
                 to="/template/$templateId"
                 params={{ templateId: template.id }}
@@ -372,10 +392,39 @@ function LibraryPage() {
         </TabsContent>
 
         <TabsContent value="howto" className="mt-4 space-y-3">
+          <Button asChild variant="secondary" className="h-12 w-full">
+            <Link to="/import" search={{ mode: "howto" }}>
+              <Plus className="size-4" /> New How To guide
+            </Link>
+          </Button>
+          <p className="text-center text-xs text-muted-foreground">
+            Paste a page that explains how a devotion is prayed. Every line becomes a step — guides
+            are only created here, never guessed from prayer text.
+          </p>
+          <BulkBar
+            noun="guides"
+            ids={db.how_tos.map((h) => h.id)}
+            selected={selHowTos}
+            setSelected={setSelHowTos}
+            active={pickHowTos}
+            setActive={setPickHowTos}
+            onDelete={(ids) => ids.forEach(deleteHowTo)}
+          />
           {db.how_tos.map((howTo) => {
             const linked = db.templates.find((t) => t.id === howTo.template_id);
             return (
               <div key={howTo.id} className="soft-card flex items-start">
+                {pickHowTos ? (
+                  <span className="self-center pl-4">
+                    <Checkbox
+                      checked={selHowTos.has(howTo.id)}
+                      onCheckedChange={(v) =>
+                        toggle(selHowTos, setSelHowTos, howTo.id, Boolean(v))
+                      }
+                      aria-label={`Select ${howTo.title}`}
+                    />
+                  </span>
+                ) : null}
                 <Link
                   to="/howto/$howToId"
                   params={{ howToId: howTo.id }}
@@ -403,6 +452,7 @@ function LibraryPage() {
             );
           })}
         </TabsContent>
+
       </Tabs>
     </AppShell>
   );
