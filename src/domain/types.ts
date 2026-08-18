@@ -107,7 +107,13 @@ export interface Reflection {
 /* -------------------------------------------------------------------------- */
 
 /** Where a photo was captured from. Every photo flows into the single Gallery. */
-export const PHOTO_CONTEXTS = ["prayer_session", "reflection", "mass", "life_library"] as const;
+export const PHOTO_CONTEXTS = [
+  "prayer_session",
+  "reflection",
+  "mass",
+  "life_library",
+  "prayer_source",
+] as const;
 export type PhotoContext = (typeof PHOTO_CONTEXTS)[number];
 
 /**
