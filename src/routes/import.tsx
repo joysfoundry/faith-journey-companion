@@ -24,8 +24,12 @@ import {
 import type { ImportCandidate, ImportDraft, SourceType } from "@/lib/prayer/types";
 
 export const Route = createFileRoute("/import")({
-  validateSearch: (search: Record<string, unknown>): { mode?: "devotion" } =>
-    search["mode"] === "devotion" ? { mode: "devotion" } : {},
+  validateSearch: (search: Record<string, unknown>): { mode?: "devotion" | "howto" } =>
+    search["mode"] === "devotion"
+      ? { mode: "devotion" }
+      : search["mode"] === "howto"
+        ? { mode: "howto" }
+        : {},
   head: () => ({
     meta: [
       { title: "Add Prayers — Faith Journey" },
@@ -96,7 +100,7 @@ function AddPrayersPage() {
 
   const [draft, setDraft] = useState<ImportDraft | null>(null);
   /** Explicit: this text is instructions, not prayer wording. */
-  const [asHowTo, setAsHowTo] = useState(false);
+  const [asHowTo, setAsHowTo] = useState(mode === "howto");
   const [howToTemplateId, setHowToTemplateId] = useState("");
 
   const asDevotion = mode === "devotion";
