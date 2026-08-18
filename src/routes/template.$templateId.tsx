@@ -475,10 +475,24 @@ function TemplateBuilder() {
           </Button>
           <Button
             variant="secondary"
-            className="col-span-2"
+            onClick={() =>
+              addItem({ kind: "salutation", label: "Salutation", versicle: "", response: "" })
+            }
+          >
+            <Plus className="size-4" /> Salutation
+          </Button>
+          <Button
+            variant="secondary"
             onClick={() => addItem({ kind: "intention", label: "Intention" })}
           >
             <Plus className="size-4" /> Intention
+          </Button>
+          <Button
+            variant="secondary"
+            className="col-span-2"
+            onClick={() => addItem({ kind: "custom", label: "New component", body: "" })}
+          >
+            <Plus className="size-4" /> Add another component
           </Button>
         </div>
 
