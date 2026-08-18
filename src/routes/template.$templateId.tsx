@@ -8,9 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { useApp } from "@/lib/prayer/store";
+import { useApp, variantsOf } from "@/lib/prayer/store";
+import { distinctivePhrase, lengthHint } from "@/lib/prayer/variantDiff";
 import { newId } from "@/lib/prayer/compiler";
-import type { MysteryPresentation, PrayerTemplate, TemplateItem } from "@/lib/prayer/types";
+import type { MysteryPresentation, Prayer, PrayerTemplate, TemplateItem } from "@/lib/prayer/types";
 
 export const Route = createFileRoute("/template/$templateId")({
   head: () => ({
