@@ -301,42 +301,83 @@ function TemplateBuilder() {
                     <GripVertical className="size-4" />
                   </span>
                   <div className="flex-1">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                      {KIND_LABELS[item.kind]}
+                    </p>
                     <p className="font-medium">
                       {item.kind === "mystery_placeholder"
                         ? `Mystery placeholder ${item.mystery_ordinal ?? index + 1}`
-                        : item.kind === "intention"
-                          ? (item.label ?? "Intention")
-                          : (prayer?.title ?? "Prayer")}
+                        : item.kind === "prayer"
+                          ? (prayer?.title ?? "Prayer")
+                          : (item.label ?? KIND_LABELS[item.kind])}
                     </p>
                     {item.kind === "prayer" && prayer ? (
                       (() => {
                         const versions = versionsOf(prayer);
                         if (versions.length < 2) return null;
-                        const current = versions.find((v) => v.prayer.id === prayer.id);
                         return (
-                          <div className="mt-1">
-                            <select
-                              aria-label="Version used in this devotion"
-                              value={prayer.id}
-                              onChange={(e) => update(index, { prayer_id: e.target.value })}
-                              className="h-9 w-full rounded-md border border-input bg-card px-2 text-xs"
-                            >
-                              {versions.map((v) => (
-                                <option key={v.prayer.id} value={v.prayer.id}>
-                                  {v.label}
-                                  {v.prayer.is_default_variant ? " (default)" : ""} — {v.difference}
-                                </option>
-                              ))}
-                            </select>
-                            {current ? (
-                              <p className="mt-1 text-xs text-muted-foreground">
-                                Differs here: “{current.difference}”
-                                {current.hint ? ` · ${current.hint}` : ""}
-                              </p>
-                            ) : null}
-                          </div>
+                          <select
+                            aria-label="Version used in this devotion"
+                            value={prayer.id}
+                            onChange={(e) => update(index, { prayer_id: e.target.value })}
+                            className="mt-1 h-9 w-full rounded-md border border-input bg-card px-2 text-xs"
+                          >
+                            {versions.map((v) => (
+                              <option key={v.prayer.id} value={v.prayer.id}>
+                                {v.label}
+                                {v.prayer.is_default_variant ? " (default)" : ""}
+                              </option>
+                            ))}
+                          </select>
                         );
                       })()
+                    ) : null}
+                    {item.kind === "salutation" ? (
+                      <div className="mt-2 space-y-2">
+                        <Input
+                          value={item.label ?? ""}
+                          placeholder="Salutation name (e.g. First Salutation)"
+                          onChange={(e) => update(index, { label: e.target.value })}
+                          className="h-9 text-sm"
+                        />
+                        <Input
+                          value={item.versicle ?? ""}
+                          placeholder="V. versicle line"
+                          onChange={(e) => update(index, { versicle: e.target.value })}
+                          className="h-9 text-sm"
+                        />
+                        <Input
+                          value={item.response ?? ""}
+                          placeholder="R. response line"
+                          onChange={(e) => update(index, { response: e.target.value })}
+                          className="h-9 text-sm"
+                        />
+                      </div>
+                    ) : null}
+                    {item.kind === "intention" || item.kind === "heading" ? (
+                      <Input
+                        value={item.label ?? ""}
+                        placeholder={item.kind === "intention" ? "Intention / petition" : "Section label"}
+                        onChange={(e) => update(index, { label: e.target.value })}
+                        className="mt-2 h-9 text-sm"
+                      />
+                    ) : null}
+                    {item.kind === "custom" ? (
+                      <div className="mt-2 space-y-2">
+                        <Input
+                          value={item.label ?? ""}
+                          placeholder="Component name"
+                          onChange={(e) => update(index, { label: e.target.value })}
+                          className="h-9 text-sm"
+                        />
+                        <Textarea
+                          value={item.body ?? ""}
+                          rows={3}
+                          placeholder="Text prayed for this component"
+                          onChange={(e) => update(index, { body: e.target.value })}
+                          className="text-sm"
+                        />
+                      </div>
                     ) : null}
                     {item.optional ? (
                       <p className="text-xs text-muted-foreground">Optional</p>
