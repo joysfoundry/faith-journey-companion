@@ -67,7 +67,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
         setDb((d) => mutations.saveImportDraft(d, draft)),
       applyImportDraft: (id: string) => setDb((d) => mutations.applyImportDraft(d, id)),
     }),
-    [db, ready, startSession],
+    [db, ready, startSession, createTemplateFromHowTo],
   );
 
   return <AppStoreContext.Provider value={value}>{children}</AppStoreContext.Provider>;
