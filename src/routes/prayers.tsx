@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Heart, Plus, Search, Trash2 } from "lucide-react";
+import { Heart, Plus, Search, Trash2, X } from "lucide-react";
 import { AppShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useApp, variantGroupId } from "@/lib/prayer/store";
@@ -10,6 +11,74 @@ import type { Prayer } from "@/lib/prayer/types";
 import { toast } from "sonner";
 import { templateOutline } from "@/lib/prayer/compiler";
 import { TAXONOMY_LABELS } from "@/domain/taxonomy";
+
+/** Shared bulk-selection toolbar: enter select mode, select all, delete many. */
+function BulkBar({
+  ids,
+  selected,
+  setSelected,
+  onDelete,
+  noun,
+}: {
+  ids: string[];
+  selected: Set<string>;
+  setSelected: (next: Set<string>) => void;
+  onDelete: (ids: string[]) => void;
+  noun: string;
+}) {
+  const [active, setActive] = useState(false);
+  if (!ids.length) return null;
+
+  if (!active)
+    return (
+      <button
+        type="button"
+        onClick={() => setActive(true)}
+        className="ml-auto block text-sm text-primary underline"
+      >
+        Select
+      </button>
+    );
+
+  const allSelected = selected.size === ids.length;
+  return (
+    <div className="flex items-center gap-2 rounded-md border border-border bg-card p-2">
+      <Checkbox
+        checked={allSelected}
+        onCheckedChange={(v) => setSelected(v ? new Set(ids) : new Set())}
+        aria-label={`Select all ${noun}`}
+      />
+      <span className="text-sm text-muted-foreground">
+        {selected.size} selected
+      </span>
+      <Button
+        variant="destructive"
+        size="sm"
+        className="ml-auto"
+        disabled={!selected.size}
+        onClick={() => {
+          if (!window.confirm(`Delete ${selected.size} ${noun}?`)) return;
+          onDelete([...selected]);
+          setSelected(new Set());
+          toast.success(`Deleted ${noun}`);
+        }}
+      >
+        <Trash2 className="size-4" /> Delete
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => {
+          setSelected(new Set());
+          setActive(false);
+        }}
+      >
+        <X className="size-4" />
+      </Button>
+    </div>
+  );
+}
+
 
 export const Route = createFileRoute("/prayers")({
   head: () => ({
