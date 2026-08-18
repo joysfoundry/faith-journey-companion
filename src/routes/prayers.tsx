@@ -189,7 +189,7 @@ function LibraryPage() {
           <p className="mb-3 text-center text-xs text-muted-foreground">
             Write it, paste it, or add a link to import from.
           </p>
-          <div className="relative mb-4">
+          <div className="relative mb-3">
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={query}
@@ -199,10 +199,35 @@ function LibraryPage() {
               aria-label="Search prayers"
             />
           </div>
+          <div className="mb-3">
+            <BulkBar
+              noun="prayers"
+              ids={groups.flatMap(({ primary, others }) => [
+                primary.id,
+                ...others.map((o) => o.id),
+              ])}
+              selected={selPrayers}
+              setSelected={setSelPrayers}
+              active={pickPrayers}
+              setActive={setPickPrayers}
+              onDelete={(ids) => ids.forEach(deletePrayer)}
+            />
+          </div>
           <ul className="space-y-3">
             {groups.map(({ key, primary, others }) => (
               <li key={key} className="soft-card">
                 <div className="flex items-center">
+                  {pickPrayers ? (
+                    <span className="pl-4">
+                      <Checkbox
+                        checked={selPrayers.has(primary.id)}
+                        onCheckedChange={(v) =>
+                          toggle(selPrayers, setSelPrayers, primary.id, Boolean(v))
+                        }
+                        aria-label={`Select ${primary.title}`}
+                      />
+                    </span>
+                  ) : null}
                   <Link
                     to="/prayer/$prayerId"
                     params={{ prayerId: primary.id }}
@@ -242,6 +267,17 @@ function LibraryPage() {
                   <ul className="border-t border-border/60 px-4 py-2">
                     {others.map((variant) => (
                       <li key={variant.id} className="flex items-center">
+                        {pickPrayers ? (
+                          <span className="pr-3">
+                            <Checkbox
+                              checked={selPrayers.has(variant.id)}
+                              onCheckedChange={(v) =>
+                                toggle(selPrayers, setSelPrayers, variant.id, Boolean(v))
+                              }
+                              aria-label={`Select ${variant.variant_label ?? "version"} of ${primary.title}`}
+                            />
+                          </span>
+                        ) : null}
                         <Link
                           to="/prayer/$prayerId"
                           params={{ prayerId: variant.id }}
@@ -249,6 +285,7 @@ function LibraryPage() {
                         >
                           {variant.variant_label ?? "Alternate wording"}
                         </Link>
+
                         <button
                           type="button"
                           onClick={() => {
