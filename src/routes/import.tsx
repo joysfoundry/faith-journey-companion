@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { TaxonomySelect } from "@/components/prayer/PrayerFields";
+import { PhotoDropzone, type LocalPhoto } from "@/components/media/PhotoDropzone";
 import { useApp } from "@/lib/prayer/store";
 import { analyzeText, draftFromWrittenPrayer, resolveAttribution } from "@/lib/prayer/importer";
 import { newId } from "@/lib/prayer/compiler";
@@ -66,6 +67,7 @@ function AddPrayersPage() {
   const [url, setUrl] = useState("");
   const [prayerType, setPrayerType] = useState<PrayerType>("traditional_expression");
   const [expressionType, setExpressionType] = useState<ExpressionType>("vocal");
+  const [photos, setPhotos] = useState<LocalPhoto[]>([]);
   const [draft, setDraft] = useState<ImportDraft | null>(null);
 
   const asDevotion = mode === "devotion";
@@ -91,6 +93,15 @@ function AddPrayersPage() {
       name: name.trim() || (isWritten ? "Written by me" : "Pasted text"),
       url: resolvedUrl,
       attribution: isWritten ? (attribution === "self" ? "self" : attribution) : attribution,
+      // MVP placeholder: photo previews are local; Cloud storage uploads them
+      // and files them into the Gallery under the "prayer_source" context.
+      metadata: photos.length
+        ? {
+            photo_count: String(photos.length),
+            photo_names: photos.map((p) => p.name).join(", "),
+            gallery_context: "prayer_source",
+          }
+        : undefined,
       created_at: new Date().toISOString(),
     };
     // One typed prayer skips block detection; a pasted bundle gets analyzed.
@@ -123,6 +134,7 @@ function AddPrayersPage() {
     setDraft(null);
     setRaw("");
     setTitle("");
+    setPhotos([]);
     toast.success(asDevotion ? "Devotion and prayers added" : "Added to your library");
     navigate({ to: "/prayers" });
   };
@@ -229,6 +241,13 @@ function AddPrayersPage() {
             </p>
           </div>
 
+          <PhotoDropzone
+            label="Source photos (optional)"
+            hint="Snap or drop pages of a booklet, holy card, or prayer sheet. Photos stay with the source and flow into your Gallery; reading text from a photo arrives with Cloud, so paste the wording below for now."
+            photos={photos}
+            onChange={setPhotos}
+          />
+
           <div>
             <Label htmlFor="raw">{isWritten ? "Prayer text" : "Text"}</Label>
             <Textarea
@@ -270,6 +289,25 @@ function AddPrayersPage() {
               (draft.source.attribution ?? "self")
             )}
           </p>
+          {photos.length ? (
+            <div>
+              <p className="text-sm">
+                <span className="eyebrow">Source photos</span> {photos.length} — saved with this
+                source and added to your Gallery.
+              </p>
+              <ul className="mt-2 flex flex-wrap gap-2">
+                {photos.map((p) => (
+                  <li key={p.id}>
+                    <img
+                      src={p.previewUrl}
+                      alt={p.name}
+                      className="h-20 w-20 rounded-md border border-border object-cover"
+                    />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
           {draft.candidates.map((c) => {
             const duplicate = db.prayers.find((p) => p.id === c.duplicate_of_prayer_id);
             const isPrayer = c.classification === "prayer" || c.classification === "prayer_version";
