@@ -105,6 +105,25 @@ export const Route = createFileRoute("/prayers")({
 function LibraryPage() {
   const { db, toggleFavorite, deletePrayer, deleteTemplate, deleteHowTo } = useApp();
   const [query, setQuery] = useState("");
+  const [pickPrayers, setPickPrayers] = useState(false);
+  const [selPrayers, setSelPrayers] = useState<Set<string>>(new Set());
+  const [pickTemplates, setPickTemplates] = useState(false);
+  const [selTemplates, setSelTemplates] = useState<Set<string>>(new Set());
+  const [pickHowTos, setPickHowTos] = useState(false);
+  const [selHowTos, setSelHowTos] = useState<Set<string>>(new Set());
+
+  const toggle = (
+    set: Set<string>,
+    setter: (next: Set<string>) => void,
+    id: string,
+    on: boolean,
+  ) => {
+    const next = new Set(set);
+    if (on) next.add(id);
+    else next.delete(id);
+    setter(next);
+  };
+
 
   // Every wording is its own record; the library groups them and shows the
   // default wording at the top of each group.
