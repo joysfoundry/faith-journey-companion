@@ -196,7 +196,7 @@ function AddPrayersPage() {
 
   return (
     <AppShell
-      title={asDevotion ? "New devotion" : "Add prayers"}
+      title={asDevotion ? "New devotion" : asHowTo ? "New How To guide" : "Add prayers"}
       subtitle={
         asDevotion
           ? "Paste the devotion. Each prayer is saved on its own, then bundled in order."
@@ -419,7 +419,7 @@ function AddPrayersPage() {
           />
 
           <div>
-            <Label htmlFor="raw">{isWritten ? "Prayer text" : "Text"}</Label>
+            <Label htmlFor="raw">{asHowTo ? "Instructions" : isWritten ? "Prayer text" : "Text"}</Label>
             <Textarea
               id="raw"
               value={raw}
@@ -440,7 +440,7 @@ function AddPrayersPage() {
             ) : null}
           </div>
           <Button className="h-12 w-full" onClick={analyze}>
-            {isWritten ? "Review prayer" : "Analyze text"}
+            {asHowTo ? "Review guide" : isWritten ? "Review prayer" : "Analyze text"}
           </Button>
         </div>
       ) : (
