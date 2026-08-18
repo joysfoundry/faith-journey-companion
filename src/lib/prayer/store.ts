@@ -137,6 +137,8 @@ export interface AppStore {
   saveTemplate: (template: PrayerTemplate, items: TemplateItem[]) => void;
   deleteTemplate: (templateId: ID) => void;
   deleteHowTo: (howToId: ID) => void;
+  saveHowTo: (howTo: HowTo) => void;
+  createTemplateFromHowTo: (howToId: ID) => ID | undefined;
   startSession: (templateId: ID, ctx: Partial<SessionContext>) => PrayerSession | undefined;
   setCursor: (sessionId: ID, cursor: number) => void;
   toggleItemDone: (itemId: ID) => void;
