@@ -213,7 +213,7 @@ function HowToPage() {
               }}
             >
               <ListPlus className="size-5" />
-              {linkedTemplate ? "Edit Devotion Template" : "Create Devotion Template"}
+              Create Devotion Template
             </Button>
             <Button variant="outline" className="h-14" onClick={startEditing}>
               Edit steps
