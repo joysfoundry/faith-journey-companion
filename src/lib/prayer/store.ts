@@ -28,15 +28,90 @@ import {
 
 export const STORAGE_KEY = "prayer-companion-db-v1";
 
+/** Variant group a prayer belongs to. Standalone prayers are their own group. */
+export function variantGroupId(prayer: Prayer): ID {
+  return prayer.variant_group_id ?? prayer.id;
+}
+
+/** All wordings of the same prayer, default first, then alphabetical by label. */
+export function variantsOf(db: Database, prayer: Prayer): Prayer[] {
+  const group = variantGroupId(prayer);
+  return db.prayers
+    .filter((p) => variantGroupId(p) === group)
+    .sort(
+      (a, b) =>
+        Number(Boolean(b.is_default_variant)) - Number(Boolean(a.is_default_variant)) ||
+        (a.variant_label ?? "").localeCompare(b.variant_label ?? ""),
+    );
+}
+
+/**
+ * Backfills the variant model and splits legacy multi-version prayers so each
+ * wording is its own record. Safe to run on every load.
+ */
+export function normalizeVariants(db: Database): Database {
+  const prayers: Prayer[] = [];
+  const versions = [...db.prayer_versions];
+
+  for (const prayer of db.prayers) {
+    const group = variantGroupId(prayer);
+    const own = versions.filter((v) => v.prayer_id === prayer.id);
+    const primary =
+      own.find((v) => v.id === prayer.default_version_id) ?? own[0];
+    prayers.push({
+      ...prayer,
+      variant_group_id: group,
+      variant_label: prayer.variant_label ?? primary?.label ?? "Traditional",
+      is_default_variant: prayer.is_default_variant ?? true,
+      ...(primary ? { default_version_id: primary.id } : {}),
+    });
+
+    // Legacy shape: extra versions on one prayer become sibling records.
+    for (const extra of own.filter((v) => v.id !== primary?.id)) {
+      const cloneId = `${prayer.id}--${extra.id}`;
+      if (db.prayers.some((p) => p.id === cloneId)) continue;
+      prayers.push({
+        ...prayer,
+        id: cloneId,
+        variant_group_id: group,
+        variant_label: extra.label,
+        is_default_variant: false,
+        favorite: false,
+        default_version_id: extra.id,
+      });
+      const index = versions.findIndex((v) => v.id === extra.id);
+      if (index >= 0) versions[index] = { ...extra, prayer_id: cloneId };
+    }
+  }
+
+  // Guarantee exactly one default per group.
+  const seen = new Set<ID>();
+  const withDefaults = prayers.map((p) => {
+    const group = variantGroupId(p);
+    if (p.is_default_variant && !seen.has(group)) {
+      seen.add(group);
+      return p;
+    }
+    return { ...p, is_default_variant: false };
+  });
+  for (const group of new Set(withDefaults.map(variantGroupId))) {
+    if (seen.has(group)) continue;
+    const first = withDefaults.find((p) => variantGroupId(p) === group);
+    if (first) first.is_default_variant = true;
+  }
+
+  return { ...db, prayers: withDefaults, prayer_versions: versions };
+}
+
 export function loadDatabase(): Database {
-  if (typeof window === "undefined") return createSeedDatabase();
+  if (typeof window === "undefined") return normalizeVariants(createSeedDatabase());
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return createSeedDatabase();
+    if (!raw) return normalizeVariants(createSeedDatabase());
     const parsed = JSON.parse(raw) as Partial<Database>;
-    return { ...createSeedDatabase(), ...parsed };
+    return normalizeVariants({ ...createSeedDatabase(), ...parsed });
   } catch {
-    return createSeedDatabase();
+    return normalizeVariants(createSeedDatabase());
   }
 }
 
