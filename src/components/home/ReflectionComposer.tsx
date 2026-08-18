@@ -1,4 +1,4 @@
-import { Camera, Link2, Plus } from "lucide-react";
+import { Camera, Link2, Plus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
