@@ -266,7 +266,9 @@ export interface HowTo {
   title: string;
   summary: string;
   steps: HowToStep[];
-  /** Template started when the user taps "Start Prayer". */
+  /** Reference links — videos, websites, articles. Any number of them. */
+  links?: string[] | undefined;
+  /** Devotion template created from this guide. */
   template_id?: ID | undefined;
   source_id?: ID | undefined;
 }
