@@ -497,7 +497,7 @@ function TemplateBuilder() {
               navigate({ to: "/prayers" });
             }}
           >
-            Delete template
+            Delete devotion
           </Button>
         ) : null}
       </div>
