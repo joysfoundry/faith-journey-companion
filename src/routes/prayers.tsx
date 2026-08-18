@@ -136,10 +136,20 @@ function LibraryPage() {
 
         <TabsContent value="templates" className="mt-4 space-y-3">
           <Button asChild variant="secondary" className="h-12 w-full">
-            <Link to="/template/$templateId" params={{ templateId: "new" }}>
+            <Link to="/import" search={{ mode: "devotion" }}>
               <Plus className="size-4" /> New devotion
             </Link>
           </Button>
+          <p className="text-center text-xs text-muted-foreground">
+            Paste or write the devotion — each prayer is saved on its own, then bundled.{" "}
+            <Link
+              to="/template/$templateId"
+              params={{ templateId: "new" }}
+              className="text-primary underline"
+            >
+              Build one by hand
+            </Link>
+          </p>
           {db.templates.map((template) => {
             const outline = templateOutline(db, template);
             return (

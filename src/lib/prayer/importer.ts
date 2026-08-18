@@ -245,6 +245,39 @@ export function draftFromWrittenPrayer(
   };
 }
 
+/**
+ * Repetition shorthand printed in booklets: "Hail Mary x10", "(3 times)",
+ * "Glory Be — 3x". Devotion bundles keep the count compact; sessions expand it.
+ */
+export function detectRepetitionCount(title: string, body = ""): number {
+  const blob = `${title} ${body.slice(0, 120)}`;
+  const patterns = [
+    /\bx\s*(\d{1,2})\b/i,
+    /\b(\d{1,2})\s*x\b/i,
+    /\b(\d{1,2})\s*times\b/i,
+    /\((\d{1,2})\)/,
+  ];
+  const words: Record<string, number> = {
+    two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, twelve: 12,
+  };
+  for (const re of patterns) {
+    const n = Number(blob.match(re)?.[1]);
+    if (n >= 2 && n <= 60) return n;
+  }
+  const word = blob.match(/\b(two|three|four|five|six|seven|eight|nine|ten|twelve)\s+times\b/i);
+  const mapped = word?.[1] ? words[word[1].toLowerCase()] : undefined;
+  return mapped ?? 1;
+}
+
+/** Strips the repetition shorthand out of a title before it becomes a prayer. */
+export function stripRepetition(title: string): string {
+  return title
+    .replace(/[\u2014\u2013-]?\s*\b(x\s*\d{1,2}|\d{1,2}\s*x|\d{1,2}\s*times)\b/i, "")
+    .replace(/\(\s*\d{1,2}\s*\)/, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 /* ---------------- source attribution ---------------- */
 
 const URL_RE = /\bhttps?:\/\/[^\s<>()"']+|(?:^|\s)(www\.[^\s<>()"']+)/i;

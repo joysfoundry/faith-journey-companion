@@ -285,6 +285,12 @@ export interface ImportDraft {
   source: Source;
   raw_text: string;
   candidates: ImportCandidate[];
+  /**
+   * When set, applying the draft also creates a devotion (template) that
+   * bundles every saved prayer in document order. The prayers themselves are
+   * still stored as single expressions in the library.
+   */
+  devotion?: { name: string; description?: string | undefined } | undefined;
   created_at: string;
 }
 
