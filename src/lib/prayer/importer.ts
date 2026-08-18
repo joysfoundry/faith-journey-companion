@@ -211,46 +211,64 @@ export function proposeTaxonomy(
 }
 
 export function analyzeText(db: Database, raw: string, source: Source): ImportDraft {
-  const candidates: ImportCandidate[] = splitBlocks(raw).map((block) => {
-    const { classification, confidence } = classify(block.title, block.body);
+  const candidates: ImportCandidate[] = [];
+  for (const block of splitBlocks(raw)) {
+    // Rubrics (V/. R/. versicles, "Our Father … (3x)") are instructions, not
+    // wording — they become a how-to so the prayer body stays clean.
+    const { prose, rubric } = splitRubric(block.body);
+    const body = prose || block.body;
+    const { classification, confidence } = classify(block.title, body);
 
-    // Duplicate detection against the existing library.
-    let bestId: string | undefined;
-    let best = 0;
-    for (const prayer of db.prayers) {
-      const version = db.prayer_versions.find((v) => v.id === prayer.default_version_id);
-      const score = Math.max(
-        similarity(block.body, version?.body ?? ""),
-        similarity(block.title, prayer.title) * 0.9,
-      );
-      if (score > best) {
-        best = score;
-        bestId = prayer.id;
+    if (prose) {
+      // Duplicate detection against the existing library.
+      let bestId: string | undefined;
+      let best = 0;
+      for (const prayer of db.prayers) {
+        const version = db.prayer_versions.find((v) => v.id === prayer.default_version_id);
+        const score = Math.max(
+          similarity(body, version?.body ?? ""),
+          similarity(block.title, prayer.title) * 0.9,
+        );
+        if (score > best) {
+          best = score;
+          bestId = prayer.id;
+        }
       }
-    }
-    const isDuplicate = best >= 0.45 && classification === "prayer";
+      const isDuplicate = best >= 0.45 && classification === "prayer";
 
-    const taxonomy = proposeTaxonomy(block.title, block.body, classification);
-    const candidate: ImportCandidate = {
-      id: newId("cand"),
-      classification,
-      ...taxonomy,
-      title: block.title,
-      body: block.body,
-      confidence,
-      decision: isDuplicate
-        ? "use_existing"
-        : classification === "source_material"
-          ? "skip"
-          : "save_new",
-
-    };
-    if (isDuplicate && bestId) {
-      candidate.duplicate_of_prayer_id = bestId;
-      candidate.similarity = Math.round(best * 100) / 100;
+      const taxonomy = proposeTaxonomy(block.title, body, classification);
+      const candidate: ImportCandidate = {
+        id: newId("cand"),
+        classification,
+        ...taxonomy,
+        title: block.title,
+        body,
+        confidence,
+        decision: isDuplicate
+          ? "use_existing"
+          : classification === "source_material"
+            ? "skip"
+            : "save_new",
+      };
+      if (isDuplicate && bestId) {
+        candidate.duplicate_of_prayer_id = bestId;
+        candidate.similarity = Math.round(best * 100) / 100;
+      }
+      candidates.push(candidate);
     }
-    return candidate;
-  });
+
+    if (rubric) {
+      candidates.push({
+        id: newId("cand"),
+        classification: "how_to",
+        title: prose ? `${block.title} — how to pray` : block.title,
+        body: rubric,
+        confidence: 0.8,
+        decision: "save_new",
+      });
+    }
+  }
+
 
   return {
     id: newId("draft"),
