@@ -121,10 +121,21 @@ export type MysteryPresentation =
   | "title_and_description"
   | "choose_during_session";
 
+/**
+ * The components a devotion is built from:
+ * - prayer: a prayer record from the library
+ * - salutation: a versicle / response pair (V. … R. …)
+ * - mystery_placeholder: rosary decades only
+ * - intention: an intention / petition slot
+ * - custom: any other component the user adds
+ * - heading: a plain section label
+ */
 export type TemplateItemKind =
   | "prayer"
+  | "salutation"
   | "mystery_placeholder"
   | "intention"
+  | "custom"
   | "heading";
 
 /** Compact template row. `repetition_count` is shorthand; sessions expand it. */
@@ -138,6 +149,12 @@ export interface TemplateItem {
   /** Which decade / mystery ordinal this placeholder refers to (1-based). */
   mystery_ordinal?: number | undefined;
   label?: string | undefined;
+  /** Salutation: the versicle line (spoken by the leader). */
+  versicle?: string | undefined;
+  /** Salutation: the response line. */
+  response?: string | undefined;
+  /** Free text for custom components. */
+  body?: string | undefined;
   repetition_count: number;
   optional: boolean;
   /** Only included when the session context enables this group. */
