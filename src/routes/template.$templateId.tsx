@@ -122,6 +122,46 @@ function TemplateBuilder() {
 
   const mysteryCount = items.filter((i) => i.kind === "mystery_placeholder").length;
 
+  /** Default wording of a prayer record — what the devotion will actually pray. */
+  const bodyOf = (prayer: Prayer) =>
+    db.prayer_versions.find((v) => v.id === prayer.default_version_id)?.body ?? "";
+
+  /**
+   * Every wording of a prayer plus the line that sets it apart, so choosing a
+   * version in a devotion isn't guesswork.
+   */
+  const versionsOf = (prayer: Prayer) => {
+    const siblings = variantsOf(db, prayer);
+    if (siblings.length < 2) return [];
+    return siblings.map((sibling) => {
+      const body = bodyOf(sibling);
+      const others = siblings.filter((s) => s.id !== sibling.id).map(bodyOf);
+      return {
+        prayer: sibling,
+        label: sibling.variant_label ?? (sibling.is_default_variant ? "Default" : "Alternate"),
+        difference: distinctivePhrase(body, others),
+        hint: lengthHint(body, others[0] ?? body),
+      };
+    });
+  };
+
+  /** One row per prayer group for the picker: the default first, versions nested. */
+  const pickerGroups = useMemo(() => {
+    const seen = new Set<string>();
+    const groups: Array<{ primary: Prayer; versions: ReturnType<typeof versionsOf> }> = [];
+    for (const prayer of db.prayers) {
+      const group = prayer.variant_group_id ?? prayer.id;
+      if (seen.has(group)) continue;
+      seen.add(group);
+      const siblings = variantsOf(db, prayer);
+      const primary = siblings.find((s) => s.is_default_variant) ?? siblings[0] ?? prayer;
+      groups.push({ primary, versions: versionsOf(primary) });
+    }
+    return groups;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [db.prayers, db.prayer_versions]);
+
+
   const save = () => {
     if (!name.trim()) {
       toast.error("Give the devotion a name.");
