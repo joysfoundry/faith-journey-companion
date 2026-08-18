@@ -24,6 +24,12 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     return result.session as PrayerSession | undefined;
   }, []);
 
+  const createTemplateFromHowTo = useCallback((howToId: string) => {
+    const result = mutations.createTemplateFromHowTo(dbRef.current, howToId);
+    setDb(result.db);
+    return result.templateId;
+  }, []);
+
   const value = useMemo(
     () => ({
       db,
