@@ -381,22 +381,25 @@ function TemplateBuilder() {
             {compiled.length} steps, fully expanded — this is exactly what you&apos;ll pray.
           </p>
           <ol className="space-y-2">
-            {compiled.map((it, i) => (
-              <li key={it.id} className="soft-card p-3">
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="text-sm font-medium">
-                    {i + 1}. {it.title}
-                    {it.repetition_total ? ` (${it.repetition_index} of ${it.repetition_total})` : ""}
-                  </span>
-                  {it.kind === "mystery" ? (
-                    <span className="text-[11px] uppercase tracking-wide text-muted-foreground">Mystery</span>
+            {compiled.map((it, i) => {
+              const heading = it.kind === "mystery" ? (it.configuration as { heading?: string })?.heading : undefined;
+              return (
+                <li key={it.id} className="soft-card p-3">
+                  {heading ? (
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-primary">{heading}</p>
                   ) : null}
-                </div>
-                {it.body ? (
-                  <p className="prayer-text mt-1 whitespace-pre-line text-sm text-muted-foreground">{it.body}</p>
-                ) : null}
-              </li>
-            ))}
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-sm font-medium">
+                      {i + 1}. {it.title}
+                      {it.repetition_total ? ` (${it.repetition_index} of ${it.repetition_total})` : ""}
+                    </span>
+                  </div>
+                  {it.body ? (
+                    <p className="prayer-text mt-1 whitespace-pre-line text-sm text-muted-foreground">{it.body}</p>
+                  ) : null}
+                </li>
+              );
+            })}
           </ol>
           <p className="text-xs text-muted-foreground">
             Saving also creates a summarized “How to pray” guide (e.g. “Hail Mary ×10”).

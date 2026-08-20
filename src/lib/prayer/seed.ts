@@ -443,8 +443,10 @@ function scripturalRosaryItems(): TemplateItem[] {
   add({ kind: "prayer", prayer_id: "our-father" });
   add({ kind: "prayer", prayer_id: "hail-mary", repetition_count: 3 });
   add({ kind: "prayer", prayer_id: "glory-be" });
-  for (const m of LUMINOUS_SCRIPTURE) {
-    add({ kind: "custom", label: m.title, body: m.description });
+  LUMINOUS_SCRIPTURE.forEach((m, di) => {
+    // A real mystery placeholder so praying shows "First Luminous Mystery" +
+    // title + description (the set is pinned to Luminous on the template).
+    add({ kind: "mystery_placeholder", mystery_ordinal: di + 1, label: m.title });
     add({ kind: "prayer", prayer_id: "our-father" });
     for (const [ref, text] of m.scripture) {
       add({ kind: "scripture", reference: ref, body: text });
@@ -452,7 +454,7 @@ function scripturalRosaryItems(): TemplateItem[] {
     }
     add({ kind: "prayer", prayer_id: "glory-be" });
     add({ kind: "prayer", prayer_id: "fatima-prayer" });
-  }
+  });
   add({ kind: "prayer", prayer_id: "hail-holy-queen" });
   // Single-line closing salutation (no response), per §9A.
   add({ kind: "custom", label: "Closing", body: "Lord Jesus, help us to persevere in living out our baptismal promises." });
@@ -591,9 +593,10 @@ export function createSeedDatabase(): Database {
         name: "Scriptural Rosary — Luminous Mysteries",
         description:
           "A distinct Scripture passage before each Hail Mary. Pray straight through, meditating on the Word.",
-        kind: "standard",
-        mystery_presentation: "title_only",
-        mystery_count: 0,
+        kind: "rosary",
+        mystery_presentation: "title_and_description",
+        mystery_count: 5,
+        fixed_mystery_set_id: "set-luminous",
         source_id: "src-usccb",
         built_in: true,
         created_at: now,

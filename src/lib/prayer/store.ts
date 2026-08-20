@@ -33,7 +33,7 @@ import {
   uncompleteSessionItem,
 } from "./compiler";
 
-export const STORAGE_KEY = "prayer-companion-db-v4";
+export const STORAGE_KEY = "prayer-companion-db-v5";
 
 /** Variant group a prayer belongs to. Standalone prayers are their own group. */
 export function variantGroupId(prayer: Prayer): ID {
