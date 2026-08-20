@@ -27,6 +27,7 @@ import { createSeedDatabase } from "./seed";
 import { detectRepetitionCount, stripRepetition } from "./importer";
 import {
   completeSessionItem,
+  defaultContext,
   generatePrayerSession,
   newId,
   uncompleteSessionItem,
@@ -145,6 +146,7 @@ export interface AppStore {
   saveHowTo: (howTo: HowTo) => void;
   createTemplateFromHowTo: (howToId: ID) => ID | undefined;
   startSession: (templateId: ID, ctx: Partial<SessionContext>) => PrayerSession | undefined;
+  startSinglePrayer: (prayerId: ID, ctx?: Partial<SessionContext>) => PrayerSession | undefined;
   setCursor: (sessionId: ID, cursor: number) => void;
   toggleItemDone: (itemId: ID) => void;
   finishSession: (sessionId: ID) => void;
@@ -420,6 +422,45 @@ export const mutations = {
         sessions: [session, ...db.sessions],
         session_items: [...db.session_items, ...items],
       },
+      session,
+    };
+  },
+  /** Pray a single prayer immediately — a one-item session, no template needed. */
+  startSinglePrayer(
+    db: Database,
+    prayerId: ID,
+    ctx: Partial<SessionContext> = {},
+  ): { db: Database; session?: PrayerSession } {
+    const prayer = db.prayers.find((p) => p.id === prayerId);
+    if (!prayer) return { db };
+    const version =
+      db.prayer_versions.find((v) => v.id === prayer.default_version_id) ??
+      db.prayer_versions.find((v) => v.prayer_id === prayerId);
+    const context = defaultContext({ progress_mode: "scroll", ...ctx });
+    const sessionId = newId("session");
+    const session: PrayerSession = {
+      id: sessionId,
+      template_id: "",
+      title: prayer.title,
+      context,
+      created_at: new Date().toISOString(),
+      cursor: 0,
+    };
+    const item: SessionItem = {
+      id: newId("item"),
+      session_id: sessionId,
+      kind: "prayer",
+      position: 0,
+      prayer_id: prayer.id,
+      prayer_version_id: version?.id,
+      title: prayer.title,
+      body: version?.body ?? "",
+      progress_mode: context.progress_mode,
+      completion_status: "pending",
+      completion_method: null,
+    };
+    return {
+      db: { ...db, sessions: [session, ...db.sessions], session_items: [...db.session_items, item] },
       session,
     };
   },

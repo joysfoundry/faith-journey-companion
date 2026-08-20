@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Heart, Plus, Search, Trash2, X } from "lucide-react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { ChevronDown, Heart, Pencil, Play, Plus, Search, Trash2, X } from "lucide-react";
 import { AppShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -10,7 +10,144 @@ import { useApp, variantGroupId } from "@/lib/prayer/store";
 import type { Prayer } from "@/lib/prayer/types";
 import { toast } from "sonner";
 import { templateOutline } from "@/lib/prayer/compiler";
-import { TAXONOMY_LABELS } from "@/domain/taxonomy";
+
+/** One prayer group: a caret expands the text; icons pray / edit; title opens details. */
+function PrayerRow({
+  primary,
+  others,
+  picking,
+  selected,
+  onSelect,
+}: {
+  primary: Prayer;
+  others: Prayer[];
+  picking: boolean;
+  selected: Set<string>;
+  onSelect: (id: string, on: boolean) => void;
+}) {
+  const { db, toggleFavorite, deletePrayer, startSinglePrayer } = useApp();
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const body = db.prayer_versions.find((v) => v.id === primary.default_version_id)?.body ?? "";
+
+  const prayNow = () => {
+    const session = startSinglePrayer(primary.id);
+    if (session) navigate({ to: "/session/$sessionId", params: { sessionId: session.id } });
+  };
+
+  return (
+    <li className="soft-card">
+      <div className="flex items-center">
+        {picking ? (
+          <span className="pl-4">
+            <Checkbox
+              checked={selected.has(primary.id)}
+              onCheckedChange={(v) => onSelect(primary.id, Boolean(v))}
+              aria-label={`Select ${primary.title}`}
+            />
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setOpen((o) => !o)}
+            aria-label={open ? "Hide text" : "Show text"}
+            aria-expanded={open}
+            className="py-4 pl-3 pr-1 text-muted-foreground"
+          >
+            <ChevronDown className={`size-5 transition-transform ${open ? "rotate-180" : ""}`} />
+          </button>
+        )}
+        <Link
+          to="/prayer/$prayerId"
+          params={{ prayerId: primary.id }}
+          className="min-w-0 flex-1 py-4 pl-1 pr-2"
+        >
+          <p className="truncate font-medium">{primary.title}</p>
+          {others.length ? (
+            <p className="text-xs text-muted-foreground">{others.length + 1} versions</p>
+          ) : null}
+        </Link>
+        <button
+          type="button"
+          onClick={prayNow}
+          aria-label={`Pray ${primary.title} now`}
+          className="px-2.5 py-4 text-primary"
+        >
+          <Play className="size-5" />
+        </button>
+        <Link
+          to="/prayer/$prayerId"
+          params={{ prayerId: primary.id }}
+          search={{ edit: true }}
+          aria-label={`Edit ${primary.title}`}
+          className="px-2.5 py-4 text-muted-foreground"
+        >
+          <Pencil className="size-5" />
+        </Link>
+        <button
+          type="button"
+          onClick={() => toggleFavorite(primary.id)}
+          aria-label={primary.favorite ? "Remove favorite" : "Add favorite"}
+          className="px-2.5 py-4 text-muted-foreground"
+        >
+          <Heart className={`size-5 ${primary.favorite ? "fill-primary text-primary" : ""}`} />
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            if (!window.confirm(`Delete “${primary.title}”?`)) return;
+            deletePrayer(primary.id);
+            toast.success("Prayer deleted");
+          }}
+          aria-label={`Delete ${primary.title}`}
+          className="px-2.5 pr-4 py-4 text-muted-foreground"
+        >
+          <Trash2 className="size-5" />
+        </button>
+      </div>
+
+      {open ? (
+        <div className="border-t border-border/60 px-5 py-3">
+          <p className="prayer-text whitespace-pre-line text-sm text-muted-foreground">{body}</p>
+        </div>
+      ) : null}
+
+      {others.length ? (
+        <ul className="border-t border-border/60 px-4 py-2">
+          {others.map((variant) => (
+            <li key={variant.id} className="flex items-center">
+              {picking ? (
+                <span className="pr-3">
+                  <Checkbox
+                    checked={selected.has(variant.id)}
+                    onCheckedChange={(v) => onSelect(variant.id, Boolean(v))}
+                    aria-label={`Select ${variant.variant_label ?? "version"} of ${primary.title}`}
+                  />
+                </span>
+              ) : null}
+              <Link
+                to="/prayer/$prayerId"
+                params={{ prayerId: variant.id }}
+                className="flex-1 py-2 text-sm text-muted-foreground"
+              >
+                {variant.variant_label ?? "Alternate wording"}
+              </Link>
+              <Link
+                to="/prayer/$prayerId"
+                params={{ prayerId: variant.id }}
+                search={{ edit: true }}
+                aria-label={`Edit ${variant.variant_label ?? "version"}`}
+                className="py-2 pl-3 text-muted-foreground"
+              >
+                <Pencil className="size-4" />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </li>
+  );
+}
 
 /** Shared bulk-selection toolbar: enter select mode, select all, delete many. */
 function BulkBar({
@@ -103,7 +240,7 @@ export const Route = createFileRoute("/prayers")({
 });
 
 function LibraryPage() {
-  const { db, toggleFavorite, deletePrayer, deleteTemplate, deleteHowTo } = useApp();
+  const { db, deletePrayer, deleteTemplate, deleteHowTo } = useApp();
   const [query, setQuery] = useState("");
   const [pickPrayers, setPickPrayers] = useState(false);
   const [selPrayers, setSelPrayers] = useState<Set<string>>(new Set());
@@ -215,99 +352,14 @@ function LibraryPage() {
           </div>
           <ul className="space-y-3">
             {groups.map(({ key, primary, others }) => (
-              <li key={key} className="soft-card">
-                <div className="flex items-center">
-                  {pickPrayers ? (
-                    <span className="pl-4">
-                      <Checkbox
-                        checked={selPrayers.has(primary.id)}
-                        onCheckedChange={(v) =>
-                          toggle(selPrayers, setSelPrayers, primary.id, Boolean(v))
-                        }
-                        aria-label={`Select ${primary.title}`}
-                      />
-                    </span>
-                  ) : null}
-                  <Link
-                    to="/prayer/$prayerId"
-                    params={{ prayerId: primary.id }}
-                    className="flex-1 p-4"
-                  >
-                    <p className="font-medium">{primary.title}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {primary.variant_label ?? "Traditional"}
-                      {others.length ? " · default" : ""} ·{" "}
-                      {TAXONOMY_LABELS[primary.prayer_type]}
-                    </p>
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() => toggleFavorite(primary.id)}
-                    aria-label={primary.favorite ? "Remove favorite" : "Add favorite"}
-                    className="px-4 py-5 text-muted-foreground"
-                  >
-                    <Heart
-                      className={`size-5 ${primary.favorite ? "fill-primary text-primary" : ""}`}
-                    />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!window.confirm(`Delete “${primary.title}”?`)) return;
-                      deletePrayer(primary.id);
-                      toast.success("Prayer deleted");
-                    }}
-                    aria-label={`Delete ${primary.title}`}
-                    className="pr-4 py-5 text-muted-foreground"
-                  >
-                    <Trash2 className="size-5" />
-                  </button>
-                </div>
-                {others.length ? (
-                  <ul className="border-t border-border/60 px-4 py-2">
-                    {others.map((variant) => (
-                      <li key={variant.id} className="flex items-center">
-                        {pickPrayers ? (
-                          <span className="pr-3">
-                            <Checkbox
-                              checked={selPrayers.has(variant.id)}
-                              onCheckedChange={(v) =>
-                                toggle(selPrayers, setSelPrayers, variant.id, Boolean(v))
-                              }
-                              aria-label={`Select ${variant.variant_label ?? "version"} of ${primary.title}`}
-                            />
-                          </span>
-                        ) : null}
-                        <Link
-                          to="/prayer/$prayerId"
-                          params={{ prayerId: variant.id }}
-                          className="flex-1 py-2 text-sm text-muted-foreground"
-                        >
-                          {variant.variant_label ?? "Alternate wording"}
-                        </Link>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (
-                              !window.confirm(
-                                `Delete the “${variant.variant_label ?? "alternate"}” wording?`,
-                              )
-                            )
-                              return;
-                            deletePrayer(variant.id);
-                            toast.success("Version deleted");
-                          }}
-                          aria-label={`Delete ${variant.variant_label ?? "version"} of ${primary.title}`}
-                          className="py-2 pl-3 text-muted-foreground"
-                        >
-                          <Trash2 className="size-4" />
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-              </li>
+              <PrayerRow
+                key={key}
+                primary={primary}
+                others={others}
+                picking={pickPrayers}
+                selected={selPrayers}
+                onSelect={(id, on) => toggle(selPrayers, setSelPrayers, id, on)}
+              />
             ))}
             {groups.length === 0 ? (
               <li className="py-10 text-center text-sm text-muted-foreground">

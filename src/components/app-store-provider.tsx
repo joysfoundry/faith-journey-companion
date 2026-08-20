@@ -30,6 +30,15 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     return result.templateId;
   }, []);
 
+  const startSinglePrayer = useCallback(
+    (prayerId: string, ctx: Parameters<typeof mutations.startSinglePrayer>[2] = {}) => {
+      const result = mutations.startSinglePrayer(dbRef.current, prayerId, ctx);
+      setDb(result.db);
+      return result.session as PrayerSession | undefined;
+    },
+    [],
+  );
+
   const value = useMemo(
     () => ({
       db,
@@ -54,6 +63,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
         setDb((d) => mutations.saveHowTo(d, h)),
       createTemplateFromHowTo,
       startSession,
+      startSinglePrayer,
       setCursor: (id: string, cursor: number) => setDb((d) => mutations.setCursor(d, id, cursor)),
       toggleItemDone: (id: string) => setDb((d) => mutations.toggleItemDone(d, id)),
       finishSession: (id: string) => setDb((d) => mutations.finishSession(d, id)),
@@ -79,7 +89,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       addMassExperience: (m: Parameters<typeof mutations.addMassExperience>[1]) =>
         setDb((d) => mutations.addMassExperience(d, m)),
     }),
-    [db, ready, startSession, createTemplateFromHowTo],
+    [db, ready, startSession, startSinglePrayer, createTemplateFromHowTo],
   );
 
   return <AppStoreContext.Provider value={value}>{children}</AppStoreContext.Provider>;

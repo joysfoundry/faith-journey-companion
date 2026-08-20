@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { Heart, NotebookPen, Pencil, Play } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
@@ -12,24 +13,187 @@ import {
 } from "@/components/prayer/PrayerFields";
 import { MediaEditor } from "@/components/media/MediaEditor";
 import { useApp, variantsOf } from "@/lib/prayer/store";
+import { TAXONOMY_LABELS } from "@/domain/taxonomy";
+import type { PrayerMedia } from "@/lib/prayer/types";
 
 export const Route = createFileRoute("/prayer/$prayerId")({
+  validateSearch: (s: Record<string, unknown>): { edit?: boolean } =>
+    s["edit"] === true || s["edit"] === "true" ? { edit: true } : {},
   head: () => ({
     meta: [
       { title: "Prayer — Faith Journey" },
-      { name: "description", content: "Read, edit, and manage versions of a prayer in your library." },
+      { name: "description", content: "Read, pray, and manage a prayer in your library." },
       { property: "og:title", content: "Prayer — Faith Journey" },
-      { property: "og:description", content: "Prayer text, alternate versions, and source lineage." },
+      { property: "og:description", content: "Prayer text, audio, alternate versions, and source." },
     ],
   }),
-  // Adding a prayer lives on the single "Add prayers" screen.
+  // Adding a prayer lives on the single "Add a prayer" screen.
   beforeLoad: ({ params }) => {
     if (params.prayerId === "new") throw redirect({ to: "/import" });
   },
-  component: PrayerDetail,
+  component: PrayerPage,
 });
 
-function PrayerDetail() {
+function PrayerPage() {
+  const { edit } = Route.useSearch();
+  return edit ? <EditPrayer /> : <ViewPrayer />;
+}
+
+function MediaItem({ m }: { m: PrayerMedia }) {
+  return (
+    <li className="rounded-lg border border-border/70 p-2.5">
+      <p className="text-sm font-medium">
+        {m.label ?? (m.kind === "video" ? "Video" : "Audio")}
+        <span className="ml-2 text-xs font-normal text-muted-foreground">
+          {m.kind} · {m.source}
+        </span>
+      </p>
+      {m.kind === "video" ? (
+        m.source === "link" ? (
+          <a href={m.url} target="_blank" rel="noreferrer" className="text-sm text-primary underline">
+            Open video
+          </a>
+        ) : (
+          <video controls src={m.url} className="mt-1 w-full rounded-md" />
+        )
+      ) : (
+        <audio controls src={m.url} className="mt-1 w-full" />
+      )}
+    </li>
+  );
+}
+
+/* ------------------------------- View (read-only) ------------------------- */
+function ViewPrayer() {
+  const { prayerId } = Route.useParams();
+  const { db, toggleFavorite, startSinglePrayer } = useApp();
+  const navigate = useNavigate();
+
+  const prayer = db.prayers.find((p) => p.id === prayerId);
+  const version = db.prayer_versions.find((v) => v.id === prayer?.default_version_id)
+    ?? db.prayer_versions.find((v) => v.prayer_id === prayerId);
+  const siblings = prayer ? variantsOf(db, prayer) : [];
+  const source = db.sources.find((s) => s.id === (prayer?.source_id ?? version?.source_id));
+
+  if (!prayer) {
+    return (
+      <AppShell title="Prayer" back={{ to: "/prayers", label: "Prayers" }}>
+        <p className="text-sm text-muted-foreground">This prayer isn&apos;t in your library.</p>
+      </AppShell>
+    );
+  }
+
+  const media = prayer.media ?? [];
+  const tags = prayer.tags ?? [];
+
+  function prayNow() {
+    const session = startSinglePrayer(prayer!.id);
+    if (session) navigate({ to: "/session/$sessionId", params: { sessionId: session.id } });
+  }
+
+  return (
+    <AppShell title={prayer.title} back={{ to: "/prayers", label: "Prayers" }}>
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="rounded-full bg-secondary px-2.5 py-0.5 text-xs text-muted-foreground">
+            {TAXONOMY_LABELS[prayer.prayer_type]}
+          </span>
+          <span className="rounded-full bg-secondary px-2.5 py-0.5 text-xs text-muted-foreground">
+            {TAXONOMY_LABELS[prayer.expression_type]}
+          </span>
+          {prayer.variant_label ? (
+            <span className="rounded-full bg-secondary px-2.5 py-0.5 text-xs text-muted-foreground">
+              {prayer.variant_label}
+              {prayer.is_default_variant ? " · default" : ""}
+            </span>
+          ) : null}
+        </div>
+
+        <article className="soft-card p-5">
+          <p className="prayer-text whitespace-pre-line text-lg">{version?.body}</p>
+        </article>
+
+        {tags.length ? (
+          <div className="flex flex-wrap gap-1.5">
+            {tags.map((t) => (
+              <span key={t} className="rounded-full border border-border px-2.5 py-0.5 text-xs text-muted-foreground">
+                {t}
+              </span>
+            ))}
+          </div>
+        ) : null}
+
+        {media.length ? (
+          <section className="soft-card p-4">
+            <p className="eyebrow">Audio &amp; video</p>
+            <ul className="mt-2 space-y-2">
+              {media.map((m) => (
+                <MediaItem key={m.id} m={m} />
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
+        {/* Primary actions */}
+        <div className="flex gap-2">
+          <Button className="h-12 flex-1" onClick={prayNow}>
+            <Play className="size-5" /> Pray now
+          </Button>
+          <Button asChild variant="secondary" className="h-12">
+            <Link to="/prayer/$prayerId" params={{ prayerId: prayer.id }} search={{ edit: true }}>
+              <Pencil className="size-5" /> Edit
+            </Link>
+          </Button>
+          <Button variant="secondary" className="h-12" onClick={() => toggleFavorite(prayer.id)} aria-label="Favorite">
+            <Heart className={`size-5 ${prayer.favorite ? "fill-primary text-primary" : ""}`} />
+          </Button>
+        </div>
+
+        <Button asChild variant="ghost" className="h-11 w-full">
+          <Link to="/reflections">
+            <NotebookPen className="size-4" /> Reflect on this prayer
+          </Link>
+        </Button>
+
+        {siblings.length > 1 ? (
+          <section className="soft-card p-4">
+            <p className="eyebrow">Other versions</p>
+            <ul className="mt-2 space-y-2">
+              {siblings
+                .filter((v) => v.id !== prayer.id)
+                .map((v) => (
+                  <li key={v.id}>
+                    <Link
+                      to="/prayer/$prayerId"
+                      params={{ prayerId: v.id }}
+                      className="text-sm text-primary underline"
+                    >
+                      {v.variant_label ?? "Alternate wording"}
+                    </Link>
+                  </li>
+                ))}
+            </ul>
+          </section>
+        ) : null}
+
+        {source ? (
+          <section className="soft-card p-4">
+            <p className="eyebrow">Source</p>
+            <p className="mt-1 text-sm">{source.name}</p>
+            {source.url ? (
+              <a className="text-sm text-primary underline" href={source.url} target="_blank" rel="noreferrer">
+                View source
+              </a>
+            ) : null}
+          </section>
+        ) : null}
+      </div>
+    </AppShell>
+  );
+}
+
+/* ------------------------------- Edit ------------------------------------- */
+function EditPrayer() {
   const { prayerId } = Route.useParams();
   const {
     db,
@@ -43,7 +207,6 @@ function PrayerDetail() {
 
   const prayer = db.prayers.find((p) => p.id === prayerId);
   const version = db.prayer_versions.find((v) => v.prayer_id === prayerId);
-  // Each wording is its own prayer record; siblings share a variant group.
   const siblings = prayer ? variantsOf(db, prayer) : [];
 
   const [draft, setDraft] = useState<PrayerDraft>({
@@ -75,14 +238,11 @@ function PrayerDetail() {
       records.version,
     );
     toast.success("Prayer saved");
-    navigate({ to: "/prayers" });
+    navigate({ to: "/prayer/$prayerId", params: { prayerId }, search: { edit: false } });
   };
 
   return (
-    <AppShell
-      title={prayer?.title ?? "Prayer"}
-      back={{ to: "/prayers", label: "Prayers" }}
-    >
+    <AppShell title={prayer?.title ?? "Prayer"} back={{ to: "/prayers", label: "Prayers" }}>
       <div className="space-y-4">
         {prayer?.variant_label ? (
           <p className="text-sm text-muted-foreground">
@@ -98,24 +258,19 @@ function PrayerDetail() {
 
         {prayer ? (
           <>
-            <Button
-              variant="secondary"
-              className="h-12 w-full"
-              onClick={() => toggleFavorite(prayer.id)}
-            >
+            <Button variant="secondary" className="h-12 w-full" onClick={() => toggleFavorite(prayer.id)}>
               {prayer.favorite ? "Remove from favorites" : "Add to favorites"}
             </Button>
 
             <section className="soft-card p-4">
               <p className="eyebrow">Versions</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Each version is its own record, so a devotion can use any wording. The
-                default one is used when you pray and sits at the top of the library.
+                Each version is its own record, so a devotion can use any wording. The default one is
+                used when you pray and sits at the top of the library.
               </p>
               <ul className="mt-2 space-y-3">
                 {siblings.map((v) => {
-                  const body =
-                    db.prayer_versions.find((x) => x.prayer_id === v.id)?.body ?? "";
+                  const body = db.prayer_versions.find((x) => x.prayer_id === v.id)?.body ?? "";
                   return (
                     <li key={v.id} className="flex items-start gap-3">
                       {siblings.length > 1 ? (
@@ -139,6 +294,7 @@ function PrayerDetail() {
                             <Link
                               to="/prayer/$prayerId"
                               params={{ prayerId: v.id }}
+                              search={{ edit: true }}
                               className="underline"
                             >
                               {v.variant_label ?? "Alternate wording"}
@@ -183,7 +339,6 @@ function PrayerDetail() {
                 </Button>
               </div>
             </section>
-
 
             {source ? (
               <section className="soft-card p-4">
