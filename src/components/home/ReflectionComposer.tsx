@@ -27,7 +27,7 @@ interface Props {
 const GROUP_TARGET: Record<string, ReflectionLinkTarget> = {
   "Prayer & devotion": "prayer_session",
   Word: "daily_reading",
-  Formation: "learning",
+  Learn: "learning",
 };
 
 function formatWhen(iso: string): string {

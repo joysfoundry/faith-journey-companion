@@ -3,7 +3,6 @@ import { BookOpen, CalendarDays, Download, FileText, Sparkles } from "lucide-rea
 
 import { AppShell } from "@/components/layout/PageShell";
 import { useApp } from "@/lib/prayer/store";
-import { learnItems } from "@/domain/placeholderData";
 
 export const Route = createFileRoute("/more")({
   head: () => ({
@@ -12,12 +11,12 @@ export const Route = createFileRoute("/more")({
       {
         name: "description",
         content:
-          "Novenas, the prayer calendar, formation reading, imported sources, and how-to guides.",
+          "Novenas, the prayer calendar, your Life Library, imported sources, and how-to guides.",
       },
       { property: "og:title", content: "More — Faith Journey" },
       {
         property: "og:description",
-        content: "Novenas, calendar, formation library, and prayer imports.",
+        content: "Novenas, calendar, Life Library, and prayer imports.",
       },
     ],
   }),
@@ -43,8 +42,8 @@ function MorePage() {
     {
       to: "/formation",
       icon: BookOpen,
-      title: "Formation",
-      desc: `${learnItems.length} books, videos, and sermons in progress`,
+      title: "Learn",
+      desc: `Life Library · ${db.learning_items.filter((i) => i.status !== "finished").length} in progress`,
     },
     {
       to: "/import",

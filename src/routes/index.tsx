@@ -84,7 +84,7 @@ function Index() {
     { id: rosary?.id ?? "rosary", label: `Daily Rosary · ${setName}`, group: "Prayer & devotion" },
     { id: todaysWord.id, label: todaysWord.liturgicalTitle, group: "Word" },
     ...readingPrograms.map((p) => ({ id: p.id, label: p.title, group: "Word" })),
-    ...db.learning_items.map((l) => ({ id: l.id, label: l.title, group: "Formation" })),
+    ...db.learning_items.map((l) => ({ id: l.id, label: l.title, group: "Learn" })),
   ];
 
   return (
@@ -186,7 +186,7 @@ function Index() {
         <WordSection onReflect={openJournal} />
       </section>
 
-      {/* D — Formation */}
+      {/* D — Learn (collection: Life Library) */}
       <section className="mb-9">
         <SectionHeading
           action={
@@ -198,7 +198,7 @@ function Index() {
             </Button>
           }
         >
-          Formation
+          Learn
         </SectionHeading>
         <Card className="border-border/70">
           <CardContent className="divide-y divide-border/70 p-0">

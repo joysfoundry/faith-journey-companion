@@ -12,16 +12,16 @@ import type { LearningStatus } from "@/lib/prayer/types";
 export const Route = createFileRoute("/formation")({
   head: () => ({
     meta: [
-      { title: "Formation — Faith Journey" },
+      { title: "Learn — Faith Journey" },
       {
         name: "description",
         content:
-          "Books, articles, videos, sermons, and podcasts you are reading and watching, with reflections attached.",
+          "Your Life Library — books, articles, videos, sermons, and podcasts you are reading and watching, with reflections attached.",
       },
-      { property: "og:title", content: "Formation — Faith Journey" },
+      { property: "og:title", content: "Learn — Faith Journey" },
       {
         property: "og:description",
-        content: "Track the books, videos, and sermons forming your faith right now.",
+        content: "Your Life Library — the books, videos, and sermons forming your faith right now.",
       },
     ],
   }),
@@ -79,8 +79,8 @@ function FormationPage() {
 
   return (
     <AppShell
-      title="Formation"
-      subtitle="Books, articles, videos, sermons, and podcasts"
+      title="Learn"
+      subtitle="Your Life Library — books, articles, videos, sermons, podcasts"
       back={{ to: "/more", label: "More" }}
       action={
         <Button size="sm" variant="secondary" onClick={() => setAdding((v) => !v)}>
@@ -104,7 +104,7 @@ function FormationPage() {
               ))}
             </select>
             <Button className="flex-1" onClick={submit} disabled={!title.trim()}>
-              Add to Library
+              Add to Life Library
             </Button>
           </div>
         </div>

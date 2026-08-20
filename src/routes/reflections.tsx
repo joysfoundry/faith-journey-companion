@@ -18,7 +18,7 @@ export const Route = createFileRoute("/reflections")({
       { property: "og:title", content: "Reflection — Faith Journey" },
       {
         property: "og:description",
-        content: "Your journal — the connecting tissue across prayer, Word, and formation.",
+        content: "Your journal — the connecting tissue across prayer, Word, and learning.",
       },
     ],
   }),
@@ -42,7 +42,7 @@ function ReflectionsPage() {
     { id: rosary?.id ?? "rosary", label: `Daily Rosary · ${setName}`, group: "Prayer & devotion" },
     { id: todaysWord.id, label: todaysWord.liturgicalTitle, group: "Word" },
     ...readingPrograms.map((p) => ({ id: p.id, label: p.title, group: "Word" })),
-    ...db.learning_items.map((l) => ({ id: l.id, label: l.title, group: "Formation" })),
+    ...db.learning_items.map((l) => ({ id: l.id, label: l.title, group: "Learn" })),
   ];
 
   return (
