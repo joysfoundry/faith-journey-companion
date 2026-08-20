@@ -50,6 +50,14 @@ out.push(
   `Scriptural Rosary: ${scr.items.length} items, ${scriptureItems.length} Scripture passages (${distinctRefs} distinct), each-followed-by-HailMary=${eachScriptureThenHailMary}`,
 );
 
+// Fixed mystery set: a rosary pinned to Luminous compiles Luminous mysteries
+const rosaryT = db.templates.find((t) => t.id === "tpl-rosary")!;
+const pinned = { ...rosaryT, fixed_mystery_set_id: "set-luminous" };
+const pinnedSession = generatePrayerSession(db, pinned, {});
+const mysteryTitles = pinnedSession.items.filter((i) => i.kind === "mystery").map((i) => i.title);
+const allLuminous = mysteryTitles.length === 5 && mysteryTitles.every((t) => /Baptism|Cana|Kingdom|Transfig|Eucharist/.test(t));
+out.push(`Fixed mystery set (Luminous): mysteries=[${mysteryTitles.join(", ")}] allLuminous=${allLuminous}`);
+
 // 54-day novena still resolves (novena rules + phases)
 const novena = compile("tpl-54-novena", { novena_instance_id: "none" });
 out.push(`54-Day Novena: ${novena.items.length} items compiled`);

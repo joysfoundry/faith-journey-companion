@@ -212,12 +212,14 @@ function ItemView({ item, showMeditation }: { item: SessionItem; showMeditation:
     );
   }
 
-  if (item.kind === "intention") {
+  if (item.kind === "intention" || item.kind === "petition" || item.kind === "meditation") {
+    const eyebrow =
+      item.kind === "petition" ? "Petition" : item.kind === "meditation" ? "Meditation" : "Intention";
     return (
       <div className="text-center">
-        <p className="eyebrow">Intention</p>
+        <p className="eyebrow">{eyebrow}</p>
         <h2 className="mt-3 font-display text-3xl">{item.title}</h2>
-        {item.body ? <p className="prayer-text mt-4">{item.body}</p> : null}
+        {item.body ? <p className="prayer-text mt-4 text-left">{item.body}</p> : null}
       </div>
     );
   }

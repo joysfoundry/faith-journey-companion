@@ -173,7 +173,11 @@ export function generatePrayerSession(
     }
   }
 
-  // 2. Mystery resolution.
+  // 2. Mystery resolution. A template can pin the set (e.g. Luminous) unless the
+  // caller's context explicitly chose one.
+  if (template.fixed_mystery_set_id && !contextInput.mystery_set_id && !ctx.mystery_set_id) {
+    ctx.mystery_set_id = template.fixed_mystery_set_id;
+  }
   const presentation = ctx.mystery_presentation ?? template.mystery_presentation;
   ctx.mystery_presentation = presentation;
   const setId = template.mystery_count > 0 ? resolveMysterySet(db, ctx) : undefined;
@@ -211,14 +215,14 @@ export function generatePrayerSession(
       continue;
     }
 
-    // Salutations are prayed like prayers, but their text is the V/R pair.
+    // Salutations are prayed like prayers. Either a V/R pair or plain text.
     if (item.kind === "salutation") {
-      const body = [
-        item.versicle ? `V. ${item.versicle}` : "",
-        item.response ? `R. ${item.response}` : "",
-      ]
-        .filter(Boolean)
-        .join("\n");
+      const isVR = item.salutation_vr ?? Boolean(item.versicle || item.response);
+      const body = isVR
+        ? [item.versicle ? `V. ${item.versicle}` : "", item.response ? `R. ${item.response}` : ""]
+            .filter(Boolean)
+            .join("\n")
+        : (item.body ?? "");
       const total = Math.max(1, item.repetition_count);
       for (let n = 1; n <= total; n++) {
         push({
@@ -229,6 +233,15 @@ export function generatePrayerSession(
           repetition_total: total > 1 ? total : undefined,
         });
       }
+      continue;
+    }
+
+    if (item.kind === "petition" || item.kind === "meditation") {
+      push({
+        kind: item.kind,
+        title: item.label ?? (item.kind === "petition" ? "Petition" : "Meditation"),
+        body: item.body ?? "",
+      });
       continue;
     }
 
@@ -271,7 +284,7 @@ export function generatePrayerSession(
       push({
         kind: "intention",
         title: item.label ?? "Intention",
-        body: intention?.body ?? intention?.title ?? item.label ?? "",
+        body: item.body ?? intention?.body ?? intention?.title ?? "",
       });
       continue;
     }

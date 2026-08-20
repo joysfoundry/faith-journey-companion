@@ -157,7 +157,9 @@ export interface ExternalLinkOption {
  * - prayer: a prayer record from the library
  * - salutation: a versicle / response pair (V. … R. …)
  * - mystery_placeholder: rosary decades only
- * - intention: an intention / petition slot
+ * - intention: the user's own intention slot
+ * - petition: a sourced petition from the devotion
+ * - meditation: a meditation prompt / reflection
  * - external_link: a link out to an external prayer experience (generic)
  * - scripture: a Scripture passage (with a citation) placeable anywhere
  * - custom: any other component the user adds
@@ -168,6 +170,8 @@ export type TemplateItemKind =
   | "salutation"
   | "mystery_placeholder"
   | "intention"
+  | "petition"
+  | "meditation"
   | "external_link"
   | "scripture"
   | "custom"
@@ -184,6 +188,8 @@ export interface TemplateItem {
   /** Which decade / mystery ordinal this placeholder refers to (1-based). */
   mystery_ordinal?: number | undefined;
   label?: string | undefined;
+  /** Salutation: true = versicle/response pair; false/absent = plain text (body). */
+  salutation_vr?: boolean | undefined;
   /** Salutation: the versicle line (spoken by the leader). */
   versicle?: string | undefined;
   /** Salutation: the response line. */
@@ -217,6 +223,10 @@ export interface PrayerTemplate {
   mystery_count: number;
   /** Novena config — duration is never assumed to be nine days. */
   novena?: NovenaConfig | undefined;
+  /** Pin the mysteries to one set (e.g. Luminous); absent = resolve by day. */
+  fixed_mystery_set_id?: ID | undefined;
+  /** Audio of the whole devotion — links now; uploads later. */
+  media?: PrayerMedia[] | undefined;
   source_id?: ID | undefined;
   built_in: boolean;
   created_at: string;
@@ -286,6 +296,8 @@ export type SessionItemKind =
   | "prayer"
   | "mystery"
   | "intention"
+  | "petition"
+  | "meditation"
   | "external_link"
   | "scripture"
   | "heading";
