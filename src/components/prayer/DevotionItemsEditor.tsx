@@ -2,7 +2,6 @@ import { Fragment, useMemo, useState } from "react";
 import { GripVertical, Minus, Plus, Search, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useApp, variantsOf } from "@/lib/prayer/store";
 import { newId } from "@/lib/prayer/compiler";
@@ -410,24 +409,15 @@ export function DevotionItemsEditor({
                       </Button>
                     </div>
                   ) : null}
-                </div>
 
-                <div className="mt-2 flex items-center justify-between">
-                  <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Switch
-                      checked={item.optional}
-                      onCheckedChange={(v) => update(index, { optional: v })}
-                    />
-                    Optional
-                  </label>
-                  <Button
-                    size="icon"
-                    variant="ghost"
+                  <button
+                    type="button"
                     aria-label="Remove item"
                     onClick={() => removeAt(index)}
+                    className="-mr-1 mt-0.5 shrink-0 p-1 text-muted-foreground hover:text-destructive"
                   >
-                    <Trash2 className="size-4 text-destructive" />
-                  </Button>
+                    <X className="size-4" />
+                  </button>
                 </div>
               </div>
             </Fragment>

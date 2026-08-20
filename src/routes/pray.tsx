@@ -1,11 +1,17 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { FilePlus2, Pencil, Play, Plus, Save, Trash2 } from "lucide-react";
+import { FilePlus2, MoreVertical, Pencil, Play, Plus, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { DevotionItemsEditor } from "@/components/prayer/DevotionItemsEditor";
 import { useApp } from "@/lib/prayer/store";
 import { listenSourcesFromItems, newId, resolveNovenaDay, todayISO } from "@/lib/prayer/compiler";
@@ -22,7 +28,7 @@ import type {
 export const Route = createFileRoute("/pray")({
   head: () => ({
     meta: [
-      { title: "Session Builder — Faith Journey" },
+      { title: "Prayer Session Builder — Faith Journey" },
       {
         name: "description",
         content:
@@ -206,8 +212,28 @@ function PrayPage() {
   );
   const openSessions = db.sessions.filter((s) => !s.completed_at);
 
+  const pageMenu = (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        aria-label="More actions"
+        className="rounded-md p-2 text-muted-foreground hover:bg-secondary hover:text-foreground"
+      >
+        <MoreVertical className="size-5" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={saveAsTemplate}>
+          <FilePlus2 className="size-4" /> Save as template
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
   return (
-    <AppShell title="Session Builder" subtitle="Assemble your devotion or prayer session.">
+    <AppShell
+      title="Prayer Session Builder"
+      subtitle="Assemble your devotion or prayer session."
+      action={pageMenu}
+    >
       <div className="space-y-4">
         {editingId ? (
           <div className="flex items-center justify-between rounded-xl bg-secondary/60 px-4 py-2 text-sm">
@@ -409,14 +435,9 @@ function PrayPage() {
         </div>
 
         {/* Actions */}
-        <div className="flex gap-3">
-          <Button variant="secondary" className="h-12 flex-1" onClick={saveAsTemplate}>
-            <FilePlus2 className="size-5" /> Save as template
-          </Button>
-          <Button className="h-12 flex-1" onClick={saveSession}>
-            <Save className="size-5" /> {editingId ? "Update session" : "Save session"}
-          </Button>
-        </div>
+        <Button className="h-12 w-full" onClick={saveSession}>
+          <Save className="size-5" /> {editingId ? "Update session" : "Save session"}
+        </Button>
 
         {plans.length > 0 ? (
           <section>
