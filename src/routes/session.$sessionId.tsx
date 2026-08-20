@@ -271,7 +271,11 @@ function ItemView({ item, showMeditation }: { item: SessionItem; showMeditation:
 
   if (item.kind === "intention" || item.kind === "petition" || item.kind === "meditation") {
     const eyebrow =
-      item.kind === "petition" ? "Petition" : item.kind === "meditation" ? "Meditation" : "Intention";
+      item.kind === "petition"
+        ? "Petition"
+        : item.kind === "meditation"
+          ? "Meditation"
+          : "Intention";
     return (
       <div className="text-center">
         <p className="eyebrow">{eyebrow}</p>

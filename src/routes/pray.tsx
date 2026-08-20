@@ -1,40 +1,38 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Eye, Pencil, Play, Plus, Save, Trash2, X } from "lucide-react";
+import { FilePlus2, Pencil, Play, Plus, Save, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { AppShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DevotionItemsEditor } from "@/components/prayer/DevotionItemsEditor";
 import { useApp } from "@/lib/prayer/store";
-import {
-  generatePrayerSession,
-  listenSources,
-  newId,
-  resolveNovenaDay,
-  templateOutline,
-  todayISO,
-} from "@/lib/prayer/compiler";
+import { listenSourcesFromItems, newId, resolveNovenaDay, todayISO } from "@/lib/prayer/compiler";
 import type {
   MysteryPresentation,
+  PrayerTemplate,
   ProgressMode,
   Recurrence,
   SessionContext,
   SessionPlan,
+  TemplateItem,
 } from "@/lib/prayer/types";
 
 export const Route = createFileRoute("/pray")({
   head: () => ({
     meta: [
-      { title: "Begin Prayer — Faith Journey" },
+      { title: "Session Builder — Faith Journey" },
       {
         name: "description",
         content:
-          "Assemble a prayer or devotion session — set the mysteries, how you listen, and when to pray it — then save or begin.",
+          "Assemble a prayer or devotion session — start from a template or from scratch, add prayers and petitions, set how you listen and when to pray it.",
       },
-      { property: "og:title", content: "Begin Prayer — Faith Journey" },
+      { property: "og:title", content: "Session Builder — Faith Journey" },
       {
         property: "og:description",
-        content: "Devotions expand into complete sessions — no counting, no page flipping.",
+        content:
+          "Start from a template or add prayers freely — sessions expand into a full prayer.",
       },
     ],
   }),
@@ -49,27 +47,85 @@ const RECURRENCE_LABEL: Record<Recurrence, string> = {
 };
 
 function PrayPage() {
-  const { db, startSession, deleteSession, saveSessionPlan, deleteSessionPlan } = useApp();
+  const {
+    db,
+    ready,
+    startBuiltSession,
+    deleteSession,
+    saveSessionPlan,
+    deleteSessionPlan,
+    saveTemplate,
+  } = useApp();
   const navigate = useNavigate();
   const today = todayISO();
+
+  const seedItems = (tid: string): TemplateItem[] =>
+    db.template_items
+      .filter((i) => i.template_id === tid)
+      .sort((a, b) => a.position - b.position)
+      .map((i) => ({ ...i }));
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [purpose, setPurpose] = useState("");
   const [dateVal, setDateVal] = useState(today);
   const [recurrence, setRecurrence] = useState<Recurrence>("none");
-  const [templateId, setTemplateId] = useState(db.templates[0]?.id ?? "");
+  const [templateId, setTemplateId] = useState("");
+  const [items, setItems] = useState<TemplateItem[]>([]);
+  const [originIds, setOriginIds] = useState<Set<string>>(new Set());
   const [progressMode, setProgressMode] = useState<ProgressMode>("scroll");
   const [mysterySet, setMysterySet] = useState("auto");
   const [presentation, setPresentation] = useState<MysteryPresentation | "template">("template");
   const [listenIndex, setListenIndex] = useState("");
   const [novenaInstanceId, setNovenaInstanceId] = useState("");
-  const [previewOpen, setPreviewOpen] = useState(false);
 
-  const template = db.templates.find((t) => t.id === templateId) ?? db.templates[0];
-  const isNovena = template?.kind === "novena";
+  const baseTemplate = templateId ? db.templates.find((t) => t.id === templateId) : undefined;
+  const isNovena = baseTemplate?.kind === "novena";
   const novenaInstances = db.novena_instances.filter((n) => n.template_id === templateId);
-  const sources = template ? listenSources(db, template) : [];
+  const mysteryCount = items.filter((i) => i.kind === "mystery_placeholder").length;
+  const sources = listenSourcesFromItems(db, items, baseTemplate?.media ?? []);
   const chosenSource = sources[Number(listenIndex)];
+
+  const pickTemplate = (id: string) => {
+    setTemplateId(id);
+    setItems(id ? seedItems(id) : []);
+    setOriginIds(new Set(id ? seedItems(id).map((i) => i.id) : []));
+    setListenIndex("");
+    setMysterySet("auto");
+    setPresentation("template");
+    setNovenaInstanceId("");
+  };
+
+  const resetForm = () => {
+    setEditingId(null);
+    setPurpose("");
+    setDateVal(today);
+    setRecurrence("none");
+    setProgressMode("scroll");
+    pickTemplate("");
+  };
+
+  const loadPlan = (plan: SessionPlan) => {
+    setEditingId(plan.id);
+    setPurpose(plan.purpose ?? "");
+    setDateVal(plan.date ?? today);
+    setRecurrence(plan.recurrence);
+    setTemplateId(plan.template_id);
+    const planItems = plan.items ?? seedItems(plan.template_id);
+    setItems(planItems.map((i) => ({ ...i })));
+    setOriginIds(new Set(seedItems(plan.template_id).map((i) => i.id)));
+    setProgressMode(plan.context.progress_mode ?? "scroll");
+    setMysterySet(plan.context.mystery_set_id ?? "auto");
+    setPresentation(plan.context.mystery_presentation ?? "template");
+    setNovenaInstanceId(plan.context.novena_instance_id ?? "");
+    const srcs = listenSourcesFromItems(
+      db,
+      planItems,
+      (plan.template_id ? db.templates.find((t) => t.id === plan.template_id)?.media : []) ?? [],
+    );
+    const idx = srcs.findIndex((s) => s.url === plan.context.listen_source?.url);
+    setListenIndex(idx >= 0 ? String(idx) : "");
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const buildContext = (): Partial<SessionContext> => ({
     progress_mode: progressMode,
@@ -79,66 +135,67 @@ function PrayPage() {
     ...(chosenSource ? { listen_source: chosenSource, audio_enabled: true } : {}),
   });
 
-  const previewItems = useMemo(() => {
-    if (!previewOpen || !template) return [];
-    return generatePrayerSession(db, template, { date: today, ...buildContext() }).items;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [previewOpen, template, mysterySet, presentation, novenaInstanceId, listenIndex, progressMode]);
-
-  const pickTemplate = (id: string) => {
-    setTemplateId(id);
-    setListenIndex("");
-    setMysterySet("auto");
-    setPresentation("template");
-    setNovenaInstanceId("");
-    setPreviewOpen(false);
-  };
-
-  const resetForm = () => {
-    setEditingId(null);
-    setPurpose("");
-    setDateVal(today);
-    setRecurrence("none");
-    pickTemplate(db.templates[0]?.id ?? "");
-  };
-
-  const loadPlan = (plan: SessionPlan) => {
-    const tpl = db.templates.find((t) => t.id === plan.template_id);
-    setEditingId(plan.id);
-    setPurpose(plan.purpose ?? "");
-    setDateVal(plan.date ?? today);
-    setRecurrence(plan.recurrence);
-    setTemplateId(plan.template_id);
-    setProgressMode(plan.context.progress_mode ?? "scroll");
-    setMysterySet(plan.context.mystery_set_id ?? "auto");
-    setPresentation(plan.context.mystery_presentation ?? "template");
-    setNovenaInstanceId(plan.context.novena_instance_id ?? "");
-    const srcs = tpl ? listenSources(db, tpl) : [];
-    const idx = srcs.findIndex((s) => s.url === plan.context.listen_source?.url);
-    setListenIndex(idx >= 0 ? String(idx) : "");
-    setPreviewOpen(false);
-    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const save = () => {
-    if (!template) return;
+  const saveSession = () => {
+    if (items.length === 0) {
+      toast.error("Add at least one prayer to the session.");
+      return;
+    }
     const plan: SessionPlan = {
       id: editingId ?? newId("plan"),
-      template_id: template.id,
+      template_id: templateId,
       ...(purpose.trim() ? { purpose: purpose.trim() } : {}),
       ...(dateVal ? { date: dateVal } : {}),
       recurrence,
       context: buildContext(),
+      items: items.map((it, i) => ({ ...it, position: i })),
       created_at:
         (editingId && db.session_plans.find((p) => p.id === editingId)?.created_at) ||
         new Date().toISOString(),
     };
     saveSessionPlan(plan);
+    toast.success(editingId ? "Session updated" : "Session saved");
     resetForm();
   };
 
-  const beginContext = (ctx: Partial<SessionContext>, tId: string) => {
-    const session = startSession(tId, { date: today, ...ctx });
+  const saveAsTemplate = () => {
+    const name = purpose.trim();
+    if (!name) {
+      toast.error("Name it in Purpose first, then save it as a template.");
+      return;
+    }
+    if (items.length === 0) {
+      toast.error("Add at least one prayer before saving a template.");
+      return;
+    }
+    const tid = newId("tpl");
+    const now = new Date().toISOString();
+    const tpl: PrayerTemplate = {
+      id: tid,
+      name,
+      kind: mysteryCount > 0 ? "rosary" : "standard",
+      mystery_presentation: "title_and_description",
+      mystery_count: mysteryCount,
+      built_in: false,
+      created_at: now,
+    };
+    saveTemplate(
+      tpl,
+      items.map((it, i) => ({ ...it, template_id: tid, position: i })),
+    );
+    // The session now starts from this new template — its items become "template".
+    setTemplateId(tid);
+    setOriginIds(new Set(items.map((i) => i.id)));
+    toast.success("You can now use this template to build your prayer sessions.");
+  };
+
+  const beginPlan = (plan: SessionPlan) => {
+    const planItems = plan.items ?? seedItems(plan.template_id);
+    const session = startBuiltSession(
+      plan.template_id || null,
+      planItems,
+      { date: today, ...plan.context },
+      plan.purpose,
+    );
     if (session) navigate({ to: "/session/$sessionId", params: { sessionId: session.id } });
   };
 
@@ -150,12 +207,16 @@ function PrayPage() {
   const openSessions = db.sessions.filter((s) => !s.completed_at);
 
   return (
-    <AppShell title="Pray" subtitle="Assemble your devotion or prayer session.">
+    <AppShell title="Session Builder" subtitle="Assemble your devotion or prayer session.">
       <div className="space-y-4">
         {editingId ? (
           <div className="flex items-center justify-between rounded-xl bg-secondary/60 px-4 py-2 text-sm">
             <span className="font-medium">Editing a saved session</span>
-            <button type="button" onClick={resetForm} className="inline-flex items-center gap-1 text-muted-foreground">
+            <button
+              type="button"
+              onClick={resetForm}
+              className="inline-flex items-center gap-1 text-muted-foreground"
+            >
               <Plus className="size-4" /> New
             </button>
           </div>
@@ -173,28 +234,24 @@ function PrayPage() {
             />
           </div>
           <div>
-            <Label htmlFor="template">What would you like to pray?</Label>
+            <Label htmlFor="template">Use a template to start?</Label>
             <select
               id="template"
-              value={template?.id ?? ""}
+              value={templateId}
               onChange={(e) => pickTemplate(e.target.value)}
               className="mt-2 h-12 w-full rounded-md border border-input bg-card px-3"
             >
+              <option value="">No template — start adding prayers</option>
               {db.templates.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.name}
                 </option>
               ))}
             </select>
-            {template ? (
-              <p className="mt-3 text-xs text-muted-foreground">
-                {templateOutline(db, template)
-                  .slice(0, 6)
-                  .map((o) => `${o.label}${o.detail ? ` ${o.detail}` : ""}`)
-                  .join(" · ")}
-                {" …"}
-              </p>
-            ) : null}
+            <p className="mt-2 text-xs text-muted-foreground">
+              A template is a fast start — you can still add, remove, and reword anything for this
+              session without changing the template.
+            </p>
           </div>
         </div>
 
@@ -237,7 +294,7 @@ function PrayPage() {
             >
               <option value="">Not tracking a novena</option>
               {novenaInstances.map((n) => {
-                const res = template ? resolveNovenaDay(template, n, today) : undefined;
+                const res = baseTemplate ? resolveNovenaDay(baseTemplate, n, today) : undefined;
                 return (
                   <option key={n.id} value={n.id}>
                     {n.name}
@@ -252,7 +309,7 @@ function PrayPage() {
           </div>
         ) : null}
 
-        {template && template.mystery_count > 0 ? (
+        {mysteryCount > 0 ? (
           <div className="soft-card space-y-3 p-4">
             <div>
               <Label htmlFor="mysteries">Mysteries</Label>
@@ -275,7 +332,9 @@ function PrayPage() {
               <select
                 id="presentation"
                 value={presentation}
-                onChange={(e) => setPresentation(e.target.value as MysteryPresentation | "template")}
+                onChange={(e) =>
+                  setPresentation(e.target.value as MysteryPresentation | "template")
+                }
                 className="mt-2 h-12 w-full rounded-md border border-input bg-card px-3"
               >
                 <option value="template">As saved in the devotion</option>
@@ -318,58 +377,43 @@ function PrayPage() {
             </select>
             {sources.length === 0 ? (
               <p className="mt-2 text-xs text-muted-foreground">
-                No audio or video attached to this devotion yet. Add media or an audio/video link in
-                the devotion builder.
+                No audio or video attached yet. Add an audio/video external link below, or template
+                media in the Template Builder.
               </p>
             ) : null}
           </div>
         </div>
 
-        {previewOpen ? (
-          <div className="soft-card p-4">
-            <div className="mb-3 flex items-center justify-between">
-              <p className="eyebrow">Preview — {previewItems.length} steps</p>
-              <button
-                type="button"
-                aria-label="Close preview"
-                onClick={() => setPreviewOpen(false)}
-                className="text-muted-foreground"
-              >
-                <X className="size-4" />
-              </button>
-            </div>
-            <ol className="max-h-80 space-y-1 overflow-y-auto text-sm">
-              {previewItems.map((it, i) => (
-                <li key={it.id} className="flex gap-2">
-                  <span className="w-6 shrink-0 text-right text-muted-foreground tabular-nums">
-                    {i + 1}
-                  </span>
-                  <span>
-                    {it.title}
-                    {it.repetition_total && it.repetition_total > 1 ? (
-                      <span className="text-muted-foreground">
-                        {" "}
-                        ({it.repetition_index}/{it.repetition_total})
-                      </span>
-                    ) : null}
-                  </span>
-                </li>
-              ))}
-            </ol>
+        {/* Editable build surface — template items + session add-ons */}
+        <div className="soft-card p-4">
+          <div className="mb-1 flex items-center justify-between">
+            <p className="eyebrow">Build your session</p>
+            {originIds.size > 0 ? (
+              <span className="text-xs text-muted-foreground">
+                <span className="mr-1 inline-block size-2 rounded-full bg-primary align-middle" />
+                added this session
+              </span>
+            ) : null}
           </div>
-        ) : null}
+          {items.length === 0 ? (
+            <p className="mb-2 text-sm text-muted-foreground">
+              Start adding prayers, or choose a template above to start.
+            </p>
+          ) : null}
+          <DevotionItemsEditor
+            items={items}
+            onChange={setItems}
+            templateId={templateId || "session"}
+            templateOriginIds={originIds}
+          />
+        </div>
 
-        {/* Action row: preview · save */}
+        {/* Actions */}
         <div className="flex gap-3">
-          <Button
-            variant="secondary"
-            className="h-12 flex-1"
-            onClick={() => setPreviewOpen((o) => !o)}
-            disabled={!template}
-          >
-            <Eye className="size-5" /> Preview
+          <Button variant="secondary" className="h-12 flex-1" onClick={saveAsTemplate}>
+            <FilePlus2 className="size-5" /> Save as template
           </Button>
-          <Button className="h-12 flex-1" onClick={save} disabled={!template}>
+          <Button className="h-12 flex-1" onClick={saveSession}>
             <Save className="size-5" /> {editingId ? "Update session" : "Save session"}
           </Button>
         </div>
@@ -400,9 +444,7 @@ function PrayPage() {
                     </span>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium leading-tight">{title}</p>
-                      {sub ? (
-                        <p className="truncate text-xs text-muted-foreground">{sub}</p>
-                      ) : null}
+                      {sub ? <p className="truncate text-xs text-muted-foreground">{sub}</p> : null}
                     </div>
                     <div className="flex shrink-0 items-center gap-0.5">
                       <button
@@ -425,7 +467,7 @@ function PrayPage() {
                         type="button"
                         aria-label="Begin session"
                         className="p-1.5 text-primary hover:opacity-80"
-                        onClick={() => beginContext(plan.context, plan.template_id)}
+                        onClick={() => beginPlan(plan)}
                       >
                         <Play className="size-4" />
                       </button>
@@ -466,6 +508,8 @@ function PrayPage() {
             </ul>
           </section>
         ) : null}
+
+        {!ready ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
       </div>
     </AppShell>
   );

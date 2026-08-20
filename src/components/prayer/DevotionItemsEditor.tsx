@@ -123,7 +123,10 @@ export function DevotionItemsEditor({
       intention: { label: "Intention", body: "" },
       petition: { label: "Petition", body: "" },
       meditation: { label: "Meditation", body: "" },
-      mystery_placeholder: { mystery_ordinal: mysteryCount + 1, label: `Decade ${mysteryCount + 1}` },
+      mystery_placeholder: {
+        mystery_ordinal: mysteryCount + 1,
+        label: `Decade ${mysteryCount + 1}`,
+      },
       external_link: {
         label: "External link",
         external_options: [{ label: "Source", url: "https://", is_default: true }],
@@ -178,7 +181,9 @@ export function DevotionItemsEditor({
             autoFocus
             defaultValue=""
             aria-label="Type of item to add"
-            onChange={(e) => e.target.value && chooseType(e.target.value as TemplateItem["kind"], index)}
+            onChange={(e) =>
+              e.target.value && chooseType(e.target.value as TemplateItem["kind"], index)
+            }
             className="h-8 flex-1 rounded border border-input bg-card px-2 text-sm"
           >
             <option value="" disabled>
@@ -190,7 +195,12 @@ export function DevotionItemsEditor({
               </option>
             ))}
           </select>
-          <button type="button" onClick={() => setMenuIndex(null)} aria-label="Cancel" className="text-muted-foreground">
+          <button
+            type="button"
+            onClick={() => setMenuIndex(null)}
+            aria-label="Cancel"
+            className="text-muted-foreground"
+          >
             <X className="size-4" />
           </button>
         </div>
@@ -248,11 +258,16 @@ export function DevotionItemsEditor({
                 className={`soft-card border-l-4 p-3 transition ${
                   isAddon ? "border-l-primary bg-primary/5" : "border-l-border"
                 } ${dragIndex === index ? "opacity-50" : ""} ${
-                  overIndex === index && dragIndex !== null && dragIndex !== index ? "ring-2 ring-primary" : ""
+                  overIndex === index && dragIndex !== null && dragIndex !== index
+                    ? "ring-2 ring-primary"
+                    : ""
                 }`}
               >
                 <div className="flex items-start gap-2">
-                  <span className="mt-1 cursor-grab touch-none text-muted-foreground active:cursor-grabbing" aria-hidden>
+                  <span
+                    className="mt-1 cursor-grab touch-none text-muted-foreground active:cursor-grabbing"
+                    aria-hidden
+                  >
                     <GripVertical className="size-4" />
                   </span>
                   <div className="min-w-0 flex-1">
@@ -310,7 +325,9 @@ export function DevotionItemsEditor({
                       </div>
                     ) : null}
 
-                    {item.kind === "intention" || item.kind === "petition" || item.kind === "meditation" ? (
+                    {item.kind === "intention" ||
+                    item.kind === "petition" ||
+                    item.kind === "meditation" ? (
                       <div className="mt-2 space-y-2">
                         <Input
                           value={item.label ?? ""}
@@ -322,7 +339,9 @@ export function DevotionItemsEditor({
                           value={item.body ?? ""}
                           rows={2}
                           placeholder={
-                            item.kind === "meditation" ? "Meditation prompt (optional)" : "Text (optional)"
+                            item.kind === "meditation"
+                              ? "Meditation prompt (optional)"
+                              : "Text (optional)"
                           }
                           onChange={(e) => update(index, { body: e.target.value })}
                           className="text-sm"
@@ -368,16 +387,24 @@ export function DevotionItemsEditor({
                         size="icon"
                         variant="ghost"
                         aria-label="Fewer repetitions"
-                        onClick={() => update(index, { repetition_count: Math.max(1, item.repetition_count - 1) })}
+                        onClick={() =>
+                          update(index, {
+                            repetition_count: Math.max(1, item.repetition_count - 1),
+                          })
+                        }
                       >
                         <Minus className="size-4" />
                       </Button>
-                      <span className="w-8 text-center tabular-nums text-sm">×{item.repetition_count}</span>
+                      <span className="w-8 text-center tabular-nums text-sm">
+                        ×{item.repetition_count}
+                      </span>
                       <Button
                         size="icon"
                         variant="ghost"
                         aria-label="More repetitions"
-                        onClick={() => update(index, { repetition_count: item.repetition_count + 1 })}
+                        onClick={() =>
+                          update(index, { repetition_count: item.repetition_count + 1 })
+                        }
                       >
                         <Plus className="size-4" />
                       </Button>
@@ -387,10 +414,18 @@ export function DevotionItemsEditor({
 
                 <div className="mt-2 flex items-center justify-between">
                   <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Switch checked={item.optional} onCheckedChange={(v) => update(index, { optional: v })} />
+                    <Switch
+                      checked={item.optional}
+                      onCheckedChange={(v) => update(index, { optional: v })}
+                    />
                     Optional
                   </label>
-                  <Button size="icon" variant="ghost" aria-label="Remove item" onClick={() => removeAt(index)}>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    aria-label="Remove item"
+                    onClick={() => removeAt(index)}
+                  >
                     <Trash2 className="size-4 text-destructive" />
                   </Button>
                 </div>
@@ -454,7 +489,9 @@ export function DevotionItemsEditor({
               </li>
             ))}
             {filteredGroups.length === 0 ? (
-              <li className="px-3 py-4 text-center text-sm text-muted-foreground">No prayers match.</li>
+              <li className="px-3 py-4 text-center text-sm text-muted-foreground">
+                No prayers match.
+              </li>
             ) : null}
           </ul>
         </div>
@@ -554,7 +591,9 @@ function ExternalLinkEditor({
           <Input
             value={o.url}
             placeholder="https://…"
-            onChange={(e) => setOptions(options.map((x, j) => (j === i ? { ...x, url: e.target.value } : x)))}
+            onChange={(e) =>
+              setOptions(options.map((x, j) => (j === i ? { ...x, url: e.target.value } : x)))
+            }
             className="h-9 flex-1 text-sm"
           />
           <select
@@ -588,7 +627,12 @@ function ExternalLinkEditor({
         type="button"
         variant="secondary"
         className="h-9"
-        onClick={() => setOptions([...options, { label: "Source", url: "https://", is_default: options.length === 0 }])}
+        onClick={() =>
+          setOptions([
+            ...options,
+            { label: "Source", url: "https://", is_default: options.length === 0 },
+          ])
+        }
       >
         <Plus className="size-4" /> Add source
       </Button>

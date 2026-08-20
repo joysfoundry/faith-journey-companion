@@ -82,7 +82,9 @@ function TemplateBuilder() {
   const navigate = useNavigate();
   const isNew = templateId === "new";
   const existing = db.templates.find((t) => t.id === templateId);
-  const existingSource = existing?.source_id ? db.sources.find((s) => s.id === existing.source_id) : undefined;
+  const existingSource = existing?.source_id
+    ? db.sources.find((s) => s.id === existing.source_id)
+    : undefined;
 
   const fallbackId = useMemo(() => newId("tpl"), []);
   const id = existing?.id ?? fallbackId;
@@ -161,12 +163,17 @@ function TemplateBuilder() {
       summary:
         "Auto-generated from the devotion. These are instructions — starting prayer expands them into the full text.",
       template_id: id,
-      steps: steps.map((text, i) => ({ id: `${howToId}-s${i}`, how_to_id: howToId, position: i, text })),
+      steps: steps.map((text, i) => ({
+        id: `${howToId}-s${i}`,
+        how_to_id: howToId,
+        position: i,
+        text,
+      })),
       ...(existing?.source_id ? { source_id: existing.source_id } : {}),
     };
     saveHowTo(howTo);
 
-    toast.success("Devotion saved · How-To guide created");
+    toast.success("You can now use this template to build your prayer sessions.");
     navigate({ to: "/prayers" });
   };
 
@@ -191,7 +198,8 @@ function TemplateBuilder() {
           </div>
           {mysteryCount > 0 ? (
             <p className="text-sm text-muted-foreground">
-              Mysteries: {fixedSetId ? db.mystery_sets.find((s) => s.id === fixedSetId)?.name : "by day"} ·{" "}
+              Mysteries:{" "}
+              {fixedSetId ? db.mystery_sets.find((s) => s.id === fixedSetId)?.name : "by day"} ·{" "}
               {presentation.replace(/_/g, " ")}
             </p>
           ) : null}
@@ -200,20 +208,29 @@ function TemplateBuilder() {
           </p>
           <ol className="space-y-2">
             {compiled.map((it, i) => {
-              const heading = it.kind === "mystery" ? (it.configuration as { heading?: string })?.heading : undefined;
+              const heading =
+                it.kind === "mystery"
+                  ? (it.configuration as { heading?: string })?.heading
+                  : undefined;
               return (
                 <li key={it.id} className="soft-card p-3">
                   {heading ? (
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-primary">{heading}</p>
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-primary">
+                      {heading}
+                    </p>
                   ) : null}
                   <div className="flex items-baseline justify-between gap-2">
                     <span className="text-sm font-medium">
                       {i + 1}. {it.title}
-                      {it.repetition_total ? ` (${it.repetition_index} of ${it.repetition_total})` : ""}
+                      {it.repetition_total
+                        ? ` (${it.repetition_index} of ${it.repetition_total})`
+                        : ""}
                     </span>
                   </div>
                   {it.body ? (
-                    <p className="prayer-text mt-1 whitespace-pre-line text-sm text-muted-foreground">{it.body}</p>
+                    <p className="prayer-text mt-1 whitespace-pre-line text-sm text-muted-foreground">
+                      {it.body}
+                    </p>
                   ) : null}
                 </li>
               );
@@ -245,11 +262,21 @@ function TemplateBuilder() {
       <div className="space-y-4">
         <div>
           <Label htmlFor="name">Name</Label>
-          <Input id="name" value={name} onChange={(e) => setName(e.target.value)} className="mt-1 h-12" />
+          <Input
+            id="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="mt-1 h-12"
+          />
         </div>
         <div>
           <Label htmlFor="desc">Description</Label>
-          <Input id="desc" value={description} onChange={(e) => setDescription(e.target.value)} className="mt-1 h-12" />
+          <Input
+            id="desc"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="mt-1 h-12"
+          />
         </div>
         <div>
           <Label htmlFor="notes">Notes from the source</Label>
@@ -267,7 +294,9 @@ function TemplateBuilder() {
         <div className="soft-card space-y-2 p-4">
           <p className="eyebrow">Source</p>
           <div>
-            <Label htmlFor="src-name" className="text-xs text-muted-foreground">Where it&apos;s from</Label>
+            <Label htmlFor="src-name" className="text-xs text-muted-foreground">
+              Where it&apos;s from
+            </Label>
             <Input
               id="src-name"
               value={sourceName}
@@ -277,7 +306,9 @@ function TemplateBuilder() {
             />
           </div>
           <div>
-            <Label htmlFor="src-url" className="text-xs text-muted-foreground">Link (optional)</Label>
+            <Label htmlFor="src-url" className="text-xs text-muted-foreground">
+              Link (optional)
+            </Label>
             <Input
               id="src-url"
               type="url"
@@ -297,7 +328,9 @@ function TemplateBuilder() {
           <div className="soft-card space-y-3 p-4">
             <p className="eyebrow">Mysteries</p>
             <div>
-              <Label htmlFor="mset" className="text-xs text-muted-foreground">Which mysteries</Label>
+              <Label htmlFor="mset" className="text-xs text-muted-foreground">
+                Which mysteries
+              </Label>
               <select
                 id="mset"
                 value={fixedSetId}
@@ -316,7 +349,9 @@ function TemplateBuilder() {
               </p>
             </div>
             <div>
-              <Label htmlFor="pres" className="text-xs text-muted-foreground">Presentation</Label>
+              <Label htmlFor="pres" className="text-xs text-muted-foreground">
+                Presentation
+              </Label>
               <select
                 id="pres"
                 value={presentation}
@@ -370,7 +405,6 @@ function TemplateBuilder() {
   );
 }
 
-
 function TemplateAudio({
   media,
   onChange,
@@ -423,13 +457,35 @@ function TemplateAudio({
         </ul>
       ) : null}
       <div className="flex gap-2">
-        <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Label" className="h-10 w-1/3" />
-        <Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://… audio link" className="h-10 flex-1" />
-        <Button type="button" variant="secondary" className="h-10" onClick={addLink} disabled={!url.trim()}>
+        <Input
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+          placeholder="Label"
+          className="h-10 w-1/3"
+        />
+        <Input
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="https://… audio link"
+          className="h-10 flex-1"
+        />
+        <Button
+          type="button"
+          variant="secondary"
+          className="h-10"
+          onClick={addLink}
+          disabled={!url.trim()}
+        >
           Add
         </Button>
       </div>
-      <Button type="button" variant="secondary" className="h-10 w-full" disabled title="Audio uploads land with cloud storage">
+      <Button
+        type="button"
+        variant="secondary"
+        className="h-10 w-full"
+        disabled
+        title="Audio uploads land with cloud storage"
+      >
         Upload audio (coming soon)
       </Button>
     </div>

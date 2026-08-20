@@ -16,15 +16,7 @@ import type {
 } from "@/domain/taxonomy";
 
 export type SourceType =
-  | "written"
-  | "manual"
-  | "pdf"
-  | "document"
-  | "text"
-  | "web"
-  | "image"
-  | "audio"
-  | "video";
+  "written" | "manual" | "pdf" | "document" | "text" | "web" | "image" | "audio" | "video";
 
 export interface Source {
   id: ID;
@@ -121,12 +113,7 @@ export interface Mystery {
 }
 
 export type MysteryContentVariant =
-  | "title_only"
-  | "short_description"
-  | "full_meditation"
-  | "scripture"
-  | "family"
-  | "devotion";
+  "title_only" | "short_description" | "full_meditation" | "scripture" | "family" | "devotion";
 
 export interface MysteryContent {
   id: ID;
@@ -136,10 +123,7 @@ export interface MysteryContent {
   source_id?: ID | undefined;
 }
 
-export type MysteryPresentation =
-  | "title_only"
-  | "title_and_description"
-  | "choose_during_session";
+export type MysteryPresentation = "title_only" | "title_and_description" | "choose_during_session";
 
 /**
  * A single external prayer experience (e.g. "Pray with the Pope").
@@ -326,6 +310,7 @@ export type Recurrence = "none" | "daily" | "weekly" | "monthly";
  */
 export interface SessionPlan {
   id: ID;
+  /** Base template this session started from; "" when built from scratch. */
   template_id: ID;
   /** User's name for it, e.g. "Monthly Family Rosary". Falls back to template name. */
   purpose?: string | undefined;
@@ -334,6 +319,12 @@ export interface SessionPlan {
   recurrence: Recurrence;
   /** The builder choices, applied verbatim when the plan is prayed. */
   context: Partial<SessionContext>;
+  /**
+   * The session's own (possibly customized) item list. Edits here are
+   * session-scoped and never change the base template. Absent = use the
+   * template's items unchanged.
+   */
+  items?: TemplateItem[] | undefined;
   created_at: string;
 }
 

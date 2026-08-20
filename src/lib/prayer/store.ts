@@ -64,8 +64,7 @@ export function normalizeVariants(db: Database): Database {
   for (const prayer of db.prayers) {
     const group = variantGroupId(prayer);
     const own = versions.filter((v) => v.prayer_id === prayer.id);
-    const primary =
-      own.find((v) => v.id === prayer.default_version_id) ?? own[0];
+    const primary = own.find((v) => v.id === prayer.default_version_id) ?? own[0];
     prayers.push({
       ...prayer,
       variant_group_id: group,
@@ -147,6 +146,12 @@ export interface AppStore {
   saveHowTo: (howTo: HowTo) => void;
   createTemplateFromHowTo: (howToId: ID) => ID | undefined;
   startSession: (templateId: ID, ctx: Partial<SessionContext>) => PrayerSession | undefined;
+  startBuiltSession: (
+    templateId: ID | null,
+    items: TemplateItem[],
+    ctx: Partial<SessionContext>,
+    title?: string,
+  ) => PrayerSession | undefined;
   startSinglePrayer: (prayerId: ID, ctx?: Partial<SessionContext>) => PrayerSession | undefined;
   setCursor: (sessionId: ID, cursor: number) => void;
   toggleItemDone: (itemId: ID) => void;
@@ -181,10 +186,19 @@ export function useApp(): AppStore {
  * Turns one how-to step into the devotion component it describes, so a guide
  * populates a real template instead of a list of plain headings.
  */
-function templateItemFromStep(db: Database, raw: string): Partial<TemplateItem> & { kind: TemplateItem["kind"] } {
+function templateItemFromStep(
+  db: Database,
+  raw: string,
+): Partial<TemplateItem> & { kind: TemplateItem["kind"] } {
   const text = raw.trim();
-  const repetition = Number(/[(\s]x\s*(\d+)|\((\d+)\s*x\)/i.exec(text)?.[1] ?? /\((\d+)\s*x\)/i.exec(text)?.[1] ?? 1) || 1;
-  const clean = text.replace(/[(\s]x\s*\d+\)?/i, "").replace(/\(\d+\s*x\)/i, "").trim();
+  const repetition =
+    Number(
+      /[(\s]x\s*(\d+)|\((\d+)\s*x\)/i.exec(text)?.[1] ?? /\((\d+)\s*x\)/i.exec(text)?.[1] ?? 1,
+    ) || 1;
+  const clean = text
+    .replace(/[(\s]x\s*\d+\)?/i, "")
+    .replace(/\(\d+\s*x\)/i, "")
+    .trim();
 
   // Versicle / response pair, written on one or two lines.
   const vr = /v[/.\s]*\.?\s*(.+?)\s*r[/.\s]*\.?\s*(.+)/is.exec(text);
@@ -223,9 +237,7 @@ export const mutations = {
   toggleFavorite(db: Database, prayerId: ID): Database {
     return {
       ...db,
-      prayers: db.prayers.map((p) =>
-        p.id === prayerId ? { ...p, favorite: !p.favorite } : p,
-      ),
+      prayers: db.prayers.map((p) => (p.id === prayerId ? { ...p, favorite: !p.favorite } : p)),
     };
   },
   upsertPrayer(db: Database, prayer: Prayer, version: PrayerVersion): Database {
@@ -353,10 +365,7 @@ export const mutations = {
    * Turns a guide into an editable devotion template. Each instruction becomes a
    * heading item the user can replace with real prayers in the devotion editor.
    */
-  createTemplateFromHowTo(
-    db: Database,
-    howToId: ID,
-  ): { db: Database; templateId?: ID } {
+  createTemplateFromHowTo(db: Database, howToId: ID): { db: Database; templateId?: ID } {
     const howTo = db.how_tos.find((h) => h.id === howToId);
     if (!howTo) return { db };
     /** Re-running rebuilds the devotion from the guide's current steps. */
@@ -429,6 +438,51 @@ export const mutations = {
       session,
     };
   },
+  /**
+   * Compile a session from an explicit (session-customized) item list. The base
+   * template — when there is one — supplies mystery settings; its stored items
+   * are ignored in favor of `sessionItems`. Passing no `templateId` builds an
+   * ad-hoc standard session. Nothing about the base template is mutated.
+   */
+  startBuiltSession(
+    db: Database,
+    templateId: ID | null,
+    sessionItems: TemplateItem[],
+    ctx: Partial<SessionContext>,
+    title?: string,
+  ): { db: Database; session?: PrayerSession } {
+    const base = templateId ? db.templates.find((t) => t.id === templateId) : undefined;
+    const workId = base?.id ?? newId("adhoc");
+    const mysteryCount = sessionItems.filter((i) => i.kind === "mystery_placeholder").length;
+    const template: PrayerTemplate = base
+      ? { ...base, mystery_count: mysteryCount }
+      : {
+          id: workId,
+          name: title?.trim() || "Prayer session",
+          kind: mysteryCount > 0 ? "rosary" : "standard",
+          mystery_presentation: "title_and_description",
+          mystery_count: mysteryCount,
+          built_in: false,
+          created_at: new Date().toISOString(),
+        };
+    const previewDb: Database = {
+      ...db,
+      template_items: [
+        ...db.template_items.filter((i) => i.template_id !== workId),
+        ...sessionItems.map((it, i) => ({ ...it, template_id: workId, position: i })),
+      ],
+    };
+    const { session, items } = generatePrayerSession(previewDb, template, ctx);
+    const titled = title?.trim() ? { ...session, title: title.trim() } : session;
+    return {
+      db: {
+        ...db,
+        sessions: [titled, ...db.sessions],
+        session_items: [...db.session_items, ...items],
+      },
+      session: titled,
+    };
+  },
   /** Pray a single prayer immediately — a one-item session, no template needed. */
   startSinglePrayer(
     db: Database,
@@ -464,7 +518,11 @@ export const mutations = {
       completion_method: null,
     };
     return {
-      db: { ...db, sessions: [session, ...db.sessions], session_items: [...db.session_items, item] },
+      db: {
+        ...db,
+        sessions: [session, ...db.sessions],
+        session_items: [...db.session_items, item],
+      },
       session,
     };
   },
@@ -709,9 +767,7 @@ export const mutations = {
       next = {
         ...next,
         how_tos: next.how_tos.map((h) =>
-          h.source_id === draft.source.id && !h.template_id
-            ? { ...h, template_id: templateId }
-            : h,
+          h.source_id === draft.source.id && !h.template_id ? { ...h, template_id: templateId } : h,
         ),
       };
     }

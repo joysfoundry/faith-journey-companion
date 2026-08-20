@@ -18,11 +18,14 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     if (ready) saveDatabase(db);
   }, [db, ready]);
 
-  const startSession = useCallback((templateId: string, ctx: Parameters<typeof mutations.startSession>[2]) => {
-    const result = mutations.startSession(dbRef.current, templateId, ctx);
-    setDb(result.db);
-    return result.session as PrayerSession | undefined;
-  }, []);
+  const startSession = useCallback(
+    (templateId: string, ctx: Parameters<typeof mutations.startSession>[2]) => {
+      const result = mutations.startSession(dbRef.current, templateId, ctx);
+      setDb(result.db);
+      return result.session as PrayerSession | undefined;
+    },
+    [],
+  );
 
   const createTemplateFromHowTo = useCallback((howToId: string) => {
     const result = mutations.createTemplateFromHowTo(dbRef.current, howToId);
@@ -39,14 +42,30 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const startBuiltSession = useCallback(
+    (
+      templateId: string | null,
+      items: Parameters<typeof mutations.startBuiltSession>[2],
+      ctx: Parameters<typeof mutations.startBuiltSession>[3],
+      title?: string,
+    ) => {
+      const result = mutations.startBuiltSession(dbRef.current, templateId, items, ctx, title);
+      setDb(result.db);
+      return result.session as PrayerSession | undefined;
+    },
+    [],
+  );
+
   const value = useMemo(
     () => ({
       db,
       ready,
       reset: () => setDb(createSeedDatabase()),
       toggleFavorite: (id: string) => setDb((d) => mutations.toggleFavorite(d, id)),
-      upsertPrayer: (p: Parameters<typeof mutations.upsertPrayer>[1], v: Parameters<typeof mutations.upsertPrayer>[2]) =>
-        setDb((d) => mutations.upsertPrayer(d, p, v)),
+      upsertPrayer: (
+        p: Parameters<typeof mutations.upsertPrayer>[1],
+        v: Parameters<typeof mutations.upsertPrayer>[2],
+      ) => setDb((d) => mutations.upsertPrayer(d, p, v)),
       addPrayerVersion: (v: Parameters<typeof mutations.addPrayerVersion>[1]) =>
         setDb((d) => mutations.addPrayerVersion(d, v)),
       addPrayerVariant: (
@@ -55,14 +74,17 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       ) => setDb((d) => mutations.addPrayerVariant(d, basePrayerId, variant)),
       setDefaultVariant: (id: string) => setDb((d) => mutations.setDefaultVariant(d, id)),
       deletePrayer: (id: string) => setDb((d) => mutations.deletePrayer(d, id)),
-      saveTemplate: (t: Parameters<typeof mutations.saveTemplate>[1], items: Parameters<typeof mutations.saveTemplate>[2]) =>
-        setDb((d) => mutations.saveTemplate(d, t, items)),
+      saveTemplate: (
+        t: Parameters<typeof mutations.saveTemplate>[1],
+        items: Parameters<typeof mutations.saveTemplate>[2],
+      ) => setDb((d) => mutations.saveTemplate(d, t, items)),
       deleteTemplate: (id: string) => setDb((d) => mutations.deleteTemplate(d, id)),
       deleteHowTo: (id: string) => setDb((d) => mutations.deleteHowTo(d, id)),
       saveHowTo: (h: Parameters<typeof mutations.saveHowTo>[1]) =>
         setDb((d) => mutations.saveHowTo(d, h)),
       createTemplateFromHowTo,
       startSession,
+      startBuiltSession,
       startSinglePrayer,
       setCursor: (id: string, cursor: number) => setDb((d) => mutations.setCursor(d, id, cursor)),
       toggleItemDone: (id: string) => setDb((d) => mutations.toggleItemDone(d, id)),
@@ -94,7 +116,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       addMassExperience: (m: Parameters<typeof mutations.addMassExperience>[1]) =>
         setDb((d) => mutations.addMassExperience(d, m)),
     }),
-    [db, ready, startSession, startSinglePrayer, createTemplateFromHowTo],
+    [db, ready, startSession, startBuiltSession, startSinglePrayer, createTemplateFromHowTo],
   );
 
   return <AppStoreContext.Provider value={value}>{children}</AppStoreContext.Provider>;

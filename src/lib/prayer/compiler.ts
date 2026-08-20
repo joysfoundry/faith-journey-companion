@@ -37,8 +37,7 @@ function isoWeekday(dateISO: string): number {
 }
 
 function daysBetween(startISO: string, endISO: string): number {
-  const ms =
-    new Date(`${endISO}T12:00:00`).getTime() - new Date(`${startISO}T12:00:00`).getTime();
+  const ms = new Date(`${endISO}T12:00:00`).getTime() - new Date(`${startISO}T12:00:00`).getTime();
   return Math.round(ms / 86_400_000);
 }
 
@@ -158,6 +157,22 @@ export function defaultContext(partial: Partial<SessionContext> = {}): SessionCo
  * then links. Empty when nothing playable is attached.
  */
 export function listenSources(db: Database, template: PrayerTemplate): ListenSource[] {
+  const items = db.template_items
+    .filter((i) => i.template_id === template.id)
+    .sort((a, b) => a.position - b.position);
+  return listenSourcesFromItems(db, items, template.media ?? [], template.name);
+}
+
+/**
+ * Listen sources drawn from an explicit item list (the session builder's live,
+ * possibly-customized items) plus any base-template audio. Deduped by URL.
+ */
+export function listenSourcesFromItems(
+  db: Database,
+  items: TemplateItem[],
+  baseMedia: import("./types").PrayerMedia[] = [],
+  fallbackLabel = "Audio",
+): ListenSource[] {
   const out: ListenSource[] = [];
   const seen = new Set<string>();
   const add = (s: ListenSource) => {
@@ -166,24 +181,29 @@ export function listenSources(db: Database, template: PrayerTemplate): ListenSou
     out.push(s);
   };
 
-  for (const m of template.media ?? []) {
-    add({ url: m.url, kind: m.kind, label: m.label ?? template.name, source: m.source });
+  for (const m of baseMedia) {
+    add({ url: m.url, kind: m.kind, label: m.label ?? fallbackLabel, source: m.source });
   }
-
-  const items = db.template_items
-    .filter((i) => i.template_id === template.id)
-    .sort((a, b) => a.position - b.position);
 
   for (const item of items) {
     if (item.prayer_id) {
       const prayer = db.prayers.find((p) => p.id === item.prayer_id);
       for (const m of prayer?.media ?? []) {
-        add({ url: m.url, kind: m.kind, label: m.label ?? prayer?.title ?? "Prayer audio", source: m.source });
+        add({
+          url: m.url,
+          kind: m.kind,
+          label: m.label ?? prayer?.title ?? "Prayer audio",
+          source: m.source,
+        });
       }
     }
     for (const opt of item.external_options ?? []) {
       if (opt.media_kind === "audio" || opt.media_kind === "video") {
-        add({ url: opt.url, kind: opt.media_kind, label: opt.label || item.label || "External audio" });
+        add({
+          url: opt.url,
+          kind: opt.media_kind,
+          label: opt.label || item.label || "External audio",
+        });
       }
     }
   }
@@ -235,7 +255,12 @@ export function generatePrayerSession(
     .filter((i) => i.template_id === template.id)
     .sort((a, b) => a.position - b.position);
 
-  const push = (item: Omit<SessionItem, "id" | "session_id" | "position" | "progress_mode" | "completion_status" | "completion_method">) => {
+  const push = (
+    item: Omit<
+      SessionItem,
+      "id" | "session_id" | "position" | "progress_mode" | "completion_status" | "completion_method"
+    >,
+  ) => {
     items.push({
       id: newId("item"),
       session_id: sessionId,
@@ -348,7 +373,8 @@ export function generatePrayerSession(
           presentation,
           set_name: setName,
           decade,
-          heading: `${ordinalWord(ordinal)} ${setName?.replace(" Mysteries", "") ?? ""} Mystery`.trim(),
+          heading:
+            `${ordinalWord(ordinal)} ${setName?.replace(" Mysteries", "") ?? ""} Mystery`.trim(),
         },
       });
       continue;
