@@ -122,11 +122,23 @@ export type MysteryPresentation =
   | "choose_during_session";
 
 /**
+ * A single external prayer experience (e.g. "Pray with the Pope").
+ * Modeled generically — never a provider-specific engine. One option is the
+ * default; the user may pick another source or add their own (parish, church).
+ */
+export interface ExternalLinkOption {
+  label: string;
+  url: string;
+  is_default?: boolean | undefined;
+}
+
+/**
  * The components a devotion is built from:
  * - prayer: a prayer record from the library
  * - salutation: a versicle / response pair (V. … R. …)
  * - mystery_placeholder: rosary decades only
  * - intention: an intention / petition slot
+ * - external_link: a link out to an external prayer experience (generic)
  * - custom: any other component the user adds
  * - heading: a plain section label
  */
@@ -135,6 +147,7 @@ export type TemplateItemKind =
   | "salutation"
   | "mystery_placeholder"
   | "intention"
+  | "external_link"
   | "custom"
   | "heading";
 
@@ -155,6 +168,8 @@ export interface TemplateItem {
   response?: string | undefined;
   /** Free text for custom components. */
   body?: string | undefined;
+  /** external_link: selectable sources; exactly one marked is_default. */
+  external_options?: ExternalLinkOption[] | undefined;
   repetition_count: number;
   optional: boolean;
   /** Only included when the session context enables this group. */
@@ -243,7 +258,7 @@ export interface PrayerSession {
   cursor: number;
 }
 
-export type SessionItemKind = "prayer" | "mystery" | "intention" | "heading";
+export type SessionItemKind = "prayer" | "mystery" | "intention" | "external_link" | "heading";
 export type CompletionStatus = "pending" | "complete" | "skipped";
 export type CompletionMethod = "manual" | "auto" | "audio" | "voice" | null;
 

@@ -37,6 +37,7 @@ const KIND_LABELS: Record<TemplateItem["kind"], string> = {
   salutation: "Salutation",
   mystery_placeholder: "Mystery",
   intention: "Intention / petition",
+  external_link: "External link",
   custom: "Component",
   heading: "Section",
 };

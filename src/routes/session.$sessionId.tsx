@@ -222,6 +222,38 @@ function ItemView({ item, showMeditation }: { item: SessionItem; showMeditation:
     );
   }
 
+  if (item.kind === "external_link") {
+    const config = (item.configuration ?? {}) as {
+      external_options?: { label: string; url: string; is_default?: boolean }[];
+    };
+    const options = config.external_options ?? [];
+    return (
+      <div className="text-center">
+        <p className="eyebrow">Pray along</p>
+        <h2 className="mt-3 font-display text-3xl leading-tight">{item.title}</h2>
+        {item.body ? <p className="prayer-text mt-4 text-muted-foreground">{item.body}</p> : null}
+        <div className="mt-8 space-y-3 text-left">
+          {options.map((o) => (
+            <a
+              key={o.url}
+              href={o.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-4 text-sm font-medium transition hover:border-primary"
+            >
+              <span className="pr-3">{o.label}</span>
+              {o.is_default ? (
+                <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-xs text-muted-foreground">
+                  Default
+                </span>
+              ) : null}
+            </a>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <h2 className="text-center font-display text-3xl leading-tight">{item.title}</h2>

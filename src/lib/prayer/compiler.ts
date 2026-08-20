@@ -232,6 +232,16 @@ export function generatePrayerSession(
       continue;
     }
 
+    if (item.kind === "external_link") {
+      push({
+        kind: "external_link",
+        title: item.label ?? "Open link",
+        body: item.body ?? undefined,
+        configuration: { external_options: item.external_options ?? [] },
+      });
+      continue;
+    }
+
     if (item.kind === "custom") {
       push({
         kind: "prayer",
@@ -332,7 +342,9 @@ export function uncompleteSessionItem(item: SessionItem): SessionItem {
 }
 
 export function sessionProgress(items: SessionItem[]): { done: number; total: number } {
-  const prayable = items.filter((i) => i.kind === "prayer" || i.kind === "mystery");
+  const prayable = items.filter(
+    (i) => i.kind === "prayer" || i.kind === "mystery" || i.kind === "external_link",
+  );
   return {
     done: prayable.filter((i) => i.completion_status === "complete").length,
     total: prayable.length,
@@ -350,6 +362,11 @@ export function templateOutline(
     .map((i) => {
       if (i.kind === "mystery_placeholder")
         return { label: `Mystery ${i.mystery_ordinal}`, detail: i.label };
+      if (i.kind === "external_link") {
+        const opts = i.external_options ?? [];
+        const def = opts.find((o) => o.is_default) ?? opts[0];
+        return { label: i.label ?? "External link", detail: def?.label };
+      }
       if (i.kind !== "prayer") return { label: i.label ?? i.kind };
       const prayer = db.prayers.find((p) => p.id === i.prayer_id);
       return {

@@ -110,7 +110,64 @@ Turn then, most gracious advocate, your eyes of mercy towards us; and after this
     `In the name of the Father, and of the Son, and of the Holy Spirit. Amen.`,
     ["rosary"],
   ),
+  prayer(
+    "st-michael-prayer",
+    "Prayer to St. Michael the Archangel",
+    "devotional",
+    `St. Michael the Archangel, defend us in battle. Be our defense against the wickedness and snares of the devil. May God rebuke him, we humbly pray; and do thou, O Prince of the heavenly host, by the power of God, thrust into Hell Satan and all the other evil spirits who prowl about the world seeking the ruin of souls. Amen.`,
+    ["st michael", "protection", "archangel"],
+  ),
 ];
+
+// Chaplet of St. Michael — nine salutations to the nine choirs of angels.
+// Declarative salutations use the generic `custom` component; the V/R lines use
+// `salutation`. No chaplet-specific engine — the compiler expands it like any
+// other devotion. (Source: private revelation to Antonia d'Astonac, approved 1851.)
+const MICHAEL_CHOIRS: Array<[string, string]> = [
+  ["Seraphim", "may the Lord make us worthy to burn with the fire of perfect charity."],
+  ["Cherubim", "may the Lord grant us the grace to leave the ways of sin and run in the paths of Christian perfection."],
+  ["Thrones", "may the Lord infuse into our hearts a true and sincere spirit of humility."],
+  ["Dominations", "may the Lord give us grace to govern our senses and overcome unruly passions."],
+  ["Virtues", "may the Lord preserve us from evil and from falling into temptation."],
+  ["Powers", "may the Lord protect our souls against the snares and temptations of the devil."],
+  ["Principalities", "may God fill our souls with the spirit of true obedience."],
+  ["Archangels", "may the Lord give us perseverance in faith and in all good works, that we may attain the glory of Heaven."],
+  ["Angels", "may the Lord grant us to be protected by them in this mortal life and conducted hereafter to eternal glory."],
+];
+
+function chapletItems(): TemplateItem[] {
+  const items: TemplateItem[] = [];
+  let p = 0;
+  const add = (partial: Partial<TemplateItem> & { kind: TemplateItem["kind"] }) =>
+    items.push(ti("tpl-chaplet-michael", p++, partial));
+
+  add({ kind: "salutation", label: "Opening", versicle: "O God, come to my assistance.", response: "O Lord, make haste to help me." });
+  add({ kind: "prayer", prayer_id: "glory-be" });
+  MICHAEL_CHOIRS.forEach(([choir, petition], i) => {
+    add({
+      kind: "custom",
+      label: `${["First", "Second", "Third", "Fourth", "Fifth", "Sixth", "Seventh", "Eighth", "Ninth"][i]} Salutation — Choir of ${choir}`,
+      body: `By the intercession of St. Michael and the celestial Choir of ${choir}, ${petition} Amen.`,
+    });
+    add({ kind: "prayer", prayer_id: "our-father" });
+    add({ kind: "prayer", prayer_id: "hail-mary", repetition_count: 3 });
+  });
+  add({ kind: "custom", label: "Four Our Fathers", body: "Pray one Our Father in honor of each: St. Michael, St. Gabriel, St. Raphael, and our Guardian Angel." });
+  add({ kind: "prayer", prayer_id: "our-father", repetition_count: 4 });
+  add({
+    kind: "custom",
+    label: "Closing Prayer",
+    body: `O glorious prince St. Michael, chief and commander of the heavenly hosts, guardian of souls, vanquisher of rebel spirits, servant in the house of the Divine King, and our admirable conductor: deliver us from all evil, who turn to you with confidence, and enable us by your gracious protection to serve God more faithfully every day.`,
+  });
+  add({ kind: "salutation", label: "Versicle", versicle: "Pray for us, O glorious St. Michael, Prince of the Church of Jesus Christ,", response: "That we may be made worthy of His promises." });
+  add({
+    kind: "custom",
+    label: "Let us pray",
+    body: `Almighty and Everlasting God, who by a prodigy of goodness and a merciful desire for the salvation of all, has appointed the most glorious Archangel St. Michael Prince of Your Church: make us worthy, we ask You, to be delivered from all our enemies, that none of them may harass us at the hour of death, but that we may be conducted by him into Your Presence. This we ask through the merits of Jesus Christ Our Lord. Amen.`,
+  });
+  return items;
+}
+const chapletItemsList = chapletItems();
 
 const mysteryData: Array<{
   set: string;
@@ -272,6 +329,19 @@ Sweet Mother, I offer this Rosary in thanksgiving, whatever the answer to my pet
   ),
 ];
 
+// Pray with the Pope — a minimal, generic external-link devotion (no pre-added
+// prayers). Starting it simply opens the selected/default source.
+const popeItems: TemplateItem[] = [
+  ti("tpl-pray-with-pope", 0, {
+    kind: "external_link",
+    label: "Pray with the Pope",
+    external_options: [
+      { label: "Click to Pray — Pope's Worldwide Prayer Network", url: "https://clicktopray.org/", is_default: true },
+      { label: "Vatican News — Pope's Monthly Intention", url: "https://www.vaticannews.va/en/pope/prayer-intentions.html" },
+    ],
+  }),
+];
+
 const allPrayers = [...base, ...novenaPrayers];
 
 export function createSeedDatabase(): Database {
@@ -295,6 +365,13 @@ export function createSeedDatabase(): Database {
         source_type: "pdf",
         name: "Fifty Four Day Novena",
         file_reference: "Fifty_Four_Day_Novena.pdf",
+        created_at: now,
+      },
+      {
+        id: "src-michael-chaplet",
+        source_type: "manual",
+        name: "Chaplet of St. Michael (private revelation, approved 1851)",
+        attribution: "Antonia d'Astonac",
         created_at: now,
       },
     ],
@@ -357,11 +434,40 @@ export function createSeedDatabase(): Database {
               note: "Offered in thanksgiving, whatever the answer.",
             },
           ],
-          mystery_cycle: ["set-joyful", "set-sorrowful", "set-glorious"],
+          mystery_cycle: ["set-joyful", "set-sorrowful", "set-glorious", "set-luminous"],
         },
       },
+      {
+        id: "tpl-pray-with-pope",
+        name: "Pray with the Pope",
+        description:
+          "Opens the Pope's monthly prayer intention. Add your own prayers around it when you build a session.",
+        kind: "standard",
+        mystery_presentation: "title_only",
+        mystery_count: 0,
+        built_in: true,
+        created_at: now,
+      },
+      {
+        id: "tpl-chaplet-michael",
+        name: "Chaplet of St. Michael",
+        description:
+          "Nine salutations to the nine choirs of angels, each with an Our Father and three Hail Marys, and the closing prayers.",
+        kind: "standard",
+        mystery_presentation: "title_only",
+        mystery_count: 0,
+        source_id: "src-michael-chaplet",
+        built_in: true,
+        created_at: now,
+      },
     ],
-    template_items: [...rosaryItemsList, ...caroItemsList, ...novenaItems],
+    template_items: [
+      ...rosaryItemsList,
+      ...caroItemsList,
+      ...novenaItems,
+      ...popeItems,
+      ...chapletItemsList,
+    ],
     sessions: [],
     session_items: [],
     intentions: [],
