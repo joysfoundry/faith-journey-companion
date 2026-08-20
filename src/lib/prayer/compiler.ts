@@ -188,6 +188,7 @@ export function generatePrayerSession(
   const sessionId = newId("session");
   const items: SessionItem[] = [];
   let position = 0;
+  let decade = 0; // increments at each mystery so Hail Marys can show "1st decade" etc.
 
   const templateItems = db.template_items
     .filter((i) => i.template_id === template.id)
@@ -293,6 +294,7 @@ export function generatePrayerSession(
       const ordinal = item.mystery_ordinal ?? 1;
       const mystery = mysteries[ordinal - 1];
       if (!mystery) continue;
+      decade = ordinal;
       const content = mysteryContentFor(db, mystery.id, presentation);
       push({
         kind: "mystery",
@@ -304,6 +306,7 @@ export function generatePrayerSession(
         configuration: {
           presentation,
           set_name: setName,
+          decade,
           heading: `${ordinalWord(ordinal)} ${setName?.replace(" Mysteries", "") ?? ""} Mystery`.trim(),
         },
       });
@@ -323,6 +326,8 @@ export function generatePrayerSession(
         prayer_version_id: resolved.versionId,
         repetition_index: total > 1 ? n : undefined,
         repetition_total: total > 1 ? total : undefined,
+        // The mystery's set of beads — label those Hail Marys with the decade.
+        ...(decade > 0 && total > 1 ? { configuration: { decade } } : {}),
       });
     }
   }

@@ -192,13 +192,27 @@ function PrayerMode() {
   );
 }
 
+function decadeOrdinal(n: number): string {
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  const suffix = s[(v - 20) % 10] ?? s[v] ?? "th";
+  return `${n}${suffix} decade`;
+}
+
+function DecadeTag({ decade }: { decade: number | undefined }) {
+  if (!decade) return null;
+  return <p className="text-right text-sm font-medium text-primary">{decadeOrdinal(decade)}</p>;
+}
+
 function ItemView({ item, showMeditation }: { item: SessionItem; showMeditation: boolean }) {
+  const decade = (item.configuration as { decade?: number } | undefined)?.decade;
   if (item.kind === "mystery") {
     const config = (item.configuration ?? {}) as { heading?: string; presentation?: string };
     const showBody =
       item.body && (config.presentation !== "choose_during_session" || showMeditation);
     return (
       <div className="text-center">
+        <DecadeTag decade={decade} />
         <p className="eyebrow">
           {config.heading ?? `${ordinalWord(item.mystery_ordinal ?? 1)} Mystery`}
         </p>
@@ -273,6 +287,7 @@ function ItemView({ item, showMeditation }: { item: SessionItem; showMeditation:
 
   return (
     <div>
+      <DecadeTag decade={decade} />
       <h2 className="text-center font-display text-3xl leading-tight">{item.title}</h2>
       {item.repetition_total ? (
         <p className="mt-2 text-center text-base tracking-wide text-muted-foreground tabular-nums">
