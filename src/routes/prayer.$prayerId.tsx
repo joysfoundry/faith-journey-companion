@@ -63,10 +63,18 @@ function MediaItem({ m }: { m: PrayerMedia }) {
   );
 }
 
+function LoadingPrayer() {
+  return (
+    <AppShell title="Prayer" back={{ to: "/prayers", label: "Prayers" }}>
+      <p className="text-sm text-muted-foreground">Loading…</p>
+    </AppShell>
+  );
+}
+
 /* ------------------------------- View (read-only) ------------------------- */
 function ViewPrayer() {
   const { prayerId } = Route.useParams();
-  const { db, toggleFavorite, startSinglePrayer } = useApp();
+  const { db, ready, toggleFavorite, startSinglePrayer } = useApp();
   const navigate = useNavigate();
 
   const prayer = db.prayers.find((p) => p.id === prayerId);
@@ -75,6 +83,8 @@ function ViewPrayer() {
   const siblings = prayer ? variantsOf(db, prayer) : [];
   const source = db.sources.find((s) => s.id === (prayer?.source_id ?? version?.source_id));
 
+  // Until the store hydrates from localStorage, a just-added prayer isn't in `db` yet.
+  if (!ready) return <LoadingPrayer />;
   if (!prayer) {
     return (
       <AppShell title="Prayer" back={{ to: "/prayers", label: "Prayers" }}>
@@ -193,7 +203,15 @@ function ViewPrayer() {
 }
 
 /* ------------------------------- Edit ------------------------------------- */
+// The form seeds its state from the store once. Gate on `ready` so a hard reload
+// or deep-link to a just-added (localStorage-only) prayer doesn't seed empty.
 function EditPrayer() {
+  const { ready } = useApp();
+  if (!ready) return <LoadingPrayer />;
+  return <EditPrayerForm />;
+}
+
+function EditPrayerForm() {
   const { prayerId } = Route.useParams();
   const {
     db,
