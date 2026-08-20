@@ -365,6 +365,70 @@ export interface ImportDraft {
   created_at: string;
 }
 
+/* ------------------------------------------------------------------ */
+/* Journey layer: Reflection (the connecting tissue), Learning, Mass    */
+/* ------------------------------------------------------------------ */
+
+export type ReflectionMode = "written" | "spoken" | "open_dialogue";
+
+/** What a reflection can be linked to. Kept flexible and target-agnostic. */
+export type ReflectionLinkTarget =
+  | "prayer_session"
+  | "session_item"
+  | "daily_reading"
+  | "mass"
+  | "learning"
+  | "intention"
+  | "mystery";
+
+/** A link is stored ON the reflection, never on the item that inspired it. */
+export interface ReflectionLink {
+  target_type: ReflectionLinkTarget;
+  target_id: ID;
+  label?: string | undefined;
+}
+
+/** The user's own words. Always the user's own unless they ask for transformation. */
+export interface Reflection {
+  id: ID;
+  title?: string | undefined;
+  body: string;
+  mode: ReflectionMode;
+  links: ReflectionLink[];
+  photo_count: number;
+  created_at: string; // ISO datetime — date/time matters in history views
+}
+
+export type LearningStatus = "not_started" | "in_progress" | "finished";
+
+/** Life Library item (dashboard label: Faith Learning). */
+export interface LearningItem {
+  id: ID;
+  title: string;
+  content_type: string; // book | article | video | podcast | sermon | show | ...
+  creator?: string | undefined;
+  source?: string | undefined;
+  url?: string | undefined;
+  status: LearningStatus;
+  has_transcript?: boolean | undefined;
+  created_at: string;
+}
+
+/** A Mass the user attended — "Heard at Mass". Nothing is fabricated. */
+export interface MassExperience {
+  id: ID;
+  date: string; // yyyy-mm-dd
+  church?: string | undefined;
+  celebrant?: string | undefined;
+  mass_time?: string | undefined;
+  location?: string | undefined;
+  notes?: string | undefined;
+  audio_url?: string | undefined;
+  transcript?: string | undefined;
+  transcript_status?: "none" | "pending" | "ready" | undefined;
+  created_at: string;
+}
+
 export interface Database {
   sources: Source[];
   prayers: Prayer[];
@@ -380,4 +444,7 @@ export interface Database {
   intentions: Intention[];
   novena_instances: NovenaInstance[];
   import_drafts: ImportDraft[];
+  reflections: Reflection[];
+  learning_items: LearningItem[];
+  mass_experiences: MassExperience[];
 }

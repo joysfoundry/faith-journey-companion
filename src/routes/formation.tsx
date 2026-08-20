@@ -1,10 +1,13 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { BookOpen, ExternalLink, NotebookPen, Plus } from "lucide-react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
+import { ExternalLink, NotebookPen, Plus } from "lucide-react";
 
 import { AppShell } from "@/components/layout/PageShell";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { learnItems } from "@/domain/placeholderData";
+import { Input } from "@/components/ui/input";
+import { newId } from "@/lib/prayer/compiler";
+import { useApp } from "@/lib/prayer/store";
+import type { LearningStatus } from "@/lib/prayer/types";
 
 export const Route = createFileRoute("/formation")({
   head: () => ({
@@ -33,18 +36,46 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
   sermon: "Sermon",
   podcast: "Podcast",
   show: "Show",
+  course: "Course",
   other: "Other",
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  not_started: "Not started",
-  in_progress: "In progress",
-  finished: "Finished",
-};
+const STATUS_STEPS: { key: LearningStatus; label: string }[] = [
+  { key: "not_started", label: "Not started" },
+  { key: "in_progress", label: "In progress" },
+  { key: "finished", label: "Finished" },
+];
 
 function FormationPage() {
-  const inProgress = learnItems.filter((i) => i.status !== "finished");
-  const finished = learnItems.filter((i) => i.status === "finished");
+  const { db, setLearningStatus, addLearningItem } = useApp();
+  const navigate = useNavigate();
+  const [adding, setAdding] = useState(false);
+  const [title, setTitle] = useState("");
+  const [creator, setCreator] = useState("");
+  const [contentType, setContentType] = useState("book");
+  const [url, setUrl] = useState("");
+
+  const items = db.learning_items;
+  const active = items.filter((i) => i.status !== "finished");
+  const finished = items.filter((i) => i.status === "finished");
+
+  function submit() {
+    if (!title.trim()) return;
+    addLearningItem({
+      id: newId("learn"),
+      title: title.trim(),
+      content_type: contentType,
+      creator: creator.trim() || undefined,
+      url: url.trim() || undefined,
+      status: "not_started",
+      created_at: new Date().toISOString(),
+    });
+    setTitle("");
+    setCreator("");
+    setUrl("");
+    setContentType("book");
+    setAdding(false);
+  }
 
   return (
     <AppShell
@@ -52,43 +83,74 @@ function FormationPage() {
       subtitle="Books, articles, videos, sermons, and podcasts"
       back={{ to: "/more", label: "More" }}
       action={
-        <Button size="sm" variant="secondary">
+        <Button size="sm" variant="secondary" onClick={() => setAdding((v) => !v)}>
           <Plus className="size-4" aria-hidden /> Item
         </Button>
       }
     >
+      {adding ? (
+        <div className="soft-card mb-4 space-y-2 p-4">
+          <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" className="h-10" />
+          <Input value={creator} onChange={(e) => setCreator(e.target.value)} placeholder="Author / creator (optional)" className="h-10" />
+          <Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="Link (optional)" className="h-10" />
+          <div className="flex gap-2">
+            <select
+              value={contentType}
+              onChange={(e) => setContentType(e.target.value)}
+              className="h-10 flex-1 rounded-md border border-input bg-background px-3 text-sm"
+            >
+              {Object.entries(CONTENT_TYPE_LABELS).map(([v, l]) => (
+                <option key={v} value={v}>{l}</option>
+              ))}
+            </select>
+            <Button className="flex-1" onClick={submit} disabled={!title.trim()}>
+              Add to Library
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
+      <p className="eyebrow mb-2">In progress &amp; up next</p>
       <ul className="space-y-2">
-        {inProgress.map((item) => (
+        {active.length === 0 ? (
+          <li className="text-sm text-muted-foreground">Nothing active — add something forming your faith.</li>
+        ) : null}
+        {active.map((item) => (
           <li key={item.id} className="soft-card p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="font-medium text-foreground">{item.title}</p>
-                <p className="truncate text-sm text-muted-foreground">
-                  {CONTENT_TYPE_LABELS[item.contentType]}
-                  {item.creator ? ` · ${item.creator}` : ""}
-                  {item.source ? ` · ${item.source}` : ""}
-                </p>
-              </div>
-              <Badge variant="secondary" className="shrink-0 font-normal">
-                {STATUS_LABELS[item.status]}
-              </Badge>
+            <div className="min-w-0">
+              <p className="font-medium text-foreground">{item.title}</p>
+              <p className="truncate text-sm text-muted-foreground">
+                {CONTENT_TYPE_LABELS[item.content_type] ?? item.content_type}
+                {item.creator ? ` · ${item.creator}` : ""}
+                {item.source ? ` · ${item.source}` : ""}
+              </p>
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-1.5">
-              <Button size="sm" variant="ghost">
-                <NotebookPen className="size-4" aria-hidden /> Reflect
-              </Button>
-              {item.url ? (
-                <Button asChild size="sm" variant="ghost">
-                  <a href={item.url} target="_blank" rel="noreferrer">
-                    <ExternalLink className="size-4" aria-hidden /> Open
-                  </a>
+              {STATUS_STEPS.map((s) => (
+                <button
+                  key={s.key}
+                  onClick={() => setLearningStatus(item.id, s.key)}
+                  className="rounded-full px-2.5 py-1 text-xs font-medium"
+                  style={{
+                    background: item.status === s.key ? "hsl(var(--primary))" : "hsl(var(--secondary))",
+                    color: item.status === s.key ? "hsl(var(--primary-foreground))" : "hsl(var(--muted-foreground))",
+                  }}
+                >
+                  {s.label}
+                </button>
+              ))}
+              <span className="ml-auto flex items-center gap-1">
+                <Button size="sm" variant="ghost" onClick={() => navigate({ to: "/reflections" })}>
+                  <NotebookPen className="size-4" aria-hidden /> Reflect
                 </Button>
-              ) : null}
-              {item.hasTranscript ? (
-                <Button size="sm" variant="ghost">
-                  <BookOpen className="size-4" aria-hidden /> Transcript
-                </Button>
-              ) : null}
+                {item.url ? (
+                  <Button asChild size="sm" variant="ghost">
+                    <a href={item.url} target="_blank" rel="noreferrer">
+                      <ExternalLink className="size-4" aria-hidden /> Open
+                    </a>
+                  </Button>
+                ) : null}
+              </span>
             </div>
           </li>
         ))}
@@ -96,18 +158,21 @@ function FormationPage() {
 
       <p className="eyebrow mt-8 mb-2">Finished</p>
       {finished.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          Nothing finished yet — completed items land here.
-        </p>
+        <p className="text-sm text-muted-foreground">Nothing finished yet — completed items land here.</p>
       ) : (
         <ul className="space-y-2">
           {finished.map((item) => (
-            <li key={item.id} className="soft-card p-4">
-              <p className="font-medium text-foreground">{item.title}</p>
-              <p className="text-sm text-muted-foreground">
-                {CONTENT_TYPE_LABELS[item.contentType]}
-                {item.creator ? ` · ${item.creator}` : ""}
-              </p>
+            <li key={item.id} className="soft-card flex items-center justify-between gap-3 p-4">
+              <div className="min-w-0">
+                <p className="font-medium text-foreground">{item.title}</p>
+                <p className="truncate text-sm text-muted-foreground">
+                  {CONTENT_TYPE_LABELS[item.content_type] ?? item.content_type}
+                  {item.creator ? ` · ${item.creator}` : ""}
+                </p>
+              </div>
+              <Button size="sm" variant="ghost" onClick={() => setLearningStatus(item.id, "in_progress")}>
+                Reopen
+              </Button>
             </li>
           ))}
         </ul>

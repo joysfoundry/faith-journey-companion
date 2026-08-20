@@ -13,24 +13,45 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
-import type { LinkableItem, ReflectionEntry } from "@/domain/placeholderData";
+import type { LinkableItem } from "@/domain/placeholderData";
+import { newId } from "@/lib/prayer/compiler";
+import { useApp } from "@/lib/prayer/store";
+import type { ReflectionLink, ReflectionLinkTarget } from "@/lib/prayer/types";
 
 interface Props {
   linkables: LinkableItem[];
-  entries: ReflectionEntry[];
   /** Item id to pre-link when the user arrives via a "Reflect" icon (provenance). */
   prefillLinkId?: string | null;
 }
 
+const GROUP_TARGET: Record<string, ReflectionLinkTarget> = {
+  "Prayer & devotion": "prayer_session",
+  Word: "daily_reading",
+  Formation: "learning",
+};
+
+function formatWhen(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
 /**
  * Free-text journal entry with optional title/theme, photos, and links to the
- * session, need, reading, or learning item that prompted it. Links are stored
- * with the reflection, never on the item that inspired it.
+ * session, reading, or learning item that prompted it. Links are stored with
+ * the reflection, never on the item that inspired it. Persisted in the store.
  */
-export function ReflectionComposer({ linkables, entries, prefillLinkId }: Props) {
-  const [saved, setSaved] = useState<ReflectionEntry[]>(entries);
+export function ReflectionComposer({ linkables, prefillLinkId }: Props) {
+  const { db, addReflection } = useApp();
+  const saved = db.reflections;
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [mode, setMode] = useState<"written" | "open_dialogue">("written");
   const [linked, setLinked] = useState<string[]>([]);
 
   useEffect(() => {
@@ -39,6 +60,7 @@ export function ReflectionComposer({ linkables, entries, prefillLinkId }: Props)
   }, [prefillLinkId]);
 
   const groups = Array.from(new Set(linkables.map((l) => l.group)));
+  const labelFor = (id: string) => linkables.find((l) => l.id === id)?.label ?? id;
 
   function toggleLink(id: string) {
     setLinked((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -46,20 +68,27 @@ export function ReflectionComposer({ linkables, entries, prefillLinkId }: Props)
 
   function save() {
     if (!body.trim()) return;
-    setSaved((prev) => [
-      ...prev,
-      {
-        id: `reflection-${prev.length + 1}`,
-        title: title.trim() || "Untitled reflection",
-        body: body.trim(),
-        linkedItemIds: linked,
-        photoCount: 0,
-        date: todayISO(),
-      },
-    ]);
+    const links: ReflectionLink[] = linked.map((id) => {
+      const item = linkables.find((l) => l.id === id);
+      return {
+        target_type: (item && GROUP_TARGET[item.group]) ?? "intention",
+        target_id: id,
+        label: item?.label,
+      };
+    });
+    addReflection({
+      id: newId("reflection"),
+      title: title.trim() || undefined,
+      body: body.trim(),
+      mode,
+      links,
+      photo_count: 0,
+      created_at: new Date().toISOString(),
+    });
     setTitle("");
     setBody("");
     setLinked([]);
+    setMode("written");
   }
 
   return (
@@ -67,15 +96,25 @@ export function ReflectionComposer({ linkables, entries, prefillLinkId }: Props)
       {saved.map((entry) => (
         <Card key={entry.id} className="border-border/70">
           <CardContent className="space-y-2 py-5">
-            <p className="font-display text-lg text-foreground">
-              <span className="text-muted-foreground">{entry.date}</span> {entry.title}
-            </p>
-            <p className="text-sm text-muted-foreground">{entry.body}</p>
-            {entry.linkedItemIds.length > 0 && (
+            <div className="flex items-baseline justify-between gap-2">
+              <p className="font-display text-lg text-foreground">
+                {entry.title ?? "Reflection"}
+              </p>
+              <time className="shrink-0 text-xs text-muted-foreground">
+                {formatWhen(entry.created_at)}
+              </time>
+            </div>
+            <p className="whitespace-pre-line text-sm text-muted-foreground">{entry.body}</p>
+            {(entry.links.length > 0 || entry.mode === "open_dialogue") && (
               <div className="flex flex-wrap gap-1.5 pt-1">
-                {entry.linkedItemIds.map((id) => (
-                  <Badge key={id} variant="secondary" className="font-normal">
-                    {linkables.find((l) => l.id === id)?.label ?? id}
+                {entry.mode === "open_dialogue" && (
+                  <Badge variant="outline" className="font-normal">
+                    Open dialogue
+                  </Badge>
+                )}
+                {entry.links.map((link) => (
+                  <Badge key={link.target_id} variant="secondary" className="font-normal">
+                    {link.label ?? labelFor(link.target_id)}
                   </Badge>
                 ))}
               </div>
@@ -158,10 +197,24 @@ export function ReflectionComposer({ linkables, entries, prefillLinkId }: Props)
               </PopoverContent>
             </Popover>
 
-            <Button size="sm" onClick={save} disabled={!body.trim()} className="ml-auto">
-              <Plus className="size-4" aria-hidden />
-              Save entry
-            </Button>
+            <div className="ml-auto flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setMode((m) => (m === "open_dialogue" ? "written" : "open_dialogue"))}
+                className="rounded-full px-2.5 py-1 text-xs font-medium"
+                style={{
+                  background: mode === "open_dialogue" ? "hsl(var(--secondary))" : "transparent",
+                  color: mode === "open_dialogue" ? "hsl(var(--foreground))" : "hsl(var(--muted-foreground))",
+                }}
+                title="Speak or write freely — captured as your own words"
+              >
+                Open dialogue
+              </button>
+              <Button size="sm" onClick={save} disabled={!body.trim()}>
+                <Plus className="size-4" aria-hidden />
+                Save entry
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

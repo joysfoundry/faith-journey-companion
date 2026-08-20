@@ -10,15 +10,40 @@ import {
 } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { readingPrograms, todaysWord, type ReadingProgram } from "@/domain/placeholderData";
+import { newId, todayISO } from "@/lib/prayer/compiler";
+import { useApp } from "@/lib/prayer/store";
 
 /** Word: today's Mass readings plus the reading programs you follow. */
 export function WordSection({ onReflect }: { onReflect: (linkId: string) => void }) {
+  const { addMassExperience } = useApp();
   const [massOpen, setMassOpen] = useState(false);
   const [programs, setPrograms] = useState<ReadingProgram[]>(readingPrograms);
   const [adding, setAdding] = useState(false);
   const [title, setTitle] = useState("");
   const [url, setUrl] = useState("");
+  const [church, setChurch] = useState("");
+  const [celebrant, setCelebrant] = useState("");
+  const [massNotes, setMassNotes] = useState("");
+  const [massSaved, setMassSaved] = useState(false);
+
+  function saveMass() {
+    if (!church.trim() && !celebrant.trim() && !massNotes.trim()) return;
+    addMassExperience({
+      id: newId("mass"),
+      date: todayISO(),
+      church: church.trim() || undefined,
+      celebrant: celebrant.trim() || undefined,
+      notes: massNotes.trim() || undefined,
+      transcript_status: "none", // no transcription connected — nothing fabricated
+      created_at: new Date().toISOString(),
+    });
+    setChurch("");
+    setCelebrant("");
+    setMassNotes("");
+    setMassSaved(true);
+  }
 
   function addProgram() {
     if (!title.trim()) return;
@@ -85,25 +110,54 @@ export function WordSection({ onReflect }: { onReflect: (linkId: string) => void
                   <Label htmlFor="mass-church" className="text-xs text-muted-foreground">
                     Church
                   </Label>
-                  <Input id="mass-church" className="h-9" placeholder="Where did you attend?" />
+                  <Input
+                    id="mass-church"
+                    className="h-9"
+                    placeholder="Where did you attend?"
+                    value={church}
+                    onChange={(e) => { setChurch(e.target.value); setMassSaved(false); }}
+                  />
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="mass-priest" className="text-xs text-muted-foreground">
-                    Priest
+                    Celebrant
                   </Label>
-                  <Input id="mass-priest" className="h-9" placeholder="Who celebrated?" />
+                  <Input
+                    id="mass-priest"
+                    className="h-9"
+                    placeholder="Who celebrated?"
+                    value={celebrant}
+                    onChange={(e) => { setCelebrant(e.target.value); setMassSaved(false); }}
+                  />
                 </div>
               </div>
+              <Textarea
+                placeholder="Notes from the homily…"
+                rows={3}
+                value={massNotes}
+                onChange={(e) => { setMassNotes(e.target.value); setMassSaved(false); }}
+              />
               <div className="flex flex-wrap items-center gap-2">
-                <Button size="sm" variant="outline">
+                <Button size="sm" variant="outline" disabled title="Audio capture lands with the Cloud phase">
                   <Mic className="size-4" aria-hidden />
                   Homily audio
                 </Button>
-                <Button size="sm" variant="outline">
+                <Button size="sm" variant="outline" disabled title="Transcription is not connected yet">
                   <FileText className="size-4" aria-hidden />
                   Homily transcript
                 </Button>
+                <Button
+                  size="sm"
+                  className="ml-auto"
+                  onClick={saveMass}
+                  disabled={!church.trim() && !celebrant.trim() && !massNotes.trim()}
+                >
+                  {massSaved ? "Saved" : "Save Mass"}
+                </Button>
               </div>
+              <p className="text-[11px] text-muted-foreground">
+                Audio &amp; transcription attach later — nothing is recorded now.
+              </p>
             </CollapsibleContent>
           </Collapsible>
         </CardContent>

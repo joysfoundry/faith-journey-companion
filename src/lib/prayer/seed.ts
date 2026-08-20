@@ -612,6 +612,28 @@ export function createSeedDatabase(): Database {
     intentions: [],
     novena_instances: [],
     import_drafts: [],
+    reflections: [],
+    mass_experiences: [],
+    learning_items: [
+      {
+        id: "learn-devout-life",
+        title: "Introduction to the Devout Life",
+        content_type: "book",
+        creator: "St. Francis de Sales",
+        source: "TAN Books",
+        status: "in_progress",
+        created_at: now,
+      },
+      {
+        id: "learn-bible-in-a-year",
+        title: "The Bible in a Year",
+        content_type: "podcast",
+        creator: "Fr. Mike Schmitz",
+        url: "https://ascensionpress.com/pages/bibleinayear",
+        status: "in_progress",
+        created_at: now,
+      },
+    ],
     how_tos: [
       {
         id: "howto-rosary",

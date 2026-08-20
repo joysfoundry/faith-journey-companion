@@ -4,7 +4,8 @@
  *   npx tsx scripts/verify-merge.ts
  */
 import { createSeedDatabase } from "../src/lib/prayer/seed";
-import { generatePrayerSession, sessionProgress } from "../src/lib/prayer/compiler";
+import { generatePrayerSession, sessionProgress, newId } from "../src/lib/prayer/compiler";
+import { mutations } from "../src/lib/prayer/store";
 
 const db = createSeedDatabase();
 const out: string[] = [];
@@ -52,6 +53,40 @@ out.push(
 // 54-day novena still resolves (novena rules + phases)
 const novena = compile("tpl-54-novena", { novena_instance_id: "none" });
 out.push(`54-Day Novena: ${novena.items.length} items compiled`);
+
+// Journey layer: Reflection / Learning / Mass persist through store reducers
+let j = db;
+j = mutations.addReflection(j, {
+  id: newId("reflection"),
+  title: "After the Rosary",
+  body: "The Annunciation stayed with me.",
+  mode: "written",
+  links: [{ target_type: "prayer_session", target_id: "sess-1", label: "Daily Rosary" }],
+  photo_count: 0,
+  created_at: new Date().toISOString(),
+});
+j = mutations.addLearningItem(j, {
+  id: "learn-x",
+  title: "Test book",
+  content_type: "book",
+  status: "not_started",
+  created_at: new Date().toISOString(),
+});
+j = mutations.setLearningStatus(j, "learn-x", "finished");
+j = mutations.addMassExperience(j, {
+  id: newId("mass"),
+  date: "2026-08-19",
+  church: "St. Mary",
+  celebrant: "Fr. A",
+  transcript_status: "none",
+  created_at: new Date().toISOString(),
+});
+const seededLearning = createSeedDatabase().learning_items.length;
+out.push(
+  `Journey layer: reflections=${j.reflections.length} (link ${j.reflections[0].links[0]?.target_type}), ` +
+    `learning=${j.learning_items.length} (seeded ${seededLearning}, learn-x=${j.learning_items.find((l) => l.id === "learn-x")?.status}), ` +
+    `mass=${j.mass_experiences.length}`,
+);
 
 console.log("\n=== fjc PRD gap-merge verification ===");
 out.forEach((l) => console.log("• " + l));

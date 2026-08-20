@@ -2,13 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { ReflectionComposer } from "@/components/home/ReflectionComposer";
 import { AppShell } from "@/components/layout/PageShell";
-import {
-  learnItems,
-  readingPrograms,
-  todaysReflections,
-  todaysWord,
-  type LinkableItem,
-} from "@/domain/placeholderData";
+import { readingPrograms, todaysWord, type LinkableItem } from "@/domain/placeholderData";
 import { defaultContext, resolveMysterySet, todayISO } from "@/lib/prayer/compiler";
 import { useApp } from "@/lib/prayer/store";
 
@@ -38,16 +32,22 @@ function ReflectionsPage() {
   const setName = db.mystery_sets.find((s) => s.id === setId)?.name ?? "Mysteries";
   const rosary = db.templates.find((t) => t.id === "tpl-rosary") ?? db.templates[0];
 
+  const recentSessions = [...db.sessions]
+    .sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""))
+    .slice(0, 5)
+    .map((s) => ({ id: s.id, label: s.title, group: "Prayer & devotion" }));
+
   const linkables: LinkableItem[] = [
+    ...recentSessions,
     { id: rosary?.id ?? "rosary", label: `Daily Rosary · ${setName}`, group: "Prayer & devotion" },
     { id: todaysWord.id, label: todaysWord.liturgicalTitle, group: "Word" },
     ...readingPrograms.map((p) => ({ id: p.id, label: p.title, group: "Word" })),
-    ...learnItems.map((l) => ({ id: l.id, label: l.title, group: "Formation" })),
+    ...db.learning_items.map((l) => ({ id: l.id, label: l.title, group: "Formation" })),
   ];
 
   return (
     <AppShell title="Reflection" subtitle="Write freely and link what inspired it">
-      <ReflectionComposer linkables={linkables} entries={todaysReflections} />
+      <ReflectionComposer linkables={linkables} />
     </AppShell>
   );
 }

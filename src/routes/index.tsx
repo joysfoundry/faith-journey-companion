@@ -10,9 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState } from "react";
 import {
-  learnItems,
   readingPrograms,
-  todaysReflections,
   todaysWord,
   type LinkableItem,
 } from "@/domain/placeholderData";
@@ -86,7 +84,7 @@ function Index() {
     { id: rosary?.id ?? "rosary", label: `Daily Rosary · ${setName}`, group: "Prayer & devotion" },
     { id: todaysWord.id, label: todaysWord.liturgicalTitle, group: "Word" },
     ...readingPrograms.map((p) => ({ id: p.id, label: p.title, group: "Word" })),
-    ...learnItems.map((l) => ({ id: l.id, label: l.title, group: "Formation" })),
+    ...db.learning_items.map((l) => ({ id: l.id, label: l.title, group: "Formation" })),
   ];
 
   return (
@@ -204,12 +202,14 @@ function Index() {
         </SectionHeading>
         <Card className="border-border/70">
           <CardContent className="divide-y divide-border/70 p-0">
-            {learnItems.map((item) => (
+            {db.learning_items
+              .filter((i) => i.status !== "finished")
+              .map((item) => (
               <div key={item.id} className="flex items-center justify-between gap-3 px-5 py-4">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium text-foreground">{item.title}</p>
                   <p className="truncate text-xs text-muted-foreground">
-                    {CONTENT_TYPE_LABELS[item.contentType]}
+                    {CONTENT_TYPE_LABELS[item.content_type] ?? item.content_type}
                     {item.creator ? ` · ${item.creator}` : ""}
                     {item.source ? ` · ${item.source}` : ""}
                   </p>
@@ -246,11 +246,7 @@ function Index() {
       {/* Reflection / Journal */}
       <section id="reflection">
         <SectionHeading>Reflection</SectionHeading>
-        <ReflectionComposer
-          linkables={linkables}
-          entries={todaysReflections}
-          prefillLinkId={journalLinkId}
-        />
+        <ReflectionComposer linkables={linkables} prefillLinkId={journalLinkId} />
       </section>
     </AppShell>
   );

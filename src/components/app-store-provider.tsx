@@ -66,6 +66,16 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       saveImportDraft: (draft: Parameters<typeof mutations.saveImportDraft>[1]) =>
         setDb((d) => mutations.saveImportDraft(d, draft)),
       applyImportDraft: (id: string) => setDb((d) => mutations.applyImportDraft(d, id)),
+      addReflection: (r: Parameters<typeof mutations.addReflection>[1]) =>
+        setDb((d) => mutations.addReflection(d, r)),
+      deleteReflection: (id: string) => setDb((d) => mutations.deleteReflection(d, id)),
+      addLearningItem: (i: Parameters<typeof mutations.addLearningItem>[1]) =>
+        setDb((d) => mutations.addLearningItem(d, i)),
+      setLearningStatus: (id: string, status: Parameters<typeof mutations.setLearningStatus>[2]) =>
+        setDb((d) => mutations.setLearningStatus(d, id, status)),
+      deleteLearningItem: (id: string) => setDb((d) => mutations.deleteLearningItem(d, id)),
+      addMassExperience: (m: Parameters<typeof mutations.addMassExperience>[1]) =>
+        setDb((d) => mutations.addMassExperience(d, m)),
     }),
     [db, ready, startSession, createTemplateFromHowTo],
   );

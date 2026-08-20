@@ -9,11 +9,15 @@ import type {
   ID,
   ImportDraft,
   Intention,
+  LearningItem,
+  LearningStatus,
+  MassExperience,
   NovenaInstance,
   Prayer,
   PrayerSession,
   PrayerTemplate,
   PrayerVersion,
+  Reflection,
   SessionContext,
   SessionItem,
   TemplateItem,
@@ -27,7 +31,7 @@ import {
   uncompleteSessionItem,
 } from "./compiler";
 
-export const STORAGE_KEY = "prayer-companion-db-v3";
+export const STORAGE_KEY = "prayer-companion-db-v4";
 
 /** Variant group a prayer belongs to. Standalone prayers are their own group. */
 export function variantGroupId(prayer: Prayer): ID {
@@ -149,6 +153,12 @@ export interface AppStore {
   deleteNovenaInstance: (id: ID) => void;
   saveImportDraft: (draft: ImportDraft) => void;
   applyImportDraft: (draftId: ID) => void;
+  addReflection: (reflection: Reflection) => void;
+  deleteReflection: (id: ID) => void;
+  addLearningItem: (item: LearningItem) => void;
+  setLearningStatus: (id: ID, status: LearningStatus) => void;
+  deleteLearningItem: (id: ID) => void;
+  addMassExperience: (mass: MassExperience) => void;
 }
 
 export const AppStoreContext = createContext<AppStore | null>(null);
@@ -650,6 +660,29 @@ export const mutations = {
       ...next,
       import_drafts: next.import_drafts.filter((d) => d.id !== draftId),
     };
+  },
+
+  // --- Journey layer: Reflection / Learning / Mass ---------------------
+  addReflection(db: Database, reflection: Reflection): Database {
+    return { ...db, reflections: [reflection, ...db.reflections] };
+  },
+  deleteReflection(db: Database, id: ID): Database {
+    return { ...db, reflections: db.reflections.filter((r) => r.id !== id) };
+  },
+  addLearningItem(db: Database, item: LearningItem): Database {
+    return { ...db, learning_items: [item, ...db.learning_items] };
+  },
+  setLearningStatus(db: Database, id: ID, status: LearningStatus): Database {
+    return {
+      ...db,
+      learning_items: db.learning_items.map((i) => (i.id === id ? { ...i, status } : i)),
+    };
+  },
+  deleteLearningItem(db: Database, id: ID): Database {
+    return { ...db, learning_items: db.learning_items.filter((i) => i.id !== id) };
+  },
+  addMassExperience(db: Database, mass: MassExperience): Database {
+    return { ...db, mass_experiences: [mass, ...db.mass_experiences] };
   },
 };
 
