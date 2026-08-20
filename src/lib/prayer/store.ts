@@ -20,6 +20,7 @@ import type {
   Reflection,
   SessionContext,
   SessionItem,
+  Source,
   TemplateItem,
 } from "./types";
 import { createSeedDatabase } from "./seed";
@@ -153,6 +154,7 @@ export interface AppStore {
   deleteNovenaInstance: (id: ID) => void;
   saveImportDraft: (draft: ImportDraft) => void;
   applyImportDraft: (draftId: ID) => void;
+  addSource: (source: Source) => void;
   addReflection: (reflection: Reflection) => void;
   deleteReflection: (id: ID) => void;
   addLearningItem: (item: LearningItem) => void;
@@ -660,6 +662,10 @@ export const mutations = {
       ...next,
       import_drafts: next.import_drafts.filter((d) => d.id !== draftId),
     };
+  },
+
+  addSource(db: Database, source: Source): Database {
+    return { ...db, sources: [source, ...db.sources] };
   },
 
   // --- Journey layer: Reflection / Learning / Mass ---------------------

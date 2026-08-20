@@ -66,6 +66,8 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       saveImportDraft: (draft: Parameters<typeof mutations.saveImportDraft>[1]) =>
         setDb((d) => mutations.saveImportDraft(d, draft)),
       applyImportDraft: (id: string) => setDb((d) => mutations.applyImportDraft(d, id)),
+      addSource: (s: Parameters<typeof mutations.addSource>[1]) =>
+        setDb((d) => mutations.addSource(d, s)),
       addReflection: (r: Parameters<typeof mutations.addReflection>[1]) =>
         setDb((d) => mutations.addReflection(d, r)),
       deleteReflection: (id: string) => setDb((d) => mutations.deleteReflection(d, id)),

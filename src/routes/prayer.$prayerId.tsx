@@ -10,6 +10,7 @@ import {
   buildPrayerRecords,
   type PrayerDraft,
 } from "@/components/prayer/PrayerFields";
+import { MediaEditor } from "@/components/media/MediaEditor";
 import { useApp, variantsOf } from "@/lib/prayer/store";
 
 export const Route = createFileRoute("/prayer/$prayerId")({
@@ -50,6 +51,8 @@ function PrayerDetail() {
     body: version?.body ?? "",
     prayerType: prayer?.prayer_type ?? "devotional",
     expressionType: prayer?.expression_type ?? "vocal",
+    tags: prayer?.tags ?? [],
+    media: prayer?.media ?? [],
   });
   const [newVersionLabel, setNewVersionLabel] = useState("");
   const [newVersionBody, setNewVersionBody] = useState("");
@@ -88,6 +91,7 @@ function PrayerDetail() {
           </p>
         ) : null}
         <PrayerFields draft={draft} onChange={setDraft} />
+        <MediaEditor media={draft.media} onChange={(media) => setDraft({ ...draft, media })} />
         <Button className="h-12 w-full" onClick={save}>
           Save prayer
         </Button>

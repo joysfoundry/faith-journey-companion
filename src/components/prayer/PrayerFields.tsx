@@ -8,7 +8,7 @@ import {
   type ExpressionType,
   type PrayerType,
 } from "@/domain/taxonomy";
-import type { Prayer, PrayerVersion } from "@/lib/prayer/types";
+import type { Prayer, PrayerMedia, PrayerVersion } from "@/lib/prayer/types";
 import { newId } from "@/lib/prayer/compiler";
 
 export interface PrayerDraft {
@@ -16,6 +16,8 @@ export interface PrayerDraft {
   body: string;
   prayerType: PrayerType;
   expressionType: ExpressionType;
+  tags: string[];
+  media: PrayerMedia[];
 }
 
 export const EMPTY_PRAYER_DRAFT: PrayerDraft = {
@@ -23,6 +25,8 @@ export const EMPTY_PRAYER_DRAFT: PrayerDraft = {
   body: "",
   prayerType: "devotional",
   expressionType: "vocal",
+  tags: [],
+  media: [],
 };
 
 /**
@@ -44,12 +48,13 @@ export function buildPrayerRecords(
       title: draft.title.trim(),
       prayer_type: draft.prayerType,
       expression_type: draft.expressionType,
-      tags: prayer?.tags ?? [],
+      tags: draft.tags.map((t) => t.trim()).filter(Boolean),
       favorite: prayer?.favorite ?? false,
       default_version_id: versionId,
       created_at: prayer?.created_at ?? now,
       ...(prayer?.devotion_type ? { devotion_type: prayer.devotion_type } : {}),
       ...(prayer?.source_id ? { source_id: prayer.source_id } : {}),
+      ...(draft.media.length ? { media: draft.media } : {}),
     },
     version: {
       id: versionId,
@@ -136,6 +141,17 @@ export function PrayerFields({
         options={EXPRESSION_TYPES}
         onChange={(v) => onChange({ ...draft, expressionType: v as ExpressionType })}
       />
+      <div>
+        <Label htmlFor={`${idPrefix}-tags`}>Tags</Label>
+        <Input
+          id={`${idPrefix}-tags`}
+          value={draft.tags.join(", ")}
+          onChange={(e) => onChange({ ...draft, tags: e.target.value.split(",").map((t) => t.trimStart()) })}
+          placeholder="marian, rosary, healing"
+          className="mt-1 h-12"
+        />
+        <p className="mt-1 text-xs text-muted-foreground">Comma-separated. Used for search.</p>
+      </div>
       <div>
         <Label htmlFor={`${idPrefix}-body`}>Prayer text</Label>
         <Textarea

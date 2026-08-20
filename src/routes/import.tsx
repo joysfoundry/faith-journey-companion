@@ -1,18 +1,25 @@
 import { useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { fetchSourceText } from "@/lib/prayer/fetchSource.functions";
-
 import { toast } from "sonner";
+
+import { fetchSourceText } from "@/lib/prayer/fetchSource.functions";
 import { AppShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { TaxonomySelect } from "@/components/prayer/PrayerFields";
+import {
+  PrayerFields,
+  EMPTY_PRAYER_DRAFT,
+  TaxonomySelect,
+  buildPrayerRecords,
+  type PrayerDraft,
+} from "@/components/prayer/PrayerFields";
+import { MediaEditor } from "@/components/media/MediaEditor";
 import { PhotoDropzone, type LocalPhoto } from "@/components/media/PhotoDropzone";
 import { useApp } from "@/lib/prayer/store";
-import { analyzeText, draftFromWrittenPrayer, resolveAttribution } from "@/lib/prayer/importer";
+import { analyzeText, resolveAttribution, similarity } from "@/lib/prayer/importer";
 import { newId } from "@/lib/prayer/compiler";
 import {
   EXPRESSION_TYPES,
@@ -21,32 +28,37 @@ import {
   type ExpressionType,
   type PrayerType,
 } from "@/domain/taxonomy";
-import type { ImportCandidate, ImportDraft, SourceType } from "@/lib/prayer/types";
+import type { ImportCandidate, ImportDraft, Source, SourceType } from "@/lib/prayer/types";
 
 export const Route = createFileRoute("/import")({
-  validateSearch: (search: Record<string, unknown>): { mode?: "devotion" | "howto" } =>
-    search["mode"] === "devotion"
-      ? { mode: "devotion" }
-      : search["mode"] === "howto"
-        ? { mode: "howto" }
-        : {},
   head: () => ({
     meta: [
-      { title: "Add Prayers — Faith Journey" },
+      { title: "Add a prayer — Faith Journey" },
       {
         name: "description",
         content:
-          "Add one prayer or a whole booklet: write it or paste it, then review every detected prayer, how-to, or mystery before it enters your library.",
+          "Add a single prayer or a whole devotion — by hand, from a link, or from a photo — and review it before it enters your library.",
       },
-      { property: "og:title", content: "Add Prayers — Faith Journey" },
-      {
-        property: "og:description",
-        content: "Nothing is saved until you review it — duplicates are flagged automatically.",
-      },
+      { property: "og:title", content: "Add a prayer — Faith Journey" },
+      { property: "og:description", content: "Nothing is saved until you review it." },
     ],
   }),
-  component: AddPrayersPage,
+  component: AddPrayerPage,
 });
+
+type What = "single" | "devotion";
+type How = "manual" | "url" | "photo" | "paste";
+
+const SINGLE_HOWS: { key: How; label: string }[] = [
+  { key: "manual", label: "Enter manually" },
+  { key: "url", label: "From a link" },
+  { key: "photo", label: "From a photo" },
+];
+const DEVOTION_HOWS: { key: How; label: string }[] = [
+  { key: "paste", label: "Paste text" },
+  { key: "url", label: "From a link" },
+  { key: "photo", label: "From a photo" },
+];
 
 const DECISIONS: Array<{ value: ImportCandidate["decision"]; label: string }> = [
   { value: "save_new", label: "Save as new" },
@@ -55,27 +67,71 @@ const DECISIONS: Array<{ value: ImportCandidate["decision"]; label: string }> = 
   { value: "skip", label: "Skip" },
 ];
 
+function Segmented<T extends string>({
+  value,
+  options,
+  onChange,
+}: {
+  value: T;
+  options: { key: T; label: string }[];
+  onChange: (v: T) => void;
+}) {
+  return (
+    <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0,1fr))` }}>
+      {options.map((o) => (
+        <button
+          key={o.key}
+          type="button"
+          onClick={() => onChange(o.key)}
+          className={
+            "h-11 rounded-md border px-2 text-sm font-medium transition-colors " +
+            (value === o.key
+              ? "border-primary bg-primary text-primary-foreground"
+              : "border-input bg-card text-muted-foreground")
+          }
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
 
-function AddPrayersPage() {
-  const { db, saveImportDraft, applyImportDraft } = useApp();
+function AddPrayerPage() {
+  const { db, upsertPrayer, addPrayerVariant, addSource, saveImportDraft, applyImportDraft } = useApp();
   const navigate = useNavigate();
-  const { mode } = Route.useSearch();
-  const [name, setName] = useState("");
-  const [devotionName, setDevotionName] = useState("");
-  const [sourceType, setSourceType] = useState<SourceType>("written");
-  const [title, setTitle] = useState("");
-  const [raw, setRaw] = useState("");
-  const [url, setUrl] = useState("");
-  /** Notes the source gives about the devotion — promises, when to pray it, context. */
-  const [notes, setNotes] = useState("");
-  const [prayerType, setPrayerType] = useState<PrayerType>("other");
-  const [expressionType, setExpressionType] = useState<ExpressionType>("vocal");
-  const [photos, setPhotos] = useState<LocalPhoto[]>([]);
-  const [fetching, setFetching] = useState(false);
   const loadSource = useServerFn(fetchSourceText);
 
-  /** Pulls the prayer text off a linked page so it can be reviewed like pasted text. */
-  const fetchFromUrl = async () => {
+  const [what, setWhat] = useState<What>("single");
+  const [how, setHow] = useState<How>("manual");
+
+  // Shared intake helpers
+  const [url, setUrl] = useState("");
+  const [fetching, setFetching] = useState(false);
+  const [photos, setPhotos] = useState<LocalPhoto[]>([]);
+
+  // Single-prayer state
+  const [draft, setDraft] = useState<PrayerDraft>(EMPTY_PRAYER_DRAFT);
+  const [sourceName, setSourceName] = useState("");
+  const [reviewingSingle, setReviewingSingle] = useState(false);
+
+  // Devotion (bundle) state
+  const [devotionName, setDevotionName] = useState("");
+  const [raw, setRaw] = useState("");
+  const [notes, setNotes] = useState("");
+  const [bundleType, setBundleType] = useState<PrayerType>("traditional_expression");
+  const [bundleExpr, setBundleExpr] = useState<ExpressionType>("vocal");
+  const [importDraft, setImportDraft] = useState<ImportDraft | null>(null);
+
+  function pickWhat(next: What) {
+    setWhat(next);
+    setHow(next === "single" ? "manual" : "paste");
+    setReviewingSingle(false);
+    setImportDraft(null);
+  }
+
+  // --- URL fetch: fills the right target for the current mode ----------------
+  async function fetchFromUrl() {
     const target = url.trim();
     if (!/^https?:\/\//i.test(target)) {
       toast.error("Add a full link starting with https://");
@@ -88,401 +144,204 @@ function AddPrayersPage() {
         toast.error(result.error ?? "Nothing readable came back — paste the text instead.");
         return;
       }
-      setRaw(result.text);
-      if (sourceType === "written") setSourceType("text");
-      toast.success("Text fetched — check it, then review the prayers.");
+      if (what === "single") {
+        setDraft((d) => ({
+          ...d,
+          title: d.title.trim() || result.title || d.title,
+          body: result.text,
+        }));
+      } else {
+        setRaw(result.text);
+        if (!devotionName.trim() && result.title) setDevotionName(result.title);
+      }
+      toast.success("Fetched — check the text, then review.");
     } catch {
       toast.error("That page couldn't be read. Copy and paste the text instead.");
     } finally {
       setFetching(false);
     }
-  };
+  }
 
-  const [draft, setDraft] = useState<ImportDraft | null>(null);
-  /** Explicit: this text is instructions, not prayer wording. */
-  const [asHowTo, setAsHowTo] = useState(mode === "howto");
-  const [howToTemplateId, setHowToTemplateId] = useState("");
+  // --- Single prayer: dedupe + save ------------------------------------------
+  const bestDuplicate = (() => {
+    const body = draft.body.trim();
+    if (body.length < 12) return undefined;
+    let best = 0;
+    let match: (typeof db.prayers)[number] | undefined;
+    for (const p of db.prayers) {
+      if (p.is_default_variant === false) continue;
+      const vbody = db.prayer_versions.find((v) => v.id === p.default_version_id)?.body ?? "";
+      const s = similarity(body, vbody);
+      if (s > best) {
+        best = s;
+        match = p;
+      }
+    }
+    return match && best > 0.6 ? { prayer: match, score: best } : undefined;
+  })();
 
-  const asDevotion = mode === "devotion";
-  const isWritten = sourceType === "written" && !asDevotion && !asHowTo;
+  function makeSourceId(): string | undefined {
+    if (!sourceName.trim() && !url.trim()) return undefined;
+    const id = newId("source");
+    const src: Source = {
+      id,
+      source_type: url.trim() ? "web" : "manual",
+      name: sourceName.trim() || (url.trim() ? "Fetched from a link" : "Added by me"),
+      created_at: new Date().toISOString(),
+      ...(url.trim() ? { url: url.trim() } : {}),
+      ...(photos.length ? { metadata: { photo_count: String(photos.length) } } : {}),
+    };
+    addSource(src);
+    return id;
+  }
 
-  const analyze = () => {
+  function saveSingleNew() {
+    const records = buildPrayerRecords(draft);
+    const sourceId = makeSourceId();
+    upsertPrayer(
+      { ...records.prayer, is_default_variant: true, ...(sourceId ? { source_id: sourceId } : {}) },
+      records.version,
+    );
+    toast.success("Added to your library");
+    navigate({ to: "/prayers" });
+  }
+
+  function saveSingleAsVariant() {
+    if (!bestDuplicate) return;
+    addPrayerVariant(bestDuplicate.prayer.id, {
+      label: draft.title.trim() || "Alternate wording",
+      body: draft.body.trim(),
+    });
+    toast.success(`Saved as a version of “${bestDuplicate.prayer.title}”`);
+    navigate({ to: "/prayer/$prayerId", params: { prayerId: bestDuplicate.prayer.id } });
+  }
+
+  // --- Devotion (bundle): analyze -> review -> apply -------------------------
+  function analyzeBundle() {
     if (!raw.trim()) {
-      toast.error("Add some prayer text first.");
+      toast.error("Add the devotion text first.");
       return;
     }
-    if (isWritten && !title.trim()) {
-      toast.error("Give the prayer a title.");
-      return;
-    }
-    if (asDevotion && !devotionName.trim()) {
+    if (!devotionName.trim()) {
       toast.error("Name the devotion.");
       return;
     }
     const { url: resolvedUrl, attribution } = resolveAttribution(raw, url);
-    const source = {
+    const source: Source = {
       id: newId("source"),
-      source_type: resolvedUrl && !isWritten ? ("web" as SourceType) : sourceType,
-      // In devotion mode the devotion name doubles as the source name,
-      // so we don't show a separate, confusing "Source name" field.
-      name:
-        name.trim() ||
-        (asDevotion
-          ? devotionName.trim()
-          : asHowTo
-            ? title.trim() || "How to pray"
-            : isWritten
-              ? "Written by me"
-              : "Pasted text"),
-      url: resolvedUrl,
-      attribution: isWritten ? (attribution === "self" ? "self" : attribution) : attribution,
-      // MVP placeholder: photo previews are local; Cloud storage uploads them
-      // and files them into the Gallery under the "prayer_source" context.
-      metadata: photos.length
-        ? {
-            photo_count: String(photos.length),
-            photo_names: photos.map((p) => p.name).join(", "),
-            gallery_context: "prayer_source",
-          }
-        : undefined,
+      source_type: resolvedUrl ? "web" : "text",
+      name: devotionName.trim(),
+      attribution,
       created_at: new Date().toISOString(),
+      ...(resolvedUrl ? { url: resolvedUrl } : {}),
+      ...(photos.length ? { metadata: { photo_count: String(photos.length) } } : {}),
     };
-    // One typed prayer skips block detection; a pasted bundle gets analyzed.
-    const next = asHowTo
-      ? analyzeText(db, raw, source, { asHowTo: true })
-      : isWritten
-        ? draftFromWrittenPrayer(db, title.trim(), raw.trim(), source, {
-            prayer_type: prayerType,
-            expression_type: expressionType,
-          })
-        : analyzeText(db, raw, source);
-    if (asHowTo) {
-      next.candidates = next.candidates.map((c) => ({
-        ...c,
-        ...(title.trim() ? { title: title.trim() } : {}),
-        ...(howToTemplateId ? { link_template_id: howToTemplateId } : {}),
-      }));
-    }
-    if (asDevotion)
-      next.devotion = {
-        name: devotionName.trim(),
-        // Explicit notes win; otherwise the prose blocks detected in the text are used.
-        ...(notes.trim() ? { notes: notes.trim() } : {}),
-      };
-    setDraft(next);
+    const next = analyzeText(db, raw, source);
+    next.candidates = next.candidates.map((c) =>
+      c.classification === "prayer" || c.classification === "prayer_version"
+        ? { ...c, prayer_type: c.prayer_type ?? bundleType, expression_type: c.expression_type ?? bundleExpr }
+        : c,
+    );
+    next.devotion = { name: devotionName.trim(), ...(notes.trim() ? { notes: notes.trim() } : {}) };
+    setImportDraft(next);
     saveImportDraft(next);
-  };
+  }
 
-
-  const patchCandidate = (candidateId: string, patch: Partial<ImportCandidate>) => {
-    setDraft((current) => {
-      if (!current) return current;
-      const next = {
-        ...current,
-        candidates: current.candidates.map((c) => (c.id === candidateId ? { ...c, ...patch } : c)),
-      };
+  function patchCandidate(id: string, patch: Partial<ImportCandidate>) {
+    setImportDraft((cur) => {
+      if (!cur) return cur;
+      const next = { ...cur, candidates: cur.candidates.map((c) => (c.id === id ? { ...c, ...patch } : c)) };
       saveImportDraft(next);
       return next;
     });
-  };
+  }
 
-  const commit = () => {
-    if (!draft) return;
-    applyImportDraft(draft.id);
-    setDraft(null);
-    setRaw("");
-    setTitle("");
-    setPhotos([]);
-    setNotes("");
-    toast.success(asDevotion ? "Devotion and prayers added" : "Added to your library");
+  function commitBundle() {
+    if (!importDraft) return;
+    applyImportDraft(importDraft.id);
+    toast.success("Devotion and prayers added");
     navigate({ to: "/prayers" });
-  };
+  }
+
+  const urlBox = (
+    <div>
+      <Label htmlFor="surl">Link</Label>
+      <div className="mt-1 flex gap-2">
+        <Input id="surl" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…" className="h-12" />
+        <Button type="button" variant="secondary" className="h-12 shrink-0" disabled={fetching} onClick={fetchFromUrl}>
+          {fetching ? "Fetching…" : "Fetch"}
+        </Button>
+      </div>
+      <p className="mt-1 text-xs text-muted-foreground">
+        We pull the title and text off the page. If it&apos;s blocked, paste the text instead.
+      </p>
+    </div>
+  );
+
+  const photoBox = (
+    <PhotoDropzone
+      label="Photo or scan"
+      hint="Snap or drop a page, holy card, or prayer sheet. Reading text from the image needs the AI connector — for now, type the words below."
+      photos={photos}
+      onChange={setPhotos}
+    />
+  );
 
   return (
     <AppShell
-      title={asDevotion ? "New devotion" : asHowTo ? "New How To guide" : "Add prayers"}
-      subtitle={
-        asDevotion
-          ? "Paste the devotion. Each prayer is saved on its own, then bundled in order."
-          : "One prayer or a whole booklet — written or pasted."
-      }
+      title="Add a prayer"
+      subtitle="A single prayer, or a whole devotion"
       back={{ to: "/prayers", label: "Prayers" }}
     >
-      {!draft ? (
-        <div className="soft-card space-y-3 p-4">
-          {/* How you're adding it — one clear choice instead of four near-identical options */}
-          {!asDevotion ? (
-            <div>
-              <Label>How are you adding this?</Label>
-              <div className="mt-1 grid grid-cols-3 gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAsHowTo(false);
-                    setSourceType("written");
-                  }}
-                  className={
-                    "flex h-12 items-center justify-center gap-1 rounded-md border px-2 text-xs font-medium transition-colors sm:text-sm " +
-                    (isWritten
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-input bg-card text-muted-foreground")
-                  }
-                >
-                  ✍️ Write a prayer
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAsHowTo(false);
-                    setSourceType("text");
-                  }}
-                  className={
-                    "flex h-12 items-center justify-center gap-1 rounded-md border px-2 text-xs font-medium transition-colors sm:text-sm " +
-                    (!isWritten && !asHowTo
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-input bg-card text-muted-foreground")
-                  }
-                >
-                  📖 Paste a booklet
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAsHowTo(true);
-                    setSourceType("text");
-                  }}
-                  className={
-                    "flex h-12 items-center justify-center gap-1 rounded-md border px-2 text-xs font-medium transition-colors sm:text-sm " +
-                    (asHowTo
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-input bg-card text-muted-foreground")
-                  }
-                >
-                  📋 How to guide
-                </button>
-              </div>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {asHowTo
-                  ? "This page or text is instructions only — every line becomes a numbered step. No prayers are created from it."
-                  : isWritten
-                    ? "You're typing a single prayer yourself."
-                    : "You're pasting text from a booklet, devotion, PDF, or web page — each titled block becomes its own prayer. Instruction lines stay with the prayer; add a How To guide separately."}
-              </p>
+      {/* ---- Single-prayer review ---- */}
+      {what === "single" && reviewingSingle ? (
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">Review before saving. Nothing is stored until you confirm.</p>
+          <article className="soft-card space-y-2 p-4">
+            <div className="flex items-start justify-between gap-2">
+              <p className="font-display text-lg">{draft.title || "Untitled prayer"}</p>
+              <span className="eyebrow shrink-0">{TAXONOMY_LABELS[draft.prayerType]}</span>
             </div>
-          ) : null}
-
-          {asHowTo ? (
-            <>
-              <div>
-                <Label htmlFor="htitle">Guide title</Label>
-                <Input
-                  id="htitle"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="How to pray the Chaplet of St. Michael"
-                  className="mt-1 h-12"
-                />
-              </div>
-              <div>
-                <Label htmlFor="htpl">These instructions are for</Label>
-                <select
-                  id="htpl"
-                  value={howToTemplateId}
-                  onChange={(e) => setHowToTemplateId(e.target.value)}
-                  className="mt-1 h-12 w-full rounded-md border border-input bg-card px-3 text-sm"
-                >
-                  <option value="">No specific devotion</option>
-                  {db.templates.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </>
-          ) : null}
-
-
-          {/* The one name field — labelled for what it actually is */}
-          {asDevotion ? (
-            <div>
-              <Label htmlFor="dname">Devotion name</Label>
-              <Input
-                id="dname"
-                value={devotionName}
-                onChange={(e) => setDevotionName(e.target.value)}
-                placeholder="Divine Mercy Chaplet"
-                className="mt-1 h-12"
-              />
-            </div>
-          ) : isWritten ? (
-            <div>
-              <Label htmlFor="ptitle">Prayer title</Label>
-              <Input
-                id="ptitle"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Hail, Holy Queen"
-                className="mt-1 h-12"
-              />
-            </div>
-          ) : (
-            <div>
-              <Label htmlFor="sname">Source</Label>
-              <Input
-                id="sname"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Grandmother's booklet, Magnificat, a website…"
-                className="mt-1 h-12"
-              />
-              <p className="mt-1 text-xs text-muted-foreground">
-                The booklet or collection these prayers come from.
-              </p>
-            </div>
-          )}
-
-          {!asHowTo ? (
-            <>
-              <TaxonomySelect
-                id="prayer-type"
-                label="Prayer type"
-                value={prayerType}
-                options={PRAYER_TYPES}
-                onChange={(v) => setPrayerType(v as PrayerType)}
-              />
-              <TaxonomySelect
-                id="expression-type"
-                label="How it is prayed"
-                value={expressionType}
-                options={EXPRESSION_TYPES}
-                onChange={(v) => setExpressionType(v as ExpressionType)}
-              />
-              {!isWritten ? (
-                <p className="-mt-1 text-xs text-muted-foreground">
-                  Used as the starting point for each detected prayer — you can change any of them on
-                  the next screen.
-                </p>
-              ) : null}
-            </>
-          ) : null}
-
-
-          <div>
-            <Label htmlFor="surl">Link to the source (optional)</Label>
-            <div className="mt-1 flex gap-2">
-              <Input
-                id="surl"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder="https://…"
-                className="h-12"
-              />
-              <Button
-                type="button"
-                variant="secondary"
-                className="h-12 shrink-0"
-                disabled={fetching}
-                onClick={fetchFromUrl}
-              >
-                {fetching ? "Fetching…" : "Fetch text"}
-              </Button>
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Paste a link and tap “Fetch text” to pull the prayers off the page — you can edit the
-              text before reviewing. If the page blocks us, copy and paste the text instead.
+            <p className="whitespace-pre-line text-sm text-muted-foreground">{draft.body}</p>
+            <p className="text-xs text-muted-foreground">
+              {TAXONOMY_LABELS[draft.expressionType]}
+              {draft.tags.filter(Boolean).length ? ` · ${draft.tags.filter(Boolean).join(", ")}` : ""}
+              {draft.media.length ? ` · ${draft.media.length} media` : ""}
+              {sourceName.trim() ? ` · Source: ${sourceName.trim()}` : ""}
             </p>
-          </div>
+          </article>
 
-
-          {asDevotion ? (
-            <div>
-              <Label htmlFor="dnotes">Notes from the source (optional)</Label>
-              <Textarea
-                id="dnotes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={4}
-                placeholder="Our Lord's promises, when to pray it, instructions printed with the prayers…"
-                className="mt-1"
-              />
+          {bestDuplicate ? (
+            <div className="soft-card p-4">
+              <p className="text-sm text-primary">
+                Looks like “{bestDuplicate.prayer.title}” is already in your library (
+                {Math.round(bestDuplicate.score * 100)}% match).
+              </p>
+              <Button variant="secondary" className="mt-2 h-11 w-full" onClick={saveSingleAsVariant}>
+                Save as a version of “{bestDuplicate.prayer.title}”
+              </Button>
               <p className="mt-1 text-xs text-muted-foreground">
-                Anything the page or booklet says about the devotion itself. Leave it blank and
-                we'll keep the explanatory paragraphs found in the text.
+                (Media attaches to a new prayer, not to a version — save as new to keep audio/video.)
               </p>
             </div>
           ) : null}
 
-
-
-          <PhotoDropzone
-            label="Source photos (optional)"
-            hint="Snap or drop pages of a booklet, holy card, or prayer sheet. They're saved with this source and added to your Gallery. Photo-to-text reading needs the AI connector, so paste the wording below for now."
-            photos={photos}
-            onChange={setPhotos}
-          />
-
-          <div>
-            <Label htmlFor="raw">{asHowTo ? "Instructions" : isWritten ? "Prayer text" : "Text"}</Label>
-            <Textarea
-              id="raw"
-              value={raw}
-              onChange={(e) => setRaw(e.target.value)}
-              rows={isWritten ? 10 : 12}
-              placeholder={
-                isWritten
-                  ? "Hail, Holy Queen, Mother of Mercy…"
-                  : "Hail Holy Queen\nHail, Holy Queen, Mother of Mercy…"
-              }
-              className="mt-1"
-            />
-            {!isWritten ? (
-              <p className="mt-2 text-xs text-muted-foreground">
-                For a PDF, copy its text and paste it here. Each block with a short first line is
-                treated as a titled section.
-              </p>
-            ) : null}
+          <div className="flex gap-2">
+            <Button variant="outline" className="h-12 flex-1" onClick={() => setReviewingSingle(false)}>
+              Back to edit
+            </Button>
+            <Button className="h-12 flex-1" onClick={saveSingleNew} disabled={!draft.title.trim() || !draft.body.trim()}>
+              Save to library
+            </Button>
           </div>
-          <Button className="h-12 w-full" onClick={analyze}>
-            {asHowTo ? "Review guide" : isWritten ? "Review prayer" : "Analyze text"}
-          </Button>
         </div>
-      ) : (
+      ) : /* ---- Devotion review ---- */ importDraft ? (
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            {draft.candidates.length} section{draft.candidates.length === 1 ? "" : "s"} detected in{" "}
-            {draft.source.name}. Nothing is saved until you confirm.
+            {importDraft.candidates.length} section{importDraft.candidates.length === 1 ? "" : "s"} detected in{" "}
+            {importDraft.source.name}. Nothing is saved until you confirm.
           </p>
-          <p className="text-sm">
-            <span className="eyebrow">Source</span>{" "}
-            {draft.source.url ? (
-              <a href={draft.source.url} className="text-primary underline" rel="noreferrer">
-                {draft.source.url}
-              </a>
-            ) : (
-              (draft.source.attribution ?? "self")
-            )}
-          </p>
-          {photos.length ? (
-            <div>
-              <p className="text-sm">
-                <span className="eyebrow">Source photos</span> {photos.length} — saved with this
-                source and added to your Gallery.
-              </p>
-              <ul className="mt-2 flex flex-wrap gap-2">
-                {photos.map((p) => (
-                  <li key={p.id}>
-                    <img
-                      src={p.previewUrl}
-                      alt={p.name}
-                      className="h-20 w-20 rounded-md border border-border object-cover"
-                    />
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-          {draft.candidates.map((c) => {
+          {importDraft.candidates.map((c) => {
             const duplicate = db.prayers.find((p) => p.id === c.duplicate_of_prayer_id);
             const isPrayer = c.classification === "prayer" || c.classification === "prayer_version";
             return (
@@ -491,23 +350,17 @@ function AddPrayersPage() {
                   <p className="font-medium">{c.title}</p>
                   <span className="eyebrow shrink-0">{c.classification.replace(/_/g, " ")}</span>
                 </div>
-                <p className="mt-2 line-clamp-4 text-sm whitespace-pre-line text-muted-foreground">
-                  {c.body}
-                </p>
+                <p className="mt-2 line-clamp-4 whitespace-pre-line text-sm text-muted-foreground">{c.body}</p>
                 {duplicate ? (
                   <p className="mt-2 text-sm text-primary">
-                    Looks like “{duplicate.title}” already in your library (
-                    {Math.round((c.similarity ?? 0) * 100)}% match).
+                    Looks like “{duplicate.title}” already in your library ({Math.round((c.similarity ?? 0) * 100)}%
+                    match).
                   </p>
                 ) : null}
                 <select
                   value={c.decision}
                   aria-label={`Decision for ${c.title}`}
-                  onChange={(e) =>
-                    patchCandidate(c.id, {
-                      decision: e.target.value as ImportCandidate["decision"],
-                    })
-                  }
+                  onChange={(e) => patchCandidate(c.id, { decision: e.target.value as ImportCandidate["decision"] })}
                   className="mt-3 h-11 w-full rounded-md border border-input bg-card px-3 text-sm"
                 >
                   {DECISIONS.map((d) => (
@@ -521,9 +374,7 @@ function AddPrayersPage() {
                     <select
                       value={c.prayer_type ?? "traditional_expression"}
                       aria-label={`Prayer type for ${c.title}`}
-                      onChange={(e) =>
-                        patchCandidate(c.id, { prayer_type: e.target.value as PrayerType })
-                      }
+                      onChange={(e) => patchCandidate(c.id, { prayer_type: e.target.value as PrayerType })}
                       className="h-11 w-full rounded-md border border-input bg-card px-3 text-sm"
                     >
                       {PRAYER_TYPES.map((t) => (
@@ -535,9 +386,7 @@ function AddPrayersPage() {
                     <select
                       value={c.expression_type ?? "vocal"}
                       aria-label={`How ${c.title} is prayed`}
-                      onChange={(e) =>
-                        patchCandidate(c.id, { expression_type: e.target.value as ExpressionType })
-                      }
+                      onChange={(e) => patchCandidate(c.id, { expression_type: e.target.value as ExpressionType })}
                       className="h-11 w-full rounded-md border border-input bg-card px-3 text-sm"
                     >
                       {EXPRESSION_TYPES.map((t) => (
@@ -548,42 +397,135 @@ function AddPrayersPage() {
                     </select>
                   </div>
                 ) : null}
-                {c.classification === "how_to" && c.decision !== "skip" ? (
-                  <div className="mt-3">
-                    <Label htmlFor={`tpl-${c.id}`} className="text-xs">
-                      These instructions are for
-                    </Label>
-                    <select
-                      id={`tpl-${c.id}`}
-                      value={c.link_template_id ?? ""}
-                      onChange={(e) =>
-                        patchCandidate(c.id, { link_template_id: e.target.value || undefined })
-                      }
-                      className="mt-1 h-11 w-full rounded-md border border-input bg-card px-3 text-sm"
-                    >
-                      <option value="">No specific devotion</option>
-                      {db.templates.map((t) => (
-                        <option key={t.id} value={t.id}>
-                          {t.name}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Each novena has its own “How to pray” guide — pick the one this belongs to.
-                    </p>
-                  </div>
-                ) : null}
               </article>
             );
           })}
           <div className="flex gap-2">
-            <Button variant="outline" className="h-12 flex-1" onClick={() => setDraft(null)}>
+            <Button variant="outline" className="h-12 flex-1" onClick={() => setImportDraft(null)}>
               Back
             </Button>
-            <Button className="h-12 flex-1" onClick={commit}>
+            <Button className="h-12 flex-1" onClick={commitBundle}>
               Add to library
             </Button>
           </div>
+        </div>
+      ) : (
+        /* ---- Intake form ---- */
+        <div className="space-y-4">
+          <div>
+            <Label>What are you adding?</Label>
+            <div className="mt-1">
+              <Segmented<What>
+                value={what}
+                onChange={pickWhat}
+                options={[
+                  { key: "single", label: "A single prayer" },
+                  { key: "devotion", label: "A devotion (multiple prayers)" },
+                ]}
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label>How?</Label>
+            <div className="mt-1">
+              <Segmented<How>
+                value={how}
+                onChange={setHow}
+                options={what === "single" ? SINGLE_HOWS : DEVOTION_HOWS}
+              />
+            </div>
+          </div>
+
+          {how === "url" ? urlBox : null}
+          {how === "photo" ? photoBox : null}
+
+          {what === "single" ? (
+            <div className="soft-card space-y-4 p-4">
+              <PrayerFields draft={draft} onChange={setDraft} />
+              <div>
+                <Label htmlFor="ssource">Source (optional)</Label>
+                <Input
+                  id="ssource"
+                  value={sourceName}
+                  onChange={(e) => setSourceName(e.target.value)}
+                  placeholder="USCCB, a booklet, a website…"
+                  className="mt-1 h-12"
+                />
+              </div>
+              <MediaEditor media={draft.media} onChange={(media) => setDraft((d) => ({ ...d, media }))} />
+              <Button
+                className="h-12 w-full"
+                onClick={() => {
+                  if (!draft.title.trim() || !draft.body.trim()) {
+                    toast.error("A prayer needs a title and text.");
+                    return;
+                  }
+                  setReviewingSingle(true);
+                }}
+              >
+                Review prayer
+              </Button>
+            </div>
+          ) : (
+            <div className="soft-card space-y-4 p-4">
+              <div>
+                <Label htmlFor="dname">Devotion name</Label>
+                <Input
+                  id="dname"
+                  value={devotionName}
+                  onChange={(e) => setDevotionName(e.target.value)}
+                  placeholder="Divine Mercy Chaplet, a family rosary…"
+                  className="mt-1 h-12"
+                />
+              </div>
+              <TaxonomySelect
+                id="bundle-type"
+                label="Default prayer type"
+                value={bundleType}
+                options={PRAYER_TYPES}
+                onChange={(v) => setBundleType(v as PrayerType)}
+              />
+              <TaxonomySelect
+                id="bundle-expr"
+                label="How they are prayed"
+                value={bundleExpr}
+                options={EXPRESSION_TYPES}
+                onChange={(v) => setBundleExpr(v as ExpressionType)}
+              />
+              <p className="-mt-1 text-xs text-muted-foreground">
+                The starting point for each detected prayer — change any of them on the review screen.
+              </p>
+              <div>
+                <Label htmlFor="dnotes">Notes from the source (optional)</Label>
+                <Textarea
+                  id="dnotes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={3}
+                  placeholder="Promises, when to pray it, printed instructions…"
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="raw">Devotion text</Label>
+                <Textarea
+                  id="raw"
+                  value={raw}
+                  onChange={(e) => setRaw(e.target.value)}
+                  rows={12}
+                  placeholder={"Apostles' Creed\nI believe in God…\n\nOur Father\nOur Father, who art in heaven…"}
+                  className="mt-1"
+                />
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Each block with a short first line becomes its own prayer, bundled in order.
+                </p>
+              </div>
+              <Button className="h-12 w-full" onClick={analyzeBundle}>
+                Review prayers
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </AppShell>

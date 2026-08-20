@@ -48,6 +48,24 @@ export interface Source {
 export type { DevotionType, ExpressionType, PrayerType } from "@/domain/taxonomy";
 
 /**
+ * Audio / video attached to a prayer. Persists with the prayer and is editable
+ * from the prayer editor. `link` and `file`/`recording` differ only in where
+ * `url` points: an external URL, or a data: URL for a small local clip.
+ */
+export type PrayerMediaKind = "audio" | "video";
+export type PrayerMediaSource = "link" | "file" | "recording";
+export interface PrayerMedia {
+  id: ID;
+  kind: PrayerMediaKind;
+  source: PrayerMediaSource;
+  label?: string | undefined;
+  /** External URL (link) or a data: URL (small file / recording). */
+  url: string;
+  duration_sec?: number | undefined;
+  created_at: string;
+}
+
+/**
  * Reusable prayer content. Never carries completion state.
  *
  * Every wording of the same prayer is its own Prayer record. Records that are
@@ -71,6 +89,8 @@ export interface Prayer {
   /** Exactly one record per variant group is the default. */
   is_default_variant?: boolean | undefined;
   source_id?: ID | undefined;
+  /** Audio/video links & short clips attached to this prayer. */
+  media?: PrayerMedia[] | undefined;
   created_at: string;
 }
 

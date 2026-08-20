@@ -18,11 +18,29 @@ export const fetchSourceText = createServerFn({ method: "POST" })
       redirect: "follow",
     });
     if (!response.ok) {
-      return { ok: false as const, error: `The page returned ${response.status}.`, text: "" };
+      return { ok: false as const, error: `The page returned ${response.status}.`, text: "", title: "" };
     }
     const html = await response.text();
-    return { ok: true as const, error: null, text: htmlToText(html) };
+    return { ok: true as const, error: null, text: htmlToText(html), title: pageTitle(html) };
   });
+
+/** Best-effort page title: <h1> if present, else <title> (stripped of site suffix). */
+function pageTitle(html: string): string {
+  const decode = (s: string) =>
+    s
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&nbsp;/gi, " ")
+      .replace(/&amp;/gi, "&")
+      .replace(/&#39;|&apos;/gi, "'")
+      .replace(/&quot;/gi, '"')
+      .replace(/\s+/g, " ")
+      .trim();
+  const h1 = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1];
+  if (h1) return decode(h1).slice(0, 120);
+  const title = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1];
+  if (title) return (decode(title).split(/\s*[|–—-]\s*/)[0] ?? "").slice(0, 120);
+  return "";
+}
 
 /** Minimal, dependency-free HTML → text with block-level line breaks. */
 function htmlToText(html: string): string {
