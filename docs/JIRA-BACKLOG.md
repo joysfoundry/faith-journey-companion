@@ -46,6 +46,8 @@ Paste-ready. Suggested **Epic: "ACTS PRD gap-merge into Faith Journey"**. Each r
 | P3 | Bug | **Hydration race on remaining edit routes** | Fixed for prayer editor + template builder; audit other `useState`-from-store routes and gate on `ready`. |
 | P4 | Story | **Restore "start from existing template" (Duplicate)** | Removed in the builder redesign; re-add as a Duplicate action if wanted. |
 | P4 | Story | **ACTS framing** | Thread Adoration · Contrition · Thanksgiving · Supplication where it fits (branding / prayer categorization). |
+| P2 | Story | **Mystery-detail versions (Scripture vs meditation)** | Same mystery (title + position fixed) needs multiple detail bodies — e.g. USCCB **Scripture** (Luke quotes + fruit) vs Ascension **meditation** text. Model already supports it: `MysteryContent.variant` ∈ title_only/short_description/full_meditation/**scripture**/family/devotion, many per `mystery_id`. Work: an editor to author the variants + let the Session/Template **choose which variant to present** (extend the "Mystery descriptions" picker beyond title/description to pick body variant). Examples: `~/Downloads/Mysteries 1.md` (Scripture), `Mysteries 2.md` (meditation). |
+| P3 | Task | **Repetition-count input design** | Current ×N control is a −/+ stepper — tedious for ×10/×53. Options: tap the "×N" to type a number; a number field; or preset chips (1·3·10) + custom. Recommend tap-to-type on the ×N. |
 
 ---
 
