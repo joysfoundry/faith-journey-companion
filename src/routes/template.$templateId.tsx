@@ -1,6 +1,6 @@
 import { Fragment, useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ChevronDown, GripVertical, Minus, Plus, Search, Trash2 } from "lucide-react";
+import { GripVertical, Minus, Plus, Search, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
@@ -114,10 +114,11 @@ function ordinal(n: number): string {
 
 function TemplateBuilder() {
   const { templateId } = Route.useParams();
-  const { db, saveTemplate, deleteTemplate, saveHowTo } = useApp();
+  const { db, saveTemplate, deleteTemplate, saveHowTo, upsertSource } = useApp();
   const navigate = useNavigate();
   const isNew = templateId === "new";
   const existing = db.templates.find((t) => t.id === templateId);
+  const existingSource = existing?.source_id ? db.sources.find((s) => s.id === existing.source_id) : undefined;
 
   const fallbackId = useMemo(() => newId("tpl"), []);
   const id = existing?.id ?? fallbackId;
@@ -130,6 +131,8 @@ function TemplateBuilder() {
   );
   const [fixedSetId, setFixedSetId] = useState(existing?.fixed_mystery_set_id ?? "");
   const [media, setMedia] = useState<PrayerMedia[]>(existing?.media ?? []);
+  const [sourceName, setSourceName] = useState(existingSource?.name ?? "");
+  const [sourceUrl, setSourceUrl] = useState(existingSource?.url ?? "");
   const [items, setItems] = useState<TemplateItem[]>(() =>
     db.template_items
       .filter((i) => i.template_id === templateId)
@@ -238,28 +241,45 @@ function TemplateBuilder() {
 
   const prayerTitle = (pid?: string) => db.prayers.find((p) => p.id === pid)?.title ?? "Prayer";
 
-  const buildTemplate = (): PrayerTemplate => ({
-    id,
-    name: name.trim(),
-    kind: existing?.kind ?? (mysteryCount > 0 ? "rosary" : "standard"),
-    mystery_presentation: presentation,
-    mystery_count: mysteryCount,
-    built_in: false,
-    created_at: existing?.created_at ?? new Date().toISOString(),
-    ...(description.trim() ? { description: description.trim() } : {}),
-    ...(notes.trim() ? { notes: notes.trim() } : {}),
-    ...(fixedSetId ? { fixed_mystery_set_id: fixedSetId } : {}),
-    ...(media.length ? { media } : {}),
-    ...(existing?.novena ? { novena: existing.novena } : {}),
-    ...(existing?.source_id ? { source_id: existing.source_id } : {}),
-  });
+  const buildTemplate = (sourceIdOverride?: string): PrayerTemplate => {
+    const sourceId = sourceIdOverride ?? existing?.source_id;
+    return {
+      id,
+      name: name.trim(),
+      kind: existing?.kind ?? (mysteryCount > 0 ? "rosary" : "standard"),
+      mystery_presentation: presentation,
+      mystery_count: mysteryCount,
+      built_in: false,
+      created_at: existing?.created_at ?? new Date().toISOString(),
+      ...(description.trim() ? { description: description.trim() } : {}),
+      ...(notes.trim() ? { notes: notes.trim() } : {}),
+      ...(fixedSetId ? { fixed_mystery_set_id: fixedSetId } : {}),
+      ...(media.length ? { media } : {}),
+      ...(existing?.novena ? { novena: existing.novena } : {}),
+      ...(sourceId ? { source_id: sourceId } : {}),
+    };
+  };
 
   const save = () => {
     if (!name.trim()) {
       toast.error("Give the devotion a name.");
       return;
     }
-    const template = buildTemplate();
+    // Persist the source (name + optional URL) and link it to the template.
+    let sourceId = existing?.source_id;
+    if (sourceName.trim() || sourceUrl.trim()) {
+      sourceId = sourceId ?? `src-${id}`;
+      upsertSource({
+        id: sourceId,
+        source_type: sourceUrl.trim() ? "web" : "manual",
+        name: sourceName.trim() || name.trim(),
+        created_at: existingSource?.created_at ?? new Date().toISOString(),
+        ...(sourceUrl.trim() ? { url: sourceUrl.trim() } : {}),
+        ...(existingSource?.attribution ? { attribution: existingSource.attribution } : {}),
+      });
+    }
+
+    const template = buildTemplate(sourceId);
     const orderedItems = items.map((it, index) => ({ ...it, template_id: id, position: index }));
     saveTemplate(template, orderedItems);
 
@@ -281,54 +301,56 @@ function TemplateBuilder() {
     navigate({ to: "/prayers" });
   };
 
-  const typeMenu = (index: number) => (
-    <div className="rounded-md border border-border bg-card p-1 shadow-lg">
-      <div className="grid grid-cols-2 gap-1">
-        {ADD_TYPES.map((t) => (
-          <button
-            key={t.kind}
-            type="button"
-            onClick={() => chooseType(t.kind, index)}
-            className="rounded px-2 py-2 text-left text-sm hover:bg-accent"
+  /**
+   * A hover-revealed "+" between items (JIRA-style). Clicking it turns the gap
+   * into a compact type dropdown that inserts at this index. `always` keeps it
+   * visible (empty list / the trailing add).
+   */
+  const insertPoint = (index: number, always = false) => {
+    if (menuIndex === index) {
+      return (
+        <div className="flex items-center gap-2 rounded-md border border-primary/40 bg-card px-2 py-1.5">
+          <Plus className="size-4 shrink-0 text-primary" />
+          <select
+            autoFocus
+            defaultValue=""
+            aria-label="Type of item to add"
+            onChange={(e) => e.target.value && chooseType(e.target.value as TemplateItem["kind"], index)}
+            className="h-8 flex-1 rounded border border-input bg-card px-2 text-sm"
           >
-            {t.label}
+            <option value="" disabled>
+              Choose a type…
+            </option>
+            {ADD_TYPES.map((t) => (
+              <option key={t.kind} value={t.kind}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+          <button type="button" onClick={() => setMenuIndex(null)} aria-label="Cancel" className="text-muted-foreground">
+            <X className="size-4" />
           </button>
-        ))}
-      </div>
-    </div>
-  );
-
-  /** Thin "+" between items so you can insert without scrolling to the bottom. */
-  const insertPoint = (index: number) => (
-    <div className="py-0.5">
-      {menuIndex === index ? (
-        typeMenu(index)
-      ) : (
-        <div className="group flex items-center">
-          <div className="h-px flex-1 bg-transparent transition-colors group-hover:bg-border" />
-          <button
-            type="button"
-            onClick={() => setMenuIndex(index)}
-            aria-label="Insert item here"
-            className="mx-2 flex size-5 items-center justify-center rounded-full border border-border bg-card text-muted-foreground opacity-60 transition hover:border-primary hover:text-primary hover:opacity-100"
-          >
-            <Plus className="size-3" />
-          </button>
-          <div className="h-px flex-1 bg-transparent transition-colors group-hover:bg-border" />
         </div>
-      )}
-    </div>
-  );
-
-  const bottomAdd = (index: number) => (
-    <div>
-      <Button variant="secondary" className="h-12 w-full" onClick={() => setMenuIndex(menuIndex === index ? null : index)}>
-        <Plus className="size-4" /> Add item
-        <ChevronDown className={`size-4 transition-transform ${menuIndex === index ? "rotate-180" : ""}`} />
-      </Button>
-      {menuIndex === index ? <div className="mt-1">{typeMenu(index)}</div> : null}
-    </div>
-  );
+      );
+    }
+    return (
+      <div className="group flex h-6 items-center">
+        <button
+          type="button"
+          onClick={() => setMenuIndex(index)}
+          aria-label="Add item here"
+          className={`flex w-full items-center gap-1.5 text-xs text-muted-foreground transition ${
+            always ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+          }`}
+        >
+          <span className="flex size-5 shrink-0 items-center justify-center rounded-full border border-border bg-card hover:border-primary hover:text-primary">
+            <Plus className="size-3" />
+          </span>
+          <span className="h-px flex-1 bg-border/70" />
+        </button>
+      </div>
+    );
+  };
 
   /* ------------------------------ Preview ------------------------------ */
   // Same expansion the session uses: every prayer occurrence listed (Hail Mary
@@ -418,6 +440,32 @@ function TemplateBuilder() {
             placeholder="Promises, when to pray it, printed instructions…"
             className="mt-1"
           />
+        </div>
+
+        {/* Source of the devotion — a name and/or a URL */}
+        <div className="soft-card space-y-2 p-4">
+          <p className="eyebrow">Source</p>
+          <div>
+            <Label htmlFor="src-name" className="text-xs text-muted-foreground">Where it&apos;s from</Label>
+            <Input
+              id="src-name"
+              value={sourceName}
+              onChange={(e) => setSourceName(e.target.value)}
+              placeholder="USCCB, a booklet, a parish…"
+              className="mt-1 h-11"
+            />
+          </div>
+          <div>
+            <Label htmlFor="src-url" className="text-xs text-muted-foreground">Link (optional)</Label>
+            <Input
+              id="src-url"
+              type="url"
+              value={sourceUrl}
+              onChange={(e) => setSourceUrl(e.target.value)}
+              placeholder="https://…"
+              className="mt-1 h-11"
+            />
+          </div>
         </div>
 
         {/* Template-level audio */}
@@ -641,16 +689,9 @@ function TemplateBuilder() {
               </Fragment>
             );
           })}
+          {/* Trailing add — always visible; hover reveals the "+" between items above. */}
+          {insertPoint(items.length, true)}
         </div>
-
-        {items.length === 0 ? (
-          <p className="py-4 text-center text-sm text-muted-foreground">
-            Empty devotion — add your first item.
-          </p>
-        ) : null}
-
-        {/* Add at the end (inline "+" buttons insert between items above) */}
-        {bottomAdd(items.length)}
 
         {/* Prayer search picker */}
         {pickerOpen ? (

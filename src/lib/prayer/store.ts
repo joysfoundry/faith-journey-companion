@@ -157,6 +157,7 @@ export interface AppStore {
   saveImportDraft: (draft: ImportDraft) => void;
   applyImportDraft: (draftId: ID) => void;
   addSource: (source: Source) => void;
+  upsertSource: (source: Source) => void;
   addReflection: (reflection: Reflection) => void;
   deleteReflection: (id: ID) => void;
   addLearningItem: (item: LearningItem) => void;
@@ -707,6 +708,15 @@ export const mutations = {
 
   addSource(db: Database, source: Source): Database {
     return { ...db, sources: [source, ...db.sources] };
+  },
+  upsertSource(db: Database, source: Source): Database {
+    const exists = db.sources.some((s) => s.id === source.id);
+    return {
+      ...db,
+      sources: exists
+        ? db.sources.map((s) => (s.id === source.id ? source : s))
+        : [source, ...db.sources],
+    };
   },
 
   // --- Journey layer: Reflection / Learning / Mass ---------------------
