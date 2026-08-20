@@ -222,6 +222,21 @@ function ItemView({ item, showMeditation }: { item: SessionItem; showMeditation:
     );
   }
 
+  if (item.kind === "scripture") {
+    return (
+      <div>
+        {item.reference ? (
+          <p className="text-center text-sm font-semibold uppercase tracking-wider text-primary">
+            {item.reference}
+          </p>
+        ) : (
+          <p className="eyebrow text-center">Scripture</p>
+        )}
+        <p className="prayer-text mt-6 text-[1.35rem] leading-relaxed">{item.body}</p>
+      </div>
+    );
+  }
+
   if (item.kind === "external_link") {
     const config = (item.configuration ?? {}) as {
       external_options?: { label: string; url: string; is_default?: boolean }[];

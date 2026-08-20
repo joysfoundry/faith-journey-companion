@@ -232,6 +232,21 @@ export function generatePrayerSession(
       continue;
     }
 
+    if (item.kind === "scripture") {
+      const total = Math.max(1, item.repetition_count);
+      for (let n = 1; n <= total; n++) {
+        push({
+          kind: "scripture",
+          title: item.reference ?? item.label ?? "Scripture",
+          body: item.body ?? "",
+          reference: item.reference,
+          repetition_index: total > 1 ? n : undefined,
+          repetition_total: total > 1 ? total : undefined,
+        });
+      }
+      continue;
+    }
+
     if (item.kind === "external_link") {
       push({
         kind: "external_link",
@@ -367,6 +382,8 @@ export function templateOutline(
         const def = opts.find((o) => o.is_default) ?? opts[0];
         return { label: i.label ?? "External link", detail: def?.label };
       }
+      if (i.kind === "scripture")
+        return { label: i.reference ?? "Scripture", detail: i.body?.slice(0, 60) };
       if (i.kind !== "prayer") return { label: i.label ?? i.kind };
       const prayer = db.prayers.find((p) => p.id === i.prayer_id);
       return {

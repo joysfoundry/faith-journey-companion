@@ -38,6 +38,7 @@ const KIND_LABELS: Record<TemplateItem["kind"], string> = {
   mystery_placeholder: "Mystery",
   intention: "Intention / petition",
   external_link: "External link",
+  scripture: "Scripture",
   custom: "Component",
   heading: "Section",
 };
@@ -377,6 +378,23 @@ function TemplateBuilder() {
                         />
                       </div>
                     ) : null}
+                    {item.kind === "scripture" ? (
+                      <div className="mt-2 space-y-2">
+                        <Input
+                          value={item.reference ?? ""}
+                          placeholder="Citation (e.g. Lk 1:26-38)"
+                          onChange={(e) => update(index, { reference: e.target.value })}
+                          className="h-9 text-sm"
+                        />
+                        <Textarea
+                          value={item.body ?? ""}
+                          rows={3}
+                          placeholder="Scripture passage"
+                          onChange={(e) => update(index, { body: e.target.value })}
+                          className="text-sm"
+                        />
+                      </div>
+                    ) : null}
                     {item.optional ? (
                       <p className="text-xs text-muted-foreground">Optional</p>
                     ) : null}
@@ -473,6 +491,24 @@ function TemplateBuilder() {
             onClick={() => addItem({ kind: "intention", label: "Intention" })}
           >
             <Plus className="size-4" /> Intention
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => addItem({ kind: "scripture", reference: "", body: "" })}
+          >
+            <Plus className="size-4" /> Scripture
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() =>
+              addItem({
+                kind: "external_link",
+                label: "External link",
+                external_options: [{ label: "Source", url: "https://", is_default: true }],
+              })
+            }
+          >
+            <Plus className="size-4" /> External link
           </Button>
           <Button
             variant="secondary"

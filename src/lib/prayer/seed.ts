@@ -342,6 +342,124 @@ const popeItems: TemplateItem[] = [
   }),
 ];
 
+// Scriptural Rosary — Luminous Mysteries. A distinct Scripture passage before
+// each Hail Mary, using the generic `scripture` component (Douay–Rheims, public
+// domain). Fixed to the Luminous set (like the USCCB Scriptural Rosary).
+const LUMINOUS_SCRIPTURE: Array<{
+  title: string;
+  description: string;
+  scripture: Array<[string, string]>;
+}> = [
+  {
+    title: "The Baptism of the Lord in the Jordan",
+    description: "The heavens open and the Father proclaims Jesus His beloved Son.",
+    scripture: [
+      ["Mt 3:13", "Then cometh Jesus from Galilee to the Jordan, unto John, to be baptized by him."],
+      ["Mt 3:14", "But John stayed him, saying: I ought to be baptized by thee, and comest thou to me?"],
+      ["Mt 3:15", "Suffer it to be so now; for so it becometh us to fulfil all justice."],
+      ["Mt 3:16", "Jesus being baptized, forthwith came out of the water."],
+      ["Mt 3:16", "And lo, the heavens were opened to him."],
+      ["Mt 3:16", "He saw the Spirit of God descending as a dove, and coming upon him."],
+      ["Mt 3:17", "And behold a voice from heaven, saying:"],
+      ["Mt 3:17", "This is my beloved Son, in whom I am well pleased."],
+      ["Jn 1:29", "Behold the Lamb of God, behold him who taketh away the sin of the world."],
+      ["Jn 1:34", "And I saw, and I gave testimony, that this is the Son of God."],
+    ],
+  },
+  {
+    title: "The Wedding at Cana",
+    description: "At Mary's word, Jesus works the first of his signs and his disciples believe.",
+    scripture: [
+      ["Jn 2:1", "There was a marriage in Cana of Galilee; and the mother of Jesus was there."],
+      ["Jn 2:2", "And Jesus also was invited, and his disciples, to the marriage."],
+      ["Jn 2:3", "The wine failing, the mother of Jesus saith to him: They have no wine."],
+      ["Jn 2:4", "Jesus saith to her: Woman, my hour is not yet come."],
+      ["Jn 2:5", "His mother saith to the waiters: Whatsoever he shall say to you, do ye."],
+      ["Jn 2:6", "Now there were set there six waterpots of stone."],
+      ["Jn 2:7", "Jesus saith to them: Fill the waterpots with water. And they filled them up to the brim."],
+      ["Jn 2:8", "Draw out now, and carry to the chief steward of the feast."],
+      ["Jn 2:9", "The steward tasted the water made wine, and knew not whence it was."],
+      ["Jn 2:11", "This beginning of miracles did Jesus; and his disciples believed in him."],
+    ],
+  },
+  {
+    title: "The Proclamation of the Kingdom",
+    description: "Jesus calls all to conversion and proclaims the Kingdom of God at hand.",
+    scripture: [
+      ["Mk 1:14", "Jesus came into Galilee, preaching the gospel of the kingdom of God."],
+      ["Mk 1:15", "The time is accomplished, and the kingdom of God is at hand."],
+      ["Mk 1:15", "Do penance, and believe the gospel."],
+      ["Mt 5:3", "Blessed are the poor in spirit, for theirs is the kingdom of heaven."],
+      ["Mt 5:7", "Blessed are the merciful, for they shall obtain mercy."],
+      ["Mt 5:8", "Blessed are the clean of heart, for they shall see God."],
+      ["Lk 15:7", "There shall be joy in heaven upon one sinner that doth penance."],
+      ["Mt 11:28", "Come to me, all you that labour and are burdened, and I will refresh you."],
+      ["Mk 2:5", "And Jesus said: Son, thy sins are forgiven thee."],
+      ["Jn 20:23", "Whose sins you shall forgive, they are forgiven them."],
+    ],
+  },
+  {
+    title: "The Transfiguration",
+    description: "On the mountain the glory of Christ shines, and the Father says: Hear ye him.",
+    scripture: [
+      ["Mt 17:1", "Jesus taketh Peter and James and John, and bringeth them up into a high mountain."],
+      ["Mt 17:2", "And he was transfigured before them."],
+      ["Mt 17:2", "And his face did shine as the sun."],
+      ["Mt 17:2", "And his garments became white as snow."],
+      ["Mt 17:3", "And behold there appeared to them Moses and Elias talking with him."],
+      ["Mt 17:4", "Lord, it is good for us to be here."],
+      ["Mt 17:5", "And lo, a bright cloud overshadowed them."],
+      ["Mt 17:5", "This is my beloved Son, in whom I am well pleased; hear ye him."],
+      ["Mt 17:6", "And the disciples hearing, fell upon their face, and were very much afraid."],
+      ["Mt 17:7", "And Jesus came and touched them, and said: Arise, and fear not."],
+    ],
+  },
+  {
+    title: "The Institution of the Eucharist",
+    description: "At the Last Supper Jesus gives his Body and Blood as the bread of life.",
+    scripture: [
+      ["Lk 22:14", "And when the hour was come, he sat down, and the twelve apostles with him."],
+      ["Lk 22:15", "With desire I have desired to eat this pasch with you."],
+      ["Mt 26:26", "Jesus took bread, and blessed, and broke."],
+      ["Mt 26:26", "And gave to his disciples, and said: Take ye and eat. This is my body."],
+      ["Mt 26:27", "And taking the chalice, he gave thanks, and gave to them."],
+      ["Mt 26:28", "This is my blood of the new testament, which shall be shed for many."],
+      ["Lk 22:19", "Do this for a commemoration of me."],
+      ["Jn 6:51", "I am the living bread which came down from heaven."],
+      ["Jn 6:52", "The bread that I will give is my flesh, for the life of the world."],
+      ["1 Cor 11:26", "As often as you shall eat this bread, you shall shew the death of the Lord."],
+    ],
+  },
+];
+
+function scripturalRosaryItems(): TemplateItem[] {
+  const items: TemplateItem[] = [];
+  let p = 0;
+  const add = (partial: Partial<TemplateItem> & { kind: TemplateItem["kind"] }) =>
+    items.push(ti("tpl-scriptural-rosary", p++, partial));
+
+  add({ kind: "prayer", prayer_id: "sign-of-the-cross" });
+  add({ kind: "prayer", prayer_id: "apostles-creed" });
+  add({ kind: "prayer", prayer_id: "our-father" });
+  add({ kind: "prayer", prayer_id: "hail-mary", repetition_count: 3 });
+  add({ kind: "prayer", prayer_id: "glory-be" });
+  for (const m of LUMINOUS_SCRIPTURE) {
+    add({ kind: "custom", label: m.title, body: m.description });
+    add({ kind: "prayer", prayer_id: "our-father" });
+    for (const [ref, text] of m.scripture) {
+      add({ kind: "scripture", reference: ref, body: text });
+      add({ kind: "prayer", prayer_id: "hail-mary" });
+    }
+    add({ kind: "prayer", prayer_id: "glory-be" });
+    add({ kind: "prayer", prayer_id: "fatima-prayer" });
+  }
+  add({ kind: "prayer", prayer_id: "hail-holy-queen" });
+  // Single-line closing salutation (no response), per §9A.
+  add({ kind: "custom", label: "Closing", body: "Lord Jesus, help us to persevere in living out our baptismal promises." });
+  return items;
+}
+const scripturalRosaryItemsList = scripturalRosaryItems();
+
 const allPrayers = [...base, ...novenaPrayers];
 
 export function createSeedDatabase(): Database {
@@ -372,6 +490,14 @@ export function createSeedDatabase(): Database {
         source_type: "manual",
         name: "Chaplet of St. Michael (private revelation, approved 1851)",
         attribution: "Antonia d'Astonac",
+        created_at: now,
+      },
+      {
+        id: "src-usccb",
+        source_type: "web",
+        name: "USCCB",
+        url: "https://www.usccb.org/prayers",
+        attribution: "United States Conference of Catholic Bishops",
         created_at: now,
       },
     ],
@@ -460,6 +586,18 @@ export function createSeedDatabase(): Database {
         built_in: true,
         created_at: now,
       },
+      {
+        id: "tpl-scriptural-rosary",
+        name: "Scriptural Rosary — Luminous Mysteries",
+        description:
+          "A distinct Scripture passage before each Hail Mary. Pray straight through, meditating on the Word.",
+        kind: "standard",
+        mystery_presentation: "title_only",
+        mystery_count: 0,
+        source_id: "src-usccb",
+        built_in: true,
+        created_at: now,
+      },
     ],
     template_items: [
       ...rosaryItemsList,
@@ -467,6 +605,7 @@ export function createSeedDatabase(): Database {
       ...novenaItems,
       ...popeItems,
       ...chapletItemsList,
+      ...scripturalRosaryItemsList,
     ],
     sessions: [],
     session_items: [],

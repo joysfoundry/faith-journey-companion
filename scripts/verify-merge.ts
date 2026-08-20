@@ -34,6 +34,21 @@ const salutationCustoms = chaplet.items.filter((i) => i.kind === "prayer" && /Sa
 const chapletHailMarys = chaplet.items.filter((i) => i.kind === "prayer" && i.title === "Hail Mary").length;
 out.push(`Chaplet of St. Michael: ${chaplet.items.length} items, ${salutationCustoms} choir salutations, ${chapletHailMarys} Hail Marys (expect 27)`);
 
+// Scriptural Rosary: distinct Scripture before EACH Hail Mary
+const scr = compile("tpl-scriptural-rosary");
+const scriptureItems = scr.items.filter((i) => i.kind === "scripture");
+let eachScriptureThenHailMary = true;
+scr.items.forEach((it, idx) => {
+  if (it.kind === "scripture") {
+    const next = scr.items[idx + 1];
+    if (!next || next.kind !== "prayer" || next.title !== "Hail Mary") eachScriptureThenHailMary = false;
+  }
+});
+const distinctRefs = new Set(scriptureItems.map((i) => `${i.reference}|${i.body}`)).size;
+out.push(
+  `Scriptural Rosary: ${scr.items.length} items, ${scriptureItems.length} Scripture passages (${distinctRefs} distinct), each-followed-by-HailMary=${eachScriptureThenHailMary}`,
+);
+
 // 54-day novena still resolves (novena rules + phases)
 const novena = compile("tpl-54-novena", { novena_instance_id: "none" });
 out.push(`54-Day Novena: ${novena.items.length} items compiled`);

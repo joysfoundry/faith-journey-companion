@@ -139,6 +139,7 @@ export interface ExternalLinkOption {
  * - mystery_placeholder: rosary decades only
  * - intention: an intention / petition slot
  * - external_link: a link out to an external prayer experience (generic)
+ * - scripture: a Scripture passage (with a citation) placeable anywhere
  * - custom: any other component the user adds
  * - heading: a plain section label
  */
@@ -148,6 +149,7 @@ export type TemplateItemKind =
   | "mystery_placeholder"
   | "intention"
   | "external_link"
+  | "scripture"
   | "custom"
   | "heading";
 
@@ -166,8 +168,10 @@ export interface TemplateItem {
   versicle?: string | undefined;
   /** Salutation: the response line. */
   response?: string | undefined;
-  /** Free text for custom components. */
+  /** Free text for custom components, and the passage text for scripture. */
   body?: string | undefined;
+  /** scripture: the citation (e.g. "Lk 1:26-38"). */
+  reference?: string | undefined;
   /** external_link: selectable sources; exactly one marked is_default. */
   external_options?: ExternalLinkOption[] | undefined;
   repetition_count: number;
@@ -258,7 +262,13 @@ export interface PrayerSession {
   cursor: number;
 }
 
-export type SessionItemKind = "prayer" | "mystery" | "intention" | "external_link" | "heading";
+export type SessionItemKind =
+  | "prayer"
+  | "mystery"
+  | "intention"
+  | "external_link"
+  | "scripture"
+  | "heading";
 export type CompletionStatus = "pending" | "complete" | "skipped";
 export type CompletionMethod = "manual" | "auto" | "audio" | "voice" | null;
 
@@ -272,6 +282,8 @@ export interface SessionItem {
   prayer_version_id?: ID | undefined;
   title: string;
   body?: string | undefined;
+  /** scripture: the citation (e.g. "Lk 1:26-38"). */
+  reference?: string | undefined;
   repetition_index?: number | undefined;
   repetition_total?: number | undefined;
   progress_mode: ProgressMode;
