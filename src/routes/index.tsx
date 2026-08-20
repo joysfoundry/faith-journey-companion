@@ -91,12 +91,7 @@ function Index() {
 
   return (
     <AppShell>
-      <section className="mb-8">
-        <h1 className="font-display text-3xl leading-tight text-foreground">Come, let us pray.</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Your devotion, the Word, and what is forming you today.
-        </p>
-      </section>
+      {/* Greeting intentionally omitted — replacement in progress. */}
 
       {/* A — Prayer & Devotion: today's session + prayer search */}
       <section className="mb-9">
