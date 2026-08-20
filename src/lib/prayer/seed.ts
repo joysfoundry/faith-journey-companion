@@ -612,6 +612,7 @@ export function createSeedDatabase(): Database {
     ],
     sessions: [],
     session_items: [],
+    session_plans: [],
     intentions: [],
     novena_instances: [],
     import_drafts: [],

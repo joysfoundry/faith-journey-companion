@@ -10,6 +10,7 @@
 import type {
   Database,
   ID,
+  ListenSource,
   Mystery,
   MysteryContent,
   MysteryPresentation,
@@ -148,6 +149,46 @@ export function defaultContext(partial: Partial<SessionContext> = {}): SessionCo
     audio_enabled: false,
     ...partial,
   };
+}
+
+/**
+ * Every media the user could pick under "How do you want to listen?" for one
+ * template: the devotion's own audio, its prayers' clips, and any external-link
+ * sources marked audio/video. Deduped by URL; order = template, then prayers,
+ * then links. Empty when nothing playable is attached.
+ */
+export function listenSources(db: Database, template: PrayerTemplate): ListenSource[] {
+  const out: ListenSource[] = [];
+  const seen = new Set<string>();
+  const add = (s: ListenSource) => {
+    if (!s.url || seen.has(s.url)) return;
+    seen.add(s.url);
+    out.push(s);
+  };
+
+  for (const m of template.media ?? []) {
+    add({ url: m.url, kind: m.kind, label: m.label ?? template.name, source: m.source });
+  }
+
+  const items = db.template_items
+    .filter((i) => i.template_id === template.id)
+    .sort((a, b) => a.position - b.position);
+
+  for (const item of items) {
+    if (item.prayer_id) {
+      const prayer = db.prayers.find((p) => p.id === item.prayer_id);
+      for (const m of prayer?.media ?? []) {
+        add({ url: m.url, kind: m.kind, label: m.label ?? prayer?.title ?? "Prayer audio", source: m.source });
+      }
+    }
+    for (const opt of item.external_options ?? []) {
+      if (opt.media_kind === "audio" || opt.media_kind === "video") {
+        add({ url: opt.url, kind: opt.media_kind, label: opt.label || item.label || "External audio" });
+      }
+    }
+  }
+
+  return out;
 }
 
 export function generatePrayerSession(

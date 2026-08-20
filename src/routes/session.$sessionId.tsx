@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useApp } from "@/lib/prayer/store";
 import { ordinalWord, sessionProgress } from "@/lib/prayer/compiler";
-import type { SessionItem } from "@/lib/prayer/types";
+import type { ListenSource, SessionItem } from "@/lib/prayer/types";
 
 export const Route = createFileRoute("/session/$sessionId")({
   head: () => ({
@@ -86,11 +86,14 @@ function PrayerMode() {
     );
   }
 
+  const listen = session.context.listen_source;
+
   if (session.context.progress_mode === "scroll") {
     return (
       <ScrollSession
         title={session.title}
         items={items}
+        listen={listen}
         onFinish={() => {
           finishSession(session.id);
           navigate({ to: "/" });
@@ -122,6 +125,8 @@ function PrayerMode() {
           className="mt-3 h-1"
         />
       </header>
+
+      {listen ? <ListenPlayer source={listen} /> : null}
 
       <main className="mx-auto flex w-full max-w-lg flex-1 flex-col justify-center px-6 py-8">
         {item ? <ItemView item={item} showMeditation={showMeditation} /> : null}
@@ -188,6 +193,44 @@ function PrayerMode() {
           </label>
         </div>
       </footer>
+    </div>
+  );
+}
+
+/** Convert a YouTube watch / share / shorts URL to its embed URL, else null. */
+function youTubeEmbed(url: string): string | null {
+  const m =
+    url.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([\w-]{11})/) ?? null;
+  return m ? `https://www.youtube.com/embed/${m[1]}` : null;
+}
+
+/**
+ * Basic listen player for the session's chosen source. Audio → native <audio>;
+ * video → YouTube embed when recognized, otherwise native <video>. No
+ * autoscroll/timing yet — the user advances items themselves.
+ */
+function ListenPlayer({ source }: { source: ListenSource }) {
+  const embed = source.kind === "video" ? youTubeEmbed(source.url) : null;
+  return (
+    <div className="mx-auto w-full max-w-lg px-5 pt-3">
+      <div className="rounded-2xl border border-border bg-card p-3">
+        <p className="mb-2 text-xs font-medium text-muted-foreground">{source.label}</p>
+        {embed ? (
+          <div className="aspect-video w-full overflow-hidden rounded-lg">
+            <iframe
+              src={embed}
+              title={source.label}
+              className="h-full w-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        ) : source.kind === "video" ? (
+          <video src={source.url} controls className="w-full rounded-lg" />
+        ) : (
+          <audio src={source.url} controls className="w-full" />
+        )}
+      </div>
     </div>
   );
 }
@@ -302,10 +345,12 @@ function ItemView({ item, showMeditation }: { item: SessionItem; showMeditation:
 function ScrollSession({
   title,
   items,
+  listen,
   onFinish,
 }: {
   title: string;
   items: SessionItem[];
+  listen?: ListenSource | undefined;
   onFinish: () => void;
 }) {
   return (
@@ -318,6 +363,7 @@ function ScrollSession({
           <p className="text-sm text-muted-foreground">{title}</p>
         </div>
       </header>
+      {listen ? <ListenPlayer source={listen} /> : null}
       <div className="mx-auto max-w-lg space-y-14 px-6 py-10">
         {items.map((item) => (
           <section key={item.id}>

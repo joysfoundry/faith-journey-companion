@@ -20,6 +20,7 @@ import type {
   Reflection,
   SessionContext,
   SessionItem,
+  SessionPlan,
   Source,
   TemplateItem,
 } from "./types";
@@ -151,6 +152,8 @@ export interface AppStore {
   toggleItemDone: (itemId: ID) => void;
   finishSession: (sessionId: ID) => void;
   deleteSession: (sessionId: ID) => void;
+  saveSessionPlan: (plan: SessionPlan) => void;
+  deleteSessionPlan: (planId: ID) => void;
   addIntention: (intention: Intention) => void;
   addNovenaInstance: (instance: NovenaInstance) => void;
   deleteNovenaInstance: (id: ID) => void;
@@ -497,6 +500,19 @@ export const mutations = {
       sessions: db.sessions.filter((s) => s.id !== sessionId),
       session_items: db.session_items.filter((i) => i.session_id !== sessionId),
     };
+  },
+  /** Add or update a saved session plan (upsert by id). */
+  saveSessionPlan(db: Database, plan: SessionPlan): Database {
+    const exists = db.session_plans.some((p) => p.id === plan.id);
+    return {
+      ...db,
+      session_plans: exists
+        ? db.session_plans.map((p) => (p.id === plan.id ? plan : p))
+        : [plan, ...db.session_plans],
+    };
+  },
+  deleteSessionPlan(db: Database, planId: ID): Database {
+    return { ...db, session_plans: db.session_plans.filter((p) => p.id !== planId) };
   },
   addIntention(db: Database, intention: Intention): Database {
     return { ...db, intentions: [...db.intentions, intention] };

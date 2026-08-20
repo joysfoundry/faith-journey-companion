@@ -146,10 +146,19 @@ export type MysteryPresentation =
  * Modeled generically — never a provider-specific engine. One option is the
  * default; the user may pick another source or add their own (parish, church).
  */
+/**
+ * What kind of destination an external-link source points at. Drives whether a
+ * source can be a "listen" source (audio/video play inline and can be followed)
+ * or is a plain "open out" web link. Absent = treat as `web` for back-compat.
+ */
+export type ExternalLinkMediaKind = "web" | "audio" | "video";
+
 export interface ExternalLinkOption {
   label: string;
   url: string;
   is_default?: boolean | undefined;
+  /** web (open out) · audio / video (playable, eligible as a listen source). */
+  media_kind?: ExternalLinkMediaKind | undefined;
 }
 
 /**
@@ -267,6 +276,20 @@ export interface Intention {
 
 export type ProgressMode = "scroll" | "manual_done";
 
+/**
+ * The media the user chose to listen to for a session ("How do you want to
+ * listen?"). Gathered from the template's saved media, its prayers' clips, and
+ * any audio/video external links. Absent = read silently, no audio.
+ */
+export interface ListenSource {
+  /** External URL, or a data: URL for a local clip/recording. */
+  url: string;
+  kind: "audio" | "video";
+  label: string;
+  /** How the underlying media is stored, when it came from PrayerMedia. */
+  source?: PrayerMediaSource | undefined;
+}
+
 export interface SessionContext {
   date: string; // yyyy-mm-dd
   mystery_set_id?: ID | undefined;
@@ -279,6 +302,8 @@ export interface SessionContext {
   condition_tags: string[];
   prayer_version_overrides: Record<ID, ID>;
   audio_enabled: boolean;
+  /** Chosen "how do you want to listen?" media; absent = read silently. */
+  listen_source?: ListenSource | undefined;
 }
 
 export interface PrayerSession {
@@ -290,6 +315,26 @@ export interface PrayerSession {
   completed_at?: string | undefined;
   /** Index of the item the user is currently on. */
   cursor: number;
+}
+
+export type Recurrence = "none" | "daily" | "weekly" | "monthly";
+
+/**
+ * A saved, re-prayable session the user assembled in the builder: one template
+ * plus the choices they made (mysteries, progress, how to listen) and an
+ * optional schedule. Praying it compiles a fresh PrayerSession from `context`.
+ */
+export interface SessionPlan {
+  id: ID;
+  template_id: ID;
+  /** User's name for it, e.g. "Monthly Family Rosary". Falls back to template name. */
+  purpose?: string | undefined;
+  /** Date to pray (yyyy-mm-dd); absent = no fixed date. */
+  date?: string | undefined;
+  recurrence: Recurrence;
+  /** The builder choices, applied verbatim when the plan is prayed. */
+  context: Partial<SessionContext>;
+  created_at: string;
 }
 
 export type SessionItemKind =
@@ -472,6 +517,7 @@ export interface Database {
   template_items: TemplateItem[];
   sessions: PrayerSession[];
   session_items: SessionItem[];
+  session_plans: SessionPlan[];
   how_tos: HowTo[];
   intentions: Intention[];
   novena_instances: NovenaInstance[];

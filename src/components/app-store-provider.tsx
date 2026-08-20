@@ -68,6 +68,9 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       toggleItemDone: (id: string) => setDb((d) => mutations.toggleItemDone(d, id)),
       finishSession: (id: string) => setDb((d) => mutations.finishSession(d, id)),
       deleteSession: (id: string) => setDb((d) => mutations.deleteSession(d, id)),
+      saveSessionPlan: (plan: Parameters<typeof mutations.saveSessionPlan>[1]) =>
+        setDb((d) => mutations.saveSessionPlan(d, plan)),
+      deleteSessionPlan: (id: string) => setDb((d) => mutations.deleteSessionPlan(d, id)),
       addIntention: (i: Parameters<typeof mutations.addIntention>[1]) =>
         setDb((d) => mutations.addIntention(d, i)),
       addNovenaInstance: (n: Parameters<typeof mutations.addNovenaInstance>[1]) =>
