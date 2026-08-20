@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ChevronDown, GripVertical, Minus, Plus, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useApp, variantsOf } from "@/lib/prayer/store";
-import { newId } from "@/lib/prayer/compiler";
+import { generatePrayerSession, newId } from "@/lib/prayer/compiler";
 import type {
   HowTo,
   MysteryPresentation,
@@ -137,8 +137,9 @@ function TemplateBuilder() {
       .map((i) => ({ ...i })),
   );
 
-  const [addOpen, setAddOpen] = useState(false);
+  const [menuIndex, setMenuIndex] = useState<number | null>(null); // which insert point's type menu is open
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerIndex, setPickerIndex] = useState<number>(0); // where a picked prayer will be inserted
   const [pickerQuery, setPickerQuery] = useState("");
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
@@ -156,22 +157,28 @@ function TemplateBuilder() {
       return next.map((it, i) => ({ ...it, position: i }));
     });
 
-  const addItem = (partial: Partial<TemplateItem> & { kind: TemplateItem["kind"] }) =>
-    setItems((list) => [
-      ...list,
-      {
+  /** Insert an item at `index` (clamped), renumbering positions. */
+  const insertItem = (partial: Partial<TemplateItem> & { kind: TemplateItem["kind"] }, index: number) =>
+    setItems((list) => {
+      const at = Math.max(0, Math.min(index, list.length));
+      const item = {
         id: newId("titem"),
         template_id: id,
-        position: list.length,
+        position: at,
         repetition_count: 1,
         optional: false,
         ...partial,
-      } as TemplateItem,
-    ]);
+      } as TemplateItem;
+      const next = [...list.slice(0, at), item, ...list.slice(at)];
+      return next.map((it, i) => ({ ...it, position: i }));
+    });
 
-  const addByKind = (kind: TemplateItem["kind"]) => {
-    setAddOpen(false);
+  /** Choose a type from an insert-point menu; Prayer opens the searchable picker. */
+  const chooseType = (kind: TemplateItem["kind"], index: number) => {
+    setMenuIndex(null);
     if (kind === "prayer") {
+      setPickerIndex(index);
+      setPickerQuery("");
       setPickerOpen(true);
       return;
     }
@@ -190,7 +197,7 @@ function TemplateBuilder() {
       heading: { label: "Section" },
       custom: { label: "Component", body: "" },
     };
-    addItem({ kind, ...(defaults[kind] ?? {}) });
+    insertItem({ kind, ...(defaults[kind] ?? {}) }, index);
   };
 
   const mysteryCount = items.filter((i) => i.kind === "mystery_placeholder").length;
@@ -274,10 +281,69 @@ function TemplateBuilder() {
     navigate({ to: "/prayers" });
   };
 
-  /* ------------------------------ Review ------------------------------ */
+  const typeMenu = (index: number) => (
+    <div className="rounded-md border border-border bg-card p-1 shadow-lg">
+      <div className="grid grid-cols-2 gap-1">
+        {ADD_TYPES.map((t) => (
+          <button
+            key={t.kind}
+            type="button"
+            onClick={() => chooseType(t.kind, index)}
+            className="rounded px-2 py-2 text-left text-sm hover:bg-accent"
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
+  /** Thin "+" between items so you can insert without scrolling to the bottom. */
+  const insertPoint = (index: number) => (
+    <div className="py-0.5">
+      {menuIndex === index ? (
+        typeMenu(index)
+      ) : (
+        <div className="group flex items-center">
+          <div className="h-px flex-1 bg-transparent transition-colors group-hover:bg-border" />
+          <button
+            type="button"
+            onClick={() => setMenuIndex(index)}
+            aria-label="Insert item here"
+            className="mx-2 flex size-5 items-center justify-center rounded-full border border-border bg-card text-muted-foreground opacity-60 transition hover:border-primary hover:text-primary hover:opacity-100"
+          >
+            <Plus className="size-3" />
+          </button>
+          <div className="h-px flex-1 bg-transparent transition-colors group-hover:bg-border" />
+        </div>
+      )}
+    </div>
+  );
+
+  const bottomAdd = (index: number) => (
+    <div>
+      <Button variant="secondary" className="h-12 w-full" onClick={() => setMenuIndex(menuIndex === index ? null : index)}>
+        <Plus className="size-4" /> Add item
+        <ChevronDown className={`size-4 transition-transform ${menuIndex === index ? "rotate-180" : ""}`} />
+      </Button>
+      {menuIndex === index ? <div className="mt-1">{typeMenu(index)}</div> : null}
+    </div>
+  );
+
+  /* ------------------------------ Preview ------------------------------ */
+  // Same expansion the session uses: every prayer occurrence listed (Hail Mary
+  // appears ten times, not "×10"), so what you preview is exactly what you pray.
   if (reviewing) {
+    const previewDb = {
+      ...db,
+      template_items: [
+        ...db.template_items.filter((i) => i.template_id !== id),
+        ...items.map((it, i) => ({ ...it, template_id: id, position: i })),
+      ],
+    };
+    const compiled = generatePrayerSession(previewDb, buildTemplate(), {}).items;
     return (
-      <AppShell title="Review devotion" back={{ to: "/prayers", label: "Prayers" }}>
+      <AppShell title="Preview devotion" back={{ to: "/prayers", label: "Prayers" }}>
         <div className="space-y-4">
           <div>
             <h2 className="font-display text-2xl">{name || "Untitled devotion"}</h2>
@@ -289,28 +355,29 @@ function TemplateBuilder() {
               {presentation.replace(/_/g, " ")}
             </p>
           ) : null}
+          <p className="text-xs text-muted-foreground">
+            {compiled.length} steps, fully expanded — this is exactly what you&apos;ll pray.
+          </p>
           <ol className="space-y-2">
-            {items.map((it, i) => (
+            {compiled.map((it, i) => (
               <li key={it.id} className="soft-card p-3">
                 <div className="flex items-baseline justify-between gap-2">
                   <span className="text-sm font-medium">
-                    {i + 1}. {reviewLabel(it, prayerTitle)}
-                    {it.repetition_count > 1 ? ` ×${it.repetition_count}` : ""}
+                    {i + 1}. {it.title}
+                    {it.repetition_total ? ` (${it.repetition_index} of ${it.repetition_total})` : ""}
                   </span>
-                  <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                    {KIND_LABELS[it.kind]}
-                  </span>
+                  {it.kind === "mystery" ? (
+                    <span className="text-[11px] uppercase tracking-wide text-muted-foreground">Mystery</span>
+                  ) : null}
                 </div>
-                {reviewBody(it, db) ? (
-                  <p className="prayer-text mt-1 whitespace-pre-line text-sm text-muted-foreground">
-                    {reviewBody(it, db)}
-                  </p>
+                {it.body ? (
+                  <p className="prayer-text mt-1 whitespace-pre-line text-sm text-muted-foreground">{it.body}</p>
                 ) : null}
               </li>
             ))}
           </ol>
           <p className="text-xs text-muted-foreground">
-            Saving also creates a numbered “How to pray” guide from this devotion.
+            Saving also creates a summarized “How to pray” guide (e.g. “Hail Mary ×10”).
           </p>
           <div className="grid grid-cols-2 gap-2">
             <Button variant="outline" className="h-12" onClick={() => setReviewing(false)}>
@@ -396,13 +463,14 @@ function TemplateBuilder() {
         ) : null}
 
         {/* Items */}
-        <ul className="space-y-2">
+        <div className="space-y-1">
           {items.map((item, index) => {
             const prayer = db.prayers.find((p) => p.id === item.prayer_id);
             const versions = prayer ? versionsOf(prayer) : [];
             return (
-              <li
-                key={item.id}
+              <Fragment key={item.id}>
+              {insertPoint(index)}
+              <div
                 draggable
                 onDragStart={(e) => {
                   setDragIndex(index);
@@ -569,37 +637,20 @@ function TemplateBuilder() {
                     <Trash2 className="size-4 text-destructive" />
                   </Button>
                 </div>
-              </li>
+              </div>
+              </Fragment>
             );
           })}
-          {items.length === 0 ? (
-            <li className="py-6 text-center text-sm text-muted-foreground">
-              Empty devotion — add your first item below.
-            </li>
-          ) : null}
-        </ul>
-
-        {/* JIRA-style add + type */}
-        <div className="relative">
-          <Button variant="secondary" className="h-12 w-full" onClick={() => setAddOpen((v) => !v)}>
-            <Plus className="size-4" /> Add item
-            <ChevronDown className={`size-4 transition-transform ${addOpen ? "rotate-180" : ""}`} />
-          </Button>
-          {addOpen ? (
-            <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-md border border-border bg-card shadow-lg">
-              {ADD_TYPES.map((t) => (
-                <button
-                  key={t.kind}
-                  type="button"
-                  onClick={() => addByKind(t.kind)}
-                  className="block w-full px-4 py-2.5 text-left text-sm hover:bg-accent"
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
-          ) : null}
         </div>
+
+        {items.length === 0 ? (
+          <p className="py-4 text-center text-sm text-muted-foreground">
+            Empty devotion — add your first item.
+          </p>
+        ) : null}
+
+        {/* Add at the end (inline "+" buttons insert between items above) */}
+        {bottomAdd(items.length)}
 
         {/* Prayer search picker */}
         {pickerOpen ? (
@@ -622,7 +673,7 @@ function TemplateBuilder() {
                       type="button"
                       className="w-full px-3 py-2 text-left text-sm"
                       onClick={() => {
-                        addItem({ kind: "prayer", prayer_id: primary.id });
+                        insertItem({ kind: "prayer", prayer_id: primary.id }, pickerIndex);
                         setPickerOpen(false);
                         setPickerQuery("");
                       }}
@@ -639,7 +690,7 @@ function TemplateBuilder() {
                               type="button"
                               className="w-full rounded-md border border-input px-2 py-2 text-left text-xs"
                               onClick={() => {
-                                addItem({ kind: "prayer", prayer_id: v.prayer.id });
+                                insertItem({ kind: "prayer", prayer_id: v.prayer.id }, pickerIndex);
                                 setPickerOpen(false);
                                 setPickerQuery("");
                               }}
@@ -700,28 +751,6 @@ function TemplateBuilder() {
 function ordinalCap(n: number): string {
   const w = ordinal(n);
   return w.charAt(0).toUpperCase() + w.slice(1);
-}
-
-function reviewLabel(it: TemplateItem, prayerTitle: (id?: string) => string): string {
-  if (it.kind === "prayer") return prayerTitle(it.prayer_id);
-  if (it.kind === "mystery_placeholder") return `${ordinalCap(it.mystery_ordinal ?? 1)} mystery`;
-  if (it.kind === "scripture") return `Scripture — ${it.reference ?? "passage"}`;
-  return it.label ?? KIND_LABELS[it.kind];
-}
-
-function reviewBody(it: TemplateItem, db: ReturnType<typeof useApp>["db"]): string {
-  if (it.kind === "prayer") {
-    const p = db.prayers.find((x) => x.id === it.prayer_id);
-    return db.prayer_versions.find((v) => v.id === p?.default_version_id)?.body ?? "";
-  }
-  if (it.kind === "salutation") {
-    const isVR = it.salutation_vr ?? Boolean(it.versicle || it.response);
-    return isVR
-      ? [it.versicle ? `V. ${it.versicle}` : "", it.response ? `R. ${it.response}` : ""].filter(Boolean).join("\n")
-      : (it.body ?? "");
-  }
-  if (it.kind === "external_link") return (it.external_options ?? []).map((o) => o.url).join("\n");
-  return it.body ?? "";
 }
 
 /* --------------------------- Sub-editors --------------------------- */
