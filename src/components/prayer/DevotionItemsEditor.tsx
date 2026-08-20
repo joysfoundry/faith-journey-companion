@@ -1,5 +1,14 @@
 import { Fragment, useMemo, useState } from "react";
-import { GripVertical, Minus, Plus, Search, Trash2, X } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  GripVertical,
+  Minus,
+  Plus,
+  Search,
+  Trash2,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -75,6 +84,15 @@ export function DevotionItemsEditor({
   const [pickerQuery, setPickerQuery] = useState("");
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
+  // Items are collapsed by default; expanding reveals the editing fields.
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const toggleOpen = (id: string) =>
+    setExpanded((s) => {
+      const next = new Set(s);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
 
   const renumber = (list: TemplateItem[]) => list.map((it, i) => ({ ...it, position: i }));
 
@@ -104,6 +122,7 @@ export function DevotionItemsEditor({
       optional: false,
       ...partial,
     } as TemplateItem;
+    setExpanded((s) => new Set(s).add(item.id));
     onChange(renumber([...items.slice(0, at), item, ...items.slice(at)]));
   };
 
@@ -230,7 +249,12 @@ export function DevotionItemsEditor({
         {items.map((item, index) => {
           const prayer = db.prayers.find((p) => p.id === item.prayer_id);
           const versions = prayer ? versionsOf(prayer) : [];
+          const prayerBody = prayer
+            ? (db.prayer_versions.find((v) => v.id === prayer.default_version_id)?.body ??
+              db.prayer_versions.find((v) => v.prayer_id === prayer.id)?.body)
+            : undefined;
           const isAddon = templateOriginIds ? !templateOriginIds.has(item.id) : false;
+          const isOpen = expanded.has(item.id);
           return (
             <Fragment key={item.id}>
               {insertPoint(index)}
@@ -270,112 +294,141 @@ export function DevotionItemsEditor({
                     <GripVertical className="size-4" />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="flex items-center gap-1.5 text-xs uppercase tracking-wide text-muted-foreground">
-                      {KIND_LABELS[item.kind]}
-                      {isAddon ? (
-                        <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-medium normal-case tracking-normal text-primary">
-                          Added this session
+                    <button
+                      type="button"
+                      onClick={() => toggleOpen(item.id)}
+                      aria-expanded={isOpen}
+                      className="flex w-full items-start gap-1.5 text-left"
+                    >
+                      {isOpen ? (
+                        <ChevronDown className="mt-1 size-4 shrink-0 text-muted-foreground" />
+                      ) : (
+                        <ChevronRight className="mt-1 size-4 shrink-0 text-muted-foreground" />
+                      )}
+                      <span className="min-w-0">
+                        <span className="flex items-center gap-1.5 text-xs uppercase tracking-wide text-muted-foreground">
+                          {KIND_LABELS[item.kind]}
+                          {isAddon ? (
+                            <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-medium normal-case tracking-normal text-primary">
+                              Added this session
+                            </span>
+                          ) : null}
                         </span>
-                      ) : null}
-                    </p>
-                    <p className="font-medium">
-                      {item.kind === "mystery_placeholder"
-                        ? `${ordinalCap(item.mystery_ordinal ?? index + 1)} mystery`
-                        : item.kind === "prayer"
-                          ? (prayer?.title ?? "Prayer")
-                          : (item.label ?? KIND_LABELS[item.kind])}
-                    </p>
+                        <span className="block truncate font-medium">
+                          {item.kind === "mystery_placeholder"
+                            ? `${ordinalCap(item.mystery_ordinal ?? index + 1)} mystery`
+                            : item.kind === "prayer"
+                              ? (prayer?.title ?? "Prayer")
+                              : (item.label ?? KIND_LABELS[item.kind])}
+                        </span>
+                      </span>
+                    </button>
 
-                    {item.kind === "prayer" && versions.length >= 2 ? (
-                      <select
-                        aria-label="Version used in this devotion"
-                        value={prayer!.id}
-                        onChange={(e) => update(index, { prayer_id: e.target.value })}
-                        className="mt-1 h-9 w-full rounded-md border border-input bg-card px-2 text-xs"
-                      >
-                        {versions.map((v) => (
-                          <option key={v.prayer.id} value={v.prayer.id}>
-                            {v.label}
-                            {v.prayer.is_default_variant ? " (default)" : ""}
-                          </option>
-                        ))}
-                      </select>
-                    ) : null}
+                    {isOpen ? (
+                      <div className="mt-2">
+                        {item.kind === "prayer" && prayerBody ? (
+                          <p className="prayer-text whitespace-pre-line text-sm text-muted-foreground">
+                            {prayerBody}
+                          </p>
+                        ) : null}
+                        {item.kind === "prayer" && versions.length >= 2 ? (
+                          <select
+                            aria-label="Version used in this devotion"
+                            value={prayer!.id}
+                            onChange={(e) => update(index, { prayer_id: e.target.value })}
+                            className="mt-1 h-9 w-full rounded-md border border-input bg-card px-2 text-xs"
+                          >
+                            {versions.map((v) => (
+                              <option key={v.prayer.id} value={v.prayer.id}>
+                                {v.label}
+                                {v.prayer.is_default_variant ? " (default)" : ""}
+                              </option>
+                            ))}
+                          </select>
+                        ) : null}
 
-                    {item.kind === "salutation" ? (
-                      <SalutationEditor item={item} onChange={(patch) => update(index, patch)} />
-                    ) : null}
+                        {item.kind === "salutation" ? (
+                          <SalutationEditor
+                            item={item}
+                            onChange={(patch) => update(index, patch)}
+                          />
+                        ) : null}
 
-                    {item.kind === "scripture" ? (
-                      <div className="mt-2 space-y-2">
-                        <Input
-                          value={item.reference ?? ""}
-                          placeholder="Citation (e.g. Lk 1:26-38)"
-                          onChange={(e) => update(index, { reference: e.target.value })}
-                          className="h-9 text-sm"
-                        />
-                        <Textarea
-                          value={item.body ?? ""}
-                          rows={3}
-                          placeholder="Scripture passage"
-                          onChange={(e) => update(index, { body: e.target.value })}
-                          className="text-sm"
-                        />
-                      </div>
-                    ) : null}
+                        {item.kind === "scripture" ? (
+                          <div className="mt-2 space-y-2">
+                            <Input
+                              value={item.reference ?? ""}
+                              placeholder="Citation (e.g. Lk 1:26-38)"
+                              onChange={(e) => update(index, { reference: e.target.value })}
+                              className="h-9 text-sm"
+                            />
+                            <Textarea
+                              value={item.body ?? ""}
+                              rows={3}
+                              placeholder="Scripture passage"
+                              onChange={(e) => update(index, { body: e.target.value })}
+                              className="text-sm"
+                            />
+                          </div>
+                        ) : null}
 
-                    {item.kind === "intention" ||
-                    item.kind === "petition" ||
-                    item.kind === "meditation" ? (
-                      <div className="mt-2 space-y-2">
-                        <Input
-                          value={item.label ?? ""}
-                          placeholder={`${KIND_LABELS[item.kind]} title`}
-                          onChange={(e) => update(index, { label: e.target.value })}
-                          className="h-9 text-sm"
-                        />
-                        <Textarea
-                          value={item.body ?? ""}
-                          rows={2}
-                          placeholder={
-                            item.kind === "meditation"
-                              ? "Meditation prompt (optional)"
-                              : "Text (optional)"
-                          }
-                          onChange={(e) => update(index, { body: e.target.value })}
-                          className="text-sm"
-                        />
-                      </div>
-                    ) : null}
+                        {item.kind === "intention" ||
+                        item.kind === "petition" ||
+                        item.kind === "meditation" ? (
+                          <div className="mt-2 space-y-2">
+                            <Input
+                              value={item.label ?? ""}
+                              placeholder={`${KIND_LABELS[item.kind]} title`}
+                              onChange={(e) => update(index, { label: e.target.value })}
+                              className="h-9 text-sm"
+                            />
+                            <Textarea
+                              value={item.body ?? ""}
+                              rows={2}
+                              placeholder={
+                                item.kind === "meditation"
+                                  ? "Meditation prompt (optional)"
+                                  : "Text (optional)"
+                              }
+                              onChange={(e) => update(index, { body: e.target.value })}
+                              className="text-sm"
+                            />
+                          </div>
+                        ) : null}
 
-                    {item.kind === "external_link" ? (
-                      <ExternalLinkEditor item={item} onChange={(patch) => update(index, patch)} />
-                    ) : null}
+                        {item.kind === "external_link" ? (
+                          <ExternalLinkEditor
+                            item={item}
+                            onChange={(patch) => update(index, patch)}
+                          />
+                        ) : null}
 
-                    {item.kind === "heading" ? (
-                      <Input
-                        value={item.label ?? ""}
-                        placeholder="Section label"
-                        onChange={(e) => update(index, { label: e.target.value })}
-                        className="mt-2 h-9 text-sm"
-                      />
-                    ) : null}
+                        {item.kind === "heading" ? (
+                          <Input
+                            value={item.label ?? ""}
+                            placeholder="Section label"
+                            onChange={(e) => update(index, { label: e.target.value })}
+                            className="mt-2 h-9 text-sm"
+                          />
+                        ) : null}
 
-                    {item.kind === "custom" ? (
-                      <div className="mt-2 space-y-2">
-                        <Input
-                          value={item.label ?? ""}
-                          placeholder="Component name"
-                          onChange={(e) => update(index, { label: e.target.value })}
-                          className="h-9 text-sm"
-                        />
-                        <Textarea
-                          value={item.body ?? ""}
-                          rows={3}
-                          placeholder="Text prayed for this component"
-                          onChange={(e) => update(index, { body: e.target.value })}
-                          className="text-sm"
-                        />
+                        {item.kind === "custom" ? (
+                          <div className="mt-2 space-y-2">
+                            <Input
+                              value={item.label ?? ""}
+                              placeholder="Component name"
+                              onChange={(e) => update(index, { label: e.target.value })}
+                              className="h-9 text-sm"
+                            />
+                            <Textarea
+                              value={item.body ?? ""}
+                              rows={3}
+                              placeholder="Text prayed for this component"
+                              onChange={(e) => update(index, { body: e.target.value })}
+                              className="text-sm"
+                            />
+                          </div>
+                        ) : null}
                       </div>
                     ) : null}
                   </div>
