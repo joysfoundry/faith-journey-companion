@@ -1,5 +1,5 @@
-import { Link } from "@tanstack/react-router";
-import { Search } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { Play, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -7,10 +7,16 @@ import { Input } from "@/components/ui/input";
 import { useApp } from "@/lib/prayer/store";
 import { TAXONOMY_LABELS } from "@/domain/taxonomy";
 
-/** Minimal prayer-library search: type, see matches, open one. */
+/** Minimal prayer-library search: type, see matches, pray or open one. */
 export function PrayerSearch() {
-  const { db } = useApp();
+  const { db, startSinglePrayer } = useApp();
+  const navigate = useNavigate();
   const [query, setQuery] = useState("");
+
+  const pray = (prayerId: string) => {
+    const session = startSinglePrayer(prayerId);
+    if (session) navigate({ to: "/session/$sessionId", params: { sessionId: session.id } });
+  };
 
   const matches = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -49,20 +55,29 @@ export function PrayerSearch() {
                     {[TAXONOMY_LABELS[prayer.prayer_type], ...prayer.tags].join(" · ")}
                   </p>
                 </div>
-                <Button asChild size="sm" variant="ghost">
-                  <Link to="/prayer/$prayerId" params={{ prayerId: prayer.id }}>
-                    Open
-                  </Link>
-                </Button>
+                <div className="flex shrink-0 items-center gap-1">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-primary"
+                    onClick={() => pray(prayer.id)}
+                    aria-label={`Pray ${prayer.title}`}
+                  >
+                    <Play className="size-4" /> Pray
+                  </Button>
+                  <Button asChild size="sm" variant="ghost">
+                    <Link to="/prayer/$prayerId" params={{ prayerId: prayer.id }}>
+                      Open
+                    </Link>
+                  </Button>
+                </div>
               </li>
             ))
           ) : (
             <li className="flex items-center justify-between gap-3 px-3 py-2.5">
               <span className="text-xs text-muted-foreground">No prayer found.</span>
               <Button asChild size="sm" variant="ghost">
-                <Link to="/import">
-                  Add prayer
-                </Link>
+                <Link to="/import">Add prayer</Link>
               </Button>
             </li>
           )}

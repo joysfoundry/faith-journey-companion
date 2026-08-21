@@ -581,11 +581,53 @@ export const mutations = {
         p.id === plan.id ? { ...p, date: nextDate } : p,
       );
     }
+
+    let completedPlanId: ID | undefined;
+    // A single prayer prayed ad-hoc (search → play → finish; template_id "" and no
+    // plan) is captured as a saved session: today, once, so it lands in Sessions.
+    if (session && !session.plan_id && session.template_id === "") {
+      const planItems: TemplateItem[] = db.session_items
+        .filter((i) => i.session_id === sessionId && i.prayer_id)
+        .sort((a, b) => a.position - b.position)
+        .map((i, idx) => ({
+          id: newId("titem"),
+          template_id: "",
+          kind: "prayer",
+          position: idx,
+          prayer_id: i.prayer_id,
+          ...(i.prayer_version_id ? { prayer_version_id: i.prayer_version_id } : {}),
+          repetition_count: 1,
+          optional: false,
+        }));
+      if (planItems.length > 0) {
+        completedPlanId = newId("plan");
+        session_plans = [
+          {
+            id: completedPlanId,
+            template_id: "",
+            purpose: session.title,
+            date: todayISO(),
+            recurrence: "none",
+            context: session.context,
+            items: planItems,
+            created_at: new Date().toISOString(),
+          },
+          ...session_plans,
+        ];
+      }
+    }
+
     return {
       ...db,
       session_plans,
       sessions: db.sessions.map((s) =>
-        s.id === sessionId ? { ...s, completed_at: new Date().toISOString() } : s,
+        s.id === sessionId
+          ? {
+              ...s,
+              completed_at: new Date().toISOString(),
+              ...(completedPlanId ? { plan_id: completedPlanId } : {}),
+            }
+          : s,
       ),
     };
   },
