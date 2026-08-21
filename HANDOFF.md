@@ -1,6 +1,6 @@
 # Handoff — PRD gap-merge
 
-_Last updated: 2026-08-21T15:12-07:00 · branch `prd-gap-merge` (**not yet pushed** — sandbox has no GitHub auth; latest `e2d834a`)_
+_Last updated: 2026-08-21T15:12-07:00 · branch `prd-gap-merge` (**pushed** to origin through `dcb9afb`; this header-fix commit needs one more push)_
 
 ## What this is
 Merging the **ACTS PRD** capabilities into **faith-journey-companion** (the app whose UX we're keeping). The ACTS Next.js build in `../acts` is now just the reference/spec + test oracle. Decision: **gap-merge into fjc, keep the localStorage store** (no Supabase persistence yet).
