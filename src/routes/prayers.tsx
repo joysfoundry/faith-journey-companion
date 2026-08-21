@@ -188,9 +188,7 @@ function BulkBar({
         onCheckedChange={(v) => setSelected(v ? new Set(ids) : new Set())}
         aria-label={`Select all ${noun}`}
       />
-      <span className="text-sm text-muted-foreground">
-        {selected.size} selected
-      </span>
+      <span className="text-sm text-muted-foreground">{selected.size} selected</span>
       <Button
         variant="destructive"
         size="sm"
@@ -218,7 +216,6 @@ function BulkBar({
     </div>
   );
 }
-
 
 export const Route = createFileRoute("/prayers")({
   head: () => ({
@@ -261,7 +258,6 @@ function LibraryPage() {
     setter(next);
   };
 
-
   // Every wording is its own record; the library groups them and shows the
   // default wording at the top of each group.
   const groups = useMemo(() => {
@@ -300,17 +296,14 @@ function LibraryPage() {
   }, [db, query]);
 
   return (
-    <AppShell
-      title="Prayers"
-      subtitle="Single prayers, devotions, and how to pray them"
-    >
+    <AppShell title="Prayers" subtitle="Single prayers, devotions, and how to pray them">
       <Tabs defaultValue="prayers">
         <TabsList className="w-full">
           <TabsTrigger value="prayers" className="flex-1">
             Prayers
           </TabsTrigger>
           <TabsTrigger value="templates" className="flex-1">
-            Devotion Template
+            Devotions
           </TabsTrigger>
           <TabsTrigger value="howto" className="flex-1">
             How To
@@ -370,6 +363,11 @@ function LibraryPage() {
         </TabsContent>
 
         <TabsContent value="templates" className="mt-4 space-y-3">
+          <p className="text-sm text-muted-foreground">
+            A devotion is a composite sequence of structured prayers — vocal prayer woven with
+            meditation. The Rosary is a devotion; bead-based devotions that follow a set pattern are
+            called chaplets.
+          </p>
           <Button asChild variant="secondary" className="h-12 w-full">
             <Link to="/import" search={{ mode: "devotion" }}>
               <Plus className="size-4" /> New devotion
@@ -398,46 +396,46 @@ function LibraryPage() {
             const outline = templateOutline(db, template);
             return (
               <div key={template.id} className="soft-card flex items-start">
-              {pickTemplates ? (
-                <span className="self-center pl-4">
-                  <Checkbox
-                    checked={selTemplates.has(template.id)}
-                    onCheckedChange={(v) =>
-                      toggle(selTemplates, setSelTemplates, template.id, Boolean(v))
-                    }
-                    aria-label={`Select ${template.name}`}
-                  />
-                </span>
-              ) : null}
-              <Link
-                to="/template/$templateId"
-                params={{ templateId: template.id }}
-                className="block flex-1 p-4"
-              >
-                <p className="font-medium">{template.name}</p>
-                <p className="text-sm text-muted-foreground">
-                  {template.description ?? `${outline.length} items`}
-                </p>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  {outline
-                    .slice(0, 4)
-                    .map((o) => `${o.label}${o.detail ? ` ${o.detail}` : ""}`)
-                    .join(" · ")}
-                  {outline.length > 4 ? " …" : ""}
-                </p>
-              </Link>
-              <button
-                type="button"
-                onClick={() => {
-                  if (!window.confirm(`Delete devotion “${template.name}”?`)) return;
-                  deleteTemplate(template.id);
-                  toast.success("Devotion deleted");
-                }}
-                aria-label={`Delete ${template.name}`}
-                className="px-4 py-5 text-muted-foreground"
-              >
-                <Trash2 className="size-5" />
-              </button>
+                {pickTemplates ? (
+                  <span className="self-center pl-4">
+                    <Checkbox
+                      checked={selTemplates.has(template.id)}
+                      onCheckedChange={(v) =>
+                        toggle(selTemplates, setSelTemplates, template.id, Boolean(v))
+                      }
+                      aria-label={`Select ${template.name}`}
+                    />
+                  </span>
+                ) : null}
+                <Link
+                  to="/template/$templateId"
+                  params={{ templateId: template.id }}
+                  className="block flex-1 p-4"
+                >
+                  <p className="font-medium">{template.name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {template.description ?? `${outline.length} items`}
+                  </p>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {outline
+                      .slice(0, 4)
+                      .map((o) => `${o.label}${o.detail ? ` ${o.detail}` : ""}`)
+                      .join(" · ")}
+                    {outline.length > 4 ? " …" : ""}
+                  </p>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!window.confirm(`Delete devotion “${template.name}”?`)) return;
+                    deleteTemplate(template.id);
+                    toast.success("Devotion deleted");
+                  }}
+                  aria-label={`Delete ${template.name}`}
+                  className="px-4 py-5 text-muted-foreground"
+                >
+                  <Trash2 className="size-5" />
+                </button>
               </div>
             );
           })}
@@ -470,9 +468,7 @@ function LibraryPage() {
                   <span className="self-center pl-4">
                     <Checkbox
                       checked={selHowTos.has(howTo.id)}
-                      onCheckedChange={(v) =>
-                        toggle(selHowTos, setSelHowTos, howTo.id, Boolean(v))
-                      }
+                      onCheckedChange={(v) => toggle(selHowTos, setSelHowTos, howTo.id, Boolean(v))}
                       aria-label={`Select ${howTo.title}`}
                     />
                   </span>
@@ -484,9 +480,7 @@ function LibraryPage() {
                 >
                   <p className="font-medium">{howTo.title}</p>
                   <p className="text-sm text-muted-foreground">{howTo.summary}</p>
-                  {linked ? (
-                    <p className="mt-1 text-xs text-primary">For {linked.name}</p>
-                  ) : null}
+                  {linked ? <p className="mt-1 text-xs text-primary">For {linked.name}</p> : null}
                 </Link>
                 <button
                   type="button"
@@ -504,7 +498,6 @@ function LibraryPage() {
             );
           })}
         </TabsContent>
-
       </Tabs>
     </AppShell>
   );

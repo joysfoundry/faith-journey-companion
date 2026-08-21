@@ -173,7 +173,7 @@ function TemplateBuilder() {
     };
     saveHowTo(howTo);
 
-    toast.success("You can now use this template to build your prayer sessions.");
+    toast.success("You can now use this devotion to build your prayer sessions.");
     navigate({ to: "/prayers" });
   };
 

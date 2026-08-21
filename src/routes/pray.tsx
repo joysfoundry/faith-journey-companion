@@ -35,13 +35,13 @@ export const Route = createFileRoute("/pray")({
       {
         name: "description",
         content:
-          "Build prayer sessions and see what's upcoming and completed — start from a template or from scratch, add prayers and petitions, set how you listen and when to pray it.",
+          "Build prayer sessions and see what's upcoming and completed — start from a devotion or from scratch, add prayers and petitions, set how you listen and when to pray it.",
       },
       { property: "og:title", content: "Prayer Sessions — Faith Journey" },
       {
         property: "og:description",
         content:
-          "Start from a template or add prayers freely — sessions expand into a full prayer.",
+          "Start from a devotion or add prayers freely — sessions expand into a full prayer.",
       },
     ],
   }),
@@ -193,11 +193,11 @@ function PrayPage() {
   const saveAsTemplate = () => {
     const name = purpose.trim();
     if (!name) {
-      toast.error("Name it in Purpose first, then save it as a template.");
+      toast.error("Name it in Purpose first, then save it as a devotion.");
       return;
     }
     if (items.length === 0) {
-      toast.error("Add at least one prayer before saving a template.");
+      toast.error("Add at least one prayer before saving a devotion.");
       return;
     }
     const tid = newId("tpl");
@@ -215,10 +215,10 @@ function PrayPage() {
       tpl,
       items.map((it, i) => ({ ...it, template_id: tid, position: i })),
     );
-    // The session now starts from this new template — its items become "template".
+    // The session now starts from this new devotion — its items become "from the devotion".
     setTemplateId(tid);
     setOriginIds(new Set(items.map((i) => i.id)));
-    toast.success("You can now use this template to build your prayer sessions.");
+    toast.success("You can now use this devotion to build your prayer sessions.");
   };
 
   const beginPlan = (plan: SessionPlan) => {
@@ -262,7 +262,7 @@ function PrayPage() {
           <Save className="size-4" /> {editingId ? "Update session" : "Save session"}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={saveAsTemplate}>
-          <FilePlus2 className="size-4" /> Save as template
+          <FilePlus2 className="size-4" /> Save as devotion
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={resetForm}>
@@ -322,14 +322,14 @@ function PrayPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="template">Use a template to start?</Label>
+                <Label htmlFor="template">Start from a devotion?</Label>
                 <select
                   id="template"
                   value={templateId}
                   onChange={(e) => pickTemplate(e.target.value)}
                   className="mt-2 h-12 w-full rounded-md border border-input bg-card px-3"
                 >
-                  <option value="">No template — start adding prayers</option>
+                  <option value="">No devotion — start adding prayers</option>
                   {db.templates.map((t) => (
                     <option key={t.id} value={t.id}>
                       {t.name}
@@ -337,7 +337,7 @@ function PrayPage() {
                   ))}
                 </select>
                 <p className="mt-2 text-xs text-muted-foreground">
-                  A template is a fast start — you can still add, remove, and reword anything for
+                  A devotion is a fast start — you can still add, remove, and reword anything for
                   this session without changing the template.
                 </p>
               </div>
@@ -511,7 +511,7 @@ function PrayPage() {
                 {sources.length === 0 ? (
                   <p className="mt-2 text-xs text-muted-foreground">
                     No audio or video attached yet. Add an audio/video external link below, or
-                    template media in the Template Builder.
+                    devotion media in the Devotion Builder.
                   </p>
                 ) : null}
               </div>
@@ -530,7 +530,7 @@ function PrayPage() {
               </div>
               {items.length === 0 ? (
                 <p className="mb-2 text-sm text-muted-foreground">
-                  Start adding prayers, or choose a template above to start.
+                  Start adding prayers, or choose a devotion above to start.
                 </p>
               ) : null}
               <DevotionItemsEditor
