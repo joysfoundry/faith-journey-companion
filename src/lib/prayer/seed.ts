@@ -117,6 +117,169 @@ Turn then, most gracious advocate, your eyes of mercy towards us; and after this
     `St. Michael the Archangel, defend us in battle. Be our defense against the wickedness and snares of the devil. May God rebuke him, we humbly pray; and do thou, O Prince of the heavenly host, by the power of God, thrust into Hell Satan and all the other evil spirits who prowl about the world seeking the ruin of souls. Amen.`,
     ["st michael", "protection", "archangel"],
   ),
+  prayer(
+    "guardian-angel",
+    "Prayer to Your Guardian Angel",
+    "devotional",
+    `Angel of God, my guardian dear, to whom God's love commits me here, ever this day be at my side, to light and guard, to rule and guide. Amen.`,
+    ["angel", "protection"],
+    "src-usccb",
+  ),
+  prayer(
+    "morning-offering",
+    "Morning Offering",
+    "devotional",
+    `O Jesus, through the Immaculate Heart of Mary, I offer You my prayers, works, joys, and sufferings of this day in union with the Holy Sacrifice of the Mass throughout the world. I offer them for all the intentions of Your Sacred Heart: the salvation of souls, reparation for sin, and the reunion of all Christians. I offer them for the intentions of our bishops and of all Apostles of Prayer, and in particular for those recommended by our Holy Father this month. Amen.`,
+    ["morning", "offering"],
+    "src-usccb",
+  ),
+  prayer(
+    "act-of-contrition",
+    "Act of Contrition",
+    "devotional",
+    `O my God, I am heartily sorry for having offended Thee, and I detest all my sins because of Thy just punishments, but most of all because they offend Thee, my God, who art all good and deserving of all my love. I firmly resolve, with the help of Thy grace, to sin no more and to avoid the near occasions of sin. Amen.`,
+    ["contrition", "penance"],
+    "src-usccb",
+  ),
+  prayer(
+    "memorare",
+    "Memorare",
+    "devotional",
+    `Remember, O most gracious Virgin Mary, that never was it known that anyone who fled to thy protection, implored thy help, or sought thy intercession was left unaided. Inspired by this confidence, I fly unto thee, O Virgin of virgins, my Mother; to thee do I come, before thee I stand, sinful and sorrowful. O Mother of the Word Incarnate, despise not my petitions, but in thy mercy hear and answer me. Amen.`,
+    ["marian", "intercession"],
+    "src-usccb",
+  ),
+  prayer(
+    "anima-christi",
+    "Anima Christi",
+    "devotional",
+    `Soul of Christ, sanctify me. Body of Christ, save me. Blood of Christ, inebriate me. Water from the side of Christ, wash me. Passion of Christ, strengthen me. O good Jesus, hear me. Within thy wounds hide me. Suffer me not to be separated from thee. From the malicious enemy defend me. In the hour of my death call me, and bid me come unto thee, that with thy saints I may praise thee for ever and ever. Amen.`,
+    ["eucharistic", "meditation"],
+    "src-usccb",
+  ),
+  prayer(
+    "divine-praises",
+    "Divine Praises",
+    "devotional",
+    `Blessed be God.
+Blessed be His Holy Name.
+Blessed be Jesus Christ, true God and true Man.
+Blessed be the Name of Jesus.
+Blessed be His Most Sacred Heart.
+Blessed be His Most Precious Blood.
+Blessed be Jesus in the Most Holy Sacrament of the Altar.
+Blessed be the Holy Spirit, the Paraclete.
+Blessed be the great Mother of God, Mary most Holy.
+Blessed be her Holy and Immaculate Conception.
+Blessed be her Glorious Assumption.
+Blessed be the Name of Mary, Virgin and Mother.
+Blessed be Saint Joseph, her most chaste spouse.
+Blessed be God in His Angels and in His Saints.`,
+    ["praise", "benediction"],
+    "src-usccb",
+  ),
+  prayer(
+    "prayer-before-crucifix",
+    "Prayer to Our Lord Jesus Christ Crucified",
+    "devotional",
+    `Behold, O good and most sweet Jesus, I cast myself upon my knees in Thy sight, and with the most fervent desire of my soul I pray and beseech Thee to impress upon my heart lively sentiments of faith, hope, and charity, with true contrition for my sins and a firm purpose of amendment; while with deep affection and grief of soul I ponder within myself and mentally contemplate Thy five most precious wounds, having before my eyes that which David spoke in prophecy of Thee: "They have pierced my hands and my feet; they have numbered all my bones." Amen.`,
+    ["crucifix", "passion"],
+    "src-usccb",
+  ),
+  prayer(
+    "nicene-creed",
+    "Nicene Creed",
+    "liturgical",
+    `I believe in one God, the Father Almighty, Maker of heaven and earth, and of all things visible and invisible. And in one Lord Jesus Christ, the only-begotten Son of God, born of the Father before all ages. God of God, Light of Light, true God of true God, begotten, not made, being of one substance with the Father, by whom all things were made. Who for us men and for our salvation came down from heaven, and was incarnate by the Holy Spirit of the Virgin Mary, and was made man. He was crucified also for us under Pontius Pilate, suffered, and was buried. And on the third day He rose again, according to the Scriptures, and ascended into heaven, and sitteth at the right hand of the Father. And He shall come again in glory to judge the living and the dead, and of His kingdom there shall be no end.
+
+And in the Holy Spirit, the Lord and Giver of Life, who proceedeth from the Father and the Son, who together with the Father and the Son is adored and glorified, who spoke by the prophets. And in one holy, catholic, and apostolic Church. I confess one Baptism for the remission of sins. And I look for the resurrection of the dead, and the life of the world to come. Amen.`,
+    ["creed", "liturgy"],
+    "src-usccb",
+  ),
+  prayer(
+    "angelus",
+    "The Angelus",
+    "devotional",
+    `V. The Angel of the Lord declared unto Mary,
+R. And she conceived of the Holy Spirit.
+Hail Mary, full of grace…
+
+V. Behold the handmaid of the Lord,
+R. Be it done unto me according to thy word.
+Hail Mary, full of grace…
+
+V. And the Word was made flesh,
+R. And dwelt among us.
+Hail Mary, full of grace…
+
+V. Pray for us, O holy Mother of God,
+R. That we may be made worthy of the promises of Christ.
+
+Let us pray. Pour forth, we beseech Thee, O Lord, Thy grace into our hearts, that we to whom the Incarnation of Christ Thy Son was made known by the message of an angel, may by His Passion and Cross be brought to the glory of His Resurrection. Through the same Christ our Lord. Amen.`,
+    ["marian", "incarnation"],
+    "src-usccb",
+  ),
+  prayer(
+    "regina-caeli",
+    "Regina Caeli",
+    "devotional",
+    `Queen of Heaven, rejoice, alleluia.
+For He whom you did merit to bear, alleluia,
+Has risen, as He said, alleluia.
+Pray for us to God, alleluia.
+
+V. Rejoice and be glad, O Virgin Mary, alleluia.
+R. For the Lord has truly risen, alleluia.
+
+Let us pray. O God, who gave joy to the world through the resurrection of Thy Son, our Lord Jesus Christ, grant, we beseech Thee, that through the intercession of the Virgin Mary, His Mother, we may obtain the joys of everlasting life. Through the same Christ our Lord. Amen.`,
+    ["marian", "easter"],
+    "src-usccb",
+  ),
+  prayer(
+    "act-of-faith-hope-love",
+    "Act of Faith, Hope, and Love",
+    "devotional",
+    `Act of Faith
+O my God, I firmly believe that Thou art one God in three Divine Persons, Father, Son, and Holy Spirit. I believe that Thy Divine Son became man and died for our sins, and that He will come to judge the living and the dead. I believe these and all the truths which the Holy Catholic Church teaches, because Thou hast revealed them, who canst neither deceive nor be deceived. Amen.
+
+Act of Hope
+O my God, relying on Thy almighty power and infinite mercy and promises, I hope to obtain pardon of my sins, the help of Thy grace, and life everlasting, through the merits of Jesus Christ, my Lord and Redeemer. Amen.
+
+Act of Love
+O my God, I love Thee above all things, with my whole heart and soul, because Thou art all good and worthy of all love. I love my neighbor as myself for the love of Thee. I forgive all who have injured me, and ask pardon of all whom I have injured. Amen.`,
+    ["theological-virtues"],
+    "src-usccb",
+  ),
+  prayer(
+    "o-sacrum-convivium",
+    "O Sacrum Convivium",
+    "liturgical",
+    `O sacred banquet, in which Christ is received, the memory of His Passion is renewed, the mind is filled with grace, and a pledge of future glory is given to us. Alleluia.
+
+V. Thou hast given them bread from heaven.
+R. Having within it all sweetness.`,
+    ["eucharistic"],
+    "src-usccb",
+  ),
+  prayer(
+    "tantum-ergo",
+    "Tantum Ergo",
+    "liturgical",
+    `Down in adoration falling, lo! the sacred Host we hail;
+Lo! o'er ancient forms departing, newer rites of grace prevail;
+Faith for all defects supplying, where the feeble senses fail.
+
+To the everlasting Father, and the Son who reigns on high,
+With the Holy Spirit proceeding forth from each eternally,
+Be salvation, honor, blessing, might and endless majesty. Amen.
+
+V. Thou hast given them bread from heaven.
+R. Having within it all sweetness.
+
+Let us pray. O God, who under a wonderful Sacrament hast left us a memorial of Thy Passion: grant us, we beseech Thee, so to venerate the sacred mysteries of Thy Body and Blood, that we may ever feel within us the fruit of Thy Redemption. Who livest and reignest for ever and ever. Amen.`,
+    ["eucharistic", "hymn"],
+    "src-usccb",
+  ),
 ];
 
 // Chaplet of St. Michael — nine salutations to the nine choirs of angels.
@@ -592,8 +755,8 @@ export function createSeedDatabase(): Database {
       {
         id: "src-usccb",
         source_type: "web",
-        name: "USCCB",
-        url: "https://www.usccb.org/prayers",
+        name: "USCCB — Basic Prayers",
+        url: "https://www.usccb.org/prayer-and-worship/prayers-and-devotions/prayers/basic-prayers",
         attribution: "United States Conference of Catholic Bishops",
         created_at: now,
       },
