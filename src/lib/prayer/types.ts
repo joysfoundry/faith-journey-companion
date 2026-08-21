@@ -301,7 +301,18 @@ export interface PrayerSession {
   cursor: number;
 }
 
-export type Recurrence = "none" | "daily" | "weekly" | "monthly";
+export type Recurrence = "none" | "daily" | "weekly" | "monthly" | "custom";
+
+/**
+ * A canonical hour of the Liturgy of the Hours a session may be tied to.
+ * Office of Readings may be prayed at any time; the rest anchor to a time of day.
+ */
+export type PrayerHour =
+  | "office_of_readings"
+  | "lauds" // Morning Prayer
+  | "daytime" // Mid-morning / noon / mid-afternoon
+  | "vespers" // Evening Prayer
+  | "compline"; // Night Prayer
 
 /**
  * A saved, re-prayable session the user assembled in the builder: one template
@@ -317,6 +328,12 @@ export interface SessionPlan {
   /** Date to pray (yyyy-mm-dd); absent = no fixed date. */
   date?: string | undefined;
   recurrence: Recurrence;
+  /** Free-text detail when recurrence is "custom" (e.g. "every 1st Friday"). */
+  recurrence_note?: string | undefined;
+  /** Liturgy-of-the-Hours slot this session is prayed at; absent = no set hour. */
+  hour?: PrayerHour | undefined;
+  /** Estimated time to pray, in minutes. */
+  duration_min?: number | undefined;
   /** The builder choices, applied verbatim when the plan is prayed. */
   context: Partial<SessionContext>;
   /**

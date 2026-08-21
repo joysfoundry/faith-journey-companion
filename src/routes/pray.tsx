@@ -17,6 +17,7 @@ import { useApp } from "@/lib/prayer/store";
 import { listenSourcesFromItems, newId, resolveNovenaDay, todayISO } from "@/lib/prayer/compiler";
 import type {
   MysteryPresentation,
+  PrayerHour,
   PrayerTemplate,
   ProgressMode,
   Recurrence,
@@ -50,6 +51,15 @@ const RECURRENCE_LABEL: Record<Recurrence, string> = {
   daily: "Every day",
   weekly: "Every week",
   monthly: "Every month",
+  custom: "Custom",
+};
+
+const HOUR_LABEL: Record<PrayerHour, string> = {
+  office_of_readings: "Office of Readings",
+  lauds: "Morning Prayer (Lauds)",
+  daytime: "Daytime Prayer",
+  vespers: "Evening Prayer (Vespers)",
+  compline: "Night Prayer (Compline)",
 };
 
 function PrayPage() {
@@ -75,6 +85,9 @@ function PrayPage() {
   const [purpose, setPurpose] = useState("");
   const [dateVal, setDateVal] = useState(today);
   const [recurrence, setRecurrence] = useState<Recurrence>("none");
+  const [recurrenceNote, setRecurrenceNote] = useState("");
+  const [hour, setHour] = useState<PrayerHour | "">("");
+  const [durationMin, setDurationMin] = useState("");
   const [templateId, setTemplateId] = useState("");
   const [items, setItems] = useState<TemplateItem[]>([]);
   const [originIds, setOriginIds] = useState<Set<string>>(new Set());
@@ -106,6 +119,9 @@ function PrayPage() {
     setPurpose("");
     setDateVal(today);
     setRecurrence("none");
+    setRecurrenceNote("");
+    setHour("");
+    setDurationMin("");
     setProgressMode("scroll");
     pickTemplate("");
   };
@@ -115,6 +131,9 @@ function PrayPage() {
     setPurpose(plan.purpose ?? "");
     setDateVal(plan.date ?? today);
     setRecurrence(plan.recurrence);
+    setRecurrenceNote(plan.recurrence_note ?? "");
+    setHour(plan.hour ?? "");
+    setDurationMin(plan.duration_min != null ? String(plan.duration_min) : "");
     setTemplateId(plan.template_id);
     const planItems = plan.items ?? seedItems(plan.template_id);
     setItems(planItems.map((i) => ({ ...i })));
@@ -152,6 +171,11 @@ function PrayPage() {
       ...(purpose.trim() ? { purpose: purpose.trim() } : {}),
       ...(dateVal ? { date: dateVal } : {}),
       recurrence,
+      ...(recurrence === "custom" && recurrenceNote.trim()
+        ? { recurrence_note: recurrenceNote.trim() }
+        : {}),
+      ...(hour ? { hour } : {}),
+      ...(durationMin && Number(durationMin) > 0 ? { duration_min: Number(durationMin) } : {}),
       context: buildContext(),
       items: items.map((it, i) => ({ ...it, position: i })),
       created_at:
@@ -281,31 +305,76 @@ function PrayPage() {
           </div>
         </div>
 
-        <div className="soft-card grid grid-cols-2 gap-3 p-4">
-          <div>
-            <Label htmlFor="date">Date to pray</Label>
-            <Input
-              id="date"
-              type="date"
-              value={dateVal}
-              onChange={(e) => setDateVal(e.target.value)}
-              className="mt-2"
-            />
+        <div className="soft-card space-y-3 p-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label htmlFor="date">Start date to pray</Label>
+              <Input
+                id="date"
+                type="date"
+                value={dateVal}
+                onChange={(e) => setDateVal(e.target.value)}
+                className="mt-2"
+              />
+            </div>
+            <div>
+              <Label htmlFor="recurrence">Recurrence</Label>
+              <select
+                id="recurrence"
+                value={recurrence}
+                onChange={(e) => setRecurrence(e.target.value as Recurrence)}
+                className="mt-2 h-12 w-full rounded-md border border-input bg-card px-3"
+              >
+                {(Object.keys(RECURRENCE_LABEL) as Recurrence[]).map((r) => (
+                  <option key={r} value={r}>
+                    {RECURRENCE_LABEL[r]}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
-          <div>
-            <Label htmlFor="recurrence">Recurrence</Label>
-            <select
-              id="recurrence"
-              value={recurrence}
-              onChange={(e) => setRecurrence(e.target.value as Recurrence)}
-              className="mt-2 h-12 w-full rounded-md border border-input bg-card px-3"
-            >
-              {(Object.keys(RECURRENCE_LABEL) as Recurrence[]).map((r) => (
-                <option key={r} value={r}>
-                  {RECURRENCE_LABEL[r]}
-                </option>
-              ))}
-            </select>
+          {recurrence === "custom" ? (
+            <div>
+              <Label htmlFor="recurrence-note">Custom recurrence</Label>
+              <Input
+                id="recurrence-note"
+                value={recurrenceNote}
+                placeholder="e.g. every 1st Friday, Mon/Wed/Fri…"
+                onChange={(e) => setRecurrenceNote(e.target.value)}
+                className="mt-2"
+              />
+            </div>
+          ) : null}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label htmlFor="hour">Hour (optional)</Label>
+              <select
+                id="hour"
+                value={hour}
+                onChange={(e) => setHour(e.target.value as PrayerHour | "")}
+                className="mt-2 h-12 w-full rounded-md border border-input bg-card px-3"
+              >
+                <option value="">No set hour</option>
+                {(Object.keys(HOUR_LABEL) as PrayerHour[]).map((h) => (
+                  <option key={h} value={h}>
+                    {HOUR_LABEL[h]}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <Label htmlFor="duration">Est. time (min)</Label>
+              <Input
+                id="duration"
+                type="number"
+                min={0}
+                inputMode="numeric"
+                value={durationMin}
+                placeholder="e.g. 20"
+                onChange={(e) => setDurationMin(e.target.value)}
+                className="mt-2"
+              />
+            </div>
           </div>
         </div>
 
@@ -455,6 +524,8 @@ function PrayPage() {
                 const sub = [
                   plan.purpose ? tpl?.name : null,
                   plan.recurrence !== "none" ? RECURRENCE_LABEL[plan.recurrence] : null,
+                  plan.hour ? HOUR_LABEL[plan.hour] : null,
+                  plan.duration_min ? `${plan.duration_min} min` : null,
                 ]
                   .filter(Boolean)
                   .join(" · ");
