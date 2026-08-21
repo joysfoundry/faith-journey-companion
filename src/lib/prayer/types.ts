@@ -86,6 +86,22 @@ export interface Prayer {
   created_at: string;
 }
 
+/**
+ * A song is a prayer that is sung and is segmented into ordered parts. The
+ * segments live on the wording (not the Prayer) because translations and
+ * arrangements differ in verse text and even verse count. A prayer is a song
+ * when its expression_type is "song" and its default version carries segments.
+ */
+export type SongSegmentKind = "verse" | "chorus" | "bridge";
+export interface SongSegment {
+  /** Order within the song, 1-based. Also the id used by TemplateItem.song_segments. */
+  ordinal: number;
+  kind: SongSegmentKind;
+  /** Human label ("Verse II", "Chorus"). Derived from kind + ordinal when absent. */
+  label?: string | undefined;
+  body: string;
+}
+
 /** A concrete wording of a Prayer (traditional, family, short form, ...). */
 export interface PrayerVersion {
   id: ID;
@@ -94,6 +110,8 @@ export interface PrayerVersion {
   body: string;
   language: string;
   source_id?: ID | undefined;
+  /** Songs only: the ordered verses / chorus. `body` stays the joined full text. */
+  segments?: SongSegment[] | undefined;
   created_at: string;
 }
 
@@ -148,6 +166,7 @@ export interface ExternalLinkOption {
 /**
  * The components a devotion is built from:
  * - prayer: a prayer record from the library
+ * - song: a sung prayer, optionally narrowed to specific verses / chorus
  * - salutation: a versicle / response pair (V. … R. …)
  * - mystery_placeholder: rosary decades only
  * - intention: the user's own intention slot
@@ -160,6 +179,7 @@ export interface ExternalLinkOption {
  */
 export type TemplateItemKind =
   | "prayer"
+  | "song"
   | "salutation"
   | "mystery_placeholder"
   | "intention"
@@ -178,6 +198,12 @@ export interface TemplateItem {
   position: number;
   prayer_id?: ID | undefined;
   prayer_version_id?: ID | undefined;
+  /**
+   * Song only: the ordered segment ordinals to sing at this placement, in the
+   * order they should be sung (e.g. [2, 1] = Verse II then Chorus). Absent or
+   * empty = the whole song. The whole placement is one session step.
+   */
+  song_segments?: number[] | undefined;
   /** Which decade / mystery ordinal this placeholder refers to (1-based). */
   mystery_ordinal?: number | undefined;
   label?: string | undefined;
@@ -353,6 +379,7 @@ export interface SessionPlan {
 
 export type SessionItemKind =
   | "prayer"
+  | "song"
   | "mystery"
   | "intention"
   | "petition"

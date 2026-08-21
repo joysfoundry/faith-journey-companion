@@ -453,6 +453,21 @@ function ItemView({ item, showMeditation }: { item: SessionItem; showMeditation:
     );
   }
 
+  if (item.kind === "song") {
+    const labels =
+      (item.configuration as { segment_labels?: string[] } | undefined)?.segment_labels ?? [];
+    return (
+      <div>
+        <DecadeTag decade={decade} />
+        <p className="eyebrow text-center">
+          {labels.length ? `Song · ${labels.join(" · ")}` : "Song"}
+        </p>
+        <h2 className="mt-2 text-center font-display text-3xl leading-tight">{item.title}</h2>
+        <p className="prayer-text mt-8">{item.body}</p>
+      </div>
+    );
+  }
+
   return (
     <div>
       <DecadeTag decade={decade} />

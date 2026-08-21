@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useApp } from "@/lib/prayer/store";
 import { ordinal } from "@/components/prayer/DevotionItemsEditor";
-import { recurrenceLabel } from "@/lib/prayer/compiler";
+import { recurrenceLabel, songSegmentLabel } from "@/lib/prayer/compiler";
 import type { PrayerHour, TemplateItem } from "@/lib/prayer/types";
 
 export const Route = createFileRoute("/devotion/$devotionId")({
@@ -291,6 +291,27 @@ function DevotionStep({
     title = prayer?.title ?? "Prayer";
     if (item.repetition_count > 1) detail = `× ${item.repetition_count}`;
     body = db.prayer_versions.find((v) => v.id === prayer?.default_version_id)?.body;
+  } else if (item.kind === "song") {
+    const prayer = db.prayers.find((p) => p.id === item.prayer_id);
+    title = prayer?.title ?? "Song";
+    const version =
+      db.prayer_versions.find(
+        (v) => v.id === (item.prayer_version_id ?? prayer?.default_version_id),
+      ) ?? db.prayer_versions.find((v) => v.prayer_id === item.prayer_id);
+    const segments = version?.segments ?? [];
+    const chosen =
+      item.song_segments && item.song_segments.length
+        ? item.song_segments
+            .map((o) => segments.find((s) => s.ordinal === o))
+            .filter((s): s is NonNullable<typeof s> => !!s)
+        : [];
+    if (chosen.length) {
+      detail = chosen.map((s) => s.label ?? songSegmentLabel(s)).join(" · ");
+      body = chosen.map((s) => s.body).join("\n\n");
+    } else {
+      if (segments.length) detail = "Whole song";
+      body = version?.body;
+    }
   } else if (item.kind === "mystery_placeholder") {
     title = `Announce the ${ordinal(item.mystery_ordinal ?? 1)} mystery`;
     body = "Announced and meditated when you pray — depends on the day's mysteries.";

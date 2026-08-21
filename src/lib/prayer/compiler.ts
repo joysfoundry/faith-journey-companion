@@ -177,6 +177,48 @@ export function resolvePrayerVersion(
 }
 
 /* ------------------------------------------------------------------ */
+/* Song resolution                                                     */
+/* ------------------------------------------------------------------ */
+
+/** Fallback label for a song segment that carries none. */
+export function songSegmentLabel(seg: { kind: string; ordinal: number }): string {
+  if (seg.kind === "chorus") return "Chorus";
+  if (seg.kind === "bridge") return "Bridge";
+  return `Verse ${seg.ordinal}`;
+}
+
+/**
+ * Resolve a song placement into a single sung step: the chosen segments joined
+ * in the order requested (or the whole song when none are chosen). Falls back to
+ * the version body for a song with no segments, so it degrades to a plain prayer.
+ */
+export function resolveSong(
+  db: Database,
+  prayerId: ID,
+  ctx: SessionContext,
+  templateVersionId?: ID,
+  songSegments?: number[],
+): { versionId?: ID | undefined; title: string; body: string; segmentLabels: string[] } {
+  const resolved = resolvePrayerVersion(db, prayerId, ctx, templateVersionId);
+  const version = db.prayer_versions.find((v) => v.id === resolved.versionId);
+  const segments = version?.segments ?? [];
+  if (segments.length === 0) return { ...resolved, segmentLabels: [] };
+
+  const byOrdinal = new Map(segments.map((s) => [s.ordinal, s]));
+  const chosen =
+    songSegments && songSegments.length > 0
+      ? songSegments.map((o) => byOrdinal.get(o)).filter((s): s is NonNullable<typeof s> => !!s)
+      : [...segments].sort((a, b) => a.ordinal - b.ordinal);
+
+  return {
+    versionId: resolved.versionId,
+    title: resolved.title,
+    body: chosen.map((s) => s.body).join("\n\n"),
+    segmentLabels: chosen.map((s) => s.label ?? songSegmentLabel(s)),
+  };
+}
+
+/* ------------------------------------------------------------------ */
 /* Session generation                                                  */
 /* ------------------------------------------------------------------ */
 
@@ -411,6 +453,29 @@ export function generatePrayerSession(
       continue;
     }
 
+    // A song is one sung step: the chosen verses/chorus (or the whole song),
+    // never expanded by repetition. Completion tracks the one step.
+    if (item.kind === "song") {
+      if (!item.prayer_id) continue;
+      const song = resolveSong(db, item.prayer_id, ctx, item.prayer_version_id, item.song_segments);
+      push({
+        kind: "song",
+        title: song.title,
+        body: song.body,
+        prayer_id: item.prayer_id,
+        prayer_version_id: song.versionId,
+        configuration: {
+          // Only label the parts when the placement sings a chosen subset — a
+          // whole-song step just reads "Song".
+          ...(item.song_segments?.length && song.segmentLabels.length
+            ? { segment_labels: song.segmentLabels }
+            : {}),
+          ...(decade > 0 ? { decade } : {}),
+        },
+      });
+      continue;
+    }
+
     // 4 + 5. Expand repetitions, resolving the version once per occurrence.
     if (!item.prayer_id) continue;
     const total = Math.max(1, item.repetition_count);
@@ -474,7 +539,11 @@ export function uncompleteSessionItem(item: SessionItem): SessionItem {
 
 export function sessionProgress(items: SessionItem[]): { done: number; total: number } {
   const prayable = items.filter(
-    (i) => i.kind === "prayer" || i.kind === "mystery" || i.kind === "external_link",
+    (i) =>
+      i.kind === "prayer" ||
+      i.kind === "song" ||
+      i.kind === "mystery" ||
+      i.kind === "external_link",
   );
   return {
     done: prayable.filter((i) => i.completion_status === "complete").length,
@@ -517,6 +586,27 @@ export function templateOutline(
       }
       if (i.kind === "scripture")
         return { label: i.reference ?? "Scripture", detail: i.body?.slice(0, 60) };
+      if (i.kind === "song") {
+        const song = db.prayers.find((p) => p.id === i.prayer_id);
+        const version = db.prayer_versions.find(
+          (v) => v.id === (i.prayer_version_id ?? song?.default_version_id),
+        );
+        const segs = version?.segments ?? [];
+        const chosen =
+          i.song_segments && i.song_segments.length
+            ? i.song_segments
+                .map((o) => segs.find((s) => s.ordinal === o))
+                .filter((s): s is NonNullable<typeof s> => !!s)
+            : [];
+        return {
+          label: song?.title ?? "Song",
+          detail: chosen.length
+            ? chosen.map((s) => s.label ?? songSegmentLabel(s)).join(" · ")
+            : segs.length
+              ? "Whole song"
+              : undefined,
+        };
+      }
       if (i.kind !== "prayer") return { label: i.label ?? i.kind };
       const prayer = db.prayers.find((p) => p.id === i.prayer_id);
       return {

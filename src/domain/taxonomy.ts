@@ -6,7 +6,12 @@
  * devotion_type, and the way it is prayed is an expression_type.
  */
 
-export const PRAYER_TYPES = ["liturgical", "devotional", "traditional_expression", "other"] as const;
+export const PRAYER_TYPES = [
+  "liturgical",
+  "devotional",
+  "traditional_expression",
+  "other",
+] as const;
 export type PrayerType = (typeof PRAYER_TYPES)[number];
 
 export const DEVOTION_TYPES = [
@@ -27,6 +32,7 @@ export const EXPRESSION_TYPES = [
   "scripture",
   "silence",
   "reflection",
+  "song",
 ] as const;
 export type ExpressionType = (typeof EXPRESSION_TYPES)[number];
 
@@ -64,4 +70,5 @@ export const TAXONOMY_LABELS: Record<string, string> = {
   scripture: "Scripture",
   silence: "Silence",
   reflection: "Reflection",
+  song: "Song",
 };

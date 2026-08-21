@@ -13,11 +13,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useApp, variantsOf } from "@/lib/prayer/store";
-import { newId } from "@/lib/prayer/compiler";
-import type { ExternalLinkMediaKind, Prayer, TemplateItem } from "@/lib/prayer/types";
+import { newId, songSegmentLabel } from "@/lib/prayer/compiler";
+import type {
+  Database,
+  ExternalLinkMediaKind,
+  Prayer,
+  SongSegment,
+  TemplateItem,
+} from "@/lib/prayer/types";
 
 export const KIND_LABELS: Record<TemplateItem["kind"], string> = {
   prayer: "Prayer",
+  song: "Song",
   salutation: "Salutation",
   mystery_placeholder: "Mystery",
   intention: "Intention",
@@ -32,6 +39,7 @@ export const KIND_LABELS: Record<TemplateItem["kind"], string> = {
 /** JIRA-style "add and type" menu. Order matches how a devotion usually reads. */
 const ADD_TYPES: { kind: TemplateItem["kind"]; label: string }[] = [
   { kind: "prayer", label: "Prayer" },
+  { kind: "song", label: "Song" },
   { kind: "salutation", label: "Salutation" },
   { kind: "scripture", label: "Scripture" },
   { kind: "intention", label: "Intention" },
@@ -82,6 +90,9 @@ export function DevotionItemsEditor({
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerIndex, setPickerIndex] = useState<number>(0);
   const [pickerQuery, setPickerQuery] = useState("");
+  // Whether the open picker is choosing a spoken prayer or a sung song. Songs
+  // and prayers live in one library; the picker filters by expression_type.
+  const [pickerMode, setPickerMode] = useState<"prayer" | "song">("prayer");
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
   // Items are collapsed by default; expanding reveals the editing fields.
@@ -128,7 +139,8 @@ export function DevotionItemsEditor({
 
   const chooseType = (kind: TemplateItem["kind"], index: number) => {
     setMenuIndex(null);
-    if (kind === "prayer") {
+    if (kind === "prayer" || kind === "song") {
+      setPickerMode(kind);
       setPickerIndex(index);
       setPickerQuery("");
       setPickerOpen(true);
@@ -180,14 +192,19 @@ export function DevotionItemsEditor({
   }, [db.prayers, db.prayer_versions]);
 
   const filteredGroups = useMemo(() => {
+    const byMode = pickerGroups.filter((g) =>
+      pickerMode === "song"
+        ? g.primary.expression_type === "song"
+        : g.primary.expression_type !== "song",
+    );
     const q = pickerQuery.trim().toLowerCase();
-    if (!q) return pickerGroups;
-    return pickerGroups.filter(
+    if (!q) return byMode;
+    return byMode.filter(
       (g) =>
         g.primary.title.toLowerCase().includes(q) ||
         (g.primary.tags ?? []).some((t) => t.includes(q)),
     );
-  }, [pickerGroups, pickerQuery]);
+  }, [pickerGroups, pickerQuery, pickerMode]);
 
   /** Hover-revealed "+" between items; click turns the gap into a type dropdown. */
   const insertPoint = (index: number, always = false) => {
@@ -317,10 +334,15 @@ export function DevotionItemsEditor({
                         <span className="block truncate font-medium">
                           {item.kind === "mystery_placeholder"
                             ? `${ordinalCap(item.mystery_ordinal ?? index + 1)} mystery`
-                            : item.kind === "prayer"
-                              ? (prayer?.title ?? "Prayer")
+                            : item.kind === "prayer" || item.kind === "song"
+                              ? (prayer?.title ?? (item.kind === "song" ? "Song" : "Prayer"))
                               : (item.label ?? KIND_LABELS[item.kind])}
                         </span>
+                        {item.kind === "song" ? (
+                          <span className="block truncate text-xs text-muted-foreground">
+                            {songSelectionSummary(item, prayer, db)}
+                          </span>
+                        ) : null}
                       </span>
                     </button>
 
@@ -331,7 +353,8 @@ export function DevotionItemsEditor({
                             {prayerBody}
                           </p>
                         ) : null}
-                        {item.kind === "prayer" && versions.length >= 2 ? (
+                        {(item.kind === "prayer" || item.kind === "song") &&
+                        versions.length >= 2 ? (
                           <select
                             aria-label="Version used in this devotion"
                             value={prayer!.id}
@@ -345,6 +368,14 @@ export function DevotionItemsEditor({
                               </option>
                             ))}
                           </select>
+                        ) : null}
+
+                        {item.kind === "song" ? (
+                          <SongSegmentsEditor
+                            item={item}
+                            prayer={prayer}
+                            onChange={(patch) => update(index, patch)}
+                          />
                         ) : null}
 
                         {item.kind === "salutation" ? (
@@ -487,7 +518,7 @@ export function DevotionItemsEditor({
               autoFocus
               value={pickerQuery}
               onChange={(e) => setPickerQuery(e.target.value)}
-              placeholder="Search prayers"
+              placeholder={pickerMode === "song" ? "Search songs" : "Search prayers"}
               className="h-11 pl-9"
             />
           </div>
@@ -499,7 +530,7 @@ export function DevotionItemsEditor({
                     type="button"
                     className="w-full px-3 py-2 text-left text-sm"
                     onClick={() => {
-                      insertItem({ kind: "prayer", prayer_id: primary.id }, pickerIndex);
+                      insertItem({ kind: pickerMode, prayer_id: primary.id }, pickerIndex);
                       setPickerOpen(false);
                       setPickerQuery("");
                     }}
@@ -516,7 +547,7 @@ export function DevotionItemsEditor({
                             type="button"
                             className="w-full rounded-md border border-input px-2 py-2 text-left text-xs"
                             onClick={() => {
-                              insertItem({ kind: "prayer", prayer_id: v.prayer.id }, pickerIndex);
+                              insertItem({ kind: pickerMode, prayer_id: v.prayer.id }, pickerIndex);
                               setPickerOpen(false);
                               setPickerQuery("");
                             }}
@@ -533,11 +564,125 @@ export function DevotionItemsEditor({
             ))}
             {filteredGroups.length === 0 ? (
               <li className="px-3 py-4 text-center text-sm text-muted-foreground">
-                No prayers match.
+                {pickerMode === "song" ? "No songs match." : "No prayers match."}
               </li>
             ) : null}
           </ul>
         </div>
+      ) : null}
+    </div>
+  );
+}
+
+/* --------------------------- Songs --------------------------- */
+
+/** The segments of a song, resolved from its currently-chosen wording. */
+function songVersionSegments(db: Database, prayer: Prayer | undefined): SongSegment[] {
+  if (!prayer) return [];
+  const version =
+    db.prayer_versions.find((v) => v.id === prayer.default_version_id) ??
+    db.prayer_versions.find((v) => v.prayer_id === prayer.id);
+  return version?.segments ?? [];
+}
+
+const segLabel = (s: SongSegment) => s.label ?? songSegmentLabel(s);
+
+/** One-line summary of what a song placement sings, in sung order. */
+function songSelectionSummary(
+  item: TemplateItem,
+  prayer: Prayer | undefined,
+  db: Database,
+): string {
+  const segments = songVersionSegments(db, prayer);
+  const chosen = item.song_segments ?? [];
+  if (segments.length === 0 || chosen.length === 0) return "Whole song";
+  return chosen
+    .map((o) => {
+      const s = segments.find((x) => x.ordinal === o);
+      return s ? segLabel(s) : `#${o}`;
+    })
+    .join(" → ");
+}
+
+/**
+ * Pick which verses / chorus this placement sings, and in what order. Tapping a
+ * part adds it to the sung order (the badge shows its position); tapping again
+ * removes it. Nothing selected = the whole song. The placement is one sung step.
+ */
+function SongSegmentsEditor({
+  item,
+  prayer,
+  onChange,
+}: {
+  item: TemplateItem;
+  prayer: Prayer | undefined;
+  onChange: (patch: Partial<TemplateItem>) => void;
+}) {
+  const { db } = useApp();
+  const segments = songVersionSegments(db, prayer);
+  const chosen = item.song_segments ?? [];
+
+  if (segments.length === 0) {
+    return (
+      <p className="mt-2 text-xs text-muted-foreground">
+        This song is sung whole — it has no separate verses to choose.
+      </p>
+    );
+  }
+
+  const toggle = (ordinal: number) => {
+    const next = chosen.includes(ordinal)
+      ? chosen.filter((o) => o !== ordinal)
+      : [...chosen, ordinal];
+    onChange({ song_segments: next });
+  };
+
+  return (
+    <div className="mt-2 space-y-2">
+      <p className="text-xs text-muted-foreground">
+        {chosen.length === 0
+          ? "Singing the whole song. Tap parts to sing only those — in the order you tap."
+          : `Sung in order: ${songSelectionSummary(item, prayer, db)}`}
+      </p>
+      <div className="space-y-1">
+        {segments.map((s) => {
+          const order = chosen.indexOf(s.ordinal);
+          const active = order >= 0;
+          const firstLine = s.body.split("\n")[0] ?? "";
+          return (
+            <button
+              key={s.ordinal}
+              type="button"
+              onClick={() => toggle(s.ordinal)}
+              className={`flex w-full items-start gap-2 rounded-md border px-2 py-1.5 text-left transition ${
+                active ? "border-primary bg-primary/5" : "border-input hover:border-primary/50"
+              }`}
+            >
+              <span
+                className={`mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold tabular-nums ${
+                  active
+                    ? "bg-primary text-primary-foreground"
+                    : "border border-border text-muted-foreground"
+                }`}
+              >
+                {active ? order + 1 : ""}
+              </span>
+              <span className="min-w-0">
+                <span className="block text-xs font-medium">{segLabel(s)}</span>
+                <span className="block truncate text-xs text-muted-foreground">{firstLine}</span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      {chosen.length > 0 ? (
+        <button
+          type="button"
+          onClick={() => onChange({ song_segments: [] })}
+          className="text-xs text-muted-foreground underline-offset-2 hover:underline"
+        >
+          Clear — sing the whole song
+        </button>
       ) : null}
     </div>
   );
