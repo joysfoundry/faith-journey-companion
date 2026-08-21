@@ -4,6 +4,7 @@ import type {
   Mystery,
   MysteryContent,
   PrayerType,
+  SongSegment,
   TemplateItem,
 } from "./types";
 
@@ -41,6 +42,170 @@ function prayer(
     },
   };
 }
+
+/**
+ * A song: a sung prayer whose wording carries ordered verse/chorus segments.
+ * `body` is the joined full text (for whole-song rendering and search); the
+ * segments let a devotion place specific verses and the chorus independently.
+ */
+function song(
+  id: string,
+  title: string,
+  segments: SongSegment[],
+  tags: string[] = [],
+  sourceId = "src-caro-rosary",
+) {
+  const body = [...segments]
+    .sort((a, b) => a.ordinal - b.ordinal)
+    .map((s) => s.body)
+    .join("\n\n");
+  return {
+    prayer: {
+      id,
+      title,
+      prayer_type: "devotional" as PrayerType,
+      expression_type: "song" as ExpressionType,
+      tags,
+      favorite: false,
+      default_version_id: `${id}-v1`,
+      source_id: sourceId,
+      created_at: now,
+    },
+    version: {
+      id: `${id}-v1`,
+      prayer_id: id,
+      label: "Traditional",
+      body,
+      language: "en",
+      source_id: sourceId,
+      segments,
+      created_at: now,
+    },
+  };
+}
+
+const seg = (
+  ordinal: number,
+  kind: SongSegment["kind"],
+  label: string,
+  body: string,
+): SongSegment => ({
+  ordinal,
+  kind,
+  label,
+  body,
+});
+
+const songs = [
+  song(
+    "immaculate-mary",
+    "Immaculate Mary",
+    [
+      seg(
+        1,
+        "verse",
+        "Verse 1",
+        `Immaculate Mary, your praises we sing;
+You reign now in splendor with Jesus our King.
+Ave, ave, ave, Maria! Ave, ave, Maria!`,
+      ),
+      seg(
+        2,
+        "verse",
+        "Verse 2",
+        `In heaven, the blessed your glory proclaim;
+On earth we, your children, invoke your sweet name.
+Ave, ave, ave, Maria! Ave, ave, Maria!`,
+      ),
+      seg(
+        3,
+        "verse",
+        "Verse 3",
+        `We pray for the Church, our true Mother on earth,
+And beg you to watch o'er the land of our birth.
+Ave, ave, ave, Maria! Ave, ave, Maria!`,
+      ),
+    ],
+    ["marian", "hymn", "closing"],
+  ),
+  song(
+    "hail-holy-queen-enthroned",
+    "Hail, Holy Queen Enthroned Above",
+    [
+      seg(
+        1,
+        "verse",
+        "Verse 1",
+        `Hail, holy Queen enthroned above, O Maria.
+Hail, Queen of mercy and of love, O Maria.
+Triumph, all ye cherubim, Sing with us, ye seraphim,
+Heaven and earth resound the hymn:
+Salve, salve, salve Regina!`,
+      ),
+      seg(
+        2,
+        "verse",
+        "Verse 2",
+        `The cause of joy to men below, O Maria.
+The spring through which all graces flow, O Maria.
+Angels, all your praises bring, Earth and heaven, with us sing,
+All creation echoing:
+Salve, salve, salve Regina!`,
+      ),
+    ],
+    ["marian", "hymn", "closing"],
+  ),
+  song(
+    "fatima-hymn",
+    "Fatima Hymn",
+    [
+      seg(
+        1,
+        "verse",
+        "Verse I",
+        `The Thirteenth of May
+In the Cova D'Iria
+Appeared, Oh so brilliant
+The Virgin Maria.`,
+      ),
+      seg(
+        2,
+        "verse",
+        "Verse II",
+        `The Virgin Maria
+Encircled with light
+Our own dearest Mother
+And Heaven's delight.`,
+      ),
+      seg(
+        3,
+        "verse",
+        "Verse III",
+        `To three little shepherds
+Our Lady appeared
+The light of her grace
+To her Son soul endeared.`,
+      ),
+      seg(
+        4,
+        "verse",
+        "Verse IV",
+        `To save all poor souls
+Who had wandered astray
+With sweet words of comfort
+She asked us to pray.`,
+      ),
+      seg(
+        5,
+        "chorus",
+        "Chorus",
+        `Ave, Ave, Ave Maria
+Ave, Ave, Ave Maria`,
+      ),
+    ],
+    ["marian", "hymn", "fatima"],
+  ),
+];
 
 const base = [
   prayer(
@@ -279,6 +444,69 @@ R. Having within it all sweetness.
 Let us pray. O God, who under a wonderful Sacrament hast left us a memorial of Thy Passion: grant us, we beseech Thee, so to venerate the sacred mysteries of Thy Body and Blood, that we may ever feel within us the fruit of Thy Redemption. Who livest and reignest for ever and ever. Amen.`,
     ["eucharistic", "hymn"],
     "src-usccb",
+  ),
+  prayer(
+    "family-prayer",
+    "Family Prayer",
+    "devotional",
+    `Father, we thank You for Your love and Your many blessings, especially the precious gift of each other. Help us to show our gratitude by loving each other as You love us. Make us understanding and patient with one another; quick to admit our failings and ask forgiveness. Generous in sharing the joy and strength we can give each other.
+
+Father, give our family lively faith and the courage to share it with those around us. Direct us to the state in life You plan for each of us, and help us to use Your gifts to serve You. We entrust our family to Your Fatherly care.
+
+Preserve us from the corruption of the modern world and help us draw closer daily to You and to each other, until we come to share with You the joys of Heaven.
+
+Jesus, Mary and Joseph, help us to be a holy family. Amen.
+
+V. Our Lady of Fatima;
+R. Pray for us
+
+V. Most Sacred Heart of Jesus;
+R. Pray for us
+
+V. St. Joseph;
+R. Pray for us`,
+    ["family", "holy family", "gratitude"],
+    "src-caro-rosary",
+  ),
+  prayer(
+    "consecration-family-sacred-heart",
+    "Act of Consecration of the Family to the Sacred Heart",
+    "devotional",
+    `O Sacred Heart of Jesus, who made known to St. Margaret Mary your ardent desire to reign over Christian families, behold us assembled here today to proclaim your absolute dominion over our home. From now on we intend to lead a life like yours, so that amongst us may flourish the virtues for which you promised peace on earth, and for this end we will banish from our midst the spirit of the world which you abhor so much.
+
+You will reign over our understanding by the simplicity of our faith. You will reign over our hearts by an ardent love for you; and may the flame of this love be kept burning in our hearts by the frequent reception of the Holy Eucharist.
+
+Deign, O Divine Heart, to preside over our meetings, to bless our undertakings, both spiritual and temporal, to banish all worry and care, to sanctify our joys, and soothe our sorrows. If any of us should ever have the misfortune to grieve Your Sacred Heart, remind him of your goodness and mercy towards the repentant sinner.
+
+Lastly, when the hour of separation will sound, and death will plunge our home into mourning, then shall we all, and every one of us, be resigned to your eternal decrees, and seek consolation in the thought that we shall one day be reunited in Heaven, where we shall sing the praises and blessings of Your Sacred Heart for all eternity.
+
+May the Immaculate Heart of Mary, and the glorious Patriarch St. Joseph, offer you this, our Consecration, and remind us of the same all the days of our life.
+
+Glory to the Divine Heart of Jesus, our King and our Father.`,
+    ["family", "consecration", "sacred heart"],
+    "src-caro-rosary",
+  ),
+  prayer(
+    "family-consecration-immaculate-heart",
+    "Family Consecration to the Immaculate Heart of Mary",
+    "traditional_expression",
+    `O Immaculate Heart of Mary, Mother of the Heart of Jesus, Mother and Queen of our household, that we may fulfill your ardent desire, we consecrate ourselves to you, and we ask you to reign over our family.
+
+Reign over each one of us, and teach us how to make the Sacred Heart of Your Divine Son reign and triumph in us and around us, as He has reigned and triumphed in you.
+
+Reign over us, O Beloved Mother, so that we may be yours both in prosperity and in adversity, in joy and in sorrow, in health and in sickness, in life and in death. O most compassionate Heart of Mary, Queen of Virgins, watch over our souls and our hearts and preserve them from the flood of pride, impurity, and paganism of which you have complained so bitterly.
+
+We desire to make amends for the numerous crimes committed against Jesus and you. We call upon our home, upon the homes of this country, and upon those of the entire world, the peace of Christ in justice and charity.
+
+Thus we promise to imitate your virtues, by a practical Christian Life, and by frequent and fervent Holy Communion, regardless of human respect. We come with confidence to you, O Throne of Grace and Mother of Fair Love; inflame us with the same divine fire which has inflamed your own Immaculate Heart.
+
+Kindle in our hearts and homes, the love of purity, an ardent passion for souls, and desire for the holiness of family life. We accept now, all the sacrifices that the Christian life will impose on us and we offer them to the Heart of Jesus, by your Immaculate Heart, in a spirit of reparation and of penance. Amen.
+
+To the Sacred Hearts of Jesus and Mary:
+be love, honor, and glory forever and ever!
+Amen.`,
+    ["family", "consecration", "immaculate heart", "marian"],
+    "src-caro-rosary",
   ),
 ];
 
@@ -552,7 +780,44 @@ function rosaryItems(templateId: string, extras: { fatima: boolean; peace: boole
 }
 
 const rosaryItemsList = rosaryItems("tpl-rosary", { fatima: true, peace: false });
-const caroItemsList = rosaryItems("tpl-caro-rosary", { fatima: true, peace: true });
+
+/**
+ * The Caro Family Rosary, as the family prays it: it opens with the three family
+ * consecration prayers, keeps the Fatima Prayer + Prayer for Peace after every
+ * decade, and sings a verse of the Fatima Hymn (with its chorus) after decades
+ * 1–4 — the hymn's four verses across the first four decades, the fifth decade
+ * left un-sung.
+ */
+function caroRosaryItems(): TemplateItem[] {
+  const templateId = "tpl-caro-rosary";
+  const items: TemplateItem[] = [];
+  let p = 0;
+  const add = (partial: Partial<TemplateItem> & { kind: TemplateItem["kind"] }) =>
+    items.push(ti(templateId, p++, partial));
+
+  add({ kind: "prayer", prayer_id: "sign-of-the-cross" });
+  add({ kind: "prayer", prayer_id: "family-consecration-immaculate-heart" });
+  add({ kind: "prayer", prayer_id: "consecration-family-sacred-heart" });
+  add({ kind: "prayer", prayer_id: "family-prayer" });
+  add({ kind: "prayer", prayer_id: "apostles-creed" });
+  add({ kind: "prayer", prayer_id: "our-father" });
+  add({ kind: "prayer", prayer_id: "hail-mary", repetition_count: 3 });
+  add({ kind: "prayer", prayer_id: "glory-be" });
+  for (let d = 1; d <= 5; d++) {
+    add({ kind: "mystery_placeholder", mystery_ordinal: d, label: `Decade ${d}` });
+    add({ kind: "prayer", prayer_id: "our-father" });
+    add({ kind: "prayer", prayer_id: "hail-mary", repetition_count: 10 });
+    add({ kind: "prayer", prayer_id: "glory-be" });
+    add({ kind: "prayer", prayer_id: "fatima-prayer" });
+    add({ kind: "prayer", prayer_id: "prayer-for-peace" });
+    // Verse d + chorus (ordinal 5) after decades 1–4; the fifth decade is un-sung.
+    if (d <= 4) add({ kind: "song", prayer_id: "fatima-hymn", song_segments: [d, 5] });
+  }
+  add({ kind: "prayer", prayer_id: "hail-holy-queen" });
+  add({ kind: "prayer", prayer_id: "sign-of-the-cross" });
+  return items;
+}
+const caroItemsList = caroRosaryItems();
 
 // The 54-day rosary is a plain daily Rosary devotion; its "54 days" lives in the
 // devotion's default recurrence (daily × 54), not a separate novena subsystem.
@@ -720,7 +985,7 @@ function scripturalRosaryItems(): TemplateItem[] {
 }
 const scripturalRosaryItemsList = scripturalRosaryItems();
 
-const allPrayers = base;
+const allPrayers = [...base, ...songs];
 
 export function createSeedDatabase(): Database {
   return {
@@ -750,6 +1015,13 @@ export function createSeedDatabase(): Database {
         source_type: "manual",
         name: "Chaplet of St. Michael (private revelation, approved 1851)",
         attribution: "Antonia d'Astonac",
+        created_at: now,
+      },
+      {
+        id: "src-caro-rosary",
+        source_type: "manual",
+        name: "Caro Family Rosary",
+        attribution: "Caro Family",
         created_at: now,
       },
       {
