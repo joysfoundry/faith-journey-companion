@@ -1,11 +1,21 @@
 # Handoff — PRD gap-merge
 
-_Last updated: 2026-08-21T15:12-07:00 · branch `prd-gap-merge` (**pushed** to origin through `dcb9afb`; this header-fix commit needs one more push)_
+_Last updated: 2026-08-21T16:22-07:00 · branch `prd-gap-merge` (**committed, NOT pushed** — `0684468`, `f00ec43`, + this handoff commit need a push from a git client with GitHub auth)_
 
 ## What this is
 Merging the **ACTS PRD** capabilities into **faith-journey-companion** (the app whose UX we're keeping). The ACTS Next.js build in `../acts` is now just the reference/spec + test oracle. Decision: **gap-merge into fjc, keep the localStorage store** (no Supabase persistence yet).
 
-## Done this session — USCCB basic prayers seed (2026-08-21, `e2d834a`)
+## Done this session — Song prayer type + Caro family prayers (2026-08-21, `0684468`, `f00ec43`)
+Added **songs/hymns** as a first-class kind, and baked the family's real Caro rosary into the seed. Memory: `song-prayer-model`.
+- **Model (no new entity):** a song is a `Prayer` with `expression_type: "song"` (new value in `taxonomy.ts`). Verses/chorus live on the **wording** — `PrayerVersion.segments?: SongSegment[]` (`{ ordinal, kind: verse|chorus|bridge, label, body }`); `body` stays the joined full text. Chose this over a parallel `Song` entity (would fork versions/media/import/UI) and over a new `prayer_type` (that axis is liturgical/devotional/…, orthogonal to "sung").
+- **Placement = one box = one step:** `TemplateItem.kind: "song"` + `song_segments?: number[]` — an **ordered** subset of segment ordinals (e.g. `[2,5]` = Verse II then Chorus), or absent = whole song. Compiler `resolveSong` + a `kind:"song"` branch emit **one** `SessionItem` (kind `"song"`, counts as prayable, one completion) — no repetition expansion. `configuration.segment_labels` set only for a chosen subset (whole song reads just "Song"). `songSegmentLabel()` exported from `compiler.ts`.
+- **Builder** (`DevotionItemsEditor.tsx`): "Song" is its own add-type; the picker filters to `expression_type === "song"` (prayers exclude songs); `SongSegmentsEditor` is a tap-to-add segment list that records sing-order (badges 1,2…) + a live "Sung in order: …" summary + "Clear — sing the whole song". Session render (`session.$sessionId.tsx`) gets a "Song · <parts>" eyebrow; devotion summary (`devotion.$devotionId.tsx`) shows the chosen parts.
+- **Seeded content** (all under source `src-caro-rosary` = "Caro Family Rosary"): 3 hymns — `immaculate-mary`, `hail-holy-queen-enthroned`, `fatima-hymn` (Fatima has a real `chorus` segment, ordinal 5); and 3 family prayers with tags — `family-prayer`, `consecration-family-sacred-heart`, `family-consecration-immaculate-heart` (text pulled from the user's `localStorage` and cleaned: stray tabs removed, `V.`/`R.` normalized).
+- **Caro Family Rosary rebuilt** (`caroRosaryItems()`): opens with the three family consecrations, keeps Fatima Prayer + Prayer for Peace after each decade, and sings **Fatima Hymn verse d + chorus after decades 1–4** (4 verses ÷ 5 decades; 5th decade un-sung). One devotion, name unchanged ("Caro Family Rosary").
+- **`STORAGE_KEY` bumped v8 → v10.**
+- **Verified in-browser** (self-assigned port 8082): all 3 hymns + 3 family prayers render in the library with correct text/tags/type/source; builder Song picker shows only the 3 songs; segment editor produces "Verse II → Chorus"; devotion detail shows the 44-item arrangement in order. **Verified via `jiti` compile** over the real seed: a `[2,5]` placement → one `song` step, body = Verse II + Chorus; a whole-song placement → all verses, one step. `tsc --noEmit` + `eslint` clean (2 pre-existing react-refresh warnings only).
+
+## Done (prior session) — USCCB basic prayers seed (2026-08-21, `e2d834a`)
 Seeded the basic prayers from the [USCCB basic-prayers list](https://www.usccb.org/prayer-and-worship/prayers-and-devotions/prayers/basic-prayers) into `src/lib/prayer/seed.ts`.
 - **Added 13 prayers** not already in the seed, each with **traditional public-domain text** and `source_id: "src-usccb"`: Guardian Angel, Morning Offering, Nicene Creed, Act of Contrition, Act of Faith/Hope/Love, Angelus, Regina Caeli, Anima Christi, Divine Praises, Memorare, O Sacrum Convivium, Tantum Ergo, Prayer to Our Lord Jesus Christ Crucified.
 - **Chaplet of Divine Mercy omitted** — it's on the USCCB list but is a multi-part *devotion* (like the St. Michael Chaplet), not a flat prayer. Left out deliberately; build as a template later if wanted.
@@ -34,7 +44,7 @@ npm run build        # full prod build (nitro)
 ```
 
 ## Architecture (fjc)
-TanStack Start (SSR + server fns) · React · TS · shadcn/ui · Tailwind. Supabase is wired for **auth only** — the domain data lives in a **localStorage repository** (`src/lib/prayer/store.ts`). Pattern: pure reducers in `mutations`, wired via `setDb` in `src/components/app-store-provider.tsx`, typed in the `AppStore` interface. **`STORAGE_KEY` is `prayer-companion-db-v5`** — bump it whenever the seed changes so fixtures reload. Deterministic session compiler in `src/lib/prayer/compiler.ts`; seed in `src/lib/prayer/seed.ts`; types in `src/lib/prayer/types.ts`; taxonomy in `src/domain/taxonomy.ts` (3 axes: prayer_type / expression_type / devotion_type).
+TanStack Start (SSR + server fns) · React · TS · shadcn/ui · Tailwind. Supabase is wired for **auth only** — the domain data lives in a **localStorage repository** (`src/lib/prayer/store.ts`). Pattern: pure reducers in `mutations`, wired via `setDb` in `src/components/app-store-provider.tsx`, typed in the `AppStore` interface. **`STORAGE_KEY` is `prayer-companion-db-v10`** — bump it whenever the seed changes so fixtures reload. Deterministic session compiler in `src/lib/prayer/compiler.ts`; seed in `src/lib/prayer/seed.ts`; types in `src/lib/prayer/types.ts`; taxonomy in `src/domain/taxonomy.ts` (3 axes: prayer_type / expression_type / devotion_type).
 
 ## Done (see JIRA backlog for the ticket list)
 Generic **External Link** + Pray with the Pope · **Chaplet of St. Michael** · generic **Scripture** component + **Scriptural Rosary (Luminous)** · **Reflection / Learning (Life Library) / Mass** promoted to persisted store entities · **Learn** relabel · **Add Prayer** redesign (single vs devotion, manual/URL/photo intake, **PrayerMedia** links+clips, review-before-save) · **Prayer library** read-only details + row actions (pray/edit/expand) · editor **hydration-race fix** · **Devotion builder** redesign (JIRA add+type, hover "+" insert-between, searchable picker, DnD-only, template audio, **Source name+URL**, fixed mystery set, **review = fully expanded**, **auto How-To** on save) · **Mystery heading** everywhere ("First Luminous Mystery" + title + description) · **decade labels** ("1st decade …") in Pray mode.
@@ -67,7 +77,7 @@ The Pray tab is now **"Prayer Sessions"** with two tabs — **Session Builder** 
 
 ## Gotchas
 - **Can't push** from the sandbox (no GitHub auth). Commits are local on `prd-gap-merge`.
-- Browser-tool screenshots **desync** on this dev server; verify via `javascript_tool` (native-setter + input event for controlled fields) and read `localStorage['prayer-companion-db-v5']`.
+- Browser-tool screenshots **desync** on this dev server; verify via `javascript_tool` (native-setter + input event for controlled fields) and read `localStorage['prayer-companion-db-v10']`. (Screenshots did work this session on the self-assigned port; the `javascript_tool` + `localStorage` path is still the reliable fallback.)
 - Hydration: components that seed `useState` from the store must gate on `ready` (localStorage loads after first render). Done for prayer editor + template builder; **other edit routes may still have the latent race**.
 - Removed the builder's old "start from existing template" copy feature during the redesign (not restored).
 
