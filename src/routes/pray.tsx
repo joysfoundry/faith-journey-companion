@@ -258,22 +258,23 @@ function PrayPage() {
         <MoreVertical className="size-5" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={resetForm}>
-          <X className="size-4" /> Clear
+        <DropdownMenuItem onClick={saveSession}>
+          <Save className="size-4" /> {editingId ? "Update session" : "Save session"}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={saveAsTemplate}>
           <FilePlus2 className="size-4" /> Save as template
         </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={resetForm}>
+          <X className="size-4" /> Clear
+        </DropdownMenuItem>
         {editingId ? (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={deleteCurrent}
-              className="text-destructive focus:text-destructive"
-            >
-              <Trash2 className="size-4" /> Delete session
-            </DropdownMenuItem>
-          </>
+          <DropdownMenuItem
+            onClick={deleteCurrent}
+            className="text-destructive focus:text-destructive"
+          >
+            <Trash2 className="size-4" /> Delete session
+          </DropdownMenuItem>
         ) : null}
       </DropdownMenuContent>
     </DropdownMenu>
