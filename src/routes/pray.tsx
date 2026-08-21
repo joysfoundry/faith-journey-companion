@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { FilePlus2, MoreVertical, Pencil, Play, Plus, Save, Trash2 } from "lucide-react";
+import { FilePlus2, MoreVertical, Pencil, Play, Plus, Save, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { DevotionItemsEditor } from "@/components/prayer/DevotionItemsEditor";
@@ -229,6 +230,13 @@ function PrayPage() {
     if (session) navigate({ to: "/session/$sessionId", params: { sessionId: session.id } });
   };
 
+  const deleteCurrent = () => {
+    if (!editingId) return;
+    deleteSessionPlan(editingId);
+    toast.success("Session deleted");
+    resetForm();
+  };
+
   const plans = [...db.session_plans].sort(
     (a, b) =>
       (a.date ?? "9999-99-99").localeCompare(b.date ?? "9999-99-99") ||
@@ -245,9 +253,23 @@ function PrayPage() {
         <MoreVertical className="size-5" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={resetForm}>
+          <X className="size-4" /> Clear
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={saveAsTemplate}>
           <FilePlus2 className="size-4" /> Save as template
         </DropdownMenuItem>
+        {editingId ? (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={deleteCurrent}
+              className="text-destructive focus:text-destructive"
+            >
+              <Trash2 className="size-4" /> Delete session
+            </DropdownMenuItem>
+          </>
+        ) : null}
       </DropdownMenuContent>
     </DropdownMenu>
   );
