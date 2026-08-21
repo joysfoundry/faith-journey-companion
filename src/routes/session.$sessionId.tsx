@@ -1,11 +1,18 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Check, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { AppShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 import { useApp } from "@/lib/prayer/store";
-import { ordinalWord, sessionProgress } from "@/lib/prayer/compiler";
+import {
+  estimateMinutes,
+  occurrenceInfo,
+  ordinalWord,
+  sessionProgress,
+} from "@/lib/prayer/compiler";
 import type { ListenSource, SessionItem } from "@/lib/prayer/types";
 
 export const Route = createFileRoute("/session/$sessionId")({
@@ -53,30 +60,16 @@ function useKeepAwake(enabled: boolean) {
 
 function PrayerMode() {
   const { sessionId } = Route.useParams();
-  const { db, ready, setCursor, toggleItemDone, finishSession } = useApp();
+  const { db, ready, toggleItemDone, finishSession } = useApp();
   const navigate = useNavigate();
 
   const session = db.sessions.find((s) => s.id === sessionId);
-  const items = useMemo(
-    () =>
-      db.session_items
-        .filter((i) => i.session_id === sessionId)
-        .sort((a, b) => a.position - b.position),
-    [db.session_items, sessionId],
-  );
+  const items = db.session_items
+    .filter((i) => i.session_id === sessionId)
+    .sort((a, b) => a.position - b.position);
 
   const [keepAwake, setKeepAwake] = useState(true);
-  const [showMeditation, setShowMeditation] = useState(false);
   useKeepAwake(keepAwake);
-
-  const cursor = Math.min(session?.cursor ?? 0, Math.max(0, items.length - 1));
-  const item = items[cursor];
-  const progress = sessionProgress(items);
-  const manual = session?.context.progress_mode === "manual_done";
-
-  useEffect(() => {
-    setShowMeditation(false);
-  }, [cursor]);
 
   if (!ready || !session) {
     return (
@@ -87,102 +80,76 @@ function PrayerMode() {
   }
 
   const listen = session.context.listen_source;
+  const progress = sessionProgress(items);
+  const pct = progress.total ? (progress.done / progress.total) * 100 : 0;
+  const estMin = estimateMinutes(items);
 
-  if (session.context.progress_mode === "scroll") {
-    return (
-      <ScrollSession
-        title={session.title}
-        items={items}
-        listen={listen}
-        onFinish={() => {
-          finishSession(session.id);
-          navigate({ to: "/" });
-        }}
-      />
-    );
-  }
+  // "Day 3 of 9" for a bounded recurrence, derived from the plan's series.
+  const plan = session.plan_id ? db.session_plans.find((p) => p.id === session.plan_id) : undefined;
+  const occ = plan
+    ? occurrenceInfo(
+        plan.starts_on,
+        plan.recurrence,
+        plan.date ?? plan.starts_on ?? session.context.date,
+      )
+    : null;
+  const dayLabel = occ?.total ? `Day ${occ.index} of ${occ.total}` : null;
 
-  const go = (delta: number) => {
-    const next = Math.min(Math.max(cursor + delta, 0), items.length - 1);
-    setCursor(session.id, next);
+  const finish = () => {
+    finishSession(session.id);
+    navigate({ to: "/" });
   };
 
-  const presentation = session.context.mystery_presentation;
-
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <header className="mx-auto w-full max-w-lg px-5 pt-6">
-        <div className="flex items-center justify-between">
-          <Link to="/" className="inline-flex items-center gap-1 text-sm text-muted-foreground">
-            <X className="size-4" /> Close
-          </Link>
-          <p className="text-sm text-muted-foreground tabular-nums">
-            {progress.done} / {progress.total}
-          </p>
+    <Tabs defaultValue="prayers" className="flex min-h-screen flex-col bg-background">
+      {/* Progress header + the Prayers/Guide tabs freeze together at the top so
+          the tabs stay reachable while a long session scrolls underneath. */}
+      <div className="sticky top-0 z-10 border-b border-border/70 bg-background/95 backdrop-blur">
+        <div className="mx-auto w-full max-w-lg px-5 pb-3 pt-6">
+          <div className="flex items-center justify-between gap-3">
+            <Link to="/" className="inline-flex items-center gap-1 text-sm text-muted-foreground">
+              <X className="size-4" /> Close
+            </Link>
+            <p className="truncate text-sm font-medium">{session.title}</p>
+            <p className="shrink-0 text-sm text-muted-foreground tabular-nums">
+              {progress.done} / {progress.total}
+            </p>
+          </div>
+          <Progress value={pct} className="mt-3 h-1" />
         </div>
-        <Progress
-          value={progress.total ? (progress.done / progress.total) * 100 : 0}
-          className="mt-3 h-1"
-        />
-      </header>
+        <div className="mx-auto w-full max-w-lg px-5 pb-3">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="prayers">Prayers</TabsTrigger>
+            <TabsTrigger value="guide">Guide</TabsTrigger>
+          </TabsList>
+        </div>
+      </div>
 
       {listen ? <ListenPlayer source={listen} /> : null}
 
-      <main className="mx-auto flex w-full max-w-lg flex-1 flex-col justify-center px-6 py-8">
-        {item ? <ItemView item={item} showMeditation={showMeditation} /> : null}
+      <div className="mx-auto w-full max-w-lg flex-1">
+        {/* forceMount keeps both tabs in the DOM so switching preserves scroll
+            position and (later) auto-scroll on the Prayers tab. */}
+        <TabsContent value="prayers" forceMount className="data-[state=inactive]:hidden">
+          <PrayersTab
+            title={session.title}
+            items={items}
+            estMin={estMin}
+            dayLabel={dayLabel}
+            onToggle={toggleItemDone}
+          />
+        </TabsContent>
 
-        {item?.kind === "mystery" && presentation === "choose_during_session" ? (
-          <div className="mt-8 grid grid-cols-2 gap-3">
-            <Button variant="secondary" className="h-12" onClick={() => setShowMeditation(true)}>
-              Read meditation
-            </Button>
-            <Button className="h-12" onClick={() => go(1)}>
-              Begin decade
-            </Button>
-          </div>
-        ) : null}
-      </main>
+        <TabsContent value="guide" forceMount className="data-[state=inactive]:hidden">
+          <GuideTab items={items} estMin={estMin} dayLabel={dayLabel} onToggle={toggleItemDone} />
+        </TabsContent>
+      </div>
 
       <footer className="sticky bottom-0 border-t border-border/70 bg-card/95 backdrop-blur">
         <div className="mx-auto w-full max-w-lg px-5 py-4">
-          {manual && item ? (
-            <Button
-              className="mb-3 h-14 w-full text-base"
-              variant={item.completion_status === "complete" ? "secondary" : "default"}
-              onClick={() => {
-                toggleItemDone(item.id);
-                if (item.completion_status !== "complete" && cursor < items.length - 1) go(1);
-              }}
-            >
-              <Check className="size-5" />
-              {item.completion_status === "complete" ? "Marked done" : "Done"}
-            </Button>
-          ) : null}
-          <div className="flex gap-3">
-            <Button
-              variant="secondary"
-              className="h-12 flex-1"
-              onClick={() => go(-1)}
-              disabled={cursor === 0}
-            >
-              <ChevronLeft className="size-5" /> Previous
-            </Button>
-            {cursor < items.length - 1 ? (
-              <Button variant="secondary" className="h-12 flex-1" onClick={() => go(1)}>
-                Next <ChevronRight className="size-5" />
-              </Button>
-            ) : (
-              <Button
-                className="h-12 flex-1"
-                onClick={() => {
-                  finishSession(session.id);
-                  navigate({ to: "/" });
-                }}
-              >
-                Finish
-              </Button>
-            )}
-          </div>
+          <Button className="h-14 w-full text-base" onClick={finish}>
+            {progress.done >= progress.total && progress.total > 0 ? "Finish session" : "Finish"}
+          </Button>
           <label className="mt-3 flex items-center justify-center gap-2 text-xs text-muted-foreground">
             <input
               type="checkbox"
@@ -193,6 +160,159 @@ function PrayerMode() {
           </label>
         </div>
       </footer>
+    </Tabs>
+  );
+}
+
+/**
+ * Tab 1 — the session title followed by every prayer written out in order.
+ * Each prayer is a bordered card you can tap to mark done; completed cards go
+ * gray. Progress is shared with the Guide tab and the header.
+ */
+function PrayersTab({
+  title,
+  items,
+  estMin,
+  dayLabel,
+  onToggle,
+}: {
+  title: string;
+  items: SessionItem[];
+  estMin?: number | undefined;
+  dayLabel?: string | null | undefined;
+  onToggle: (itemId: string) => void;
+}) {
+  return (
+    <div className="px-5 py-8">
+      <h1 className="mb-2 text-center font-display text-3xl leading-tight">{title}</h1>
+      {dayLabel ? (
+        <p className="mb-1 text-center text-sm font-medium text-primary">{dayLabel}</p>
+      ) : null}
+      <p className="mb-4 text-center text-xs uppercase tracking-wide text-muted-foreground">
+        {items.length} steps · in order{estMin ? ` · ~${estMin} min` : ""}
+      </p>
+      <p className="mb-8 text-center text-xs text-muted-foreground">
+        Tap a prayer when you finish it.
+      </p>
+      <div className="space-y-5">
+        {items.map((item) => {
+          const done = item.completion_status === "complete";
+          return (
+            <div
+              key={item.id}
+              role="button"
+              tabIndex={0}
+              aria-pressed={done}
+              onClick={() => onToggle(item.id)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  onToggle(item.id);
+                }
+              }}
+              className={cn(
+                "relative cursor-pointer rounded-2xl border px-5 py-6 transition",
+                done
+                  ? "border-border/60 bg-muted/40 opacity-60"
+                  : "border-border bg-card hover:border-primary/40",
+              )}
+            >
+              <span
+                className={cn(
+                  "absolute right-3 top-3 flex size-6 items-center justify-center rounded-full border transition",
+                  done
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-background text-transparent",
+                )}
+                aria-hidden
+              >
+                <Check className="size-4" />
+              </span>
+              <ItemView item={item} showMeditation />
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** Short label for a step on the Guide — e.g. "Hail Mary (1/10)". */
+function mapLabel(item: SessionItem): string {
+  const base = item.kind === "scripture" ? (item.reference ?? "Scripture") : item.title;
+  return item.repetition_total
+    ? `${base} (${item.repetition_index}/${item.repetition_total})`
+    : base;
+}
+
+/** Tab 2 — a summarized guide to the whole session with a check circle per step. */
+function GuideTab({
+  items,
+  estMin,
+  dayLabel,
+  onToggle,
+}: {
+  items: SessionItem[];
+  estMin?: number | undefined;
+  dayLabel?: string | null | undefined;
+  onToggle: (itemId: string) => void;
+}) {
+  return (
+    <div className="px-5 py-6">
+      {dayLabel ? <p className="mb-1 text-sm font-medium text-primary">{dayLabel}</p> : null}
+      <p className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">
+        {items.length} steps{estMin ? ` · ~${estMin} min` : ""}
+      </p>
+      <p className="mb-4 text-xs text-muted-foreground">
+        Tap a circle to mark a step done. Progress is shared with the Prayers tab.
+      </p>
+      <ol className="space-y-1">
+        {items.map((item, i) => {
+          const heading =
+            item.kind === "mystery"
+              ? ((item.configuration as { heading?: string } | undefined)?.heading ??
+                `${ordinalWord(item.mystery_ordinal ?? 1)} Mystery`)
+              : undefined;
+          const done = item.completion_status === "complete";
+          return (
+            <li key={item.id}>
+              {heading ? (
+                <p className="mt-4 px-1 text-[11px] font-semibold uppercase tracking-wide text-primary">
+                  {heading}
+                </p>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => onToggle(item.id)}
+                aria-pressed={done}
+                className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left transition hover:bg-muted/60"
+              >
+                <span
+                  className={cn(
+                    "flex size-6 shrink-0 items-center justify-center rounded-full border transition",
+                    done
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border bg-background",
+                  )}
+                >
+                  {done ? <Check className="size-4" /> : null}
+                </span>
+                <span className="w-6 shrink-0 text-right text-xs text-muted-foreground tabular-nums">
+                  {i + 1}
+                </span>
+                <span
+                  className={cn(
+                    "text-sm",
+                    done ? "text-muted-foreground line-through" : "font-medium",
+                  )}
+                >
+                  {mapLabel(item)}
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ol>
     </div>
   );
 }
@@ -317,6 +437,7 @@ function ItemView({ item, showMeditation }: { item: SessionItem; showMeditation:
               href={o.url}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
               className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-4 text-sm font-medium transition hover:border-primary"
             >
               <span className="pr-3">{o.label}</span>
@@ -342,42 +463,6 @@ function ItemView({ item, showMeditation }: { item: SessionItem; showMeditation:
         </p>
       ) : null}
       <p className="prayer-text mt-8">{item.body}</p>
-    </div>
-  );
-}
-
-function ScrollSession({
-  title,
-  items,
-  listen,
-  onFinish,
-}: {
-  title: string;
-  items: SessionItem[];
-  listen?: ListenSource | undefined;
-  onFinish: () => void;
-}) {
-  return (
-    <div className="min-h-screen bg-background pb-20">
-      <header className="sticky top-0 z-10 border-b border-border/70 bg-background/95 px-5 py-4 backdrop-blur">
-        <div className="mx-auto flex max-w-lg items-center justify-between">
-          <Link to="/" className="inline-flex items-center gap-1 text-sm text-muted-foreground">
-            <X className="size-4" /> Close
-          </Link>
-          <p className="text-sm text-muted-foreground">{title}</p>
-        </div>
-      </header>
-      {listen ? <ListenPlayer source={listen} /> : null}
-      <div className="mx-auto max-w-lg space-y-14 px-6 py-10">
-        {items.map((item) => (
-          <section key={item.id}>
-            <ItemView item={item} showMeditation />
-          </section>
-        ))}
-        <Button className="h-14 w-full text-base" onClick={onFinish}>
-          Finish session
-        </Button>
-      </div>
     </div>
   );
 }

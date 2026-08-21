@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Copy, FilePlus2, MoreVertical, Pencil, Play, Plus, Save, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
@@ -16,8 +16,16 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DevotionItemsEditor } from "@/components/prayer/DevotionItemsEditor";
 import { useApp } from "@/lib/prayer/store";
-import { listenSourcesFromItems, newId, resolveNovenaDay, todayISO } from "@/lib/prayer/compiler";
+import {
+  estimateMinutes,
+  generatePrayerSession,
+  listenSourcesFromItems,
+  newId,
+  recurrenceLabel,
+  todayISO,
+} from "@/lib/prayer/compiler";
 import type {
+  Frequency,
   MysteryPresentation,
   PrayerHour,
   PrayerTemplate,
@@ -27,17 +35,24 @@ import type {
   SessionPlan,
   TemplateItem,
 } from "@/lib/prayer/types";
+import {
+  buildRecurrence,
+  FREQ_OPTIONS,
+  FREQ_UNIT_LABEL,
+  recurrenceFields,
+  type EndMode,
+} from "@/lib/prayer/recurrence";
 
 export const Route = createFileRoute("/pray")({
   head: () => ({
     meta: [
-      { title: "Prayer Sessions — Faith Journey" },
+      { title: "Pray Plan — Faith Journey" },
       {
         name: "description",
         content:
           "Build prayer sessions and see what's upcoming and completed — start from a devotion or from scratch, add prayers and petitions, set how you listen and when to pray it.",
       },
-      { property: "og:title", content: "Prayer Sessions — Faith Journey" },
+      { property: "og:title", content: "Pray Plan — Faith Journey" },
       {
         property: "og:description",
         content:
@@ -47,14 +62,6 @@ export const Route = createFileRoute("/pray")({
   }),
   component: PrayPage,
 });
-
-const RECURRENCE_LABEL: Record<Recurrence, string> = {
-  none: "Once",
-  daily: "Every day",
-  weekly: "Every week",
-  monthly: "Every month",
-  custom: "Custom",
-};
 
 const HOUR_LABEL: Record<PrayerHour, string> = {
   office_of_readings: "Office of Readings",
@@ -87,10 +94,13 @@ function PrayPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [purpose, setPurpose] = useState("");
   const [dateVal, setDateVal] = useState(today);
-  const [recurrence, setRecurrence] = useState<Recurrence>("none");
-  const [recurrenceNote, setRecurrenceNote] = useState("");
+  const [freq, setFreq] = useState<Frequency>("none");
+  const [interval, setIntervalVal] = useState("1");
+  const [endMode, setEndMode] = useState<EndMode>("never");
+  const [count, setCount] = useState("");
+  const [untilVal, setUntilVal] = useState("");
   const [hour, setHour] = useState<PrayerHour | "">("");
-  const [durationMin, setDurationMin] = useState("");
+  const [startTime, setStartTime] = useState("");
   const [templateId, setTemplateId] = useState("");
   const [items, setItems] = useState<TemplateItem[]>([]);
   const [originIds, setOriginIds] = useState<Set<string>>(new Set());
@@ -98,14 +108,51 @@ function PrayPage() {
   const [mysterySet, setMysterySet] = useState("auto");
   const [presentation, setPresentation] = useState<MysteryPresentation | "template">("template");
   const [listenIndex, setListenIndex] = useState("");
-  const [novenaInstanceId, setNovenaInstanceId] = useState("");
 
   const baseTemplate = templateId ? db.templates.find((t) => t.id === templateId) : undefined;
-  const isNovena = baseTemplate?.kind === "novena";
-  const novenaInstances = db.novena_instances.filter((n) => n.template_id === templateId);
   const mysteryCount = items.filter((i) => i.kind === "mystery_placeholder").length;
   const sources = listenSourcesFromItems(db, items, baseTemplate?.media ?? []);
   const chosenSource = sources[Number(listenIndex)];
+
+  // The app derives the estimate from the fully-expanded session (same compile
+  // the real session uses), so it reflects repetitions, mysteries, and edits.
+  const estMin = useMemo(() => {
+    if (items.length === 0) return 0;
+    const workId = templateId || "adhoc-preview";
+    const previewTemplate: PrayerTemplate = baseTemplate
+      ? { ...baseTemplate, mystery_count: mysteryCount }
+      : {
+          id: workId,
+          name: purpose.trim() || "Prayer session",
+          kind: mysteryCount > 0 ? "rosary" : "standard",
+          mystery_presentation: "title_and_description",
+          mystery_count: mysteryCount,
+          built_in: false,
+          created_at: "",
+        };
+    const previewDb = {
+      ...db,
+      template_items: [
+        ...db.template_items.filter((i) => i.template_id !== workId),
+        ...items.map((it, i) => ({ ...it, template_id: workId, position: i })),
+      ],
+    };
+    try {
+      return estimateMinutes(generatePrayerSession(previewDb, previewTemplate, {}).items);
+    } catch {
+      return 0;
+    }
+  }, [items, templateId, baseTemplate, mysteryCount, purpose, db]);
+
+  // Apply a Recurrence to the builder's schedule fields.
+  const applyRecurrence = (r: Recurrence | undefined) => {
+    const f = recurrenceFields(r);
+    setFreq(f.freq);
+    setIntervalVal(f.interval);
+    setEndMode(f.endMode);
+    setCount(f.count);
+    setUntilVal(f.until);
+  };
 
   const pickTemplate = (id: string) => {
     setTemplateId(id);
@@ -114,17 +161,20 @@ function PrayPage() {
     setListenIndex("");
     setMysterySet("auto");
     setPresentation("template");
-    setNovenaInstanceId("");
+    // Pre-fill the schedule from the devotion's defaults (user can override).
+    const tpl = id ? db.templates.find((t) => t.id === id) : undefined;
+    applyRecurrence(tpl?.default_recurrence);
+    setHour(tpl?.default_hour ?? "");
+    setStartTime(tpl?.default_start_time ?? "");
   };
 
   const resetForm = () => {
     setEditingId(null);
     setPurpose("");
     setDateVal(today);
-    setRecurrence("none");
-    setRecurrenceNote("");
+    applyRecurrence(undefined);
     setHour("");
-    setDurationMin("");
+    setStartTime("");
     setProgressMode("scroll");
     pickTemplate("");
   };
@@ -133,10 +183,9 @@ function PrayPage() {
     setEditingId(plan.id);
     setPurpose(plan.purpose ?? "");
     setDateVal(plan.date ?? today);
-    setRecurrence(plan.recurrence);
-    setRecurrenceNote(plan.recurrence_note ?? "");
+    applyRecurrence(plan.recurrence);
     setHour(plan.hour ?? "");
-    setDurationMin(plan.duration_min != null ? String(plan.duration_min) : "");
+    setStartTime(plan.start_time ?? "");
     setTemplateId(plan.template_id);
     const planItems = plan.items ?? seedItems(plan.template_id);
     setItems(planItems.map((i) => ({ ...i })));
@@ -144,7 +193,6 @@ function PrayPage() {
     setProgressMode(plan.context.progress_mode ?? "scroll");
     setMysterySet(plan.context.mystery_set_id ?? "auto");
     setPresentation(plan.context.mystery_presentation ?? "template");
-    setNovenaInstanceId(plan.context.novena_instance_id ?? "");
     const srcs = listenSourcesFromItems(
       db,
       planItems,
@@ -159,7 +207,6 @@ function PrayPage() {
     progress_mode: progressMode,
     ...(mysterySet !== "auto" ? { mystery_set_id: mysterySet } : {}),
     ...(presentation !== "template" ? { mystery_presentation: presentation } : {}),
-    ...(isNovena && novenaInstanceId ? { novena_instance_id: novenaInstanceId } : {}),
     ...(chosenSource ? { listen_source: chosenSource, audio_enabled: true } : {}),
   });
 
@@ -168,22 +215,21 @@ function PrayPage() {
       toast.error("Add at least one prayer to the session.");
       return;
     }
+    const existingPlan = editingId ? db.session_plans.find((p) => p.id === editingId) : undefined;
     const plan: SessionPlan = {
       id: editingId ?? newId("plan"),
       template_id: templateId,
       ...(purpose.trim() ? { purpose: purpose.trim() } : {}),
       ...(dateVal ? { date: dateVal } : {}),
-      recurrence,
-      ...(recurrence === "custom" && recurrenceNote.trim()
-        ? { recurrence_note: recurrenceNote.trim() }
-        : {}),
+      // Anchor the series once; keep it stable across edits so "Day N" holds.
+      ...(dateVal ? { starts_on: existingPlan?.starts_on ?? dateVal } : {}),
+      recurrence: buildRecurrence({ freq, interval, endMode, count, until: untilVal }),
       ...(hour ? { hour } : {}),
-      ...(durationMin && Number(durationMin) > 0 ? { duration_min: Number(durationMin) } : {}),
+      ...(startTime ? { start_time: startTime } : {}),
+      ...(estMin > 0 ? { duration_min: estMin } : {}),
       context: buildContext(),
       items: items.map((it, i) => ({ ...it, position: i })),
-      created_at:
-        (editingId && db.session_plans.find((p) => p.id === editingId)?.created_at) ||
-        new Date().toISOString(),
+      created_at: existingPlan?.created_at || new Date().toISOString(),
     };
     saveSessionPlan(plan);
     toast.success(editingId ? "Session updated" : "Session saved");
@@ -294,7 +340,7 @@ function PrayPage() {
   );
 
   return (
-    <AppShell title="Prayer Sessions" action={tab === "builder" ? pageMenu : undefined}>
+    <AppShell title="Pray Plan" action={tab === "builder" ? pageMenu : undefined}>
       <Tabs value={tab} onValueChange={(v) => setTab(v as "builder" | "sessions")}>
         <TabsList className="mb-4 grid w-full grid-cols-2">
           <TabsTrigger value="builder">Session Builder</TabsTrigger>
@@ -369,36 +415,87 @@ function PrayPage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="recurrence">Recurrence</Label>
+                  <Label htmlFor="freq">Repeats</Label>
                   <select
-                    id="recurrence"
-                    value={recurrence}
-                    onChange={(e) => setRecurrence(e.target.value as Recurrence)}
+                    id="freq"
+                    value={freq}
+                    onChange={(e) => setFreq(e.target.value as Frequency)}
                     className="mt-2 h-12 w-full rounded-md border border-input bg-card px-3"
                   >
-                    {(Object.keys(RECURRENCE_LABEL) as Recurrence[]).map((r) => (
-                      <option key={r} value={r}>
-                        {RECURRENCE_LABEL[r]}
+                    {FREQ_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
                       </option>
                     ))}
                   </select>
                 </div>
               </div>
-              {recurrence === "custom" ? (
+              {freq !== "none" ? (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="interval">Every</Label>
+                    <div className="mt-2 flex items-center gap-2">
+                      <Input
+                        id="interval"
+                        type="number"
+                        min={1}
+                        inputMode="numeric"
+                        value={interval}
+                        onChange={(e) => setIntervalVal(e.target.value)}
+                        className="w-20"
+                      />
+                      <span className="text-sm text-muted-foreground">
+                        {FREQ_UNIT_LABEL[freq]}
+                        {Number(interval) > 1 ? "s" : ""}
+                      </span>
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="endmode">Ends</Label>
+                    <select
+                      id="endmode"
+                      value={endMode}
+                      onChange={(e) => setEndMode(e.target.value as EndMode)}
+                      className="mt-2 h-12 w-full rounded-md border border-input bg-card px-3"
+                    >
+                      <option value="never">Never</option>
+                      <option value="count">After N times</option>
+                      <option value="until">On date</option>
+                    </select>
+                  </div>
+                </div>
+              ) : null}
+              {freq !== "none" && endMode === "count" ? (
                 <div>
-                  <Label htmlFor="recurrence-note">Custom recurrence</Label>
+                  <Label htmlFor="count">How many {FREQ_UNIT_LABEL[freq]}s?</Label>
+                  <div className="mt-2 flex items-center gap-2">
+                    <Input
+                      id="count"
+                      type="number"
+                      min={1}
+                      inputMode="numeric"
+                      value={count}
+                      placeholder="e.g. 9 for a novena, 54 for a 54-day rosary"
+                      onChange={(e) => setCount(e.target.value)}
+                    />
+                  </div>
+                </div>
+              ) : null}
+              {freq !== "none" && endMode === "until" ? (
+                <div>
+                  <Label htmlFor="until">Until</Label>
                   <Input
-                    id="recurrence-note"
-                    value={recurrenceNote}
-                    placeholder="e.g. every 1st Friday, Mon/Wed/Fri…"
-                    onChange={(e) => setRecurrenceNote(e.target.value)}
+                    id="until"
+                    type="date"
+                    value={untilVal}
+                    onChange={(e) => setUntilVal(e.target.value)}
                     className="mt-2"
                   />
                 </div>
               ) : null}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label htmlFor="hour">Hour (optional)</Label>
+                  <Label htmlFor="hour">Hour (tag, optional)</Label>
                   <select
                     id="hour"
                     value={hour}
@@ -414,46 +511,32 @@ function PrayPage() {
                   </select>
                 </div>
                 <div>
-                  <Label htmlFor="duration">Est. time (min)</Label>
+                  <Label htmlFor="start-time">Start time (optional)</Label>
                   <Input
-                    id="duration"
-                    type="number"
-                    min={0}
-                    inputMode="numeric"
-                    value={durationMin}
-                    placeholder="e.g. 20"
-                    onChange={(e) => setDurationMin(e.target.value)}
+                    id="start-time"
+                    type="time"
+                    value={startTime}
+                    onChange={(e) => setStartTime(e.target.value)}
                     className="mt-2"
                   />
                 </div>
               </div>
-            </div>
-
-            {isNovena ? (
-              <div className="soft-card p-4">
-                <Label htmlFor="novena">Novena</Label>
-                <select
-                  id="novena"
-                  value={novenaInstanceId}
-                  onChange={(e) => setNovenaInstanceId(e.target.value)}
-                  className="mt-2 h-12 w-full rounded-md border border-input bg-card px-3"
-                >
-                  <option value="">Not tracking a novena</option>
-                  {novenaInstances.map((n) => {
-                    const res = baseTemplate ? resolveNovenaDay(baseTemplate, n, today) : undefined;
-                    return (
-                      <option key={n.id} value={n.id}>
-                        {n.name}
-                        {res ? ` — Day ${res.day}${res.phase ? ` (${res.phase.name})` : ""}` : ""}
-                      </option>
-                    );
-                  })}
-                </select>
-                <Link to="/novenas" className="mt-2 inline-block text-sm underline">
-                  Manage novenas
-                </Link>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Est. time</Label>
+                  <div className="mt-2 flex h-12 items-center rounded-md border border-input bg-muted/40 px-3 text-sm">
+                    {estMin > 0 ? (
+                      <span className="tabular-nums">~{estMin} min</span>
+                    ) : (
+                      <span className="text-muted-foreground">Add prayers to estimate</span>
+                    )}
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Calculated from the prayers in this session.
+                  </p>
+                </div>
               </div>
-            ) : null}
+            </div>
 
             {mysteryCount > 0 ? (
               <div className="soft-card space-y-3 p-4">
@@ -610,9 +693,10 @@ function PrayPage() {
                       : "Any time";
                     const sub = [
                       plan.purpose ? tpl?.name : null,
-                      plan.recurrence !== "none" ? RECURRENCE_LABEL[plan.recurrence] : null,
+                      plan.recurrence.freq !== "none" ? recurrenceLabel(plan.recurrence) : null,
+                      plan.start_time ? plan.start_time : null,
                       plan.hour ? HOUR_LABEL[plan.hour] : null,
-                      plan.duration_min ? `${plan.duration_min} min` : null,
+                      plan.duration_min ? `~${plan.duration_min} min` : null,
                     ]
                       .filter(Boolean)
                       .join(" · ");

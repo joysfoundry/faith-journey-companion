@@ -9,15 +9,15 @@
  */
 import type {
   Database,
+  Frequency,
   ID,
   ListenSource,
   Mystery,
   MysteryContent,
   MysteryPresentation,
-  NovenaInstance,
-  NovenaPhase,
   PrayerSession,
   PrayerTemplate,
+  Recurrence,
   SessionContext,
   SessionItem,
   TemplateItem,
@@ -39,6 +39,86 @@ function isoWeekday(dateISO: string): number {
 function daysBetween(startISO: string, endISO: string): number {
   const ms = new Date(`${endISO}T12:00:00`).getTime() - new Date(`${startISO}T12:00:00`).getTime();
   return Math.round(ms / 86_400_000);
+}
+
+function addUnits(dateISO: string, freq: Frequency, n: number): string {
+  const d = new Date(`${dateISO}T12:00:00`);
+  if (freq === "daily") d.setDate(d.getDate() + n);
+  else if (freq === "weekly") d.setDate(d.getDate() + n * 7);
+  else if (freq === "monthly") d.setMonth(d.getMonth() + n);
+  else if (freq === "yearly") d.setFullYear(d.getFullYear() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+const FREQ_UNIT: Record<Frequency, string> = {
+  none: "time",
+  daily: "day",
+  weekly: "week",
+  monthly: "month",
+  yearly: "year",
+};
+
+/* ----------------------------- Recurrence ------------------------------ */
+// One calendar-style model (RRULE subset) drives every schedule: session plans,
+// devotion defaults, and the "Day N of M" a running session shows.
+
+/** Human label for a recurrence, e.g. "Once", "Daily · 9 days", "Every 2 weeks". */
+export function recurrenceLabel(r: Recurrence | undefined): string {
+  if (!r || r.freq === "none") return "Once";
+  const unit = FREQ_UNIT[r.freq];
+  const every =
+    r.interval > 1
+      ? `Every ${r.interval} ${unit}s`
+      : `${r.freq[0]!.toUpperCase()}${r.freq.slice(1)}`;
+  if (r.count && r.count > 1) return `${every} · ${r.count} ${unit}s`;
+  if (r.until) return `${every} · until ${r.until}`;
+  return every;
+}
+
+/**
+ * Which occurrence `onDate` is within a series anchored at `startsOn`.
+ * `index` is 1-based; `total` is the recurrence `count` when bounded.
+ * Returns null for a non-repeating series or when the anchor is missing.
+ */
+export function occurrenceInfo(
+  startsOn: string | undefined,
+  r: Recurrence | undefined,
+  onDate: string,
+): { index: number; total?: number | undefined } | null {
+  if (!startsOn || !r || r.freq === "none") return null;
+  const elapsed = daysBetween(startsOn, onDate);
+  if (elapsed < 0) return null;
+  const perStep = r.freq === "daily" ? r.interval : r.freq === "weekly" ? r.interval * 7 : null; // month/year handled below by counting
+  let index: number;
+  if (perStep) {
+    index = Math.floor(elapsed / perStep) + 1;
+  } else {
+    // Count month/year steps by walking forward until we pass onDate.
+    let i = 0;
+    while (addUnits(startsOn, r.freq, i + 1) <= onDate) i += 1;
+    index = i + 1;
+  }
+  return { index, total: r.count };
+}
+
+/**
+ * The next occurrence date strictly after `fromDate`, or null when the series is
+ * exhausted (past `count` occurrences or `until`). Anchored at `startsOn` so the
+ * bound is measured from the true series start, not the rolling date.
+ */
+export function nextOccurrence(
+  startsOn: string | undefined,
+  r: Recurrence | undefined,
+  fromDate: string,
+): string | null {
+  if (!r || r.freq === "none") return null;
+  const anchor = startsOn ?? fromDate;
+  const current = occurrenceInfo(anchor, r, fromDate);
+  const currentIndex = current?.index ?? 1;
+  if (r.count && currentIndex >= r.count) return null;
+  const next = addUnits(fromDate, r.freq, r.interval);
+  if (r.until && next > r.until) return null;
+  return next;
 }
 
 /* ------------------------------------------------------------------ */
@@ -71,39 +151,6 @@ export function mysteryContentFor(
     all.find((c) => c.variant === "full_meditation") ??
     all[0]
   );
-}
-
-/* ------------------------------------------------------------------ */
-/* Novena resolution                                                   */
-/* ------------------------------------------------------------------ */
-
-export interface NovenaDayResolution {
-  day: number;
-  phase?: NovenaPhase | undefined;
-  mystery_set_id?: ID | undefined;
-  condition_tags: string[];
-  out_of_range: boolean;
-}
-
-export function resolveNovenaDay(
-  template: PrayerTemplate,
-  instance: NovenaInstance,
-  dateISO: string,
-): NovenaDayResolution {
-  const cfg = template.novena;
-  const day = daysBetween(instance.start_date, dateISO) + 1;
-  if (!cfg) return { day, condition_tags: [], out_of_range: false };
-  const phase = cfg.phases.find((p) => day >= p.start_day && day <= p.end_day);
-  const cycle = cfg.mystery_cycle;
-  const mystery_set_id =
-    cycle.length > 0 ? cycle[(day - 1 + cycle.length) % cycle.length] : undefined;
-  return {
-    day,
-    phase,
-    mystery_set_id,
-    condition_tags: phase?.condition_tag ? [phase.condition_tag] : [],
-    out_of_range: day < 1 || day > cfg.duration_days,
-  };
 }
 
 /* ------------------------------------------------------------------ */
@@ -218,23 +265,7 @@ export function generatePrayerSession(
 ): GeneratedSession {
   const ctx = defaultContext(contextInput);
 
-  // 1. Novena rules (day, phase, rotating mysteries) feed the context.
-  let novenaLabel = "";
-  if (template.kind === "novena" && ctx.novena_instance_id) {
-    const instance = db.novena_instances.find((n) => n.id === ctx.novena_instance_id);
-    if (instance) {
-      const res = resolveNovenaDay(template, instance, ctx.date);
-      ctx.novena_day = res.day;
-      ctx.novena_phase_id = res.phase?.id;
-      ctx.condition_tags = [...new Set([...ctx.condition_tags, ...res.condition_tags])];
-      if (!contextInput.mystery_set_id && res.mystery_set_id) {
-        ctx.mystery_set_id = res.mystery_set_id;
-      }
-      novenaLabel = ` — Day ${res.day}${res.phase ? ` (${res.phase.name})` : ""}`;
-    }
-  }
-
-  // 2. Mystery resolution. A template can pin the set (e.g. Luminous) unless the
+  // Mystery resolution. A template can pin the set (e.g. Luminous) unless the
   // caller's context explicitly chose one.
   if (template.fixed_mystery_set_id && !contextInput.mystery_set_id && !ctx.mystery_set_id) {
     ctx.mystery_set_id = template.fixed_mystery_set_id;
@@ -402,7 +433,7 @@ export function generatePrayerSession(
   const session: PrayerSession = {
     id: sessionId,
     template_id: template.id,
-    title: `${template.name}${novenaLabel}`,
+    title: template.name,
     context: ctx,
     created_at: new Date().toISOString(),
     cursor: 0,
@@ -449,6 +480,23 @@ export function sessionProgress(items: SessionItem[]): { done: number; total: nu
     done: prayable.filter((i) => i.completion_status === "complete").length,
     total: prayable.length,
   };
+}
+
+/**
+ * Estimate how long a compiled session takes to pray, in whole minutes.
+ * Model: recited prayer runs ~180 words/min, plus a few seconds per step to
+ * announce and transition. Calibrated so a full five-decade Rosary lands near
+ * ~20 min. The app derives this — users never type it.
+ */
+export function estimateMinutes(items: SessionItem[]): number {
+  const WORDS_PER_MIN = 180;
+  const OVERHEAD_SEC_PER_ITEM = 3;
+  const words = (t?: string) => (t ? t.trim().split(/\s+/).filter(Boolean).length : 0);
+  const seconds = items.reduce(
+    (sum, it) => sum + (words(it.body) / WORDS_PER_MIN) * 60 + OVERHEAD_SEC_PER_ITEM,
+    0,
+  );
+  return items.length === 0 ? 0 : Math.max(1, Math.round(seconds / 60));
 }
 
 /** Expands the compact template into a human-readable preview (no session). */

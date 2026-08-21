@@ -1,15 +1,43 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ChevronDown, Heart, Pencil, Play, Plus, Search, Trash2, X } from "lucide-react";
+import {
+  ChevronDown,
+  ExternalLink,
+  FilePlus2,
+  Hand,
+  Heart,
+  MoreVertical,
+  Pencil,
+  Play,
+  Plus,
+  Search,
+  Trash2,
+  X,
+} from "lucide-react";
 import { AppShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useApp, variantGroupId } from "@/lib/prayer/store";
-import type { Prayer } from "@/lib/prayer/types";
+import type { HowTo, PrayerHour, PrayerTemplate, Prayer } from "@/lib/prayer/types";
 import { toast } from "sonner";
-import { templateOutline } from "@/lib/prayer/compiler";
+import { newId, recurrenceLabel, templateOutline } from "@/lib/prayer/compiler";
+
+const HOUR_LABEL: Record<PrayerHour, string> = {
+  office_of_readings: "Office of Readings",
+  lauds: "Morning Prayer (Lauds)",
+  daytime: "Daytime Prayer",
+  vespers: "Evening Prayer (Vespers)",
+  compline: "Night Prayer (Compline)",
+};
 
 /** One prayer group: a caret expands the text; icons pray / edit; title opens details. */
 function PrayerRow({
@@ -149,6 +177,238 @@ function PrayerRow({
   );
 }
 
+/**
+ * One devotion in the library — mirrors PrayerRow: a caret expands a summary
+ * (schedule + mystery + source + step outline) in place; inline icons edit,
+ * favorite, and delete. No detail page — the guided follow-along lives in a
+ * prayer session, not here.
+ */
+function DevotionRow({
+  template,
+  picking,
+  selected,
+  onSelect,
+}: {
+  template: PrayerTemplate;
+  picking: boolean;
+  selected: Set<string>;
+  onSelect: (id: string, on: boolean) => void;
+}) {
+  const { db, toggleTemplateFavorite, deleteTemplate } = useApp();
+  const [open, setOpen] = useState(false);
+  const outline = templateOutline(db, template);
+  const source = template.source_id
+    ? db.sources.find((s) => s.id === template.source_id)
+    : undefined;
+  const schedule = [
+    template.default_recurrence ? recurrenceLabel(template.default_recurrence) : null,
+    template.default_start_time ?? null,
+    template.default_hour ? HOUR_LABEL[template.default_hour] : null,
+  ].filter(Boolean);
+  const mystery =
+    template.mystery_count > 0
+      ? `${template.mystery_count} mysteries · ${
+          template.fixed_mystery_set_id
+            ? (db.mystery_sets.find((s) => s.id === template.fixed_mystery_set_id)?.name ??
+              "fixed set")
+            : "by day"
+        }`
+      : null;
+
+  return (
+    <li className="soft-card">
+      <div className="flex items-center">
+        {picking ? (
+          <span className="pl-4">
+            <Checkbox
+              checked={selected.has(template.id)}
+              onCheckedChange={(v) => onSelect(template.id, Boolean(v))}
+              aria-label={`Select ${template.name}`}
+            />
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setOpen((o) => !o)}
+            aria-label={open ? "Hide summary" : "Show summary"}
+            aria-expanded={open}
+            className="py-4 pl-3 pr-1 text-muted-foreground"
+          >
+            <ChevronDown className={`size-5 transition-transform ${open ? "rotate-180" : ""}`} />
+          </button>
+        )}
+        <Link
+          to="/devotion/$devotionId"
+          params={{ devotionId: template.id }}
+          className="min-w-0 flex-1 py-4 pl-1 pr-2"
+        >
+          <p className="truncate font-medium">{template.name}</p>
+          <p className="truncate text-xs text-muted-foreground">
+            {template.description ?? `${outline.length} steps`}
+          </p>
+        </Link>
+        <Link
+          to="/template/$templateId"
+          params={{ templateId: template.id }}
+          aria-label={`Edit ${template.name}`}
+          className="px-2.5 py-4 text-muted-foreground"
+        >
+          <Pencil className="size-5" />
+        </Link>
+        <button
+          type="button"
+          onClick={() => toggleTemplateFavorite(template.id)}
+          aria-label={template.favorite ? "Remove favorite" : "Add favorite"}
+          className="px-2.5 py-4 text-muted-foreground"
+        >
+          <Heart className={`size-5 ${template.favorite ? "fill-primary text-primary" : ""}`} />
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            if (!window.confirm(`Delete devotion “${template.name}”?`)) return;
+            deleteTemplate(template.id);
+            toast.success("Devotion deleted");
+          }}
+          aria-label={`Delete ${template.name}`}
+          className="px-2.5 pr-4 py-4 text-muted-foreground"
+        >
+          <Trash2 className="size-5" />
+        </button>
+      </div>
+
+      {open ? (
+        <div className="space-y-3 border-t border-border/60 px-5 py-4">
+          {schedule.length || mystery || source ? (
+            <div className="flex flex-wrap gap-x-2 gap-y-1 text-xs text-muted-foreground">
+              {schedule.map((s) => (
+                <span key={s} className="rounded-full bg-secondary px-2 py-0.5">
+                  {s}
+                </span>
+              ))}
+              {mystery ? (
+                <span className="rounded-full bg-secondary px-2 py-0.5">{mystery}</span>
+              ) : null}
+              {source ? (
+                <span className="rounded-full bg-secondary px-2 py-0.5">Source: {source.name}</span>
+              ) : null}
+            </div>
+          ) : null}
+          <ol className="space-y-1 text-sm">
+            {outline.map((o, i) => (
+              <li key={i} className="flex gap-2">
+                <span className="w-5 shrink-0 text-right text-xs text-muted-foreground tabular-nums">
+                  {i + 1}
+                </span>
+                <span>
+                  {o.label}
+                  {o.detail ? <span className="text-muted-foreground"> {o.detail}</span> : null}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      ) : null}
+    </li>
+  );
+}
+
+/** Pretty label for a resource link — the file name for PDFs, else the host. */
+function linkLabel(url: string): string {
+  try {
+    const u = new URL(url);
+    if (/\.pdf($|\?)/i.test(u.pathname)) return u.pathname.split("/").pop() || "PDF";
+    return u.hostname.replace(/^www\./, "") + (u.pathname.length > 1 ? u.pathname : "");
+  } catch {
+    return url;
+  }
+}
+
+/**
+ * A How To guide is a collection of reference links / PDFs (no hand-written
+ * steps). Each card lists its links and lets you add or remove URLs.
+ */
+function HowToCard({ howTo }: { howTo: HowTo }) {
+  const { db, saveHowTo, deleteHowTo } = useApp();
+  const [newLink, setNewLink] = useState("");
+  const links = howTo.links ?? [];
+  const linked = db.templates.find((t) => t.id === howTo.template_id);
+
+  const addLink = () => {
+    const url = newLink.trim();
+    if (!/^https?:\/\//i.test(url)) {
+      toast.error("Add a full link starting with https://");
+      return;
+    }
+    saveHowTo({ ...howTo, links: [...links, url] });
+    setNewLink("");
+  };
+
+  return (
+    <li className="soft-card p-4">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="font-medium">{howTo.title}</p>
+          {linked ? <p className="text-xs text-primary">For {linked.name}</p> : null}
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            if (!window.confirm(`Delete guide “${howTo.title}”?`)) return;
+            deleteHowTo(howTo.id);
+            toast.success("Guide deleted");
+          }}
+          aria-label={`Delete ${howTo.title}`}
+          className="shrink-0 text-muted-foreground"
+        >
+          <Trash2 className="size-5" />
+        </button>
+      </div>
+
+      <ul className="mt-3 space-y-2">
+        {links.map((url) => (
+          <li key={url} className="flex items-center gap-2">
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm transition hover:border-primary"
+            >
+              <ExternalLink className="size-4 shrink-0 text-muted-foreground" />
+              <span className="truncate">{linkLabel(url)}</span>
+            </a>
+            <button
+              type="button"
+              onClick={() => saveHowTo({ ...howTo, links: links.filter((l) => l !== url) })}
+              aria-label="Remove link"
+              className="shrink-0 text-muted-foreground hover:text-destructive"
+            >
+              <X className="size-4" />
+            </button>
+          </li>
+        ))}
+        {links.length === 0 ? (
+          <li className="text-xs text-muted-foreground">No links yet — add a URL or PDF below.</li>
+        ) : null}
+      </ul>
+
+      <div className="mt-3 flex gap-2">
+        <Input
+          value={newLink}
+          onChange={(e) => setNewLink(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && addLink()}
+          placeholder="https://… or a PDF link"
+          className="h-11"
+          aria-label={`Add a link to ${howTo.title}`}
+        />
+        <Button variant="secondary" className="h-11 shrink-0" onClick={addLink}>
+          <Plus className="size-4" /> Add
+        </Button>
+      </div>
+    </li>
+  );
+}
+
 /** Shared bulk-selection toolbar: enter select mode, select all, delete many. */
 function BulkBar({
   ids,
@@ -237,14 +497,26 @@ export const Route = createFileRoute("/prayers")({
 });
 
 function LibraryPage() {
-  const { db, deletePrayer, deleteTemplate, deleteHowTo } = useApp();
+  const { db, deletePrayer, deleteTemplate, saveHowTo } = useApp();
+  const navigate = useNavigate();
+  const [tab, setTab] = useState("prayers");
   const [query, setQuery] = useState("");
   const [pickPrayers, setPickPrayers] = useState(false);
   const [selPrayers, setSelPrayers] = useState<Set<string>>(new Set());
   const [pickTemplates, setPickTemplates] = useState(false);
   const [selTemplates, setSelTemplates] = useState<Set<string>>(new Set());
-  const [pickHowTos, setPickHowTos] = useState(false);
-  const [selHowTos, setSelHowTos] = useState<Set<string>>(new Set());
+  const [newGuideTitle, setNewGuideTitle] = useState("");
+
+  const addGuide = () => {
+    const title = newGuideTitle.trim();
+    if (!title) {
+      toast.error("Name the guide first.");
+      return;
+    }
+    saveHowTo({ id: newId("howto"), title, summary: "", steps: [], links: [] });
+    setNewGuideTitle("");
+    toast.success("Guide added — now add its links.");
+  };
 
   const toggle = (
     set: Set<string>,
@@ -295,9 +567,44 @@ function LibraryPage() {
       );
   }, [db, query]);
 
+  // Add lives in the ⋯ menu, matching the Prayer Sessions page. "New devotion"
+  // opens the Devotion Builder; "Build by hand" jumps straight to the drag-and-
+  // drop editor.
+  const addMenu = (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        aria-label="Add to library"
+        className="rounded-md p-2 text-muted-foreground hover:bg-secondary hover:text-foreground"
+      >
+        <MoreVertical className="size-5" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => navigate({ to: "/import", search: { mode: "single" } })}>
+          <Plus className="size-4" /> New prayer
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => navigate({ to: "/import", search: { mode: "devotion" } })}>
+          <FilePlus2 className="size-4" /> New devotion
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTab("howto")}>
+          <Plus className="size-4" /> New How To
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onClick={() => navigate({ to: "/template/$templateId", params: { templateId: "new" } })}
+        >
+          <Hand className="size-4" /> Build a devotion by hand
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
   return (
-    <AppShell title="Prayers" subtitle="Single prayers, devotions, and how to pray them">
-      <Tabs defaultValue="prayers">
+    <AppShell
+      title="Prayers"
+      subtitle="Single prayers, devotions, and how to pray them"
+      action={addMenu}
+    >
+      <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="w-full">
           <TabsTrigger value="prayers" className="flex-1">
             Prayers
@@ -311,14 +618,6 @@ function LibraryPage() {
         </TabsList>
 
         <TabsContent value="prayers" className="mt-4">
-          <Button asChild variant="secondary" className="mb-3 h-12 w-full">
-            <Link to="/import">
-              <Plus className="size-4" /> New prayer
-            </Link>
-          </Button>
-          <p className="mb-3 text-center text-xs text-muted-foreground">
-            Write it, paste it, or add a link to import from.
-          </p>
           <div className="relative mb-3">
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -366,22 +665,7 @@ function LibraryPage() {
           <p className="text-sm text-muted-foreground">
             A devotion is a composite sequence of structured prayers — vocal prayer woven with
             meditation. The Rosary is a devotion; bead-based devotions that follow a set pattern are
-            called chaplets.
-          </p>
-          <Button asChild variant="secondary" className="h-12 w-full">
-            <Link to="/import" search={{ mode: "devotion" }}>
-              <Plus className="size-4" /> New devotion
-            </Link>
-          </Button>
-          <p className="text-center text-xs text-muted-foreground">
-            Paste or write the devotion — each prayer is saved on its own, then bundled.{" "}
-            <Link
-              to="/template/$templateId"
-              params={{ templateId: "new" }}
-              className="text-primary underline"
-            >
-              Build one by hand
-            </Link>
+            called chaplets. Add one from the ⋯ menu.
           </p>
           <BulkBar
             noun="devotions"
@@ -392,111 +676,58 @@ function LibraryPage() {
             setActive={setPickTemplates}
             onDelete={(ids) => ids.forEach(deleteTemplate)}
           />
-          {db.templates.map((template) => {
-            const outline = templateOutline(db, template);
-            return (
-              <div key={template.id} className="soft-card flex items-start">
-                {pickTemplates ? (
-                  <span className="self-center pl-4">
-                    <Checkbox
-                      checked={selTemplates.has(template.id)}
-                      onCheckedChange={(v) =>
-                        toggle(selTemplates, setSelTemplates, template.id, Boolean(v))
-                      }
-                      aria-label={`Select ${template.name}`}
-                    />
-                  </span>
-                ) : null}
-                <Link
-                  to="/template/$templateId"
-                  params={{ templateId: template.id }}
-                  className="block flex-1 p-4"
-                >
-                  <p className="font-medium">{template.name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {template.description ?? `${outline.length} items`}
-                  </p>
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    {outline
-                      .slice(0, 4)
-                      .map((o) => `${o.label}${o.detail ? ` ${o.detail}` : ""}`)
-                      .join(" · ")}
-                    {outline.length > 4 ? " …" : ""}
-                  </p>
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!window.confirm(`Delete devotion “${template.name}”?`)) return;
-                    deleteTemplate(template.id);
-                    toast.success("Devotion deleted");
-                  }}
-                  aria-label={`Delete ${template.name}`}
-                  className="px-4 py-5 text-muted-foreground"
-                >
-                  <Trash2 className="size-5" />
-                </button>
-              </div>
-            );
-          })}
+          <ul className="space-y-3">
+            {[...db.templates]
+              .sort(
+                (a, b) =>
+                  Number(Boolean(b.favorite)) - Number(Boolean(a.favorite)) ||
+                  a.name.localeCompare(b.name),
+              )
+              .map((template) => (
+                <DevotionRow
+                  key={template.id}
+                  template={template}
+                  picking={pickTemplates}
+                  selected={selTemplates}
+                  onSelect={(id, on) => toggle(selTemplates, setSelTemplates, id, on)}
+                />
+              ))}
+            {db.templates.length === 0 ? (
+              <li className="py-10 text-center text-sm text-muted-foreground">
+                No devotions yet. Add one from the ⋯ menu.
+              </li>
+            ) : null}
+          </ul>
         </TabsContent>
 
         <TabsContent value="howto" className="mt-4 space-y-3">
-          <Button asChild variant="secondary" className="h-12 w-full">
-            <Link to="/import" search={{ mode: "howto" }}>
-              <Plus className="size-4" /> New How To guide
-            </Link>
-          </Button>
-          <p className="text-center text-xs text-muted-foreground">
-            Paste a page that explains how a devotion is prayed. Every line becomes a step — guides
-            are only created here, never guessed from prayer text.
+          <p className="text-sm text-muted-foreground">
+            A How To guide is a set of reference links and PDFs for a devotion — add the pages that
+            explain how it&apos;s prayed.
           </p>
-          <BulkBar
-            noun="guides"
-            ids={db.how_tos.map((h) => h.id)}
-            selected={selHowTos}
-            setSelected={setSelHowTos}
-            active={pickHowTos}
-            setActive={setPickHowTos}
-            onDelete={(ids) => ids.forEach(deleteHowTo)}
-          />
-          {db.how_tos.map((howTo) => {
-            const linked = db.templates.find((t) => t.id === howTo.template_id);
-            return (
-              <div key={howTo.id} className="soft-card flex items-start">
-                {pickHowTos ? (
-                  <span className="self-center pl-4">
-                    <Checkbox
-                      checked={selHowTos.has(howTo.id)}
-                      onCheckedChange={(v) => toggle(selHowTos, setSelHowTos, howTo.id, Boolean(v))}
-                      aria-label={`Select ${howTo.title}`}
-                    />
-                  </span>
-                ) : null}
-                <Link
-                  to="/howto/$howToId"
-                  params={{ howToId: howTo.id }}
-                  className="block flex-1 p-4"
-                >
-                  <p className="font-medium">{howTo.title}</p>
-                  <p className="text-sm text-muted-foreground">{howTo.summary}</p>
-                  {linked ? <p className="mt-1 text-xs text-primary">For {linked.name}</p> : null}
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!window.confirm(`Delete guide “${howTo.title}”?`)) return;
-                    deleteHowTo(howTo.id);
-                    toast.success("Guide deleted");
-                  }}
-                  aria-label={`Delete ${howTo.title}`}
-                  className="px-4 py-5 text-muted-foreground"
-                >
-                  <Trash2 className="size-5" />
-                </button>
-              </div>
-            );
-          })}
+          <div className="flex gap-2">
+            <Input
+              value={newGuideTitle}
+              onChange={(e) => setNewGuideTitle(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && addGuide()}
+              placeholder="New guide title, e.g. How to Pray the Chaplet"
+              className="h-12"
+              aria-label="New How To guide title"
+            />
+            <Button variant="secondary" className="h-12 shrink-0" onClick={addGuide}>
+              <Plus className="size-4" /> Add
+            </Button>
+          </div>
+          <ul className="space-y-3">
+            {db.how_tos.map((howTo) => (
+              <HowToCard key={howTo.id} howTo={howTo} />
+            ))}
+            {db.how_tos.length === 0 ? (
+              <li className="py-10 text-center text-sm text-muted-foreground">
+                No guides yet. Name one above, then add its links.
+              </li>
+            ) : null}
+          </ul>
         </TabsContent>
       </Tabs>
     </AppShell>

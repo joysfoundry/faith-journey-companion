@@ -10,13 +10,30 @@ import { Textarea } from "@/components/ui/textarea";
 import { DevotionItemsEditor, ordinal } from "@/components/prayer/DevotionItemsEditor";
 import { useApp } from "@/lib/prayer/store";
 import { generatePrayerSession, newId } from "@/lib/prayer/compiler";
+import {
+  buildRecurrence,
+  FREQ_OPTIONS,
+  FREQ_UNIT_LABEL,
+  recurrenceFields,
+  type EndMode,
+} from "@/lib/prayer/recurrence";
 import type {
+  Frequency,
   HowTo,
   MysteryPresentation,
+  PrayerHour,
   PrayerMedia,
   PrayerTemplate,
   TemplateItem,
 } from "@/lib/prayer/types";
+
+const HOUR_LABEL: Record<PrayerHour, string> = {
+  office_of_readings: "Office of Readings",
+  lauds: "Morning Prayer (Lauds)",
+  daytime: "Daytime Prayer",
+  vespers: "Evening Prayer (Vespers)",
+  compline: "Night Prayer (Compline)",
+};
 
 export const Route = createFileRoute("/template/$templateId")({
   head: () => ({
@@ -99,6 +116,15 @@ function TemplateBuilder() {
   const [media, setMedia] = useState<PrayerMedia[]>(existing?.media ?? []);
   const [sourceName, setSourceName] = useState(existingSource?.name ?? "");
   const [sourceUrl, setSourceUrl] = useState(existingSource?.url ?? "");
+  // Default schedule this devotion suggests (calendar-style recurrence + hour).
+  const initialRec = recurrenceFields(existing?.default_recurrence);
+  const [freq, setFreq] = useState<Frequency>(initialRec.freq);
+  const [interval, setIntervalVal] = useState(initialRec.interval);
+  const [endMode, setEndMode] = useState<EndMode>(initialRec.endMode);
+  const [count, setCount] = useState(initialRec.count);
+  const [untilVal, setUntilVal] = useState(initialRec.until);
+  const [hour, setHour] = useState<PrayerHour | "">(existing?.default_hour ?? "");
+  const [startTime, setStartTime] = useState(existing?.default_start_time ?? "");
   const [items, setItems] = useState<TemplateItem[]>(() =>
     db.template_items
       .filter((i) => i.template_id === templateId)
@@ -126,7 +152,19 @@ function TemplateBuilder() {
       ...(notes.trim() ? { notes: notes.trim() } : {}),
       ...(fixedSetId ? { fixed_mystery_set_id: fixedSetId } : {}),
       ...(media.length ? { media } : {}),
-      ...(existing?.novena ? { novena: existing.novena } : {}),
+      ...(freq !== "none"
+        ? {
+            default_recurrence: buildRecurrence({
+              freq,
+              interval,
+              endMode,
+              count,
+              until: untilVal,
+            }),
+          }
+        : {}),
+      ...(hour ? { default_hour: hour } : {}),
+      ...(startTime ? { default_start_time: startTime } : {}),
       ...(sourceId ? { source_id: sourceId } : {}),
     };
   };
@@ -317,6 +355,124 @@ function TemplateBuilder() {
               placeholder="https://…"
               className="mt-1 h-11"
             />
+          </div>
+        </div>
+
+        {/* Default schedule — pre-fills the Session Builder when you build from this
+            devotion. "Daily · ends after 9" is a novena; 54 is a 54-day rosary. */}
+        <div className="soft-card space-y-3 p-4">
+          <p className="eyebrow">Default schedule</p>
+          <p className="-mt-1 text-xs text-muted-foreground">
+            Suggested when you build a session from this devotion — you can change it there.
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label htmlFor="freq">Repeats</Label>
+              <select
+                id="freq"
+                value={freq}
+                onChange={(e) => setFreq(e.target.value as Frequency)}
+                className="mt-1 h-11 w-full rounded-md border border-input bg-card px-3"
+              >
+                {FREQ_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {freq !== "none" ? (
+              <div>
+                <Label htmlFor="endmode">Ends</Label>
+                <select
+                  id="endmode"
+                  value={endMode}
+                  onChange={(e) => setEndMode(e.target.value as EndMode)}
+                  className="mt-1 h-11 w-full rounded-md border border-input bg-card px-3"
+                >
+                  <option value="never">Never</option>
+                  <option value="count">After N times</option>
+                  <option value="until">On date</option>
+                </select>
+              </div>
+            ) : null}
+          </div>
+          {freq !== "none" ? (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="interval">Every</Label>
+                <div className="mt-1 flex items-center gap-2">
+                  <Input
+                    id="interval"
+                    type="number"
+                    min={1}
+                    inputMode="numeric"
+                    value={interval}
+                    onChange={(e) => setIntervalVal(e.target.value)}
+                    className="w-20 h-11"
+                  />
+                  <span className="text-sm text-muted-foreground">
+                    {FREQ_UNIT_LABEL[freq]}
+                    {Number(interval) > 1 ? "s" : ""}
+                  </span>
+                </div>
+              </div>
+              {endMode === "count" ? (
+                <div>
+                  <Label htmlFor="count">How many {FREQ_UNIT_LABEL[freq]}s?</Label>
+                  <Input
+                    id="count"
+                    type="number"
+                    min={1}
+                    inputMode="numeric"
+                    value={count}
+                    placeholder="9, 54…"
+                    onChange={(e) => setCount(e.target.value)}
+                    className="mt-1 h-11"
+                  />
+                </div>
+              ) : null}
+              {endMode === "until" ? (
+                <div>
+                  <Label htmlFor="until">Until</Label>
+                  <Input
+                    id="until"
+                    type="date"
+                    value={untilVal}
+                    onChange={(e) => setUntilVal(e.target.value)}
+                    className="mt-1 h-11"
+                  />
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label htmlFor="hour">Hour (tag)</Label>
+              <select
+                id="hour"
+                value={hour}
+                onChange={(e) => setHour(e.target.value as PrayerHour | "")}
+                className="mt-1 h-11 w-full rounded-md border border-input bg-card px-3"
+              >
+                <option value="">No set hour</option>
+                {(Object.keys(HOUR_LABEL) as PrayerHour[]).map((h) => (
+                  <option key={h} value={h}>
+                    {HOUR_LABEL[h]}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <Label htmlFor="start-time">Start time</Label>
+              <Input
+                id="start-time"
+                type="time"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                className="mt-1 h-11"
+              />
+            </div>
           </div>
         </div>
 

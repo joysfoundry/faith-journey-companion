@@ -125,14 +125,23 @@ Turn then, most gracious advocate, your eyes of mercy towards us; and after this
 // other devotion. (Source: private revelation to Antonia d'Astonac, approved 1851.)
 const MICHAEL_CHOIRS: Array<[string, string]> = [
   ["Seraphim", "may the Lord make us worthy to burn with the fire of perfect charity."],
-  ["Cherubim", "may the Lord grant us the grace to leave the ways of sin and run in the paths of Christian perfection."],
+  [
+    "Cherubim",
+    "may the Lord grant us the grace to leave the ways of sin and run in the paths of Christian perfection.",
+  ],
   ["Thrones", "may the Lord infuse into our hearts a true and sincere spirit of humility."],
   ["Dominations", "may the Lord give us grace to govern our senses and overcome unruly passions."],
   ["Virtues", "may the Lord preserve us from evil and from falling into temptation."],
   ["Powers", "may the Lord protect our souls against the snares and temptations of the devil."],
   ["Principalities", "may God fill our souls with the spirit of true obedience."],
-  ["Archangels", "may the Lord give us perseverance in faith and in all good works, that we may attain the glory of Heaven."],
-  ["Angels", "may the Lord grant us to be protected by them in this mortal life and conducted hereafter to eternal glory."],
+  [
+    "Archangels",
+    "may the Lord give us perseverance in faith and in all good works, that we may attain the glory of Heaven.",
+  ],
+  [
+    "Angels",
+    "may the Lord grant us to be protected by them in this mortal life and conducted hereafter to eternal glory.",
+  ],
 ];
 
 function chapletItems(): TemplateItem[] {
@@ -141,7 +150,12 @@ function chapletItems(): TemplateItem[] {
   const add = (partial: Partial<TemplateItem> & { kind: TemplateItem["kind"] }) =>
     items.push(ti("tpl-chaplet-michael", p++, partial));
 
-  add({ kind: "salutation", label: "Opening", versicle: "O God, come to my assistance.", response: "O Lord, make haste to help me." });
+  add({
+    kind: "salutation",
+    label: "Opening",
+    versicle: "O God, come to my assistance.",
+    response: "O Lord, make haste to help me.",
+  });
   add({ kind: "prayer", prayer_id: "glory-be" });
   MICHAEL_CHOIRS.forEach(([choir, petition], i) => {
     add({
@@ -152,14 +166,23 @@ function chapletItems(): TemplateItem[] {
     add({ kind: "prayer", prayer_id: "our-father" });
     add({ kind: "prayer", prayer_id: "hail-mary", repetition_count: 3 });
   });
-  add({ kind: "custom", label: "Four Our Fathers", body: "Pray one Our Father in honor of each: St. Michael, St. Gabriel, St. Raphael, and our Guardian Angel." });
+  add({
+    kind: "custom",
+    label: "Four Our Fathers",
+    body: "Pray one Our Father in honor of each: St. Michael, St. Gabriel, St. Raphael, and our Guardian Angel.",
+  });
   add({ kind: "prayer", prayer_id: "our-father", repetition_count: 4 });
   add({
     kind: "custom",
     label: "Closing Prayer",
     body: `O glorious prince St. Michael, chief and commander of the heavenly hosts, guardian of souls, vanquisher of rebel spirits, servant in the house of the Divine King, and our admirable conductor: deliver us from all evil, who turn to you with confidence, and enable us by your gracious protection to serve God more faithfully every day.`,
   });
-  add({ kind: "salutation", label: "Versicle", versicle: "Pray for us, O glorious St. Michael, Prince of the Church of Jesus Christ,", response: "That we may be made worthy of His promises." });
+  add({
+    kind: "salutation",
+    label: "Versicle",
+    versicle: "Pray for us, O glorious St. Michael, Prince of the Church of Jesus Christ,",
+    response: "That we may be made worthy of His promises.",
+  });
   add({
     kind: "custom",
     label: "Let us pray",
@@ -178,44 +201,124 @@ const mysteryData: Array<{
     set: "Joyful",
     weekdays: [1, 6],
     items: [
-      ["The Annunciation", "The angel Gabriel announces that Mary will bear the Son of God.", "Mary hears an impossible word and answers with trust: 'Be it done unto me according to thy word.' Ask for the grace of humble, unhesitating yes."],
-      ["The Visitation", "Mary carries Christ to Elizabeth.", "Mary rises and goes in haste to serve. Christ within her leaps in another's heart. Ask for the grace of charity that moves quickly."],
-      ["The Nativity", "Christ is born in Bethlehem.", "The Word becomes small enough to be held. Ask for the grace of poverty of spirit and wonder."],
-      ["The Presentation", "Jesus is presented in the Temple.", "Simeon holds the promise and foretells the sword. Ask for the grace of obedience and of offering what we love most."],
-      ["The Finding in the Temple", "Jesus is found among the teachers.", "Three days of searching end in the Father's house. Ask for the grace of perseverance when God seems hidden."],
+      [
+        "The Annunciation",
+        "The angel Gabriel announces that Mary will bear the Son of God.",
+        "Mary hears an impossible word and answers with trust: 'Be it done unto me according to thy word.' Ask for the grace of humble, unhesitating yes.",
+      ],
+      [
+        "The Visitation",
+        "Mary carries Christ to Elizabeth.",
+        "Mary rises and goes in haste to serve. Christ within her leaps in another's heart. Ask for the grace of charity that moves quickly.",
+      ],
+      [
+        "The Nativity",
+        "Christ is born in Bethlehem.",
+        "The Word becomes small enough to be held. Ask for the grace of poverty of spirit and wonder.",
+      ],
+      [
+        "The Presentation",
+        "Jesus is presented in the Temple.",
+        "Simeon holds the promise and foretells the sword. Ask for the grace of obedience and of offering what we love most.",
+      ],
+      [
+        "The Finding in the Temple",
+        "Jesus is found among the teachers.",
+        "Three days of searching end in the Father's house. Ask for the grace of perseverance when God seems hidden.",
+      ],
     ],
   },
   {
     set: "Sorrowful",
     weekdays: [2, 5],
     items: [
-      ["The Agony in the Garden", "Jesus prays in Gethsemane.", "He sees every sin and every sorrow and still says, 'Not my will but Thine.' Ask for the grace of surrender."],
-      ["The Scourging at the Pillar", "Jesus is scourged.", "Innocence bears what guilt deserved. Ask for the grace of purity and self-restraint."],
-      ["The Crowning with Thorns", "Jesus is crowned with thorns.", "The King is mocked. Ask for the grace of moral courage when faith is ridiculed."],
-      ["The Carrying of the Cross", "Jesus carries His cross to Calvary.", "He falls, He rises, He goes on. Ask for the grace of patience under the daily weight."],
-      ["The Crucifixion", "Jesus dies on the Cross.", "From the Cross He gives us His Mother and His pardon. Ask for the grace of final perseverance."],
+      [
+        "The Agony in the Garden",
+        "Jesus prays in Gethsemane.",
+        "He sees every sin and every sorrow and still says, 'Not my will but Thine.' Ask for the grace of surrender.",
+      ],
+      [
+        "The Scourging at the Pillar",
+        "Jesus is scourged.",
+        "Innocence bears what guilt deserved. Ask for the grace of purity and self-restraint.",
+      ],
+      [
+        "The Crowning with Thorns",
+        "Jesus is crowned with thorns.",
+        "The King is mocked. Ask for the grace of moral courage when faith is ridiculed.",
+      ],
+      [
+        "The Carrying of the Cross",
+        "Jesus carries His cross to Calvary.",
+        "He falls, He rises, He goes on. Ask for the grace of patience under the daily weight.",
+      ],
+      [
+        "The Crucifixion",
+        "Jesus dies on the Cross.",
+        "From the Cross He gives us His Mother and His pardon. Ask for the grace of final perseverance.",
+      ],
     ],
   },
   {
     set: "Glorious",
     weekdays: [3, 7],
     items: [
-      ["The Resurrection", "Christ rises from the dead.", "The stone is rolled away from every tomb we live in. Ask for the grace of living faith."],
-      ["The Ascension", "Christ ascends into heaven.", "Our humanity is carried into the life of God. Ask for the grace of hope."],
-      ["The Descent of the Holy Spirit", "The Spirit comes upon the Apostles.", "Fear becomes proclamation. Ask for the grace of the Holy Spirit's gifts."],
-      ["The Assumption", "Mary is assumed into heaven.", "The first disciple arrives home whole. Ask for the grace of a holy death."],
-      ["The Coronation of Mary", "Mary is crowned Queen of Heaven and Earth.", "She reigns by having served. Ask for the grace of trust in her intercession."],
+      [
+        "The Resurrection",
+        "Christ rises from the dead.",
+        "The stone is rolled away from every tomb we live in. Ask for the grace of living faith.",
+      ],
+      [
+        "The Ascension",
+        "Christ ascends into heaven.",
+        "Our humanity is carried into the life of God. Ask for the grace of hope.",
+      ],
+      [
+        "The Descent of the Holy Spirit",
+        "The Spirit comes upon the Apostles.",
+        "Fear becomes proclamation. Ask for the grace of the Holy Spirit's gifts.",
+      ],
+      [
+        "The Assumption",
+        "Mary is assumed into heaven.",
+        "The first disciple arrives home whole. Ask for the grace of a holy death.",
+      ],
+      [
+        "The Coronation of Mary",
+        "Mary is crowned Queen of Heaven and Earth.",
+        "She reigns by having served. Ask for the grace of trust in her intercession.",
+      ],
     ],
   },
   {
     set: "Luminous",
     weekdays: [4],
     items: [
-      ["The Baptism in the Jordan", "Jesus is baptized by John.", "The Father names His Beloved. Ask for the grace of fidelity to your baptism."],
-      ["The Wedding at Cana", "Water is changed into wine.", "'Do whatever He tells you.' Ask for the grace of listening to Mary's counsel."],
-      ["The Proclamation of the Kingdom", "Jesus calls to conversion.", "The Kingdom is near, and mercy is offered. Ask for the grace of repentance."],
-      ["The Transfiguration", "Christ is transfigured on the mountain.", "Glory shines through the ordinary face of a friend. Ask for the grace of contemplation."],
-      ["The Institution of the Eucharist", "Christ gives His Body and Blood.", "He stays. Ask for the grace of eucharistic love."],
+      [
+        "The Baptism in the Jordan",
+        "Jesus is baptized by John.",
+        "The Father names His Beloved. Ask for the grace of fidelity to your baptism.",
+      ],
+      [
+        "The Wedding at Cana",
+        "Water is changed into wine.",
+        "'Do whatever He tells you.' Ask for the grace of listening to Mary's counsel.",
+      ],
+      [
+        "The Proclamation of the Kingdom",
+        "Jesus calls to conversion.",
+        "The Kingdom is near, and mercy is offered. Ask for the grace of repentance.",
+      ],
+      [
+        "The Transfiguration",
+        "Christ is transfigured on the mountain.",
+        "Glory shines through the ordinary face of a friend. Ask for the grace of contemplation.",
+      ],
+      [
+        "The Institution of the Eucharist",
+        "Christ gives His Body and Blood.",
+        "He stays. Ask for the grace of eucharistic love.",
+      ],
     ],
   },
 ];
@@ -288,46 +391,12 @@ function rosaryItems(templateId: string, extras: { fatima: boolean; peace: boole
 const rosaryItemsList = rosaryItems("tpl-rosary", { fatima: true, peace: false });
 const caroItemsList = rosaryItems("tpl-caro-rosary", { fatima: true, peace: true });
 
+// The 54-day rosary is a plain daily Rosary devotion; its "54 days" lives in the
+// devotion's default recurrence (daily × 54), not a separate novena subsystem.
 const novenaItems: TemplateItem[] = rosaryItems("tpl-54-novena", {
   fatima: true,
   peace: false,
 }).map((item) => ({ ...item, template_id: "tpl-54-novena" }));
-// Phase-specific closing prayers for the 54-day novena.
-novenaItems.push(
-  ti("tpl-54-novena", novenaItems.length, {
-    kind: "prayer",
-    prayer_id: "novena-petition",
-    condition_tag: "petition",
-  }),
-  ti("tpl-54-novena", novenaItems.length + 1, {
-    kind: "prayer",
-    prayer_id: "novena-thanksgiving",
-    condition_tag: "thanksgiving",
-  }),
-);
-
-const novenaPrayers = [
-  prayer(
-    "novena-petition",
-    "54-Day Novena — Petition Prayer",
-    "devotional",
-    `Hail, Queen of the Most Holy Rosary, my Mother Mary, hail! At thy feet I humbly kneel to offer thee a Crown of Roses — snow-white buds to remind thee of thy joys, each bud recalling to thee a holy mystery.
-
-Sweet Mother, in petition I offer this Rosary, and I beg of thee to obtain for me the favor I ask, if it be the will of God.`,
-    ["novena", "petition"],
-    "src-54-day-pdf",
-  ),
-  prayer(
-    "novena-thanksgiving",
-    "54-Day Novena — Thanksgiving Prayer",
-    "devotional",
-    `Hail, Queen of the Most Holy Rosary, my Mother Mary, hail! At thy feet I gratefully kneel to offer thee a Crown of Roses in thanksgiving for the graces given.
-
-Sweet Mother, I offer this Rosary in thanksgiving, whatever the answer to my petition may have been, trusting in thy care.`,
-    ["novena", "thanksgiving"],
-    "src-54-day-pdf",
-  ),
-];
 
 // Pray with the Pope — a minimal, generic external-link devotion (no pre-added
 // prayers). Starting it simply opens the selected/default source.
@@ -336,8 +405,15 @@ const popeItems: TemplateItem[] = [
     kind: "external_link",
     label: "Pray with the Pope",
     external_options: [
-      { label: "Click to Pray — Pope's Worldwide Prayer Network", url: "https://clicktopray.org/", is_default: true },
-      { label: "Vatican News — Pope's Monthly Intention", url: "https://www.vaticannews.va/en/pope/prayer-intentions.html" },
+      {
+        label: "Click to Pray — Pope's Worldwide Prayer Network",
+        url: "https://clicktopray.org/",
+        is_default: true,
+      },
+      {
+        label: "Vatican News — Pope's Monthly Intention",
+        url: "https://www.vaticannews.va/en/pope/prayer-intentions.html",
+      },
     ],
   }),
 ];
@@ -354,8 +430,14 @@ const LUMINOUS_SCRIPTURE: Array<{
     title: "The Baptism of the Lord in the Jordan",
     description: "The heavens open and the Father proclaims Jesus His beloved Son.",
     scripture: [
-      ["Mt 3:13", "Then cometh Jesus from Galilee to the Jordan, unto John, to be baptized by him."],
-      ["Mt 3:14", "But John stayed him, saying: I ought to be baptized by thee, and comest thou to me?"],
+      [
+        "Mt 3:13",
+        "Then cometh Jesus from Galilee to the Jordan, unto John, to be baptized by him.",
+      ],
+      [
+        "Mt 3:14",
+        "But John stayed him, saying: I ought to be baptized by thee, and comest thou to me?",
+      ],
       ["Mt 3:15", "Suffer it to be so now; for so it becometh us to fulfil all justice."],
       ["Mt 3:16", "Jesus being baptized, forthwith came out of the water."],
       ["Mt 3:16", "And lo, the heavens were opened to him."],
@@ -376,7 +458,10 @@ const LUMINOUS_SCRIPTURE: Array<{
       ["Jn 2:4", "Jesus saith to her: Woman, my hour is not yet come."],
       ["Jn 2:5", "His mother saith to the waiters: Whatsoever he shall say to you, do ye."],
       ["Jn 2:6", "Now there were set there six waterpots of stone."],
-      ["Jn 2:7", "Jesus saith to them: Fill the waterpots with water. And they filled them up to the brim."],
+      [
+        "Jn 2:7",
+        "Jesus saith to them: Fill the waterpots with water. And they filled them up to the brim.",
+      ],
       ["Jn 2:8", "Draw out now, and carry to the chief steward of the feast."],
       ["Jn 2:9", "The steward tasted the water made wine, and knew not whence it was."],
       ["Jn 2:11", "This beginning of miracles did Jesus; and his disciples believed in him."],
@@ -402,7 +487,10 @@ const LUMINOUS_SCRIPTURE: Array<{
     title: "The Transfiguration",
     description: "On the mountain the glory of Christ shines, and the Father says: Hear ye him.",
     scripture: [
-      ["Mt 17:1", "Jesus taketh Peter and James and John, and bringeth them up into a high mountain."],
+      [
+        "Mt 17:1",
+        "Jesus taketh Peter and James and John, and bringeth them up into a high mountain.",
+      ],
       ["Mt 17:2", "And he was transfigured before them."],
       ["Mt 17:2", "And his face did shine as the sun."],
       ["Mt 17:2", "And his garments became white as snow."],
@@ -427,7 +515,10 @@ const LUMINOUS_SCRIPTURE: Array<{
       ["Lk 22:19", "Do this for a commemoration of me."],
       ["Jn 6:51", "I am the living bread which came down from heaven."],
       ["Jn 6:52", "The bread that I will give is my flesh, for the life of the world."],
-      ["1 Cor 11:26", "As often as you shall eat this bread, you shall shew the death of the Lord."],
+      [
+        "1 Cor 11:26",
+        "As often as you shall eat this bread, you shall shew the death of the Lord.",
+      ],
     ],
   },
 ];
@@ -457,12 +548,16 @@ function scripturalRosaryItems(): TemplateItem[] {
   });
   add({ kind: "prayer", prayer_id: "hail-holy-queen" });
   // Single-line closing salutation (no response), per §9A.
-  add({ kind: "custom", label: "Closing", body: "Lord Jesus, help us to persevere in living out our baptismal promises." });
+  add({
+    kind: "custom",
+    label: "Closing",
+    body: "Lord Jesus, help us to persevere in living out our baptismal promises.",
+  });
   return items;
 }
 const scripturalRosaryItemsList = scripturalRosaryItems();
 
-const allPrayers = [...base, ...novenaPrayers];
+const allPrayers = base;
 
 export function createSeedDatabase(): Database {
   return {
@@ -534,36 +629,14 @@ export function createSeedDatabase(): Database {
       {
         id: "tpl-54-novena",
         name: "54-Day Rosary Novena",
-        description:
-          "27 days of petition followed by 27 days of thanksgiving, with a rotating mystery cycle.",
-        kind: "novena",
+        description: "A full Rosary prayed daily for 54 days.",
+        kind: "rosary",
         mystery_presentation: "title_and_description",
         mystery_count: 5,
+        default_recurrence: { freq: "daily", interval: 1, count: 54 },
         source_id: "src-54-day-pdf",
         built_in: true,
         created_at: now,
-        novena: {
-          duration_days: 54,
-          phases: [
-            {
-              id: "phase-petition",
-              name: "Petition",
-              start_day: 1,
-              end_day: 27,
-              condition_tag: "petition",
-              note: "Offered in petition for the intention.",
-            },
-            {
-              id: "phase-thanksgiving",
-              name: "Thanksgiving",
-              start_day: 28,
-              end_day: 54,
-              condition_tag: "thanksgiving",
-              note: "Offered in thanksgiving, whatever the answer.",
-            },
-          ],
-          mystery_cycle: ["set-joyful", "set-sorrowful", "set-glorious", "set-luminous"],
-        },
       },
       {
         id: "tpl-pray-with-pope",
@@ -614,7 +687,6 @@ export function createSeedDatabase(): Database {
     session_items: [],
     session_plans: [],
     intentions: [],
-    novena_instances: [],
     import_drafts: [],
     reflections: [],
     mass_experiences: [],
@@ -642,46 +714,10 @@ export function createSeedDatabase(): Database {
       {
         id: "howto-rosary",
         title: "How to Pray the Rosary",
-        summary:
-          "The traditional order of the Rosary. This page is instruction only — tap Start Prayer for the full text of every prayer.",
+        summary: "Reference guides and pages that walk through praying the Rosary.",
         template_id: "tpl-rosary",
-        steps: [
-          "Make the Sign of the Cross and say the Apostles' Creed.",
-          "Say one Our Father.",
-          "Say three Hail Marys for faith, hope, and charity.",
-          "Say one Glory Be.",
-          "Announce the first mystery, then say one Our Father.",
-          "Say ten Hail Marys while meditating on the mystery.",
-          "Say one Glory Be, then the Fatima Prayer.",
-          "Repeat for the remaining four decades.",
-          "Close with the Hail, Holy Queen and the Sign of the Cross.",
-        ].map((text, i) => ({
-          id: `howto-rosary-s${i}`,
-          how_to_id: "howto-rosary",
-          position: i,
-          text,
-        })),
-      },
-      {
-        id: "howto-novena",
-        title: "How to Pray a Novena",
-        summary:
-          "A novena is a devotion prayed over a set number of days. Duration and daily structure vary by novena.",
-        template_id: "tpl-54-novena",
-        source_id: "src-54-day-pdf",
-        steps: [
-          "Choose your intention before you begin.",
-          "Pray each day without interruption for the full duration.",
-          "For the 54-Day Rosary Novena, pray a full Rosary each day.",
-          "Days 1 through 27 are prayed in petition.",
-          "Days 28 through 54 are prayed in thanksgiving.",
-          "Rotate the mysteries: Joyful, Sorrowful, then Glorious, repeating in that order.",
-        ].map((text, i) => ({
-          id: `howto-novena-s${i}`,
-          how_to_id: "howto-novena",
-          position: i,
-          text,
-        })),
+        steps: [],
+        links: ["https://www.usccb.org/how-to-pray-the-rosary"],
       },
     ],
   };

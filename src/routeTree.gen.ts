@@ -14,12 +14,11 @@ import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as FormationRouteImport } from './routes/formation'
 import { Route as ImportRouteImport } from './routes/import'
 import { Route as MoreRouteImport } from './routes/more'
-import { Route as NovenasRouteImport } from './routes/novenas'
 import { Route as PrayRouteImport } from './routes/pray'
 import { Route as PrayersRouteImport } from './routes/prayers'
 import { Route as ReflectionsRouteImport } from './routes/reflections'
 import { Route as WordRouteImport } from './routes/word'
-import { Route as HowtoHowToIdRouteImport } from './routes/howto.$howToId'
+import { Route as DevotionDevotionIdRouteImport } from './routes/devotion.$devotionId'
 import { Route as PrayerPrayerIdRouteImport } from './routes/prayer.$prayerId'
 import { Route as SessionSessionIdRouteImport } from './routes/session.$sessionId'
 import { Route as TemplateTemplateIdRouteImport } from './routes/template.$templateId'
@@ -49,11 +48,6 @@ const MoreRoute = MoreRouteImport.update({
   path: '/more',
   getParentRoute: () => rootRouteImport,
 } as any)
-const NovenasRoute = NovenasRouteImport.update({
-  id: '/novenas',
-  path: '/novenas',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const PrayRoute = PrayRouteImport.update({
   id: '/pray',
   path: '/pray',
@@ -74,9 +68,9 @@ const WordRoute = WordRouteImport.update({
   path: '/word',
   getParentRoute: () => rootRouteImport,
 } as any)
-const HowtoHowToIdRoute = HowtoHowToIdRouteImport.update({
-  id: '/howto/$howToId',
-  path: '/howto/$howToId',
+const DevotionDevotionIdRoute = DevotionDevotionIdRouteImport.update({
+  id: '/devotion/$devotionId',
+  path: '/devotion/$devotionId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrayerPrayerIdRoute = PrayerPrayerIdRouteImport.update({
@@ -101,12 +95,11 @@ export interface FileRoutesByFullPath {
   '/formation': typeof FormationRoute
   '/import': typeof ImportRoute
   '/more': typeof MoreRoute
-  '/novenas': typeof NovenasRoute
   '/pray': typeof PrayRoute
   '/prayers': typeof PrayersRoute
   '/reflections': typeof ReflectionsRoute
   '/word': typeof WordRoute
-  '/howto/$howToId': typeof HowtoHowToIdRoute
+  '/devotion/$devotionId': typeof DevotionDevotionIdRoute
   '/prayer/$prayerId': typeof PrayerPrayerIdRoute
   '/session/$sessionId': typeof SessionSessionIdRoute
   '/template/$templateId': typeof TemplateTemplateIdRoute
@@ -117,12 +110,11 @@ export interface FileRoutesByTo {
   '/formation': typeof FormationRoute
   '/import': typeof ImportRoute
   '/more': typeof MoreRoute
-  '/novenas': typeof NovenasRoute
   '/pray': typeof PrayRoute
   '/prayers': typeof PrayersRoute
   '/reflections': typeof ReflectionsRoute
   '/word': typeof WordRoute
-  '/howto/$howToId': typeof HowtoHowToIdRoute
+  '/devotion/$devotionId': typeof DevotionDevotionIdRoute
   '/prayer/$prayerId': typeof PrayerPrayerIdRoute
   '/session/$sessionId': typeof SessionSessionIdRoute
   '/template/$templateId': typeof TemplateTemplateIdRoute
@@ -134,12 +126,11 @@ export interface FileRoutesById {
   '/formation': typeof FormationRoute
   '/import': typeof ImportRoute
   '/more': typeof MoreRoute
-  '/novenas': typeof NovenasRoute
   '/pray': typeof PrayRoute
   '/prayers': typeof PrayersRoute
   '/reflections': typeof ReflectionsRoute
   '/word': typeof WordRoute
-  '/howto/$howToId': typeof HowtoHowToIdRoute
+  '/devotion/$devotionId': typeof DevotionDevotionIdRoute
   '/prayer/$prayerId': typeof PrayerPrayerIdRoute
   '/session/$sessionId': typeof SessionSessionIdRoute
   '/template/$templateId': typeof TemplateTemplateIdRoute
@@ -152,12 +143,11 @@ export interface FileRouteTypes {
     | '/formation'
     | '/import'
     | '/more'
-    | '/novenas'
     | '/pray'
     | '/prayers'
     | '/reflections'
     | '/word'
-    | '/howto/$howToId'
+    | '/devotion/$devotionId'
     | '/prayer/$prayerId'
     | '/session/$sessionId'
     | '/template/$templateId'
@@ -168,12 +158,11 @@ export interface FileRouteTypes {
     | '/formation'
     | '/import'
     | '/more'
-    | '/novenas'
     | '/pray'
     | '/prayers'
     | '/reflections'
     | '/word'
-    | '/howto/$howToId'
+    | '/devotion/$devotionId'
     | '/prayer/$prayerId'
     | '/session/$sessionId'
     | '/template/$templateId'
@@ -184,12 +173,11 @@ export interface FileRouteTypes {
     | '/formation'
     | '/import'
     | '/more'
-    | '/novenas'
     | '/pray'
     | '/prayers'
     | '/reflections'
     | '/word'
-    | '/howto/$howToId'
+    | '/devotion/$devotionId'
     | '/prayer/$prayerId'
     | '/session/$sessionId'
     | '/template/$templateId'
@@ -201,12 +189,11 @@ export interface RootRouteChildren {
   FormationRoute: typeof FormationRoute
   ImportRoute: typeof ImportRoute
   MoreRoute: typeof MoreRoute
-  NovenasRoute: typeof NovenasRoute
   PrayRoute: typeof PrayRoute
   PrayersRoute: typeof PrayersRoute
   ReflectionsRoute: typeof ReflectionsRoute
   WordRoute: typeof WordRoute
-  HowtoHowToIdRoute: typeof HowtoHowToIdRoute
+  DevotionDevotionIdRoute: typeof DevotionDevotionIdRoute
   PrayerPrayerIdRoute: typeof PrayerPrayerIdRoute
   SessionSessionIdRoute: typeof SessionSessionIdRoute
   TemplateTemplateIdRoute: typeof TemplateTemplateIdRoute
@@ -249,13 +236,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MoreRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/novenas': {
-      id: '/novenas'
-      path: '/novenas'
-      fullPath: '/novenas'
-      preLoaderRoute: typeof NovenasRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/pray': {
       id: '/pray'
       path: '/pray'
@@ -284,11 +264,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WordRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/howto/$howToId': {
-      id: '/howto/$howToId'
-      path: '/howto/$howToId'
-      fullPath: '/howto/$howToId'
-      preLoaderRoute: typeof HowtoHowToIdRouteImport
+    '/devotion/$devotionId': {
+      id: '/devotion/$devotionId'
+      path: '/devotion/$devotionId'
+      fullPath: '/devotion/$devotionId'
+      preLoaderRoute: typeof DevotionDevotionIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/prayer/$prayerId': {
@@ -321,12 +301,11 @@ const rootRouteChildren: RootRouteChildren = {
   FormationRoute: FormationRoute,
   ImportRoute: ImportRoute,
   MoreRoute: MoreRoute,
-  NovenasRoute: NovenasRoute,
   PrayRoute: PrayRoute,
   PrayersRoute: PrayersRoute,
   ReflectionsRoute: ReflectionsRoute,
   WordRoute: WordRoute,
-  HowtoHowToIdRoute: HowtoHowToIdRoute,
+  DevotionDevotionIdRoute: DevotionDevotionIdRoute,
   PrayerPrayerIdRoute: PrayerPrayerIdRoute,
   SessionSessionIdRoute: SessionSessionIdRoute,
   TemplateTemplateIdRoute: TemplateTemplateIdRoute,

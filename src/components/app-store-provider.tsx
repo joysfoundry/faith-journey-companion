@@ -33,6 +33,12 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     return result.templateId;
   }, []);
 
+  const duplicateTemplate = useCallback((templateId: string) => {
+    const result = mutations.duplicateTemplate(dbRef.current, templateId);
+    setDb(result.db);
+    return result.templateId;
+  }, []);
+
   const startSinglePrayer = useCallback(
     (prayerId: string, ctx: Parameters<typeof mutations.startSinglePrayer>[2] = {}) => {
       const result = mutations.startSinglePrayer(dbRef.current, prayerId, ctx);
@@ -87,6 +93,8 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
         items: Parameters<typeof mutations.saveTemplate>[2],
       ) => setDb((d) => mutations.saveTemplate(d, t, items)),
       deleteTemplate: (id: string) => setDb((d) => mutations.deleteTemplate(d, id)),
+      toggleTemplateFavorite: (id: string) => setDb((d) => mutations.toggleTemplateFavorite(d, id)),
+      duplicateTemplate,
       deleteHowTo: (id: string) => setDb((d) => mutations.deleteHowTo(d, id)),
       saveHowTo: (h: Parameters<typeof mutations.saveHowTo>[1]) =>
         setDb((d) => mutations.saveHowTo(d, h)),
@@ -103,9 +111,6 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       deleteSessionPlan: (id: string) => setDb((d) => mutations.deleteSessionPlan(d, id)),
       addIntention: (i: Parameters<typeof mutations.addIntention>[1]) =>
         setDb((d) => mutations.addIntention(d, i)),
-      addNovenaInstance: (n: Parameters<typeof mutations.addNovenaInstance>[1]) =>
-        setDb((d) => mutations.addNovenaInstance(d, n)),
-      deleteNovenaInstance: (id: string) => setDb((d) => mutations.deleteNovenaInstance(d, id)),
       saveImportDraft: (draft: Parameters<typeof mutations.saveImportDraft>[1]) =>
         setDb((d) => mutations.saveImportDraft(d, draft)),
       applyImportDraft: (id: string) => setDb((d) => mutations.applyImportDraft(d, id)),
@@ -124,7 +129,15 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       addMassExperience: (m: Parameters<typeof mutations.addMassExperience>[1]) =>
         setDb((d) => mutations.addMassExperience(d, m)),
     }),
-    [db, ready, startSession, startBuiltSession, startSinglePrayer, createTemplateFromHowTo],
+    [
+      db,
+      ready,
+      startSession,
+      startBuiltSession,
+      startSinglePrayer,
+      createTemplateFromHowTo,
+      duplicateTemplate,
+    ],
   );
 
   return <AppStoreContext.Provider value={value}>{children}</AppStoreContext.Provider>;

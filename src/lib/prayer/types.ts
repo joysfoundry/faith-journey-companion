@@ -199,7 +199,7 @@ export interface TemplateItem {
   condition_tag?: string | undefined;
 }
 
-export type TemplateKind = "standard" | "rosary" | "novena";
+export type TemplateKind = "standard" | "rosary";
 
 export interface PrayerTemplate {
   id: ID;
@@ -212,42 +212,25 @@ export interface PrayerTemplate {
    * instructions printed alongside the prayers, or context copied from a URL.
    */
   notes?: string | undefined;
-  /** Rosary/Novena helper: how many mystery placeholders the template expects. */
+  /** Rosary helper: how many mystery placeholders the template expects. */
   mystery_count: number;
-  /** Novena config — duration is never assumed to be nine days. */
-  novena?: NovenaConfig | undefined;
+  /**
+   * Default schedule this devotion suggests — pre-fills the Session Builder when
+   * you build from it. A 54-day rosary carries `{ freq:"daily", count:54 }`.
+   */
+  default_recurrence?: Recurrence | undefined;
+  /** Default Liturgy-of-the-Hours tag this devotion is prayed at. */
+  default_hour?: PrayerHour | undefined;
+  /** Default clock time ("HH:MM", 24h) this devotion is prayed at. */
+  default_start_time?: string | undefined;
   /** Pin the mysteries to one set (e.g. Luminous); absent = resolve by day. */
   fixed_mystery_set_id?: ID | undefined;
   /** Audio of the whole devotion — links now; uploads later. */
   media?: PrayerMedia[] | undefined;
   source_id?: ID | undefined;
   built_in: boolean;
-  created_at: string;
-}
-
-export interface NovenaPhase {
-  id: ID;
-  name: string;
-  start_day: number;
-  end_day: number;
-  /** Prayers tagged with this condition tag are included during the phase. */
-  condition_tag?: string | undefined;
-  note?: string | undefined;
-}
-
-export interface NovenaConfig {
-  duration_days: number;
-  phases: NovenaPhase[];
-  /** Rotating mystery cycle by MysterySet id, applied day by day. */
-  mystery_cycle: ID[];
-}
-
-export interface NovenaInstance {
-  id: ID;
-  template_id: ID;
-  name: string;
-  start_date: string; // yyyy-mm-dd
-  intention_id?: ID | undefined;
+  /** Starred in the Prayers → Devotions list. */
+  favorite?: boolean | undefined;
   created_at: string;
 }
 
@@ -277,9 +260,6 @@ export interface ListenSource {
 export interface SessionContext {
   date: string; // yyyy-mm-dd
   mystery_set_id?: ID | undefined;
-  novena_instance_id?: ID | undefined;
-  novena_day?: number | undefined;
-  novena_phase_id?: ID | undefined;
   progress_mode: ProgressMode;
   mystery_presentation?: MysteryPresentation | undefined;
   include_optional: boolean;
@@ -303,7 +283,27 @@ export interface PrayerSession {
   cursor: number;
 }
 
-export type Recurrence = "none" | "daily" | "weekly" | "monthly" | "custom";
+export type Frequency = "none" | "daily" | "weekly" | "monthly" | "yearly";
+
+/**
+ * Calendar-style recurrence — a subset of iCalendar RRULE (FREQ/INTERVAL/COUNT/
+ * UNTIL). One model for everything: "once" is `{ freq: "none" }`, a 9-day novena
+ * is `{ freq: "daily", count: 9 }`, a 54-day rosary is `{ freq: "daily", count:
+ * 54 }`. The "Day N of M" a session shows is derived from this, not a separate
+ * counter. Shaped so a real calendar (Google/ICS) can sync it later.
+ */
+export interface Recurrence {
+  freq: Frequency;
+  /** Every N units (default 1). */
+  interval: number;
+  /** Total occurrences; absent = open-ended. Gives the "of M" in "Day N of M". */
+  count?: number | undefined;
+  /** yyyy-mm-dd end date; an alternative to `count`. */
+  until?: string | undefined;
+}
+
+/** "Once" — no repetition. */
+export const RECURRENCE_ONCE: Recurrence = { freq: "none", interval: 1 };
 
 /**
  * A canonical hour of the Liturgy of the Hours a session may be tied to.
@@ -327,14 +327,18 @@ export interface SessionPlan {
   template_id: ID;
   /** User's name for it, e.g. "Monthly Family Rosary". Falls back to template name. */
   purpose?: string | undefined;
-  /** Date to pray (yyyy-mm-dd); absent = no fixed date. */
+  /** Current/next date to pray (yyyy-mm-dd); advances on finish. Absent = no fixed date. */
   date?: string | undefined;
+  /** Fixed series anchor (DTSTART, yyyy-mm-dd) the "Day N of M" index counts from. */
+  starts_on?: string | undefined;
   recurrence: Recurrence;
-  /** Free-text detail when recurrence is "custom" (e.g. "every 1st Friday"). */
+  /** Rare free-text detail the structured recurrence can't express. */
   recurrence_note?: string | undefined;
-  /** Liturgy-of-the-Hours slot this session is prayed at; absent = no set hour. */
+  /** Liturgy-of-the-Hours slot — a filterable tag, not a clock time; absent = none. */
   hour?: PrayerHour | undefined;
-  /** Estimated time to pray, in minutes. */
+  /** Concrete clock time to pray ("HH:MM", 24h); absent = only the hour tag. Calendar-ready. */
+  start_time?: string | undefined;
+  /** Estimated time to pray, in minutes (app-computed). Doubles as calendar event length. */
   duration_min?: number | undefined;
   /** The builder choices, applied verbatim when the plan is prayed. */
   context: Partial<SessionContext>;
@@ -411,7 +415,6 @@ export type ImportClassification =
   | "template_structure"
   | "mystery"
   | "mystery_meditation"
-  | "novena"
   | "source_material";
 
 export interface ImportCandidate {
@@ -427,7 +430,7 @@ export interface ImportCandidate {
   /** Proposed taxonomy for prayer candidates; editable during review. */
   prayer_type?: PrayerTypeValue | undefined;
   expression_type?: ExpressionTypeValue | undefined;
-  /** For how_to candidates: the specific template/novena these instructions describe. */
+  /** For how_to candidates: the specific template these instructions describe. */
   link_template_id?: ID | undefined;
 }
 
@@ -447,6 +450,10 @@ export interface ImportDraft {
         description?: string | undefined;
         /** Notes from the source about the devotion (promises, when to pray it, context). */
         notes?: string | undefined;
+        /** Detected default schedule (e.g. a "54-day" → daily × 54); editable before saving. */
+        recurrence?: Recurrence | undefined;
+        hour?: PrayerHour | undefined;
+        start_time?: string | undefined;
       }
     | undefined;
   created_at: string;
@@ -530,7 +537,6 @@ export interface Database {
   session_plans: SessionPlan[];
   how_tos: HowTo[];
   intentions: Intention[];
-  novena_instances: NovenaInstance[];
   import_drafts: ImportDraft[];
   reflections: Reflection[];
   learning_items: LearningItem[];

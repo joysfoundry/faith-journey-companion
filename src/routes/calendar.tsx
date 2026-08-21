@@ -4,7 +4,7 @@ import { AppShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useApp } from "@/lib/prayer/store";
-import { defaultContext, resolveMysterySet, resolveNovenaDay, todayISO } from "@/lib/prayer/compiler";
+import { defaultContext, resolveMysterySet, todayISO } from "@/lib/prayer/compiler";
 
 export const Route = createFileRoute("/calendar")({
   head: () => ({
@@ -12,12 +12,12 @@ export const Route = createFileRoute("/calendar")({
       { title: "Prayer Calendar — Faith Journey" },
       {
         name: "description",
-        content: "See the mysteries for any date, your novena days, and the sessions you have prayed.",
+        content: "See the mysteries for any date and the sessions you have prayed.",
       },
       { property: "og:title", content: "Prayer Calendar — Faith Journey" },
       {
         property: "og:description",
-        content: "Date-based mystery selection and novena day tracking at a glance.",
+        content: "Date-based mystery selection at a glance.",
       },
     ],
   }),
@@ -38,7 +38,7 @@ function CalendarPage() {
   const completed = db.sessions.filter((s) => s.completed_at);
 
   return (
-    <AppShell title="Calendar" subtitle="Mysteries, novena days, and what you have prayed.">
+    <AppShell title="Calendar" subtitle="Mysteries and what you have prayed.">
       <div className="space-y-4">
         <div className="soft-card p-4">
           <Input
@@ -72,27 +72,6 @@ function CalendarPage() {
             Pray these mysteries
           </Button>
         </div>
-
-        {db.novena_instances.length > 0 ? (
-          <section className="soft-card p-4">
-            <p className="eyebrow">Novena days</p>
-            <ul className="mt-2 space-y-2 text-sm">
-              {db.novena_instances.map((instance) => {
-                const template = db.templates.find((t) => t.id === instance.template_id);
-                if (!template) return null;
-                const res = resolveNovenaDay(template, instance, date);
-                return (
-                  <li key={instance.id}>
-                    <span className="font-medium">{instance.name}</span> —{" "}
-                    {res.out_of_range
-                      ? "not in range"
-                      : `Day ${res.day}${res.phase ? ` · ${res.phase.name}` : ""}`}
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-        ) : null}
 
         <section className="soft-card p-4">
           <p className="eyebrow">Prayed</p>

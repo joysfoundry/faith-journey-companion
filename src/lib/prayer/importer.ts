@@ -12,9 +12,43 @@ import type {
   ImportCandidate,
   ImportClassification,
   ImportDraft,
+  Recurrence,
   Source,
 } from "./types";
 import { newId } from "./compiler";
+
+const NUMBER_WORDS: Record<string, number> = {
+  one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8,
+  nine: 9, ten: 10, eleven: 11, twelve: 12, thirteen: 13, fourteen: 14,
+  fifteen: 15, twenty: 20, thirty: 30, forty: 40, fifty: 50, "fifty-four": 54,
+};
+
+/**
+ * Detect a devotion's default recurrence from its text, with no AI — an explicit
+ * "N-day" / "N days" (or a spelled-out number + "day(s)") becomes `daily × N`; a
+ * bare "novena" with no number defaults to 9 days. The result is a starting
+ * point the user edits on the review screen. Returns undefined when nothing
+ * suggests a repeat.
+ */
+export function detectRecurrence(text: string): Recurrence | undefined {
+  const blob = text.toLowerCase();
+  // "54-day", "54 day", "9-day novena", "for 30 days"
+  const numeric = blob.match(/\b(\d{1,3})[\s-]*day\b/);
+  if (numeric) {
+    const n = Number(numeric[1]);
+    if (n >= 2 && n <= 366) return { freq: "daily", interval: 1, count: n };
+  }
+  // Spelled-out: "nine day novena", "fifty-four days"
+  const word = blob.match(
+    /\b(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|twenty|thirty|forty|fifty|fifty-four)[\s-]*days?\b/,
+  );
+  if (word?.[1] && NUMBER_WORDS[word[1]]) {
+    return { freq: "daily", interval: 1, count: NUMBER_WORDS[word[1]] };
+  }
+  // Bare "novena" implies the traditional nine days.
+  if (/\bnovena\b/.test(blob)) return { freq: "daily", interval: 1, count: 9 };
+  return undefined;
+}
 
 const INSTRUCTION_HINTS = [
   /\bsay\b.*\b(one|two|three|ten|\d+)\b/i,
@@ -25,7 +59,6 @@ const INSTRUCTION_HINTS = [
   /\bthen (pray|say)\b/i,
 ];
 
-const NOVENA_HINTS = [/\bnovena\b/i, /\bday\s*\d+\b/i, /\b54[- ]day\b/i];
 const MYSTERY_HINTS = [/\bmyster(y|ies)\b/i, /\b(joyful|sorrowful|glorious|luminous)\b/i];
 
 function normalize(text: string): string {
@@ -63,8 +96,6 @@ function classify(title: string, body: string): { classification: ImportClassifi
   const blob = `${title}\n${body}`;
   const devotional = PRAYER_HINTS.filter((r) => r.test(blob)).length;
 
-  if (NOVENA_HINTS.some((r) => r.test(blob)) && /\bday\b/i.test(blob))
-    return { classification: "novena", confidence: 0.7 };
   if (MYSTERY_HINTS.some((r) => r.test(title)))
     return { classification: "mystery", confidence: 0.6 };
   if (/^the .+ mystery/i.test(title)) return { classification: "mystery_meditation", confidence: 0.6 };

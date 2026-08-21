@@ -19,8 +19,20 @@ import {
 import { MediaEditor } from "@/components/media/MediaEditor";
 import { PhotoDropzone, type LocalPhoto } from "@/components/media/PhotoDropzone";
 import { useApp } from "@/lib/prayer/store";
-import { analyzeText, resolveAttribution, similarity } from "@/lib/prayer/importer";
-import { newId } from "@/lib/prayer/compiler";
+import {
+  analyzeText,
+  detectRecurrence,
+  resolveAttribution,
+  similarity,
+} from "@/lib/prayer/importer";
+import { newId, recurrenceLabel } from "@/lib/prayer/compiler";
+import {
+  buildRecurrence,
+  FREQ_OPTIONS,
+  FREQ_UNIT_LABEL,
+  recurrenceFields,
+  type EndMode,
+} from "@/lib/prayer/recurrence";
 import {
   EXPRESSION_TYPES,
   PRAYER_TYPES,
@@ -28,18 +40,40 @@ import {
   type ExpressionType,
   type PrayerType,
 } from "@/domain/taxonomy";
-import type { ImportCandidate, ImportDraft, Source, SourceType } from "@/lib/prayer/types";
+import type {
+  Frequency,
+  ImportCandidate,
+  ImportDraft,
+  PrayerHour,
+  Recurrence,
+  Source,
+  SourceType,
+} from "@/lib/prayer/types";
+
+const HOUR_LABEL: Record<PrayerHour, string> = {
+  office_of_readings: "Office of Readings",
+  lauds: "Morning Prayer (Lauds)",
+  daytime: "Daytime Prayer",
+  vespers: "Evening Prayer (Vespers)",
+  compline: "Night Prayer (Compline)",
+};
+
+type ImportMode = "single" | "devotion" | "howto";
 
 export const Route = createFileRoute("/import")({
+  validateSearch: (search: Record<string, unknown>): { mode?: ImportMode } => {
+    const mode = search["mode"];
+    return mode === "single" || mode === "devotion" || mode === "howto" ? { mode } : {};
+  },
   head: () => ({
     meta: [
-      { title: "Add a prayer — Faith Journey" },
+      { title: "Devotion Builder — Faith Journey" },
       {
         name: "description",
         content:
-          "Add a single prayer or a whole devotion — by hand, from a link, or from a photo — and review it before it enters your library.",
+          "Build a devotion or add a single prayer — by hand, from a link, or from a photo — and review it before it enters your library.",
       },
-      { property: "og:title", content: "Add a prayer — Faith Journey" },
+      { property: "og:title", content: "Devotion Builder — Faith Journey" },
       { property: "og:description", content: "Nothing is saved until you review it." },
     ],
   }),
@@ -55,6 +89,7 @@ const SINGLE_HOWS: { key: How; label: string }[] = [
   { key: "photo", label: "From a photo" },
 ];
 const DEVOTION_HOWS: { key: How; label: string }[] = [
+  { key: "manual", label: "By hand" },
   { key: "paste", label: "Paste text" },
   { key: "url", label: "From a link" },
   { key: "photo", label: "From a photo" },
@@ -77,7 +112,10 @@ function Segmented<T extends string>({
   onChange: (v: T) => void;
 }) {
   return (
-    <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0,1fr))` }}>
+    <div
+      className="grid gap-2"
+      style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0,1fr))` }}
+    >
       {options.map((o) => (
         <button
           key={o.key}
@@ -98,12 +136,16 @@ function Segmented<T extends string>({
 }
 
 function AddPrayerPage() {
-  const { db, upsertPrayer, addPrayerVariant, addSource, saveImportDraft, applyImportDraft } = useApp();
+  const { db, upsertPrayer, addPrayerVariant, addSource, saveImportDraft, applyImportDraft } =
+    useApp();
   const navigate = useNavigate();
+  const { mode } = Route.useSearch();
   const loadSource = useServerFn(fetchSourceText);
 
-  const [what, setWhat] = useState<What>("single");
-  const [how, setHow] = useState<How>("manual");
+  // Prayers tab → single prayer; Devotions tab → a devotion. Mirrors the tab you
+  // came from so the right form is showing on arrival.
+  const [what, setWhat] = useState<What>(mode === "devotion" ? "devotion" : "single");
+  const [how, setHow] = useState<How>(mode === "devotion" ? "paste" : "manual");
 
   // Shared intake helpers
   const [url, setUrl] = useState("");
@@ -117,6 +159,9 @@ function AddPrayerPage() {
 
   // Devotion (bundle) state
   const [devotionName, setDevotionName] = useState("");
+  const [devDescription, setDevDescription] = useState("");
+  const [devSourceName, setDevSourceName] = useState("");
+  const [devSourceUrl, setDevSourceUrl] = useState("");
   const [raw, setRaw] = useState("");
   const [notes, setNotes] = useState("");
   const [bundleType, setBundleType] = useState<PrayerType>("traditional_expression");
@@ -153,6 +198,15 @@ function AddPrayerPage() {
       } else {
         setRaw(result.text);
         if (!devotionName.trim() && result.title) setDevotionName(result.title);
+        // Auto-fill what the source gives us: the page as the source + its link.
+        if (!devSourceUrl.trim()) setDevSourceUrl(target);
+        if (!devSourceName.trim()) {
+          try {
+            setDevSourceName(new URL(target).hostname.replace(/^www\./, ""));
+          } catch {
+            /* leave blank */
+          }
+        }
       }
       toast.success("Fetched — check the text, then review.");
     } catch {
@@ -226,31 +280,55 @@ function AddPrayerPage() {
       toast.error("Name the devotion.");
       return;
     }
-    const { url: resolvedUrl, attribution } = resolveAttribution(raw, url);
+    const { url: resolvedUrl, attribution } = resolveAttribution(raw, devSourceUrl || url);
+    const sourceUrl = devSourceUrl.trim() || resolvedUrl;
     const source: Source = {
       id: newId("source"),
-      source_type: resolvedUrl ? "web" : "text",
-      name: devotionName.trim(),
+      source_type: sourceUrl ? "web" : "text",
+      name: devSourceName.trim() || devotionName.trim(),
       attribution,
       created_at: new Date().toISOString(),
-      ...(resolvedUrl ? { url: resolvedUrl } : {}),
+      ...(sourceUrl ? { url: sourceUrl } : {}),
       ...(photos.length ? { metadata: { photo_count: String(photos.length) } } : {}),
     };
     const next = analyzeText(db, raw, source);
     next.candidates = next.candidates.map((c) =>
       c.classification === "prayer" || c.classification === "prayer_version"
-        ? { ...c, prayer_type: c.prayer_type ?? bundleType, expression_type: c.expression_type ?? bundleExpr }
+        ? {
+            ...c,
+            prayer_type: c.prayer_type ?? bundleType,
+            expression_type: c.expression_type ?? bundleExpr,
+          }
         : c,
     );
-    next.devotion = { name: devotionName.trim(), ...(notes.trim() ? { notes: notes.trim() } : {}) };
+    // Detect a default schedule from the text (e.g. "54-Day Rosary" → daily × 54).
+    const detected = detectRecurrence(`${devotionName} ${notes} ${raw}`);
+    next.devotion = {
+      name: devotionName.trim(),
+      ...(devDescription.trim() ? { description: devDescription.trim() } : {}),
+      ...(notes.trim() ? { notes: notes.trim() } : {}),
+      ...(detected ? { recurrence: detected } : {}),
+    };
     setImportDraft(next);
     saveImportDraft(next);
+  }
+
+  function patchDevotion(patch: Partial<NonNullable<ImportDraft["devotion"]>>) {
+    setImportDraft((cur) => {
+      if (!cur || !cur.devotion) return cur;
+      const next = { ...cur, devotion: { ...cur.devotion, ...patch } };
+      saveImportDraft(next);
+      return next;
+    });
   }
 
   function patchCandidate(id: string, patch: Partial<ImportCandidate>) {
     setImportDraft((cur) => {
       if (!cur) return cur;
-      const next = { ...cur, candidates: cur.candidates.map((c) => (c.id === id ? { ...c, ...patch } : c)) };
+      const next = {
+        ...cur,
+        candidates: cur.candidates.map((c) => (c.id === id ? { ...c, ...patch } : c)),
+      };
       saveImportDraft(next);
       return next;
     });
@@ -267,8 +345,20 @@ function AddPrayerPage() {
     <div>
       <Label htmlFor="surl">Link</Label>
       <div className="mt-1 flex gap-2">
-        <Input id="surl" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…" className="h-12" />
-        <Button type="button" variant="secondary" className="h-12 shrink-0" disabled={fetching} onClick={fetchFromUrl}>
+        <Input
+          id="surl"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="https://…"
+          className="h-12"
+        />
+        <Button
+          type="button"
+          variant="secondary"
+          className="h-12 shrink-0"
+          disabled={fetching}
+          onClick={fetchFromUrl}
+        >
           {fetching ? "Fetching…" : "Fetch"}
         </Button>
       </div>
@@ -289,14 +379,16 @@ function AddPrayerPage() {
 
   return (
     <AppShell
-      title="Add a prayer"
-      subtitle="A single prayer, or a whole devotion"
+      title="Devotion Builder"
+      subtitle="Build a devotion, or add a single prayer"
       back={{ to: "/prayers", label: "Prayers" }}
     >
       {/* ---- Single-prayer review ---- */}
       {what === "single" && reviewingSingle ? (
         <div className="space-y-3">
-          <p className="text-sm text-muted-foreground">Review before saving. Nothing is stored until you confirm.</p>
+          <p className="text-sm text-muted-foreground">
+            Review before saving. Nothing is stored until you confirm.
+          </p>
           <article className="soft-card space-y-2 p-4">
             <div className="flex items-start justify-between gap-2">
               <p className="font-display text-lg">{draft.title || "Untitled prayer"}</p>
@@ -305,7 +397,9 @@ function AddPrayerPage() {
             <p className="whitespace-pre-line text-sm text-muted-foreground">{draft.body}</p>
             <p className="text-xs text-muted-foreground">
               {TAXONOMY_LABELS[draft.expressionType]}
-              {draft.tags.filter(Boolean).length ? ` · ${draft.tags.filter(Boolean).join(", ")}` : ""}
+              {draft.tags.filter(Boolean).length
+                ? ` · ${draft.tags.filter(Boolean).join(", ")}`
+                : ""}
               {draft.media.length ? ` · ${draft.media.length} media` : ""}
               {sourceName.trim() ? ` · Source: ${sourceName.trim()}` : ""}
             </p>
@@ -317,20 +411,33 @@ function AddPrayerPage() {
                 Looks like “{bestDuplicate.prayer.title}” is already in your library (
                 {Math.round(bestDuplicate.score * 100)}% match).
               </p>
-              <Button variant="secondary" className="mt-2 h-11 w-full" onClick={saveSingleAsVariant}>
+              <Button
+                variant="secondary"
+                className="mt-2 h-11 w-full"
+                onClick={saveSingleAsVariant}
+              >
                 Save as a version of “{bestDuplicate.prayer.title}”
               </Button>
               <p className="mt-1 text-xs text-muted-foreground">
-                (Media attaches to a new prayer, not to a version — save as new to keep audio/video.)
+                (Media attaches to a new prayer, not to a version — save as new to keep
+                audio/video.)
               </p>
             </div>
           ) : null}
 
           <div className="flex gap-2">
-            <Button variant="outline" className="h-12 flex-1" onClick={() => setReviewingSingle(false)}>
+            <Button
+              variant="outline"
+              className="h-12 flex-1"
+              onClick={() => setReviewingSingle(false)}
+            >
               Back to edit
             </Button>
-            <Button className="h-12 flex-1" onClick={saveSingleNew} disabled={!draft.title.trim() || !draft.body.trim()}>
+            <Button
+              className="h-12 flex-1"
+              onClick={saveSingleNew}
+              disabled={!draft.title.trim() || !draft.body.trim()}
+            >
               Save to library
             </Button>
           </div>
@@ -338,9 +445,121 @@ function AddPrayerPage() {
       ) : /* ---- Devotion review ---- */ importDraft ? (
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            {importDraft.candidates.length} section{importDraft.candidates.length === 1 ? "" : "s"} detected in{" "}
-            {importDraft.source.name}. Nothing is saved until you confirm.
+            {importDraft.candidates.length} section{importDraft.candidates.length === 1 ? "" : "s"}{" "}
+            detected in {importDraft.source.name}. Nothing is saved until you confirm.
           </p>
+
+          {/* Default schedule detected from the text (e.g. "54-day" → daily × 54),
+              editable in case detection is off. Saved onto the devotion. */}
+          {(() => {
+            const rf = recurrenceFields(importDraft.devotion?.recurrence);
+            const setRec = (next: Partial<typeof rf>) => {
+              const merged = { ...rf, ...next };
+              patchDevotion({ recurrence: buildRecurrence(merged) });
+            };
+            return (
+              <div className="soft-card space-y-3 p-4">
+                <p className="eyebrow">Default schedule</p>
+                <p className="-mt-1 text-xs text-muted-foreground">
+                  {importDraft.devotion?.recurrence
+                    ? `Detected: ${recurrenceLabel(importDraft.devotion.recurrence)}. Adjust if it read the text wrong.`
+                    : "No repeat detected — set one if this devotion is prayed over several days."}
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="imp-freq">Repeats</Label>
+                    <select
+                      id="imp-freq"
+                      value={rf.freq}
+                      onChange={(e) => setRec({ freq: e.target.value as Frequency })}
+                      className="mt-1 h-11 w-full rounded-md border border-input bg-card px-3 text-sm"
+                    >
+                      {FREQ_OPTIONS.map((o) => (
+                        <option key={o.value} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {rf.freq !== "none" ? (
+                    <div>
+                      <Label htmlFor="imp-end">Ends</Label>
+                      <select
+                        id="imp-end"
+                        value={rf.endMode}
+                        onChange={(e) => setRec({ endMode: e.target.value as EndMode })}
+                        className="mt-1 h-11 w-full rounded-md border border-input bg-card px-3 text-sm"
+                      >
+                        <option value="never">Never</option>
+                        <option value="count">After N times</option>
+                        <option value="until">On date</option>
+                      </select>
+                    </div>
+                  ) : null}
+                </div>
+                {rf.freq !== "none" && rf.endMode === "count" ? (
+                  <div>
+                    <Label htmlFor="imp-count">How many {FREQ_UNIT_LABEL[rf.freq]}s?</Label>
+                    <Input
+                      id="imp-count"
+                      type="number"
+                      min={1}
+                      inputMode="numeric"
+                      value={rf.count}
+                      placeholder="9, 54…"
+                      onChange={(e) => setRec({ count: e.target.value })}
+                      className="mt-1 h-11"
+                    />
+                  </div>
+                ) : null}
+                {rf.freq !== "none" && rf.endMode === "until" ? (
+                  <div>
+                    <Label htmlFor="imp-until">Until</Label>
+                    <Input
+                      id="imp-until"
+                      type="date"
+                      value={rf.until}
+                      onChange={(e) => setRec({ until: e.target.value })}
+                      className="mt-1 h-11"
+                    />
+                  </div>
+                ) : null}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="imp-hour">Hour (tag)</Label>
+                    <select
+                      id="imp-hour"
+                      value={importDraft.devotion?.hour ?? ""}
+                      onChange={(e) =>
+                        patchDevotion({
+                          hour: (e.target.value || undefined) as PrayerHour | undefined,
+                        })
+                      }
+                      className="mt-1 h-11 w-full rounded-md border border-input bg-card px-3 text-sm"
+                    >
+                      <option value="">No set hour</option>
+                      {(Object.keys(HOUR_LABEL) as PrayerHour[]).map((h) => (
+                        <option key={h} value={h}>
+                          {HOUR_LABEL[h]}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <Label htmlFor="imp-time">Start time</Label>
+                    <Input
+                      id="imp-time"
+                      type="time"
+                      value={importDraft.devotion?.start_time ?? ""}
+                      onChange={(e) => patchDevotion({ start_time: e.target.value || undefined })}
+                      className="mt-1 h-11"
+                    />
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
           {importDraft.candidates.map((c) => {
             const duplicate = db.prayers.find((p) => p.id === c.duplicate_of_prayer_id);
             const isPrayer = c.classification === "prayer" || c.classification === "prayer_version";
@@ -350,17 +569,23 @@ function AddPrayerPage() {
                   <p className="font-medium">{c.title}</p>
                   <span className="eyebrow shrink-0">{c.classification.replace(/_/g, " ")}</span>
                 </div>
-                <p className="mt-2 line-clamp-4 whitespace-pre-line text-sm text-muted-foreground">{c.body}</p>
+                <p className="mt-2 line-clamp-4 whitespace-pre-line text-sm text-muted-foreground">
+                  {c.body}
+                </p>
                 {duplicate ? (
                   <p className="mt-2 text-sm text-primary">
-                    Looks like “{duplicate.title}” already in your library ({Math.round((c.similarity ?? 0) * 100)}%
-                    match).
+                    Looks like “{duplicate.title}” already in your library (
+                    {Math.round((c.similarity ?? 0) * 100)}% match).
                   </p>
                 ) : null}
                 <select
                   value={c.decision}
                   aria-label={`Decision for ${c.title}`}
-                  onChange={(e) => patchCandidate(c.id, { decision: e.target.value as ImportCandidate["decision"] })}
+                  onChange={(e) =>
+                    patchCandidate(c.id, {
+                      decision: e.target.value as ImportCandidate["decision"],
+                    })
+                  }
                   className="mt-3 h-11 w-full rounded-md border border-input bg-card px-3 text-sm"
                 >
                   {DECISIONS.map((d) => (
@@ -374,7 +599,9 @@ function AddPrayerPage() {
                     <select
                       value={c.prayer_type ?? "traditional_expression"}
                       aria-label={`Prayer type for ${c.title}`}
-                      onChange={(e) => patchCandidate(c.id, { prayer_type: e.target.value as PrayerType })}
+                      onChange={(e) =>
+                        patchCandidate(c.id, { prayer_type: e.target.value as PrayerType })
+                      }
                       className="h-11 w-full rounded-md border border-input bg-card px-3 text-sm"
                     >
                       {PRAYER_TYPES.map((t) => (
@@ -386,7 +613,9 @@ function AddPrayerPage() {
                     <select
                       value={c.expression_type ?? "vocal"}
                       aria-label={`How ${c.title} is prayed`}
-                      onChange={(e) => patchCandidate(c.id, { expression_type: e.target.value as ExpressionType })}
+                      onChange={(e) =>
+                        patchCandidate(c.id, { expression_type: e.target.value as ExpressionType })
+                      }
                       className="h-11 w-full rounded-md border border-input bg-card px-3 text-sm"
                     >
                       {EXPRESSION_TYPES.map((t) => (
@@ -431,7 +660,14 @@ function AddPrayerPage() {
             <div className="mt-1">
               <Segmented<How>
                 value={how}
-                onChange={setHow}
+                onChange={(v) => {
+                  // "By hand" is the full drag-and-drop devotion editor.
+                  if (what === "devotion" && v === "manual") {
+                    navigate({ to: "/template/$templateId", params: { templateId: "new" } });
+                    return;
+                  }
+                  setHow(v);
+                }}
                 options={what === "single" ? SINGLE_HOWS : DEVOTION_HOWS}
               />
             </div>
@@ -453,7 +689,10 @@ function AddPrayerPage() {
                   className="mt-1 h-12"
                 />
               </div>
-              <MediaEditor media={draft.media} onChange={(media) => setDraft((d) => ({ ...d, media }))} />
+              <MediaEditor
+                media={draft.media}
+                onChange={(media) => setDraft((d) => ({ ...d, media }))}
+              />
               <Button
                 className="h-12 w-full"
                 onClick={() => {
@@ -479,6 +718,39 @@ function AddPrayerPage() {
                   className="mt-1 h-12"
                 />
               </div>
+              <div>
+                <Label htmlFor="ddesc">Description (optional)</Label>
+                <Input
+                  id="ddesc"
+                  value={devDescription}
+                  onChange={(e) => setDevDescription(e.target.value)}
+                  placeholder="One line on what this devotion is"
+                  className="mt-1 h-12"
+                />
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div>
+                  <Label htmlFor="dsrcname">Source (optional)</Label>
+                  <Input
+                    id="dsrcname"
+                    value={devSourceName}
+                    onChange={(e) => setDevSourceName(e.target.value)}
+                    placeholder="USCCB, a booklet…"
+                    className="mt-1 h-12"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="dsrcurl">Source link (optional)</Label>
+                  <Input
+                    id="dsrcurl"
+                    type="url"
+                    value={devSourceUrl}
+                    onChange={(e) => setDevSourceUrl(e.target.value)}
+                    placeholder="https://…"
+                    className="mt-1 h-12"
+                  />
+                </div>
+              </div>
               <TaxonomySelect
                 id="bundle-type"
                 label="Default prayer type"
@@ -494,7 +766,8 @@ function AddPrayerPage() {
                 onChange={(v) => setBundleExpr(v as ExpressionType)}
               />
               <p className="-mt-1 text-xs text-muted-foreground">
-                The starting point for each detected prayer — change any of them on the review screen.
+                The starting point for each detected prayer — change any of them on the review
+                screen.
               </p>
               <div>
                 <Label htmlFor="dnotes">Notes from the source (optional)</Label>
@@ -514,7 +787,9 @@ function AddPrayerPage() {
                   value={raw}
                   onChange={(e) => setRaw(e.target.value)}
                   rows={12}
-                  placeholder={"Apostles' Creed\nI believe in God…\n\nOur Father\nOur Father, who art in heaven…"}
+                  placeholder={
+                    "Apostles' Creed\nI believe in God…\n\nOur Father\nOur Father, who art in heaven…"
+                  }
                   className="mt-1"
                 />
                 <p className="mt-2 text-xs text-muted-foreground">

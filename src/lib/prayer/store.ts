@@ -12,7 +12,6 @@ import type {
   LearningItem,
   LearningStatus,
   MassExperience,
-  NovenaInstance,
   Prayer,
   PrayerSession,
   PrayerTemplate,
@@ -24,6 +23,7 @@ import type {
   Source,
   TemplateItem,
 } from "./types";
+import { RECURRENCE_ONCE, type Recurrence } from "./types";
 import { createSeedDatabase } from "./seed";
 import { detectRepetitionCount, stripRepetition } from "./importer";
 import {
@@ -31,24 +31,32 @@ import {
   defaultContext,
   generatePrayerSession,
   newId,
+  nextOccurrence,
   todayISO,
   uncompleteSessionItem,
 } from "./compiler";
 
-export const STORAGE_KEY = "prayer-companion-db-v5";
+export const STORAGE_KEY = "prayer-companion-db-v7";
 
 /**
- * The next occurrence date for a recurring plan (yyyy-mm-dd). daily/weekly/monthly
- * advance from the given date; "none" and "custom" stay put (nothing to compute).
+ * Migrate a legacy string recurrence ("daily"/"custom"/…) to the structured
+ * calendar model. Objects pass through untouched. Used when loading old data.
  */
-function advanceDate(date: string, recurrence: string): string {
-  const d = new Date(`${date}T00:00`);
-  if (Number.isNaN(d.getTime())) return date;
-  if (recurrence === "daily") d.setDate(d.getDate() + 1);
-  else if (recurrence === "weekly") d.setDate(d.getDate() + 7);
-  else if (recurrence === "monthly") d.setMonth(d.getMonth() + 1);
-  else return date;
-  return d.toISOString().slice(0, 10);
+function migrateRecurrence(value: unknown): Recurrence {
+  if (value && typeof value === "object" && "freq" in (value as Record<string, unknown>)) {
+    const r = value as Recurrence;
+    return { freq: r.freq, interval: r.interval ?? 1, count: r.count, until: r.until };
+  }
+  switch (value) {
+    case "daily":
+      return { freq: "daily", interval: 1 };
+    case "weekly":
+      return { freq: "weekly", interval: 1 };
+    case "monthly":
+      return { freq: "monthly", interval: 1 };
+    default: // "none" | "custom" | undefined
+      return { ...RECURRENCE_ONCE };
+  }
 }
 
 /** Variant group a prayer belongs to. Standalone prayers are their own group. */
@@ -122,7 +130,15 @@ export function normalizeVariants(db: Database): Database {
     if (first) first.is_default_variant = true;
   }
 
-  return { ...db, prayers: withDefaults, prayer_versions: versions };
+  // Migrate stored plans to the structured recurrence model and anchor the
+  // series (starts_on) so "Day N of M" has a fixed reference. Idempotent.
+  const session_plans = (db.session_plans ?? []).map((plan) => ({
+    ...plan,
+    recurrence: migrateRecurrence((plan as { recurrence?: unknown }).recurrence),
+    ...(plan.starts_on ? {} : plan.date ? { starts_on: plan.date } : {}),
+  }));
+
+  return { ...db, prayers: withDefaults, prayer_versions: versions, session_plans };
 }
 
 export function loadDatabase(): Database {
@@ -157,6 +173,8 @@ export interface AppStore {
   deletePrayer: (prayerId: ID) => void;
   saveTemplate: (template: PrayerTemplate, items: TemplateItem[]) => void;
   deleteTemplate: (templateId: ID) => void;
+  toggleTemplateFavorite: (templateId: ID) => void;
+  duplicateTemplate: (templateId: ID) => ID | undefined;
   deleteHowTo: (howToId: ID) => void;
   saveHowTo: (howTo: HowTo) => void;
   createTemplateFromHowTo: (howToId: ID) => ID | undefined;
@@ -176,8 +194,6 @@ export interface AppStore {
   saveSessionPlan: (plan: SessionPlan) => void;
   deleteSessionPlan: (planId: ID) => void;
   addIntention: (intention: Intention) => void;
-  addNovenaInstance: (instance: NovenaInstance) => void;
-  deleteNovenaInstance: (id: ID) => void;
   saveImportDraft: (draft: ImportDraft) => void;
   applyImportDraft: (draftId: ID) => void;
   addSource: (source: Source) => void;
@@ -363,6 +379,40 @@ export const mutations = {
       ...db,
       templates: db.templates.filter((t) => t.id !== templateId),
       template_items: db.template_items.filter((i) => i.template_id !== templateId),
+    };
+  },
+  toggleTemplateFavorite(db: Database, templateId: ID): Database {
+    return {
+      ...db,
+      templates: db.templates.map((t) =>
+        t.id === templateId ? { ...t, favorite: !t.favorite } : t,
+      ),
+    };
+  },
+  /** Copy a devotion (and its items) into a new editable, non-built-in devotion. */
+  duplicateTemplate(db: Database, templateId: ID): { db: Database; templateId?: ID } {
+    const source = db.templates.find((t) => t.id === templateId);
+    if (!source) return { db };
+    const newId_ = newId("tpl");
+    const copy: PrayerTemplate = {
+      ...source,
+      id: newId_,
+      name: `Copy of ${source.name}`,
+      built_in: false,
+      favorite: false,
+      created_at: new Date().toISOString(),
+    };
+    const items = db.template_items
+      .filter((i) => i.template_id === templateId)
+      .sort((a, b) => a.position - b.position)
+      .map((i, index) => ({ ...i, id: newId("titem"), template_id: newId_, position: index }));
+    return {
+      db: {
+        ...db,
+        templates: [copy, ...db.templates],
+        template_items: [...db.template_items, ...items],
+      },
+      templateId: newId_,
     };
   },
   deleteHowTo(db: Database, howToId: ID): Database {
@@ -572,14 +622,19 @@ export const mutations = {
     const plan = session?.plan_id
       ? db.session_plans.find((p) => p.id === session.plan_id)
       : undefined;
-    if (
-      plan &&
-      (plan.recurrence === "daily" || plan.recurrence === "weekly" || plan.recurrence === "monthly")
-    ) {
-      const nextDate = advanceDate(plan.date ?? todayISO(), plan.recurrence);
-      session_plans = db.session_plans.map((p) =>
-        p.id === plan.id ? { ...p, date: nextDate } : p,
+    if (plan && plan.recurrence.freq !== "none") {
+      // Advance to the next occurrence; a null means the series (count/until) is
+      // spent, so leave the plan on its last date and stop rolling forward.
+      const nextDate = nextOccurrence(
+        plan.starts_on ?? plan.date,
+        plan.recurrence,
+        plan.date ?? todayISO(),
       );
+      if (nextDate) {
+        session_plans = db.session_plans.map((p) =>
+          p.id === plan.id ? { ...p, date: nextDate } : p,
+        );
+      }
     }
 
     let completedPlanId: ID | undefined;
@@ -607,7 +662,8 @@ export const mutations = {
             template_id: "",
             purpose: session.title,
             date: todayISO(),
-            recurrence: "none",
+            starts_on: todayISO(),
+            recurrence: { ...RECURRENCE_ONCE },
             context: session.context,
             items: planItems,
             created_at: new Date().toISOString(),
@@ -653,12 +709,6 @@ export const mutations = {
   },
   addIntention(db: Database, intention: Intention): Database {
     return { ...db, intentions: [...db.intentions, intention] };
-  },
-  addNovenaInstance(db: Database, instance: NovenaInstance): Database {
-    return { ...db, novena_instances: [...db.novena_instances, instance] };
-  },
-  deleteNovenaInstance(db: Database, id: ID): Database {
-    return { ...db, novena_instances: db.novena_instances.filter((n) => n.id !== id) };
   },
   saveImportDraft(db: Database, draft: ImportDraft): Database {
     return {
@@ -836,6 +886,10 @@ export const mutations = {
           kind: "standard",
           mystery_presentation: "title_and_description",
           mystery_count: 0,
+          // Reviewed default schedule (e.g. a "54-day" novena detected from the text).
+          ...(draft.devotion.recurrence ? { default_recurrence: draft.devotion.recurrence } : {}),
+          ...(draft.devotion.hour ? { default_hour: draft.devotion.hour } : {}),
+          ...(draft.devotion.start_time ? { default_start_time: draft.devotion.start_time } : {}),
           source_id: draft.source.id,
           built_in: false,
           created_at: new Date().toISOString(),

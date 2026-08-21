@@ -50,12 +50,26 @@ function MediaItem({ m }: { m: PrayerMedia }) {
       </p>
       {m.kind === "video" ? (
         m.source === "link" ? (
-          <a href={m.url} target="_blank" rel="noreferrer" className="text-sm text-primary underline">
-            Open video
+          <a
+            href={m.url}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-1 block break-all text-sm text-primary underline"
+          >
+            {m.url}
           </a>
         ) : (
           <video controls src={m.url} className="mt-1 w-full rounded-md" />
         )
+      ) : m.source === "link" ? (
+        <a
+          href={m.url}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-1 block break-all text-sm text-primary underline"
+        >
+          {m.url}
+        </a>
       ) : (
         <audio controls src={m.url} className="mt-1 w-full" />
       )}
@@ -191,8 +205,13 @@ function ViewPrayer() {
             <p className="eyebrow">Source</p>
             <p className="mt-1 text-sm">{source.name}</p>
             {source.url ? (
-              <a className="text-sm text-primary underline" href={source.url} target="_blank" rel="noreferrer">
-                View source
+              <a
+                className="mt-1 block break-all text-sm text-primary underline"
+                href={source.url}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {source.url}
               </a>
             ) : null}
           </section>
