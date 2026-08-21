@@ -31,10 +31,25 @@ import {
   defaultContext,
   generatePrayerSession,
   newId,
+  todayISO,
   uncompleteSessionItem,
 } from "./compiler";
 
 export const STORAGE_KEY = "prayer-companion-db-v5";
+
+/**
+ * The next occurrence date for a recurring plan (yyyy-mm-dd). daily/weekly/monthly
+ * advance from the given date; "none" and "custom" stay put (nothing to compute).
+ */
+function advanceDate(date: string, recurrence: string): string {
+  const d = new Date(`${date}T00:00`);
+  if (Number.isNaN(d.getTime())) return date;
+  if (recurrence === "daily") d.setDate(d.getDate() + 1);
+  else if (recurrence === "weekly") d.setDate(d.getDate() + 7);
+  else if (recurrence === "monthly") d.setMonth(d.getMonth() + 1);
+  else return date;
+  return d.toISOString().slice(0, 10);
+}
 
 /** Variant group a prayer belongs to. Standalone prayers are their own group. */
 export function variantGroupId(prayer: Prayer): ID {
@@ -151,6 +166,7 @@ export interface AppStore {
     items: TemplateItem[],
     ctx: Partial<SessionContext>,
     title?: string,
+    planId?: ID,
   ) => PrayerSession | undefined;
   startSinglePrayer: (prayerId: ID, ctx?: Partial<SessionContext>) => PrayerSession | undefined;
   setCursor: (sessionId: ID, cursor: number) => void;
@@ -450,6 +466,7 @@ export const mutations = {
     sessionItems: TemplateItem[],
     ctx: Partial<SessionContext>,
     title?: string,
+    planId?: ID,
   ): { db: Database; session?: PrayerSession } {
     const base = templateId ? db.templates.find((t) => t.id === templateId) : undefined;
     const workId = base?.id ?? newId("adhoc");
@@ -473,7 +490,11 @@ export const mutations = {
       ],
     };
     const { session, items } = generatePrayerSession(previewDb, template, ctx);
-    const titled = title?.trim() ? { ...session, title: title.trim() } : session;
+    const titled: PrayerSession = {
+      ...session,
+      ...(title?.trim() ? { title: title.trim() } : {}),
+      ...(planId ? { plan_id: planId } : {}),
+    };
     return {
       db: {
         ...db,
@@ -545,8 +566,24 @@ export const mutations = {
     };
   },
   finishSession(db: Database, sessionId: ID): Database {
+    const session = db.sessions.find((s) => s.id === sessionId);
+    // A recurring plan rolls forward to its next occurrence when finished.
+    let session_plans = db.session_plans;
+    const plan = session?.plan_id
+      ? db.session_plans.find((p) => p.id === session.plan_id)
+      : undefined;
+    if (
+      plan &&
+      (plan.recurrence === "daily" || plan.recurrence === "weekly" || plan.recurrence === "monthly")
+    ) {
+      const nextDate = advanceDate(plan.date ?? todayISO(), plan.recurrence);
+      session_plans = db.session_plans.map((p) =>
+        p.id === plan.id ? { ...p, date: nextDate } : p,
+      );
+    }
     return {
       ...db,
+      session_plans,
       sessions: db.sessions.map((s) =>
         s.id === sessionId ? { ...s, completed_at: new Date().toISOString() } : s,
       ),

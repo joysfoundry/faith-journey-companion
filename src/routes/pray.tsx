@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { FilePlus2, MoreVertical, Pencil, Play, Plus, Save, Trash2, X } from "lucide-react";
+import { Copy, FilePlus2, MoreVertical, Pencil, Play, Plus, Save, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
@@ -228,8 +228,21 @@ function PrayPage() {
       planItems,
       { date: today, ...plan.context },
       plan.purpose,
+      plan.id,
     );
     if (session) navigate({ to: "/session/$sessionId", params: { sessionId: session.id } });
+  };
+
+  const duplicatePlan = (plan: SessionPlan) => {
+    const tpl = db.templates.find((t) => t.id === plan.template_id);
+    saveSessionPlan({
+      ...plan,
+      id: newId("plan"),
+      purpose: `Copy of ${plan.purpose || tpl?.name || "Session"}`,
+      items: plan.items?.map((it) => ({ ...it })),
+      created_at: new Date().toISOString(),
+    });
+    toast.success("Session duplicated — rename the copy");
   };
 
   const deleteCurrent = () => {
@@ -338,7 +351,7 @@ function PrayPage() {
                 </select>
                 <p className="mt-2 text-xs text-muted-foreground">
                   A devotion is a fast start — you can still add, remove, and reword anything for
-                  this session without changing the template.
+                  this session without changing the devotion.
                 </p>
               </div>
             </div>
@@ -625,6 +638,14 @@ function PrayPage() {
                             }}
                           >
                             <Pencil className="size-4" />
+                          </button>
+                          <button
+                            type="button"
+                            aria-label="Duplicate session"
+                            className="p-1.5 text-muted-foreground hover:text-foreground"
+                            onClick={() => duplicatePlan(plan)}
+                          >
+                            <Copy className="size-4" />
                           </button>
                           <button
                             type="button"

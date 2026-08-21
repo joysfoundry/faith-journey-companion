@@ -48,8 +48,16 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       items: Parameters<typeof mutations.startBuiltSession>[2],
       ctx: Parameters<typeof mutations.startBuiltSession>[3],
       title?: string,
+      planId?: string,
     ) => {
-      const result = mutations.startBuiltSession(dbRef.current, templateId, items, ctx, title);
+      const result = mutations.startBuiltSession(
+        dbRef.current,
+        templateId,
+        items,
+        ctx,
+        title,
+        planId,
+      );
       setDb(result.db);
       return result.session as PrayerSession | undefined;
     },

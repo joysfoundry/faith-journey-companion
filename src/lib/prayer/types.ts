@@ -297,6 +297,8 @@ export interface PrayerSession {
   context: SessionContext;
   created_at: string;
   completed_at?: string | undefined;
+  /** The SessionPlan this was started from; lets completion advance a recurrence. */
+  plan_id?: ID | undefined;
   /** Index of the item the user is currently on. */
   cursor: number;
 }
