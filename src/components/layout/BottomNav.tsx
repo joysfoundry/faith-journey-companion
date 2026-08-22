@@ -3,7 +3,7 @@ import { Heart, Home, MoreHorizontal, NotebookPen, Sparkles, Sun } from "lucide-
 
 const links = [
   { to: "/", label: "Today", icon: Home },
-  { to: "/pray", label: "Pray", icon: Sparkles },
+  { to: "/pray", label: "Plan", icon: Sparkles },
   { to: "/prayers", label: "Prayers", icon: Heart },
   { to: "/word", label: "Word", icon: Sun },
   { to: "/reflections", label: "Reflect", icon: NotebookPen },
