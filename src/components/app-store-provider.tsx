@@ -120,6 +120,8 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
         setDb((d) => mutations.upsertSource(d, s)),
       addReflection: (r: Parameters<typeof mutations.addReflection>[1]) =>
         setDb((d) => mutations.addReflection(d, r)),
+      updateReflection: (r: Parameters<typeof mutations.updateReflection>[1]) =>
+        setDb((d) => mutations.updateReflection(d, r)),
       deleteReflection: (id: string) => setDb((d) => mutations.deleteReflection(d, id)),
       addLearningItem: (i: Parameters<typeof mutations.addLearningItem>[1]) =>
         setDb((d) => mutations.addLearningItem(d, i)),
@@ -128,6 +130,8 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       deleteLearningItem: (id: string) => setDb((d) => mutations.deleteLearningItem(d, id)),
       addMassExperience: (m: Parameters<typeof mutations.addMassExperience>[1]) =>
         setDb((d) => mutations.addMassExperience(d, m)),
+      setDailyTemplate: (templateId: string | undefined) =>
+        setDb((d) => mutations.setDailyTemplate(d, templateId)),
     }),
     [
       db,

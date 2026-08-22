@@ -550,7 +550,18 @@ export interface MassExperience {
   created_at: string;
 }
 
+/** App-level, user-editable settings. Persisted with the rest of the store. */
+export interface AppSettings {
+  /**
+   * The devotion the Home "daily" prayer card starts. Absent = the standard
+   * Holy Rosary (`tpl-rosary`). Lets the family pin their own (e.g. the Caro
+   * Family Rosary) as the daily prayer.
+   */
+  daily_template_id?: ID | undefined;
+}
+
 export interface Database {
+  settings: AppSettings;
   sources: Source[];
   prayers: Prayer[];
   prayer_versions: PrayerVersion[];

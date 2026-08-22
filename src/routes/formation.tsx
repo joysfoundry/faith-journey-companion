@@ -10,6 +10,8 @@ import { useApp } from "@/lib/prayer/store";
 import type { LearningStatus } from "@/lib/prayer/types";
 
 export const Route = createFileRoute("/formation")({
+  validateSearch: (search: Record<string, unknown>): { add?: boolean } =>
+    search["add"] === "1" || search["add"] === true ? { add: true } : {},
   head: () => ({
     meta: [
       { title: "Learn — Faith Journey" },
@@ -33,9 +35,10 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
   article: "Article",
   newsletter: "Newsletter",
   video: "Video",
-  sermon: "Sermon",
   podcast: "Podcast",
+  sermon: "Sermon",
   show: "Show",
+  social_media: "Social media",
   course: "Course",
   other: "Other",
 };
@@ -49,7 +52,8 @@ const STATUS_STEPS: { key: LearningStatus; label: string }[] = [
 function FormationPage() {
   const { db, setLearningStatus, addLearningItem } = useApp();
   const navigate = useNavigate();
-  const [adding, setAdding] = useState(false);
+  const { add } = Route.useSearch();
+  const [adding, setAdding] = useState(Boolean(add));
   const [title, setTitle] = useState("");
   const [creator, setCreator] = useState("");
   const [contentType, setContentType] = useState("book");
@@ -90,30 +94,51 @@ function FormationPage() {
     >
       {adding ? (
         <div className="soft-card mb-4 space-y-2 p-4">
-          <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" className="h-10" />
-          <Input value={creator} onChange={(e) => setCreator(e.target.value)} placeholder="Author / creator (optional)" className="h-10" />
-          <Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="Link (optional)" className="h-10" />
-          <div className="flex gap-2">
-            <select
-              value={contentType}
-              onChange={(e) => setContentType(e.target.value)}
-              className="h-10 flex-1 rounded-md border border-input bg-background px-3 text-sm"
-            >
-              {Object.entries(CONTENT_TYPE_LABELS).map(([v, l]) => (
-                <option key={v} value={v}>{l}</option>
-              ))}
-            </select>
-            <Button className="flex-1" onClick={submit} disabled={!title.trim()}>
-              Add to Life Library
-            </Button>
-          </div>
+          <label className="block text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Type
+          </label>
+          <select
+            value={contentType}
+            onChange={(e) => setContentType(e.target.value)}
+            aria-label="Type"
+            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+          >
+            {Object.entries(CONTENT_TYPE_LABELS).map(([v, l]) => (
+              <option key={v} value={v}>
+                {l}
+              </option>
+            ))}
+          </select>
+          <Input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Title"
+            className="h-10"
+          />
+          <Input
+            value={creator}
+            onChange={(e) => setCreator(e.target.value)}
+            placeholder="Author / creator (optional)"
+            className="h-10"
+          />
+          <Input
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="Link (optional)"
+            className="h-10"
+          />
+          <Button className="w-full" onClick={submit} disabled={!title.trim()}>
+            Add to Life Library
+          </Button>
         </div>
       ) : null}
 
       <p className="eyebrow mb-2">In progress &amp; up next</p>
       <ul className="space-y-2">
         {active.length === 0 ? (
-          <li className="text-sm text-muted-foreground">Nothing active — add something forming your faith.</li>
+          <li className="text-sm text-muted-foreground">
+            Nothing active — add something forming your faith.
+          </li>
         ) : null}
         {active.map((item) => (
           <li key={item.id} className="soft-card p-4">
@@ -132,8 +157,12 @@ function FormationPage() {
                   onClick={() => setLearningStatus(item.id, s.key)}
                   className="rounded-full px-2.5 py-1 text-xs font-medium"
                   style={{
-                    background: item.status === s.key ? "hsl(var(--primary))" : "hsl(var(--secondary))",
-                    color: item.status === s.key ? "hsl(var(--primary-foreground))" : "hsl(var(--muted-foreground))",
+                    background:
+                      item.status === s.key ? "hsl(var(--primary))" : "hsl(var(--secondary))",
+                    color:
+                      item.status === s.key
+                        ? "hsl(var(--primary-foreground))"
+                        : "hsl(var(--muted-foreground))",
                   }}
                 >
                   {s.label}
@@ -158,7 +187,9 @@ function FormationPage() {
 
       <p className="eyebrow mt-8 mb-2">Finished</p>
       {finished.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Nothing finished yet — completed items land here.</p>
+        <p className="text-sm text-muted-foreground">
+          Nothing finished yet — completed items land here.
+        </p>
       ) : (
         <ul className="space-y-2">
           {finished.map((item) => (
@@ -170,7 +201,11 @@ function FormationPage() {
                   {item.creator ? ` · ${item.creator}` : ""}
                 </p>
               </div>
-              <Button size="sm" variant="ghost" onClick={() => setLearningStatus(item.id, "in_progress")}>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setLearningStatus(item.id, "in_progress")}
+              >
                 Reopen
               </Button>
             </li>

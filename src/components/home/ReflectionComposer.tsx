@@ -1,17 +1,12 @@
-import { Camera, Link2, Plus, X } from "lucide-react";
+import { Camera, Check, Link2, MessagesSquare, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { todayISO } from "@/lib/prayer/compiler";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
 import type { LinkableItem } from "@/domain/placeholderData";
 import { newId } from "@/lib/prayer/compiler";
@@ -30,25 +25,47 @@ const GROUP_TARGET: Record<string, ReflectionLinkTarget> = {
   Learn: "learning",
 };
 
-function formatWhen(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleString(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+/** Icon-only action button. Label kept for a11y + tooltip; no visible text. */
+function IconBtn({
+  label,
+  onClick,
+  active,
+  disabled,
+  title,
+  children,
+}: {
+  label: string;
+  onClick?: () => void;
+  active?: boolean;
+  disabled?: boolean;
+  title?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Button
+      type="button"
+      size="icon"
+      variant="ghost"
+      className={`size-9 ${active ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      aria-pressed={active}
+      title={title ?? label}
+    >
+      {children}
+    </Button>
+  );
 }
 
 /**
  * Free-text journal entry with optional title/theme, photos, and links to the
  * session, reading, or learning item that prompted it. Links are stored with
- * the reflection, never on the item that inspired it. Persisted in the store.
+ * the reflection, never on the item that inspired it. Renders as flat rows meant
+ * to sit inside the Home "Reflection" SectionCard.
  */
 export function ReflectionComposer({ linkables, prefillLinkId }: Props) {
-  const { db, addReflection } = useApp();
-  const saved = db.reflections;
+  const { addReflection } = useApp();
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [mode, setMode] = useState<"written" | "open_dialogue">("written");
@@ -92,132 +109,102 @@ export function ReflectionComposer({ linkables, prefillLinkId }: Props) {
   }
 
   return (
-    <div className="space-y-3">
-      {saved.map((entry) => (
-        <Card key={entry.id} className="border-border/70">
-          <CardContent className="space-y-2 py-5">
-            <div className="flex items-baseline justify-between gap-2">
-              <p className="font-display text-lg text-foreground">
-                {entry.title ?? "Reflection"}
-              </p>
-              <time className="shrink-0 text-xs text-muted-foreground">
-                {formatWhen(entry.created_at)}
-              </time>
-            </div>
-            <p className="whitespace-pre-line text-sm text-muted-foreground">{entry.body}</p>
-            {(entry.links.length > 0 || entry.mode === "open_dialogue") && (
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                {entry.mode === "open_dialogue" && (
-                  <Badge variant="outline" className="font-normal">
-                    Open dialogue
-                  </Badge>
-                )}
-                {entry.links.map((link) => (
-                  <Badge key={link.target_id} variant="secondary" className="font-normal">
-                    {link.label ?? labelFor(link.target_id)}
-                  </Badge>
+    <div className="divide-y divide-border/60">
+      {/* Composer */}
+      <div className="space-y-3 px-5 py-4">
+        <Input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Title or theme (optional)"
+          className="border-0 border-b border-border/70 px-0 font-display text-lg shadow-none focus-visible:ring-0"
+        />
+        <Textarea
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          placeholder="What stayed with you today?"
+          rows={4}
+        />
+
+        {linked.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {linked.map((id) => (
+              <Badge key={id} variant="secondary" className="gap-1 pr-1.5 font-normal">
+                {labelFor(id)}
+                <button
+                  type="button"
+                  onClick={() => toggleLink(id)}
+                  className="ml-0.5 rounded-full p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                  aria-label={`Remove ${labelFor(id)}`}
+                >
+                  <X className="size-3" aria-hidden />
+                </button>
+              </Badge>
+            ))}
+          </div>
+        )}
+
+        <div className="flex items-center gap-1">
+          <IconBtn label="Add photo" disabled title="Photos land with the Cloud phase">
+            <Camera className="size-4" aria-hidden />
+          </IconBtn>
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <IconBtn label="Link an item" active={linked.length > 0}>
+                <Link2 className="size-4" aria-hidden />
+              </IconBtn>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-72 p-2">
+              <div className="max-h-72 space-y-3 overflow-y-auto">
+                {groups.map((group) => (
+                  <div key={group}>
+                    <p className="px-2 pb-1 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                      {group}
+                    </p>
+                    {linkables
+                      .filter((l) => l.group === group)
+                      .map((l) => (
+                        <button
+                          key={l.id}
+                          type="button"
+                          onClick={() => toggleLink(l.id)}
+                          className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm text-foreground hover:bg-accent"
+                        >
+                          <span>{l.label}</span>
+                          {linked.includes(l.id) && (
+                            <span className="text-xs text-primary">Linked</span>
+                          )}
+                        </button>
+                      ))}
+                  </div>
                 ))}
               </div>
-            )}
-          </CardContent>
-        </Card>
-      ))}
+            </PopoverContent>
+          </Popover>
 
-      <Card className="border-border/70 shadow-devotional">
-        <CardContent className="space-y-3 py-5">
-          <Input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Title or theme (optional)"
-            className="border-0 border-b border-border/70 px-0 font-display text-lg shadow-none focus-visible:ring-0"
-          />
-          <Textarea
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            placeholder="What stayed with you today?"
-            rows={4}
-          />
+          <IconBtn
+            label="Open dialogue — speak or write freely, captured as your own words"
+            active={mode === "open_dialogue"}
+            onClick={() => setMode((m) => (m === "open_dialogue" ? "written" : "open_dialogue"))}
+          >
+            <MessagesSquare className="size-4" aria-hidden />
+          </IconBtn>
 
-          {linked.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {linked.map((id) => (
-                <Badge key={id} variant="secondary" className="gap-1 pr-1.5 font-normal">
-                  {linkables.find((l) => l.id === id)?.label ?? id}
-                  <button
-                    type="button"
-                    onClick={() => toggleLink(id)}
-                    className="ml-0.5 rounded-full p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-                    aria-label={`Remove ${linkables.find((l) => l.id === id)?.label ?? id}`}
-                  >
-                    <X className="size-3" aria-hidden />
-                  </button>
-                </Badge>
-              ))}
-            </div>
-          )}
-
-          <div className="flex flex-wrap items-center gap-2">
-            <Button size="sm" variant="outline" disabled title="Photos land with the Cloud phase">
-              <Camera className="size-4" aria-hidden />
-              Add photo
+          <div className="ml-auto">
+            <Button
+              type="button"
+              size="icon"
+              className="size-9"
+              onClick={save}
+              disabled={!body.trim()}
+              aria-label="Save entry"
+              title="Save entry"
+            >
+              <Check className="size-4" aria-hidden />
             </Button>
-
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button size="sm" variant="outline">
-                  <Link2 className="size-4" aria-hidden />
-                  Link an item
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent align="start" className="w-72 p-2">
-                <div className="max-h-72 space-y-3 overflow-y-auto">
-                  {groups.map((group) => (
-                    <div key={group}>
-                      <p className="px-2 pb-1 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-                        {group}
-                      </p>
-                      {linkables
-                        .filter((l) => l.group === group)
-                        .map((l) => (
-                          <button
-                            key={l.id}
-                            type="button"
-                            onClick={() => toggleLink(l.id)}
-                            className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm text-foreground hover:bg-accent"
-                          >
-                            <span>{l.label}</span>
-                            {linked.includes(l.id) && (
-                              <span className="text-xs text-primary">Linked</span>
-                            )}
-                          </button>
-                        ))}
-                    </div>
-                  ))}
-                </div>
-              </PopoverContent>
-            </Popover>
-
-            <div className="ml-auto flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => setMode((m) => (m === "open_dialogue" ? "written" : "open_dialogue"))}
-                className="rounded-full px-2.5 py-1 text-xs font-medium"
-                style={{
-                  background: mode === "open_dialogue" ? "hsl(var(--secondary))" : "transparent",
-                  color: mode === "open_dialogue" ? "hsl(var(--foreground))" : "hsl(var(--muted-foreground))",
-                }}
-                title="Speak or write freely — captured as your own words"
-              >
-                Open dialogue
-              </button>
-              <Button size="sm" onClick={save} disabled={!body.trim()}>
-                <Plus className="size-4" aria-hidden />
-                Save entry
-              </Button>
-            </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

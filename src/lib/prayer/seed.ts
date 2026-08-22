@@ -989,6 +989,7 @@ const allPrayers = [...base, ...songs];
 
 export function createSeedDatabase(): Database {
   return {
+    settings: {},
     sources: [
       {
         id: "src-tradition",
@@ -1132,15 +1133,6 @@ export function createSeedDatabase(): Database {
         content_type: "book",
         creator: "St. Francis de Sales",
         source: "TAN Books",
-        status: "in_progress",
-        created_at: now,
-      },
-      {
-        id: "learn-bible-in-a-year",
-        title: "The Bible in a Year",
-        content_type: "podcast",
-        creator: "Fr. Mike Schmitz",
-        url: "https://ascensionpress.com/pages/bibleinayear",
         status: "in_progress",
         created_at: now,
       },

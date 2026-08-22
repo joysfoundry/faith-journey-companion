@@ -36,7 +36,7 @@ import {
   uncompleteSessionItem,
 } from "./compiler";
 
-export const STORAGE_KEY = "prayer-companion-db-v10";
+export const STORAGE_KEY = "prayer-companion-db-v11";
 
 /**
  * Migrate a legacy string recurrence ("daily"/"custom"/…) to the structured
@@ -199,11 +199,14 @@ export interface AppStore {
   addSource: (source: Source) => void;
   upsertSource: (source: Source) => void;
   addReflection: (reflection: Reflection) => void;
+  updateReflection: (reflection: Reflection) => void;
   deleteReflection: (id: ID) => void;
   addLearningItem: (item: LearningItem) => void;
   setLearningStatus: (id: ID, status: LearningStatus) => void;
   deleteLearningItem: (id: ID) => void;
   addMassExperience: (mass: MassExperience) => void;
+  /** Pin the devotion the Home "daily" prayer card starts; undefined = the default Rosary. */
+  setDailyTemplate: (templateId: ID | undefined) => void;
 }
 
 export const AppStoreContext = createContext<AppStore | null>(null);
@@ -928,6 +931,12 @@ export const mutations = {
   addReflection(db: Database, reflection: Reflection): Database {
     return { ...db, reflections: [reflection, ...db.reflections] };
   },
+  updateReflection(db: Database, reflection: Reflection): Database {
+    return {
+      ...db,
+      reflections: db.reflections.map((r) => (r.id === reflection.id ? reflection : r)),
+    };
+  },
   deleteReflection(db: Database, id: ID): Database {
     return { ...db, reflections: db.reflections.filter((r) => r.id !== id) };
   },
@@ -945,6 +954,9 @@ export const mutations = {
   },
   addMassExperience(db: Database, mass: MassExperience): Database {
     return { ...db, mass_experiences: [mass, ...db.mass_experiences] };
+  },
+  setDailyTemplate(db: Database, templateId: ID | undefined): Database {
+    return { ...db, settings: { ...db.settings, daily_template_id: templateId } };
   },
 };
 
