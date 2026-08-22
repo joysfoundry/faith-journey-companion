@@ -1,13 +1,15 @@
-import { ChevronDown, ExternalLink, Mic, NotebookPen, Plus, X } from "lucide-react";
+import { ChevronDown, ChevronRight, ExternalLink, Mic, NotebookPen, Plus } from "lucide-react";
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { readingPrograms, todaysWord, type ReadingProgram } from "@/domain/placeholderData";
+import { todaysWord } from "@/domain/placeholderData";
 import { newId, todayISO } from "@/lib/prayer/compiler";
+import { byStatusThenRecent, isScriptureProgram, knowledgeSubtitle } from "@/lib/prayer/knowledge";
 import { useApp } from "@/lib/prayer/store";
 
 /** Icon-only row action. Visible label omitted; kept for a11y + tooltip. */
@@ -35,16 +37,17 @@ function RowIcon({
 }
 
 /**
- * Word: today's Mass readings plus the reading programs you follow. Renders as
- * flat rows meant to sit inside the Home "Word" SectionCard (no card of its own).
+ * Word: today's Mass readings, the optional "heard at Mass" capture, and any
+ * Bible-reading programs. Reading programs are Knowledge `program` items flagged
+ * `reads_scripture` — still managed in the Knowledge library, but surfaced here
+ * because they belong with the Word. Renders flat rows inside the Word card.
  */
 export function WordSection({ onReflect }: { onReflect: (linkId: string) => void }) {
-  const { addMassExperience } = useApp();
+  const { db, addMassExperience } = useApp();
+  const readingPrograms = db.knowledge_items
+    .filter((i) => isScriptureProgram(i) && i.status !== "finished")
+    .sort(byStatusThenRecent);
   const [massOpen, setMassOpen] = useState(false);
-  const [programs, setPrograms] = useState<ReadingProgram[]>(readingPrograms);
-  const [adding, setAdding] = useState(false);
-  const [title, setTitle] = useState("");
-  const [url, setUrl] = useState("");
   const [church, setChurch] = useState("");
   const [celebrant, setCelebrant] = useState("");
   const [transcript, setTranscript] = useState("");
@@ -65,22 +68,6 @@ export function WordSection({ onReflect }: { onReflect: (linkId: string) => void
     setCelebrant("");
     setTranscript("");
     setMassSaved(true);
-  }
-
-  function addProgram() {
-    if (!title.trim()) return;
-    setPrograms((prev) => [
-      ...prev,
-      {
-        id: `program-${prev.length + 1}`,
-        title: title.trim(),
-        detail: "Added by you",
-        url: url.trim(),
-      },
-    ]);
-    setTitle("");
-    setUrl("");
-    setAdding(false);
   }
 
   return (
@@ -195,83 +182,65 @@ export function WordSection({ onReflect }: { onReflect: (linkId: string) => void
         </Collapsible>
       </div>
 
-      {/* Reading programs */}
-      <div className="px-5 py-4">
-        <div className="flex items-center justify-between gap-3">
-          <h3 className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Programs</h3>
-          <RowIcon
-            label={adding ? "Cancel adding a program" : "Add a reading program"}
-            onClick={() => setAdding((v) => !v)}
-          >
-            {adding ? (
-              <X className="size-4" aria-hidden />
-            ) : (
-              <Plus className="size-4" aria-hidden />
-            )}
-          </RowIcon>
-        </div>
-
-        {adding ? (
-          <div className="mt-3 space-y-2.5 rounded-lg border border-border/70 bg-muted/30 p-3">
-            <div className="space-y-1">
-              <Label htmlFor="program-title" className="text-xs text-muted-foreground">
-                Title
-              </Label>
-              <Input
-                id="program-title"
-                className="h-9"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Bible in a Year"
-              />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="program-url" className="text-xs text-muted-foreground">
-                Source (URL)
-              </Label>
-              <Input
-                id="program-url"
-                className="h-9"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder="https://"
-              />
-            </div>
-            <Button size="sm" onClick={addProgram}>
-              Save program
+      {/* Bible-reading programs (Knowledge `program` items flagged reads_scripture). */}
+      {readingPrograms.length > 0 ? (
+        <div className="px-5 py-4">
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <h3 className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Programs</h3>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="size-8 shrink-0 text-muted-foreground hover:text-foreground"
+              aria-label="Add a reading program"
+              title="Add a reading program"
+              asChild
+            >
+              <Link to="/formation" search={{ add: true }}>
+                <Plus className="size-4" aria-hidden />
+              </Link>
             </Button>
           </div>
-        ) : null}
-
-        <ul className="mt-3 space-y-3">
-          {programs.map((program) => (
-            <li key={program.id} className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                {program.url ? (
-                  <a
-                    href={program.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1 font-medium text-foreground underline-offset-4 hover:text-primary hover:underline"
+          <ul className="space-y-3">
+            {readingPrograms.map((program) => (
+              <li key={program.id} className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  {program.url ? (
+                    <a
+                      href={program.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 font-medium text-foreground underline-offset-4 hover:text-primary hover:underline"
+                    >
+                      {program.title}
+                      <ExternalLink className="size-3.5 text-muted-foreground" aria-hidden />
+                    </a>
+                  ) : (
+                    <p className="font-medium text-foreground">{program.title}</p>
+                  )}
+                  <p className="truncate text-sm text-muted-foreground">
+                    {knowledgeSubtitle(program)}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-0.5">
+                  <RowIcon
+                    label={`Write a reflection about ${program.title}`}
+                    onClick={() => onReflect(program.id)}
                   >
-                    {program.title}
-                    <ExternalLink className="size-3.5 text-muted-foreground" aria-hidden />
-                  </a>
-                ) : (
-                  <p className="font-medium text-foreground">{program.title}</p>
-                )}
-                <p className="truncate text-sm text-muted-foreground">{program.detail}</p>
-              </div>
-              <RowIcon
-                label={`Write a reflection about ${program.title}`}
-                onClick={() => onReflect(program.id)}
-              >
-                <NotebookPen className="size-4" aria-hidden />
-              </RowIcon>
-            </li>
-          ))}
-        </ul>
-      </div>
+                    <NotebookPen className="size-4" aria-hidden />
+                  </RowIcon>
+                  <Link
+                    to="/formation"
+                    aria-label={`Open ${program.title} in Knowledge`}
+                    className="p-1 text-muted-foreground hover:text-foreground"
+                  >
+                    <ChevronRight className="size-4" aria-hidden />
+                  </Link>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </div>
   );
 }

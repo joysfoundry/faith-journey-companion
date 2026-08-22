@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { BookOpen, CalendarDays, Download } from "lucide-react";
+import { CalendarDays, Download, Lightbulb } from "lucide-react";
 
 import { AppShell } from "@/components/layout/PageShell";
 import { useApp } from "@/lib/prayer/store";
@@ -34,9 +34,9 @@ function MorePage() {
     },
     {
       to: "/formation",
-      icon: BookOpen,
-      title: "Learn",
-      desc: `Life Library · ${db.learning_items.filter((i) => i.status !== "finished").length} in progress`,
+      icon: Lightbulb,
+      title: "Knowledge",
+      desc: `${db.knowledge_items.filter((i) => i.category !== "resource" && i.status === "in_progress").length} in progress · ${db.knowledge_items.length} saved`,
     },
     {
       to: "/import",

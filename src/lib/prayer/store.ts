@@ -9,8 +9,9 @@ import type {
   ID,
   ImportDraft,
   Intention,
-  LearningItem,
-  LearningStatus,
+  KnowledgeCategory,
+  KnowledgeItem,
+  KnowledgeStatus,
   MassExperience,
   Prayer,
   PrayerSession,
@@ -36,7 +37,7 @@ import {
   uncompleteSessionItem,
 } from "./compiler";
 
-export const STORAGE_KEY = "prayer-companion-db-v11";
+export const STORAGE_KEY = "prayer-companion-db-v13";
 
 /**
  * Migrate a legacy string recurrence ("daily"/"custom"/…) to the structured
@@ -138,7 +139,73 @@ export function normalizeVariants(db: Database): Database {
     ...(plan.starts_on ? {} : plan.date ? { starts_on: plan.date } : {}),
   }));
 
-  return { ...db, prayers: withDefaults, prayer_versions: versions, session_plans };
+  // Knowledge library: migrate any legacy `learning_items` (content_type/
+  // has_transcript) onto the unified `knowledge_items` shape, and backfill
+  // defaults on partial records. Idempotent.
+  const legacy = (db as { learning_items?: unknown }).learning_items;
+  const rawKnowledge = Array.isArray(db.knowledge_items)
+    ? db.knowledge_items
+    : Array.isArray(legacy)
+      ? (legacy as unknown[])
+      : [];
+  const knowledge_items: KnowledgeItem[] = rawKnowledge.map((raw) =>
+    normalizeKnowledgeItem(raw as Record<string, unknown>),
+  );
+
+  return {
+    ...db,
+    prayers: withDefaults,
+    prayer_versions: versions,
+    session_plans,
+    knowledge_items,
+  };
+}
+
+const KNOWLEDGE_CATEGORIES: KnowledgeCategory[] = [
+  "book",
+  "article",
+  "video",
+  "podcast",
+  "post",
+  "program",
+  "resource",
+];
+
+/** Coerce a stored/legacy record into a valid KnowledgeItem. */
+function normalizeKnowledgeItem(raw: Record<string, unknown>): KnowledgeItem {
+  const str = (k: string): string | undefined =>
+    typeof raw[k] === "string" && raw[k] ? (raw[k] as string) : undefined;
+  const candidate = str("category") ?? str("content_type") ?? "book";
+  // Map legacy content types that no longer exist as categories.
+  const mapped =
+    candidate === "sermon" || candidate === "show" || candidate === "newsletter"
+      ? "video"
+      : candidate === "course"
+        ? "program"
+        : candidate === "other"
+          ? "article"
+          : candidate;
+  const category = (KNOWLEDGE_CATEGORIES as string[]).includes(mapped)
+    ? (mapped as KnowledgeCategory)
+    : "book";
+  const status = ["not_started", "in_progress", "finished"].includes(str("status") ?? "")
+    ? (raw["status"] as KnowledgeStatus)
+    : "not_started";
+  return {
+    id: str("id") ?? `know-${Math.random().toString(36).slice(2)}`,
+    title: str("title") ?? "Untitled",
+    category,
+    creator: str("creator"),
+    source: str("source"),
+    url: str("url"),
+    notes: str("notes"),
+    status,
+    favorite: Boolean(raw["favorite"]) || undefined,
+    start_date: str("start_date"),
+    target_date: str("target_date"),
+    reads_scripture: Boolean(raw["reads_scripture"]) || undefined,
+    created_at: str("created_at") ?? new Date().toISOString(),
+  };
 }
 
 export function loadDatabase(): Database {
@@ -201,9 +268,11 @@ export interface AppStore {
   addReflection: (reflection: Reflection) => void;
   updateReflection: (reflection: Reflection) => void;
   deleteReflection: (id: ID) => void;
-  addLearningItem: (item: LearningItem) => void;
-  setLearningStatus: (id: ID, status: LearningStatus) => void;
-  deleteLearningItem: (id: ID) => void;
+  addKnowledgeItem: (item: KnowledgeItem) => void;
+  updateKnowledgeItem: (item: KnowledgeItem) => void;
+  setKnowledgeStatus: (id: ID, status: KnowledgeStatus) => void;
+  toggleKnowledgeFavorite: (id: ID) => void;
+  deleteKnowledgeItem: (id: ID) => void;
   addMassExperience: (mass: MassExperience) => void;
   /** Pin the devotion the Home "daily" prayer card starts; undefined = the default Rosary. */
   setDailyTemplate: (templateId: ID | undefined) => void;
@@ -940,17 +1009,31 @@ export const mutations = {
   deleteReflection(db: Database, id: ID): Database {
     return { ...db, reflections: db.reflections.filter((r) => r.id !== id) };
   },
-  addLearningItem(db: Database, item: LearningItem): Database {
-    return { ...db, learning_items: [item, ...db.learning_items] };
+  addKnowledgeItem(db: Database, item: KnowledgeItem): Database {
+    return { ...db, knowledge_items: [item, ...db.knowledge_items] };
   },
-  setLearningStatus(db: Database, id: ID, status: LearningStatus): Database {
+  updateKnowledgeItem(db: Database, item: KnowledgeItem): Database {
     return {
       ...db,
-      learning_items: db.learning_items.map((i) => (i.id === id ? { ...i, status } : i)),
+      knowledge_items: db.knowledge_items.map((i) => (i.id === item.id ? item : i)),
     };
   },
-  deleteLearningItem(db: Database, id: ID): Database {
-    return { ...db, learning_items: db.learning_items.filter((i) => i.id !== id) };
+  setKnowledgeStatus(db: Database, id: ID, status: KnowledgeStatus): Database {
+    return {
+      ...db,
+      knowledge_items: db.knowledge_items.map((i) => (i.id === id ? { ...i, status } : i)),
+    };
+  },
+  toggleKnowledgeFavorite(db: Database, id: ID): Database {
+    return {
+      ...db,
+      knowledge_items: db.knowledge_items.map((i) =>
+        i.id === id ? { ...i, favorite: !i.favorite } : i,
+      ),
+    };
+  },
+  deleteKnowledgeItem(db: Database, id: ID): Database {
+    return { ...db, knowledge_items: db.knowledge_items.filter((i) => i.id !== id) };
   },
   addMassExperience(db: Database, mass: MassExperience): Database {
     return { ...db, mass_experiences: [mass, ...db.mass_experiences] };

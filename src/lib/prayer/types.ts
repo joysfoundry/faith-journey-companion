@@ -520,18 +520,42 @@ export interface Reflection {
   created_at: string; // ISO datetime — date/time matters in history views
 }
 
-export type LearningStatus = "not_started" | "in_progress" | "finished";
+export type KnowledgeStatus = "not_started" | "in_progress" | "finished";
 
-/** Life Library item (dashboard label: Faith Learning). */
-export interface LearningItem {
+/**
+ * The kind of a Knowledge item. This is the discriminator across the whole
+ * library — completable content (book/article/video/podcast/post) and guided
+ * plans (program) carry a real `status`; `resource` items are ongoing tools
+ * (apps/sites) with no completion, surfaced on Home only when favorited.
+ */
+export type KnowledgeCategory =
+  "book" | "article" | "video" | "podcast" | "post" | "program" | "resource";
+
+/**
+ * One item in the Knowledge library (formerly the "Life Library"). Books,
+ * media, guided programs, and ongoing resources all share this shape:
+ * - completable categories use `status` (not_started → in_progress → finished);
+ * - `resource` ignores `status` and instead uses `favorite` to appear on Home;
+ * - `start_date`/`target_date` apply to programs (absent = open-ended plan).
+ */
+export interface KnowledgeItem {
   id: ID;
   title: string;
-  content_type: string; // book | article | video | podcast | sermon | show | ...
-  creator?: string | undefined;
-  source?: string | undefined;
+  category: KnowledgeCategory;
+  creator?: string | undefined; // author / channel / host
+  source?: string | undefined; // publisher / platform ("YouVersion", "Ascension")
   url?: string | undefined;
-  status: LearningStatus;
-  has_transcript?: boolean | undefined;
+  notes?: string | undefined;
+  status: KnowledgeStatus;
+  favorite?: boolean | undefined; // resources on Home; a "star" for anything else
+  start_date?: string | undefined; // programs
+  target_date?: string | undefined; // programs
+  /**
+   * Programs only. A program that involves reading through Scripture displays
+   * under the Home "Word" section instead of the Knowledge → Programs group
+   * (it's still a `program` in the Library). E.g. Bible in a Year.
+   */
+  reads_scripture?: boolean | undefined;
   created_at: string;
 }
 
@@ -577,6 +601,6 @@ export interface Database {
   intentions: Intention[];
   import_drafts: ImportDraft[];
   reflections: Reflection[];
-  learning_items: LearningItem[];
+  knowledge_items: KnowledgeItem[];
   mass_experiences: MassExperience[];
 }

@@ -123,11 +123,17 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       updateReflection: (r: Parameters<typeof mutations.updateReflection>[1]) =>
         setDb((d) => mutations.updateReflection(d, r)),
       deleteReflection: (id: string) => setDb((d) => mutations.deleteReflection(d, id)),
-      addLearningItem: (i: Parameters<typeof mutations.addLearningItem>[1]) =>
-        setDb((d) => mutations.addLearningItem(d, i)),
-      setLearningStatus: (id: string, status: Parameters<typeof mutations.setLearningStatus>[2]) =>
-        setDb((d) => mutations.setLearningStatus(d, id, status)),
-      deleteLearningItem: (id: string) => setDb((d) => mutations.deleteLearningItem(d, id)),
+      addKnowledgeItem: (i: Parameters<typeof mutations.addKnowledgeItem>[1]) =>
+        setDb((d) => mutations.addKnowledgeItem(d, i)),
+      updateKnowledgeItem: (i: Parameters<typeof mutations.updateKnowledgeItem>[1]) =>
+        setDb((d) => mutations.updateKnowledgeItem(d, i)),
+      setKnowledgeStatus: (
+        id: string,
+        status: Parameters<typeof mutations.setKnowledgeStatus>[2],
+      ) => setDb((d) => mutations.setKnowledgeStatus(d, id, status)),
+      toggleKnowledgeFavorite: (id: string) =>
+        setDb((d) => mutations.toggleKnowledgeFavorite(d, id)),
+      deleteKnowledgeItem: (id: string) => setDb((d) => mutations.deleteKnowledgeItem(d, id)),
       addMassExperience: (m: Parameters<typeof mutations.addMassExperience>[1]) =>
         setDb((d) => mutations.addMassExperience(d, m)),
       setDailyTemplate: (templateId: string | undefined) =>

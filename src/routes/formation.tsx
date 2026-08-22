@@ -1,217 +1,433 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
-import { ExternalLink, NotebookPen, Plus } from "lucide-react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import { ExternalLink, MoreVertical, Pencil, Plus, Star, Trash2 } from "lucide-react";
 
 import { AppShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { newId } from "@/lib/prayer/compiler";
+import {
+  CATEGORY_LABELS,
+  CATEGORY_OPTIONS,
+  GROUP_LABELS,
+  GROUP_ORDER,
+  STATUS_STEPS,
+  byStatusThenRecent,
+  detectCategory,
+  detectScriptureProgram,
+  groupOf,
+  isCompletable,
+  isScriptureProgram,
+  knowledgeSubtitle,
+  type KnowledgeGroup,
+} from "@/lib/prayer/knowledge";
 import { useApp } from "@/lib/prayer/store";
-import type { LearningStatus } from "@/lib/prayer/types";
+import type { KnowledgeCategory, KnowledgeItem } from "@/lib/prayer/types";
 
 export const Route = createFileRoute("/formation")({
   validateSearch: (search: Record<string, unknown>): { add?: boolean } =>
     search["add"] === "1" || search["add"] === true ? { add: true } : {},
   head: () => ({
     meta: [
-      { title: "Learn — Faith Journey" },
+      { title: "Knowledge — Faith Journey" },
       {
         name: "description",
         content:
-          "Your Life Library — books, articles, videos, sermons, and podcasts you are reading and watching, with reflections attached.",
+          "Your Knowledge library — books, media, guided programs, and the resources forming your faith, with reflections attached.",
       },
-      { property: "og:title", content: "Learn — Faith Journey" },
+      { property: "og:title", content: "Knowledge — Faith Journey" },
       {
         property: "og:description",
-        content: "Your Life Library — the books, videos, and sermons forming your faith right now.",
+        content: "Books, media, programs, and resources forming your faith right now.",
       },
     ],
   }),
-  component: FormationPage,
+  component: KnowledgePage,
 });
 
-const CONTENT_TYPE_LABELS: Record<string, string> = {
-  book: "Book",
-  article: "Article",
-  newsletter: "Newsletter",
-  video: "Video",
-  podcast: "Podcast",
-  sermon: "Sermon",
-  show: "Show",
-  social_media: "Social media",
-  course: "Course",
-  other: "Other",
-};
+type FilterKey = "all" | KnowledgeGroup;
 
-const STATUS_STEPS: { key: LearningStatus; label: string }[] = [
-  { key: "not_started", label: "Not started" },
-  { key: "in_progress", label: "In progress" },
-  { key: "finished", label: "Finished" },
+const FILTERS: { key: FilterKey; label: string }[] = [
+  { key: "all", label: "All" },
+  ...GROUP_ORDER.map((g) => ({ key: g, label: GROUP_LABELS[g] })),
 ];
 
-function FormationPage() {
-  const { db, setLearningStatus, addLearningItem } = useApp();
-  const navigate = useNavigate();
+function KnowledgePage() {
+  const {
+    db,
+    addKnowledgeItem,
+    updateKnowledgeItem,
+    setKnowledgeStatus,
+    toggleKnowledgeFavorite,
+    deleteKnowledgeItem,
+  } = useApp();
   const { add } = Route.useSearch();
-  const [adding, setAdding] = useState(Boolean(add));
+
+  const [tab, setTab] = useState<"add" | "library">(add ? "add" : "library");
+  const [filter, setFilter] = useState<FilterKey>("all");
+
+  // Add / edit form
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [category, setCategory] = useState<KnowledgeCategory>("book");
+  const [categoryTouched, setCategoryTouched] = useState(false);
   const [title, setTitle] = useState("");
   const [creator, setCreator] = useState("");
-  const [contentType, setContentType] = useState("book");
+  const [source, setSource] = useState("");
   const [url, setUrl] = useState("");
+  const [notes, setNotes] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [targetDate, setTargetDate] = useState("");
+  const [readsScripture, setReadsScripture] = useState(false);
+  const [scriptureTouched, setScriptureTouched] = useState(false);
 
-  const items = db.learning_items;
-  const active = items.filter((i) => i.status !== "finished");
-  const finished = items.filter((i) => i.status === "finished");
+  const items = db.knowledge_items;
 
-  function submit() {
-    if (!title.trim()) return;
-    addLearningItem({
-      id: newId("learn"),
-      title: title.trim(),
-      content_type: contentType,
-      creator: creator.trim() || undefined,
-      url: url.trim() || undefined,
-      status: "not_started",
-      created_at: new Date().toISOString(),
-    });
+  const visible = useMemo(() => {
+    const filtered = filter === "all" ? items : items.filter((i) => groupOf(i.category) === filter);
+    return [...filtered].sort(byStatusThenRecent);
+  }, [items, filter]);
+
+  function resetForm() {
+    setEditingId(null);
+    setCategory("book");
+    setCategoryTouched(false);
     setTitle("");
     setCreator("");
+    setSource("");
     setUrl("");
-    setContentType("book");
-    setAdding(false);
+    setNotes("");
+    setStartDate("");
+    setTargetDate("");
+    setReadsScripture(false);
+    setScriptureTouched(false);
   }
+
+  function beginEdit(item: KnowledgeItem) {
+    setEditingId(item.id);
+    setCategory(item.category);
+    setCategoryTouched(true);
+    setTitle(item.title);
+    setCreator(item.creator ?? "");
+    setSource(item.source ?? "");
+    setUrl(item.url ?? "");
+    setNotes(item.notes ?? "");
+    setStartDate(item.start_date ?? "");
+    setTargetDate(item.target_date ?? "");
+    setReadsScripture(!!item.reads_scripture);
+    setScriptureTouched(true);
+    setTab("add");
+  }
+
+  function save() {
+    if (!title.trim()) return;
+    const base = {
+      title: title.trim(),
+      category,
+      creator: creator.trim() || undefined,
+      source: source.trim() || undefined,
+      url: url.trim() || undefined,
+      notes: notes.trim() || undefined,
+      start_date: category === "program" ? startDate || undefined : undefined,
+      target_date: category === "program" ? targetDate || undefined : undefined,
+      reads_scripture: category === "program" ? readsScripture || undefined : undefined,
+    };
+    if (editingId) {
+      const existing = items.find((i) => i.id === editingId);
+      if (existing) updateKnowledgeItem({ ...existing, ...base });
+    } else {
+      addKnowledgeItem({
+        id: newId("know"),
+        ...base,
+        status: "not_started",
+        created_at: new Date().toISOString(),
+      });
+    }
+    resetForm();
+    setTab("library");
+  }
+
+  // When the URL changes and the user hasn't picked a category by hand, guess it.
+  function onUrlChange(next: string) {
+    setUrl(next);
+    const guessed = categoryTouched ? category : detectCategory(next, title);
+    if (!categoryTouched) setCategory(guessed);
+    if (!scriptureTouched && guessed === "program") {
+      setReadsScripture(detectScriptureProgram(next, title, source));
+    }
+  }
+
+  const addMenu =
+    tab === "add" ? (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button size="icon" variant="secondary" className="size-9" aria-label="Item actions">
+            <MoreVertical className="size-4" aria-hidden />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={save} disabled={!title.trim()}>
+            <Plus className="size-4" aria-hidden /> {editingId ? "Save changes" : "Save item"}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={() => {
+              resetForm();
+              setTab("library");
+            }}
+          >
+            {editingId ? "Cancel edit" : "Clear"}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    ) : undefined;
 
   return (
     <AppShell
-      title="Learn"
-      subtitle="Your Life Library — books, articles, videos, sermons, podcasts"
+      title="Knowledge"
+      subtitle="Books, media, programs, and resources forming your faith"
       back={{ to: "/more", label: "More" }}
-      action={
-        <Button size="sm" variant="secondary" onClick={() => setAdding((v) => !v)}>
-          <Plus className="size-4" aria-hidden /> Item
-        </Button>
-      }
+      action={addMenu}
     >
-      {adding ? (
-        <div className="soft-card mb-4 space-y-2 p-4">
-          <label className="block text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Type
-          </label>
-          <select
-            value={contentType}
-            onChange={(e) => setContentType(e.target.value)}
-            aria-label="Type"
-            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-          >
-            {Object.entries(CONTENT_TYPE_LABELS).map(([v, l]) => (
-              <option key={v} value={v}>
-                {l}
-              </option>
-            ))}
-          </select>
-          <Input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Title"
-            className="h-10"
-          />
-          <Input
-            value={creator}
-            onChange={(e) => setCreator(e.target.value)}
-            placeholder="Author / creator (optional)"
-            className="h-10"
-          />
-          <Input
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="Link (optional)"
-            className="h-10"
-          />
-          <Button className="w-full" onClick={submit} disabled={!title.trim()}>
-            Add to Life Library
-          </Button>
-        </div>
-      ) : null}
+      <Tabs value={tab} onValueChange={(v) => setTab(v as "add" | "library")}>
+        <TabsList className="mb-4 grid w-full grid-cols-2">
+          <TabsTrigger value="add">{editingId ? "Edit" : "Add"}</TabsTrigger>
+          <TabsTrigger value="library">Library</TabsTrigger>
+        </TabsList>
 
-      <p className="eyebrow mb-2">In progress &amp; up next</p>
-      <ul className="space-y-2">
-        {active.length === 0 ? (
-          <li className="text-sm text-muted-foreground">
-            Nothing active — add something forming your faith.
-          </li>
-        ) : null}
-        {active.map((item) => (
-          <li key={item.id} className="soft-card p-4">
-            <div className="min-w-0">
-              <p className="font-medium text-foreground">{item.title}</p>
-              <p className="truncate text-sm text-muted-foreground">
-                {CONTENT_TYPE_LABELS[item.content_type] ?? item.content_type}
-                {item.creator ? ` · ${item.creator}` : ""}
-                {item.source ? ` · ${item.source}` : ""}
-              </p>
-            </div>
-            <div className="mt-3 flex flex-wrap items-center gap-1.5">
-              {STATUS_STEPS.map((s) => (
-                <button
-                  key={s.key}
-                  onClick={() => setLearningStatus(item.id, s.key)}
-                  className="rounded-full px-2.5 py-1 text-xs font-medium"
-                  style={{
-                    background:
-                      item.status === s.key ? "hsl(var(--primary))" : "hsl(var(--secondary))",
-                    color:
-                      item.status === s.key
-                        ? "hsl(var(--primary-foreground))"
-                        : "hsl(var(--muted-foreground))",
-                  }}
-                >
-                  {s.label}
-                </button>
-              ))}
-              <span className="ml-auto flex items-center gap-1">
-                <Button size="sm" variant="ghost" onClick={() => navigate({ to: "/reflections" })}>
-                  <NotebookPen className="size-4" aria-hidden /> Reflect
-                </Button>
-                {item.url ? (
-                  <Button asChild size="sm" variant="ghost">
-                    <a href={item.url} target="_blank" rel="noreferrer">
-                      <ExternalLink className="size-4" aria-hidden /> Open
-                    </a>
-                  </Button>
-                ) : null}
-              </span>
-            </div>
-          </li>
-        ))}
-      </ul>
-
-      <p className="eyebrow mt-8 mb-2">Finished</p>
-      {finished.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          Nothing finished yet — completed items land here.
-        </p>
-      ) : (
-        <ul className="space-y-2">
-          {finished.map((item) => (
-            <li key={item.id} className="soft-card flex items-center justify-between gap-3 p-4">
-              <div className="min-w-0">
-                <p className="font-medium text-foreground">{item.title}</p>
-                <p className="truncate text-sm text-muted-foreground">
-                  {CONTENT_TYPE_LABELS[item.content_type] ?? item.content_type}
-                  {item.creator ? ` · ${item.creator}` : ""}
-                </p>
-              </div>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setLearningStatus(item.id, "in_progress")}
+        {/* ADD / EDIT ------------------------------------------------------ */}
+        <TabsContent value="add" className="mt-0">
+          <div className="soft-card space-y-3 p-4">
+            <div className="space-y-1">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">Type</Label>
+              <select
+                value={category}
+                onChange={(e) => {
+                  setCategory(e.target.value as KnowledgeCategory);
+                  setCategoryTouched(true);
+                }}
+                aria-label="Type"
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
               >
-                Reopen
-              </Button>
-            </li>
-          ))}
-        </ul>
-      )}
+                {CATEGORY_OPTIONS.map((c) => (
+                  <option key={c} value={c}>
+                    {CATEGORY_LABELS[c]}
+                  </option>
+                ))}
+              </select>
+              {url.trim() && !categoryTouched ? (
+                <p className="text-[11px] text-muted-foreground">
+                  Auto-detected from the link — change it above if it&apos;s wrong.
+                </p>
+              ) : null}
+            </div>
+
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Title"
+              className="h-10"
+            />
+            <Input
+              value={url}
+              onChange={(e) => onUrlChange(e.target.value)}
+              placeholder="Link (optional) — paste to auto-sort"
+              className="h-10"
+            />
+            <Input
+              value={creator}
+              onChange={(e) => setCreator(e.target.value)}
+              placeholder="Author / creator (optional)"
+              className="h-10"
+            />
+            <Input
+              value={source}
+              onChange={(e) => setSource(e.target.value)}
+              placeholder="Publisher / platform (optional)"
+              className="h-10"
+            />
+
+            {category === "program" ? (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Start (optional)</Label>
+                  <Input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="h-10"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Target (optional)</Label>
+                  <Input
+                    type="date"
+                    value={targetDate}
+                    onChange={(e) => setTargetDate(e.target.value)}
+                    className="h-10"
+                  />
+                </div>
+              </div>
+            ) : null}
+
+            {category === "program" ? (
+              <label className="flex items-start gap-2 rounded-md border border-border/70 bg-muted/30 p-3">
+                <Checkbox
+                  checked={readsScripture}
+                  onCheckedChange={(v) => {
+                    setReadsScripture(v === true);
+                    setScriptureTouched(true);
+                  }}
+                  className="mt-0.5"
+                />
+                <span className="text-sm">
+                  <span className="font-medium text-foreground">Reads through Scripture</span>
+                  <span className="block text-xs text-muted-foreground">
+                    Shows under the Word section on Home instead of Programs.
+                  </span>
+                </span>
+              </label>
+            ) : null}
+
+            <Textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Notes (optional)"
+              rows={2}
+            />
+
+            <p className="text-[11px] text-muted-foreground">
+              Save from the ⋯ menu at the top right.
+            </p>
+          </div>
+        </TabsContent>
+
+        {/* LIBRARY --------------------------------------------------------- */}
+        <TabsContent value="library" className="mt-0">
+          <div className="mb-3 flex flex-wrap gap-1.5">
+            {FILTERS.map((f) => (
+              <button
+                key={f.key}
+                onClick={() => setFilter(f.key)}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                  filter === f.key
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+
+          {visible.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Nothing here yet — add a book, video, program, or resource.
+            </p>
+          ) : (
+            <ul className="divide-y divide-border/60 overflow-hidden rounded-lg border border-border/60">
+              {visible.map((item) => (
+                <li key={item.id} className="flex items-center gap-3 px-4 py-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <p className="truncate text-sm font-medium text-foreground">{item.title}</p>
+                      {item.url ? (
+                        <a
+                          href={item.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          aria-label={`Open ${item.title}`}
+                          className="shrink-0 text-muted-foreground hover:text-primary"
+                        >
+                          <ExternalLink className="size-3.5" aria-hidden />
+                        </a>
+                      ) : null}
+                      {isScriptureProgram(item) ? (
+                        <span className="shrink-0 rounded-full bg-secondary px-1.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                          Word
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {knowledgeSubtitle(item)}
+                    </p>
+                    {isCompletable(item.category) ? (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {STATUS_STEPS.map((s) => (
+                          <button
+                            key={s.key}
+                            onClick={() => setKnowledgeStatus(item.id, s.key)}
+                            className={`rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors ${
+                              item.status === s.key
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-secondary text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
+                            {s.label}
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+
+                  {/* Resources: star = show on Home. */}
+                  {item.category === "resource" ? (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="size-8 shrink-0"
+                      aria-label={item.favorite ? "Unfavorite" : "Favorite (show on Home)"}
+                      title={
+                        item.favorite ? "Favorited — shows on Home" : "Favorite to show on Home"
+                      }
+                      onClick={() => toggleKnowledgeFavorite(item.id)}
+                    >
+                      <Star
+                        className={`size-4 ${item.favorite ? "fill-primary text-primary" : "text-muted-foreground"}`}
+                        aria-hidden
+                      />
+                    </Button>
+                  ) : null}
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="size-8 shrink-0 text-muted-foreground"
+                        aria-label={`Actions for ${item.title}`}
+                      >
+                        <MoreVertical className="size-4" aria-hidden />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => beginEdit(item)}>
+                        <Pencil className="size-4" aria-hidden /> Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive"
+                        onClick={() => deleteKnowledgeItem(item.id)}
+                      >
+                        <Trash2 className="size-4" aria-hidden /> Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </li>
+              ))}
+            </ul>
+          )}
+        </TabsContent>
+      </Tabs>
     </AppShell>
   );
 }

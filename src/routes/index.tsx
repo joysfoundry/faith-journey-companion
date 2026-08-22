@@ -3,8 +3,10 @@ import {
   ArrowLeftRight,
   BookOpen,
   Check,
+  ChevronDown,
   ChevronRight,
   MoreVertical,
+  Notebook,
   NotebookPen,
   Play,
   Plus,
@@ -32,7 +34,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { readingPrograms, todaysWord, type LinkableItem } from "@/domain/placeholderData";
+import { todaysWord, type LinkableItem } from "@/domain/placeholderData";
+import {
+  GROUP_LABELS,
+  GROUP_ORDER,
+  byStatusThenRecent,
+  groupOf,
+  isScriptureProgram,
+  knowledgeSubtitle,
+} from "@/lib/prayer/knowledge";
+import type { KnowledgeItem } from "@/lib/prayer/types";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { defaultContext, resolveMysterySet, todayISO } from "@/lib/prayer/compiler";
 import { useApp } from "@/lib/prayer/store";
 import type { PrayerTemplate } from "@/lib/prayer/types";
@@ -56,16 +68,76 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-const CONTENT_TYPE_LABELS: Record<string, string> = {
-  book: "Book",
-  article: "Article",
-  newsletter: "Newsletter",
-  video: "Video",
-  sermon: "Sermon",
-  podcast: "Podcast",
-  show: "Show",
-  other: "Other",
-};
+/**
+ * One expandable Knowledge group on Home (Programs / Books / Media / Resources).
+ * Shows its items in-progress-first; completed items are already filtered out by
+ * the caller. Starts expanded.
+ */
+function KnowledgeGroupRow({
+  label,
+  items,
+  onReflect,
+}: {
+  label: string;
+  items: KnowledgeItem[];
+  onReflect: (linkId: string) => void;
+}) {
+  const [open, setOpen] = useState(true);
+  return (
+    <Collapsible open={open} onOpenChange={setOpen} className="border-t border-border/60">
+      <CollapsibleTrigger className="flex w-full items-center justify-between gap-2 px-5 py-3 text-left transition-colors hover:bg-accent/40">
+        <span className="flex items-center gap-2">
+          <span className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            {label}
+          </span>
+          <span className="rounded-full bg-secondary px-1.5 text-[11px] text-muted-foreground">
+            {items.length}
+          </span>
+        </span>
+        <ChevronDown
+          className={`size-4 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`}
+          aria-hidden
+        />
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        {items.map((item) => (
+          <div key={item.id} className="flex items-center justify-between gap-3 px-5 pb-3 pl-6">
+            <Link
+              to="/formation"
+              className="flex min-w-0 flex-1 items-center gap-2 transition-colors hover:text-primary"
+            >
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-medium text-foreground">
+                  {item.title}
+                </span>
+                <span className="block truncate text-xs text-muted-foreground">
+                  {knowledgeSubtitle(item)}
+                </span>
+              </span>
+            </Link>
+            <div className="flex shrink-0 items-center gap-0.5">
+              <IconAction
+                label={`Write a reflection about ${item.title}`}
+                onClick={() => onReflect(item.id)}
+              >
+                <span>
+                  <NotebookPen className="size-4" aria-hidden />
+                </span>
+              </IconAction>
+              <Link
+                to="/formation"
+                aria-label={`Open ${item.title} in Knowledge`}
+                className="p-1 text-muted-foreground hover:text-foreground"
+              >
+                <ChevronRight className="size-4" aria-hidden />
+              </Link>
+            </div>
+          </div>
+        ))}
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
 
 /** Icon-only header action. Label is for a11y + tooltip; no visible text. */
 function IconAction({
@@ -280,11 +352,19 @@ function Index() {
   const linkables: LinkableItem[] = [
     { id: daily?.id ?? "rosary", label: dailySubtitle, group: "Prayer & devotion" },
     { id: todaysWord.id, label: "Daily Readings", group: "Word" },
-    ...readingPrograms.map((p) => ({ id: p.id, label: p.title, group: "Word" })),
-    ...db.learning_items.map((l) => ({ id: l.id, label: l.title, group: "Learn" })),
+    ...db.knowledge_items.map((k) => ({ id: k.id, label: k.title, group: "Knowledge" })),
   ];
 
-  const activeLearning = db.learning_items.filter((i) => i.status !== "finished");
+  // Home Knowledge card: one expandable group per display group. Resources show
+  // only when favorited; everything else hides completed items. Scripture-reading
+  // programs are surfaced under the Word section instead, so exclude them here.
+  const homeKnowledge = GROUP_ORDER.map((g) => {
+    const list = db.knowledge_items
+      .filter((i) => groupOf(i.category) === g && !isScriptureProgram(i))
+      .filter((i) => (g === "resource" ? i.favorite : i.status !== "finished"))
+      .sort(byStatusThenRecent);
+    return { group: g, items: list };
+  }).filter((x) => x.items.length > 0);
 
   return (
     <AppShell>
@@ -332,13 +412,17 @@ function Index() {
           ) : null}
 
           <div>
-            {/* Daily rosary — auto-provided (not user-created), so it gets a
-                subtle accent and a "Daily" tag, plus a switch icon to swap the
-                template it uses. Otherwise it's a session row like the rest. */}
-            <div className="flex items-center justify-between gap-3 bg-primary/[0.04] px-5 py-4">
+            {/* Daily rosary — auto-provided (not user-created). The blue eyebrow
+                (text-primary) differentiates it; no background tint. A switch
+                icon swaps the template it uses. Otherwise a normal session row. */}
+            <div className="flex items-center justify-between gap-3 px-5 py-4">
               <span className="min-w-0">
                 <span className="eyebrow block text-primary">
-                  {dailyOpen ? "Daily · Continue" : dailyDone ? "Daily · Done" : "Daily"}
+                  {dailyOpen
+                    ? "Daily Rosary · Continue"
+                    : dailyDone
+                      ? "Daily Rosary · Done"
+                      : "Daily Rosary"}
                 </span>
                 <span className="block truncate font-display text-lg">{dailySubtitle}</span>
               </span>
@@ -457,69 +541,31 @@ function Index() {
           <WordSection onReflect={openJournal} />
         </SectionCard>
 
-        {/* D — Learn (collection: Life Library) */}
+        {/* D — Knowledge: Programs, Books, Media, and favorited Resources */}
         <SectionCard
-          title="Learn"
+          title="Knowledge"
           actions={
-            <>
-              <IconAction label="All & finished items" asChild>
-                <Link to="/formation">
-                  <BookOpen className="size-4" aria-hidden />
-                </Link>
-              </IconAction>
-              <IconAction label="Add an item" asChild>
-                <Link to="/formation" search={{ add: true }}>
-                  <Plus className="size-4" aria-hidden />
-                </Link>
-              </IconAction>
-            </>
+            <IconAction label="Add & browse your library" asChild>
+              <Link to="/formation" search={{ add: true }}>
+                <Plus className="size-4" aria-hidden />
+              </Link>
+            </IconAction>
           }
         >
-          {activeLearning.length === 0 ? (
+          {homeKnowledge.length === 0 ? (
             <SectionRow className="border-t border-border/60">
               <p className="text-sm text-muted-foreground">
-                Books, articles, videos, sermons, shows you&apos;re following.
+                Programs, books, media, and resources forming your faith.
               </p>
             </SectionRow>
           ) : (
-            activeLearning.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center justify-between gap-3 border-t border-border/60 px-5 py-4"
-              >
-                <Link
-                  to="/formation"
-                  className="flex min-w-0 flex-1 items-center gap-2 transition-colors hover:text-primary"
-                >
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-medium text-foreground">
-                      {item.title}
-                    </span>
-                    <span className="block truncate text-xs text-muted-foreground">
-                      {CONTENT_TYPE_LABELS[item.content_type] ?? item.content_type}
-                      {item.creator ? ` · ${item.creator}` : ""}
-                      {item.source ? ` · ${item.source}` : ""}
-                    </span>
-                  </span>
-                </Link>
-                <div className="flex shrink-0 items-center gap-0.5">
-                  <IconAction
-                    label={`Write a reflection about ${item.title}`}
-                    onClick={() => openJournal(item.id)}
-                  >
-                    <span>
-                      <NotebookPen className="size-4" aria-hidden />
-                    </span>
-                  </IconAction>
-                  <Link
-                    to="/formation"
-                    aria-label={`Open ${item.title} in Learn`}
-                    className="p-1 text-muted-foreground hover:text-foreground"
-                  >
-                    <ChevronRight className="size-4" aria-hidden />
-                  </Link>
-                </div>
-              </div>
+            homeKnowledge.map(({ group, items }) => (
+              <KnowledgeGroupRow
+                key={group}
+                label={GROUP_LABELS[group]}
+                items={items}
+                onReflect={openJournal}
+              />
             ))
           )}
         </SectionCard>
@@ -531,7 +577,7 @@ function Index() {
             actions={
               <IconAction label="Open your journal" asChild>
                 <Link to="/reflections">
-                  <BookOpen className="size-4" aria-hidden />
+                  <Notebook className="size-4" aria-hidden />
                 </Link>
               </IconAction>
             }

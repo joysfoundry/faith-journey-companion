@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { readingPrograms, todaysWord, type LinkableItem } from "@/domain/placeholderData";
+import { todaysWord, type LinkableItem } from "@/domain/placeholderData";
 import { defaultContext, resolveMysterySet, todayISO } from "@/lib/prayer/compiler";
 import { useApp } from "@/lib/prayer/store";
 import type { Reflection } from "@/lib/prayer/types";
@@ -243,8 +243,7 @@ function ReflectionsPage() {
     ...recentSessions,
     { id: rosary?.id ?? "rosary", label: `Daily Rosary · ${setName}`, group: "Prayer & devotion" },
     { id: todaysWord.id, label: "Daily Readings", group: "Word" },
-    ...readingPrograms.map((p) => ({ id: p.id, label: p.title, group: "Word" })),
-    ...db.learning_items.map((l) => ({ id: l.id, label: l.title, group: "Learn" })),
+    ...db.knowledge_items.map((k) => ({ id: k.id, label: k.title, group: "Knowledge" })),
   ];
 
   // Latest entry on top.
