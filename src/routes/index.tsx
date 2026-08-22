@@ -189,28 +189,44 @@ function Index() {
   const openSessions = db.sessions.filter((s) => !s.completed_at);
   const completedSessions = db.sessions.filter((s) => s.completed_at);
   const isToday = (iso?: string) => (iso ?? "").slice(0, 10) === today;
+  const latestDoneToday = (match: (s: (typeof completedSessions)[number]) => boolean) =>
+    completedSessions
+      .filter((s) => isToday(s.completed_at) && match(s))
+      .sort((a, b) => (b.completed_at ?? "").localeCompare(a.completed_at ?? ""))[0];
 
   // The daily's own ad-hoc session (started from the Daily row, no plan). The
-  // Daily row flips to "Continue" for it, so it never also shows as a separate row.
+  // Daily row itself reflects its state, so it never shows as a separate row.
   const dailyOpen = daily
     ? openSessions.find((s) => s.template_id === daily.id && !s.plan_id)
     : undefined;
+  const dailyDone =
+    daily && !dailyOpen
+      ? latestDoneToday((s) => s.template_id === daily.id && !s.plan_id)
+      : undefined;
 
-  // Each session scheduled for today resolves to ONE state — never both a
-  // "Today" (start) and a "Continue" (resume) line for the same prayer, and it
-  // drops off once finished today.
+  // Each today session resolves to ONE state — start (Today), continue, or done —
+  // never doubled. Completed sessions stay visible as "Done" for the day, deduped
+  // to one per devotion (the daily is shown on its own row).
   const representedIds = new Set<string>();
+  const doneSeen = new Set<string>(daily ? [daily.id] : []);
   const continueList: { id: string; title: string; sessionId: string }[] = [];
   const todayList: { id: string; title: string; planId: string }[] = [];
+  const doneList: { id: string; title: string; sessionId: string }[] = [];
+  const addDone = (key: string, row: { id: string; title: string; sessionId: string }) => {
+    if (doneSeen.has(key)) return;
+    doneSeen.add(key);
+    doneList.push(row);
+  };
   for (const plan of db.session_plans.filter((p) => p.date === today)) {
     const tpl = db.templates.find((t) => t.id === plan.template_id);
     const title = plan.purpose || tpl?.name || "Session";
     const openS = openSessions.find((s) => s.plan_id === plan.id);
+    const doneS = latestDoneToday((s) => s.plan_id === plan.id);
     if (openS) {
       representedIds.add(openS.id);
       continueList.push({ id: plan.id, title, sessionId: openS.id });
-    } else if (completedSessions.some((s) => s.plan_id === plan.id && isToday(s.completed_at))) {
-      // Finished today — nothing to show.
+    } else if (doneS) {
+      addDone(plan.template_id || plan.id, { id: plan.id, title, sessionId: doneS.id });
     } else {
       todayList.push({ id: plan.id, title, planId: plan.id });
     }
@@ -219,6 +235,11 @@ function Index() {
   for (const s of openSessions) {
     if (s.id === dailyOpen?.id || representedIds.has(s.id)) continue;
     continueList.push({ id: s.id, title: s.title, sessionId: s.id });
+  }
+  // Ad-hoc sessions completed today (no plan), one per devotion.
+  for (const s of completedSessions) {
+    if (!isToday(s.completed_at) || s.plan_id) continue;
+    addDone(s.template_id || s.id, { id: s.id, title: s.title, sessionId: s.id });
   }
 
   function openJournal(linkId: string) {
@@ -317,7 +338,7 @@ function Index() {
             <div className="flex items-center justify-between gap-3 bg-primary/[0.04] px-5 py-4">
               <span className="min-w-0">
                 <span className="eyebrow block text-primary">
-                  {dailyOpen ? "Daily · Continue" : "Daily"}
+                  {dailyOpen ? "Daily · Continue" : dailyDone ? "Daily · Done" : "Daily"}
                 </span>
                 <span className="block truncate font-display text-lg">{dailySubtitle}</span>
               </span>
@@ -343,8 +364,20 @@ function Index() {
                   variant="ghost"
                   className="size-9 shrink-0 text-primary"
                   onClick={beginDaily}
-                  aria-label={dailyOpen ? "Continue the daily rosary" : "Begin the daily rosary"}
-                  title={dailyOpen ? "Continue the daily rosary" : "Begin the daily rosary"}
+                  aria-label={
+                    dailyOpen
+                      ? "Continue the daily rosary"
+                      : dailyDone
+                        ? "Pray the daily rosary again"
+                        : "Begin the daily rosary"
+                  }
+                  title={
+                    dailyOpen
+                      ? "Continue the daily rosary"
+                      : dailyDone
+                        ? "Pray again"
+                        : "Begin the daily rosary"
+                  }
                 >
                   <Play className="size-4" aria-hidden />
                 </Button>
@@ -388,6 +421,24 @@ function Index() {
                   <Play className="size-4" aria-hidden />
                 </Button>
               </div>
+            ))}
+
+            {/* Completed today — kept visible as Done; tap to review. */}
+            {doneList.map((row) => (
+              <Link
+                key={row.id}
+                to="/session/$sessionId"
+                params={{ sessionId: row.sessionId }}
+                className="flex items-center justify-between gap-3 border-t border-border/60 px-5 py-4 transition-colors hover:bg-accent/40"
+              >
+                <span className="min-w-0">
+                  <span className="eyebrow block text-muted-foreground">Done</span>
+                  <span className="truncate font-display text-lg text-muted-foreground">
+                    {row.title}
+                  </span>
+                </span>
+                <Check className="size-5 shrink-0 text-muted-foreground" aria-hidden />
+              </Link>
             ))}
           </div>
         </Card>
