@@ -187,6 +187,7 @@ export function DevotionItemsEditor({
       const primary = siblings.find((s) => s.is_default_variant) ?? siblings[0] ?? prayer;
       groups.push({ primary, versions: versionsOf(primary) });
     }
+    groups.sort((a, b) => a.primary.title.localeCompare(b.primary.title));
     return groups;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [db.prayers, db.prayer_versions]);
