@@ -21,6 +21,7 @@ import {
   generatePrayerSession,
   listenSourcesFromItems,
   newId,
+  planTitle,
   recurrenceLabel,
   todayISO,
 } from "@/lib/prayer/compiler";
@@ -280,11 +281,10 @@ function PrayPage() {
   };
 
   const duplicatePlan = (plan: SessionPlan) => {
-    const tpl = db.templates.find((t) => t.id === plan.template_id);
     saveSessionPlan({
       ...plan,
       id: newId("plan"),
-      purpose: `Copy of ${plan.purpose || tpl?.name || "Session"}`,
+      purpose: `Copy of ${planTitle(db, plan)}`,
       items: plan.items?.map((it) => ({ ...it })),
       created_at: new Date().toISOString(),
     });
@@ -684,7 +684,7 @@ function PrayPage() {
                 <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border">
                   {plans.map((plan) => {
                     const tpl = db.templates.find((t) => t.id === plan.template_id);
-                    const title = plan.purpose || tpl?.name || "Session";
+                    const title = planTitle(db, plan);
                     const dateLabel = plan.date
                       ? new Date(`${plan.date}T00:00`).toLocaleDateString(undefined, {
                           month: "short",

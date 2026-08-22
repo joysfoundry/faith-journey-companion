@@ -20,6 +20,7 @@ import type {
   Recurrence,
   SessionContext,
   SessionItem,
+  SessionPlan,
   TemplateItem,
 } from "./types";
 
@@ -73,6 +74,26 @@ export function recurrenceLabel(r: Recurrence | undefined): string {
   if (r.count && r.count > 1) return `${every} · ${r.count} ${unit}s`;
   if (r.until) return `${every} · until ${r.until}`;
   return every;
+}
+
+/**
+ * Display name for a saved session plan. Prefers the user's Purpose, then the
+ * base devotion's name, then — for a from-scratch session — the first prayer or
+ * song it contains (so a single ad-hoc prayer reads as its own name, not the
+ * generic "Session"). Falls back to a section heading, then "Prayer session".
+ */
+export function planTitle(db: Database, plan: SessionPlan): string {
+  if (plan.purpose?.trim()) return plan.purpose.trim();
+  const tpl = db.templates.find((t) => t.id === plan.template_id);
+  if (tpl?.name) return tpl.name;
+  for (const it of plan.items ?? []) {
+    if (it.kind === "prayer" || it.kind === "song") {
+      const prayer = db.prayers.find((p) => p.id === it.prayer_id);
+      if (prayer?.title) return prayer.title;
+    }
+    if (it.kind === "heading" && it.label?.trim()) return it.label.trim();
+  }
+  return "Prayer session";
 }
 
 /**

@@ -45,7 +45,7 @@ import {
 } from "@/lib/prayer/knowledge";
 import type { KnowledgeItem } from "@/lib/prayer/types";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { defaultContext, resolveMysterySet, todayISO } from "@/lib/prayer/compiler";
+import { defaultContext, planTitle, resolveMysterySet, todayISO } from "@/lib/prayer/compiler";
 import { useApp } from "@/lib/prayer/store";
 import type { PrayerTemplate } from "@/lib/prayer/types";
 
@@ -290,8 +290,7 @@ function Index() {
     doneList.push(row);
   };
   for (const plan of db.session_plans.filter((p) => p.date === today)) {
-    const tpl = db.templates.find((t) => t.id === plan.template_id);
-    const title = plan.purpose || tpl?.name || "Session";
+    const title = planTitle(db, plan);
     const openS = openSessions.find((s) => s.plan_id === plan.id);
     if (openS) {
       representedIds.add(openS.id);
@@ -315,10 +314,7 @@ function Index() {
   for (const s of completedSessions) {
     if (!isToday(s.completed_at)) continue;
     const plan = s.plan_id ? db.session_plans.find((p) => p.id === s.plan_id) : undefined;
-    const tpl = (plan ? plan.template_id : s.template_id)
-      ? db.templates.find((t) => t.id === (plan ? plan.template_id : s.template_id))
-      : undefined;
-    const title = plan?.purpose || tpl?.name || s.title || "Session";
+    const title = plan ? planTitle(db, plan) : s.title?.trim() || "Prayer session";
     addDone(plan?.template_id || s.template_id || s.id, { id: s.id, title, sessionId: s.id });
   }
 
