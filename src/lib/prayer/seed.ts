@@ -1137,6 +1137,16 @@ export function createSeedDatabase(): Database {
         created_at: now,
       },
       {
+        id: "know-why-we-are-catholic",
+        title: "Why We Are Catholic",
+        category: "book",
+        creator: "Trent Horn",
+        source: "Catholic Answers Press",
+        url: "https://a.co/d/0iRtwemk",
+        status: "not_started",
+        created_at: now,
+      },
+      {
         id: "know-bible-in-a-year",
         title: "Bible in a Year",
         category: "program",
