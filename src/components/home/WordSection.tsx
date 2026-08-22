@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronRight, ExternalLink, Mic, NotebookPen, Plus } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { todaysWord } from "@/domain/placeholderData";
 import { newId, todayISO } from "@/lib/prayer/compiler";
 import { byStatusThenRecent, isScriptureProgram, knowledgeSubtitle } from "@/lib/prayer/knowledge";
+import { getLiturgicalDay, type LiturgicalDay } from "@/lib/liturgical/calendar";
 import { useApp } from "@/lib/prayer/store";
 
 /** Icon-only row action. Visible label omitted; kept for a11y + tooltip. */
@@ -47,6 +48,11 @@ export function WordSection({ onReflect }: { onReflect: (linkId: string) => void
   const readingPrograms = db.knowledge_items
     .filter((i) => isScriptureProgram(i) && i.status !== "finished")
     .sort(byStatusThenRecent);
+  // Computed client-side (todayISO uses the local clock) to avoid an SSR/timezone
+  // hydration mismatch — falls back to "Daily Readings" until it resolves.
+  const [litDay, setLitDay] = useState<LiturgicalDay | null>(null);
+  useEffect(() => setLitDay(getLiturgicalDay(todayISO())), []);
+  const isNamedCelebration = litDay ? litDay.title !== litDay.ferialTitle : false;
   const [massOpen, setMassOpen] = useState(false);
   const [church, setChurch] = useState("");
   const [celebrant, setCelebrant] = useState("");
@@ -72,24 +78,35 @@ export function WordSection({ onReflect }: { onReflect: (linkId: string) => void
 
   return (
     <div className="divide-y divide-border/60">
-      {/* Daily readings — the liturgical day name varies daily and isn't
-          computed here, so the title itself links out to today's readings
-          (USCCB auto-shows the correct day). */}
+      {/* Daily readings — the liturgical day is computed from the date
+          (src/lib/liturgical/calendar.ts): the seasonal day plus the saint,
+          feast, or solemnity that governs it. The title links to today's
+          readings (USCCB auto-shows the correct day). */}
       <div className="px-5 py-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
+            <span className="eyebrow block text-primary">Daily Readings</span>
             <a
               href={todaysWord.readingsUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1 font-display text-lg text-foreground underline-offset-4 hover:text-primary hover:underline"
+              className="inline-flex items-start gap-1 font-display text-lg leading-snug text-foreground underline-offset-4 hover:text-primary hover:underline"
             >
-              Daily Readings
-              <ExternalLink className="size-4 text-muted-foreground" aria-hidden />
+              {litDay ? litDay.title : "Today's readings"}
+              <ExternalLink className="mt-1 size-4 shrink-0 text-muted-foreground" aria-hidden />
             </a>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              {todaysWord.readings.join(" · ")}
+              {litDay
+                ? isNamedCelebration
+                  ? `${litDay.rankLabel} · ${litDay.ferialTitle}`
+                  : "Today's Mass readings"
+                : "Today's Mass readings"}
             </p>
+            {litDay && litDay.optionalMemorials.length > 0 ? (
+              <p className="mt-1 text-[11px] leading-snug text-muted-foreground/80">
+                Also today: {litDay.optionalMemorials.join(" · ")}
+              </p>
+            ) : null}
           </div>
           <RowIcon
             label="Write a reflection about today's readings"
@@ -185,7 +202,7 @@ export function WordSection({ onReflect }: { onReflect: (linkId: string) => void
       {/* Bible-reading programs (Knowledge `program` items flagged reads_scripture). */}
       {readingPrograms.length > 0 ? (
         <div className="px-5 py-4">
-          <div className="mb-2 flex items-center justify-between gap-3">
+          <div className="mb-1 flex items-center justify-between gap-3">
             <h3 className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Programs</h3>
             <Button
               size="icon"
