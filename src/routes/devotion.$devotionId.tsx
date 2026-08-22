@@ -1,6 +1,14 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ChevronDown, Copy, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronsDownUp,
+  ChevronsUpDown,
+  Copy,
+  MoreVertical,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
@@ -177,22 +185,28 @@ function DevotionPage() {
           </div>
         ) : null}
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-end gap-0.5">
           <Button
-            variant="outline"
-            className="h-11 flex-1"
+            size="icon"
+            variant="ghost"
+            className="size-8 text-muted-foreground hover:text-foreground"
             onClick={allOpen}
             disabled={open.size >= collapsible}
+            aria-label="Expand all"
+            title="Expand all"
           >
-            Expand all
+            <ChevronsUpDown className="size-4" aria-hidden />
           </Button>
           <Button
-            variant="outline"
-            className="h-11 flex-1"
+            size="icon"
+            variant="ghost"
+            className="size-8 text-muted-foreground hover:text-foreground"
             onClick={allClosed}
             disabled={open.size === 0}
+            aria-label="Collapse all"
+            title="Collapse all"
           >
-            Collapse all
+            <ChevronsDownUp className="size-4" aria-hidden />
           </Button>
         </div>
 
