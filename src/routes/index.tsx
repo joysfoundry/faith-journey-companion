@@ -419,7 +419,7 @@ function Index() {
             {/* Daily rosary — auto-provided (not user-created). The blue eyebrow
                 (text-primary) differentiates it; no background tint. A switch
                 icon swaps the template it uses. Otherwise a normal session row. */}
-            <div className="flex items-center justify-between gap-3 px-5 py-4">
+            <div className="flex items-center justify-between gap-3 px-5 py-3">
               <span className="min-w-0">
                 <span className="eyebrow block text-primary">
                   {dailyOpen
@@ -428,7 +428,7 @@ function Index() {
                       ? "Daily Rosary · Done"
                       : "Daily Rosary"}
                 </span>
-                <span className="block truncate font-display text-lg">{dailySubtitle}</span>
+                <span className="block truncate font-display text-base">{dailySubtitle}</span>
               </span>
               <div className="flex shrink-0 items-center gap-0.5">
                 <IconAction
@@ -478,11 +478,11 @@ function Index() {
                 key={row.id}
                 to="/session/$sessionId"
                 params={{ sessionId: row.sessionId }}
-                className="flex items-center justify-between border-t border-border/60 px-5 py-4 transition-colors hover:bg-accent/40"
+                className="flex items-center justify-between border-t border-border/60 px-5 py-3 transition-colors hover:bg-accent/40"
               >
                 <span className="min-w-0">
                   <span className="eyebrow block">Continue</span>
-                  <span className="truncate font-display text-lg">{row.title}</span>
+                  <span className="truncate font-display text-base">{row.title}</span>
                 </span>
                 <ChevronRight className="size-5 shrink-0 text-muted-foreground" aria-hidden />
               </Link>
@@ -492,11 +492,11 @@ function Index() {
             {todayList.map((row) => (
               <div
                 key={row.id}
-                className="flex items-center justify-between gap-3 border-t border-border/60 px-5 py-4"
+                className="flex items-center justify-between gap-3 border-t border-border/60 px-5 py-3"
               >
                 <span className="min-w-0">
                   <span className="eyebrow block">Today</span>
-                  <span className="truncate font-display text-lg">{row.title}</span>
+                  <span className="truncate font-display text-base">{row.title}</span>
                 </span>
                 <Button
                   size="icon"
@@ -517,11 +517,11 @@ function Index() {
                 key={row.id}
                 to="/session/$sessionId"
                 params={{ sessionId: row.sessionId }}
-                className="flex items-center justify-between gap-3 border-t border-border/60 px-5 py-4 transition-colors hover:bg-accent/40"
+                className="flex items-center justify-between gap-3 border-t border-border/60 px-5 py-3 transition-colors hover:bg-accent/40"
               >
                 <span className="min-w-0">
                   <span className="eyebrow block text-muted-foreground">Done</span>
-                  <span className="truncate font-display text-lg text-muted-foreground">
+                  <span className="truncate font-display text-base text-muted-foreground">
                     {row.title}
                   </span>
                 </span>

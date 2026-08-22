@@ -90,7 +90,7 @@ export function WordSection({ onReflect }: { onReflect: (linkId: string) => void
               href={todaysWord.readingsUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-start gap-1 font-display text-lg leading-snug text-foreground underline-offset-4 hover:text-primary hover:underline"
+              className="inline-flex items-start gap-1 font-display text-base leading-snug text-foreground underline-offset-4 hover:text-primary hover:underline"
             >
               {litDay ? litDay.title : "Today's readings"}
               <ExternalLink className="mt-1 size-4 shrink-0 text-muted-foreground" aria-hidden />
@@ -201,8 +201,8 @@ export function WordSection({ onReflect }: { onReflect: (linkId: string) => void
 
       {/* Bible-reading programs (Knowledge `program` items flagged reads_scripture). */}
       {readingPrograms.length > 0 ? (
-        <div className="px-5 py-4">
-          <div className="mb-1 flex items-center justify-between gap-3">
+        <div className="px-5 pb-4 pt-3">
+          <div className="mb-0.5 flex items-center justify-between gap-3">
             <h3 className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Programs</h3>
             <Button
               size="icon"
@@ -226,13 +226,13 @@ export function WordSection({ onReflect }: { onReflect: (linkId: string) => void
                       href={program.url}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-1 font-medium text-foreground underline-offset-4 hover:text-primary hover:underline"
+                      className="inline-flex items-center gap-1 text-sm font-medium text-foreground underline-offset-4 hover:text-primary hover:underline"
                     >
                       {program.title}
                       <ExternalLink className="size-3.5 text-muted-foreground" aria-hidden />
                     </a>
                   ) : (
-                    <p className="font-medium text-foreground">{program.title}</p>
+                    <p className="text-sm font-medium text-foreground">{program.title}</p>
                   )}
                   <p className="truncate text-sm text-muted-foreground">
                     {knowledgeSubtitle(program)}
