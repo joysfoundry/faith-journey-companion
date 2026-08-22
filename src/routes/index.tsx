@@ -85,7 +85,7 @@ function KnowledgeGroupRow({
   const [open, setOpen] = useState(true);
   return (
     <Collapsible open={open} onOpenChange={setOpen} className="border-t border-border/60">
-      <CollapsibleTrigger className="flex w-full items-center justify-between gap-2 px-5 py-3 text-left transition-colors hover:bg-accent/40">
+      <CollapsibleTrigger className="flex w-full items-center justify-between gap-2 px-5 pb-1.5 pt-3 text-left transition-colors hover:bg-accent/40">
         <span className="flex items-center gap-2">
           <span className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
             {label}
@@ -293,12 +293,12 @@ function Index() {
     const tpl = db.templates.find((t) => t.id === plan.template_id);
     const title = plan.purpose || tpl?.name || "Session";
     const openS = openSessions.find((s) => s.plan_id === plan.id);
-    const doneS = latestDoneToday((s) => s.plan_id === plan.id);
     if (openS) {
       representedIds.add(openS.id);
       continueList.push({ id: plan.id, title, sessionId: openS.id });
-    } else if (doneS) {
-      addDone(plan.template_id || plan.id, { id: plan.id, title, sessionId: doneS.id });
+    } else if (latestDoneToday((s) => s.plan_id === plan.id)) {
+      // Completed today — surfaced as Done by the completed-sessions pass below.
+      // (Kept out of Today so a finished once-plan doesn't reappear as "start".)
     } else {
       todayList.push({ id: plan.id, title, planId: plan.id });
     }
@@ -308,10 +308,18 @@ function Index() {
     if (s.id === dailyOpen?.id || representedIds.has(s.id)) continue;
     continueList.push({ id: s.id, title: s.title, sessionId: s.id });
   }
-  // Ad-hoc sessions completed today (no plan), one per devotion.
+  // Everything completed today lands in Done — one per devotion. This includes
+  // recurring-plan sessions whose plan has already rolled forward to its next
+  // date (so the today-plan loop above no longer sees them). The daily shows on
+  // its own row, so it's excluded via doneSeen.
   for (const s of completedSessions) {
-    if (!isToday(s.completed_at) || s.plan_id) continue;
-    addDone(s.template_id || s.id, { id: s.id, title: s.title, sessionId: s.id });
+    if (!isToday(s.completed_at)) continue;
+    const plan = s.plan_id ? db.session_plans.find((p) => p.id === s.plan_id) : undefined;
+    const tpl = (plan ? plan.template_id : s.template_id)
+      ? db.templates.find((t) => t.id === (plan ? plan.template_id : s.template_id))
+      : undefined;
+    const title = plan?.purpose || tpl?.name || s.title || "Session";
+    addDone(plan?.template_id || s.template_id || s.id, { id: s.id, title, sessionId: s.id });
   }
 
   function openJournal(linkId: string) {
