@@ -118,6 +118,9 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
         setDb((d) => mutations.addSource(d, s)),
       upsertSource: (s: Parameters<typeof mutations.upsertSource>[1]) =>
         setDb((d) => mutations.upsertSource(d, s)),
+      upsertMysteryContent: (c: Parameters<typeof mutations.upsertMysteryContent>[1]) =>
+        setDb((d) => mutations.upsertMysteryContent(d, c)),
+      deleteMysteryBody: (bodyKey: string) => setDb((d) => mutations.deleteMysteryBody(d, bodyKey)),
       addReflection: (r: Parameters<typeof mutations.addReflection>[1]) =>
         setDb((d) => mutations.addReflection(d, r)),
       updateReflection: (r: Parameters<typeof mutations.updateReflection>[1]) =>

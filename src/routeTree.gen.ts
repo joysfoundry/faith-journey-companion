@@ -19,6 +19,7 @@ import { Route as PrayersRouteImport } from './routes/prayers'
 import { Route as ReflectionsRouteImport } from './routes/reflections'
 import { Route as WordRouteImport } from './routes/word'
 import { Route as DevotionDevotionIdRouteImport } from './routes/devotion.$devotionId'
+import { Route as MysteryVersionBodyKeyRouteImport } from './routes/mystery-version.$bodyKey'
 import { Route as PrayerPrayerIdRouteImport } from './routes/prayer.$prayerId'
 import { Route as SessionSessionIdRouteImport } from './routes/session.$sessionId'
 import { Route as TemplateTemplateIdRouteImport } from './routes/template.$templateId'
@@ -73,6 +74,11 @@ const DevotionDevotionIdRoute = DevotionDevotionIdRouteImport.update({
   path: '/devotion/$devotionId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MysteryVersionBodyKeyRoute = MysteryVersionBodyKeyRouteImport.update({
+  id: '/mystery-version/$bodyKey',
+  path: '/mystery-version/$bodyKey',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PrayerPrayerIdRoute = PrayerPrayerIdRouteImport.update({
   id: '/prayer/$prayerId',
   path: '/prayer/$prayerId',
@@ -100,6 +106,7 @@ export interface FileRoutesByFullPath {
   '/reflections': typeof ReflectionsRoute
   '/word': typeof WordRoute
   '/devotion/$devotionId': typeof DevotionDevotionIdRoute
+  '/mystery-version/$bodyKey': typeof MysteryVersionBodyKeyRoute
   '/prayer/$prayerId': typeof PrayerPrayerIdRoute
   '/session/$sessionId': typeof SessionSessionIdRoute
   '/template/$templateId': typeof TemplateTemplateIdRoute
@@ -115,6 +122,7 @@ export interface FileRoutesByTo {
   '/reflections': typeof ReflectionsRoute
   '/word': typeof WordRoute
   '/devotion/$devotionId': typeof DevotionDevotionIdRoute
+  '/mystery-version/$bodyKey': typeof MysteryVersionBodyKeyRoute
   '/prayer/$prayerId': typeof PrayerPrayerIdRoute
   '/session/$sessionId': typeof SessionSessionIdRoute
   '/template/$templateId': typeof TemplateTemplateIdRoute
@@ -131,6 +139,7 @@ export interface FileRoutesById {
   '/reflections': typeof ReflectionsRoute
   '/word': typeof WordRoute
   '/devotion/$devotionId': typeof DevotionDevotionIdRoute
+  '/mystery-version/$bodyKey': typeof MysteryVersionBodyKeyRoute
   '/prayer/$prayerId': typeof PrayerPrayerIdRoute
   '/session/$sessionId': typeof SessionSessionIdRoute
   '/template/$templateId': typeof TemplateTemplateIdRoute
@@ -148,6 +157,7 @@ export interface FileRouteTypes {
     | '/reflections'
     | '/word'
     | '/devotion/$devotionId'
+    | '/mystery-version/$bodyKey'
     | '/prayer/$prayerId'
     | '/session/$sessionId'
     | '/template/$templateId'
@@ -163,6 +173,7 @@ export interface FileRouteTypes {
     | '/reflections'
     | '/word'
     | '/devotion/$devotionId'
+    | '/mystery-version/$bodyKey'
     | '/prayer/$prayerId'
     | '/session/$sessionId'
     | '/template/$templateId'
@@ -178,6 +189,7 @@ export interface FileRouteTypes {
     | '/reflections'
     | '/word'
     | '/devotion/$devotionId'
+    | '/mystery-version/$bodyKey'
     | '/prayer/$prayerId'
     | '/session/$sessionId'
     | '/template/$templateId'
@@ -194,6 +206,7 @@ export interface RootRouteChildren {
   ReflectionsRoute: typeof ReflectionsRoute
   WordRoute: typeof WordRoute
   DevotionDevotionIdRoute: typeof DevotionDevotionIdRoute
+  MysteryVersionBodyKeyRoute: typeof MysteryVersionBodyKeyRoute
   PrayerPrayerIdRoute: typeof PrayerPrayerIdRoute
   SessionSessionIdRoute: typeof SessionSessionIdRoute
   TemplateTemplateIdRoute: typeof TemplateTemplateIdRoute
@@ -271,6 +284,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DevotionDevotionIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/mystery-version/$bodyKey': {
+      id: '/mystery-version/$bodyKey'
+      path: '/mystery-version/$bodyKey'
+      fullPath: '/mystery-version/$bodyKey'
+      preLoaderRoute: typeof MysteryVersionBodyKeyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/prayer/$prayerId': {
       id: '/prayer/$prayerId'
       path: '/prayer/$prayerId'
@@ -306,6 +326,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReflectionsRoute: ReflectionsRoute,
   WordRoute: WordRoute,
   DevotionDevotionIdRoute: DevotionDevotionIdRoute,
+  MysteryVersionBodyKeyRoute: MysteryVersionBodyKeyRoute,
   PrayerPrayerIdRoute: PrayerPrayerIdRoute,
   SessionSessionIdRoute: SessionSessionIdRoute,
   TemplateTemplateIdRoute: TemplateTemplateIdRoute,

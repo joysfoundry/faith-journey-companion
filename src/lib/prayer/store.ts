@@ -13,6 +13,7 @@ import type {
   KnowledgeItem,
   KnowledgeStatus,
   MassExperience,
+  MysteryContent,
   Prayer,
   PrayerSession,
   PrayerTemplate,
@@ -37,7 +38,7 @@ import {
   uncompleteSessionItem,
 } from "./compiler";
 
-export const STORAGE_KEY = "prayer-companion-db-v14";
+export const STORAGE_KEY = "prayer-companion-db-v17";
 
 /**
  * Migrate a legacy string recurrence ("daily"/"custom"/…) to the structured
@@ -265,6 +266,8 @@ export interface AppStore {
   applyImportDraft: (draftId: ID) => void;
   addSource: (source: Source) => void;
   upsertSource: (source: Source) => void;
+  upsertMysteryContent: (content: MysteryContent) => void;
+  deleteMysteryBody: (bodyKey: string) => void;
   addReflection: (reflection: Reflection) => void;
   updateReflection: (reflection: Reflection) => void;
   deleteReflection: (id: ID) => void;
@@ -993,6 +996,24 @@ export const mutations = {
       sources: exists
         ? db.sources.map((s) => (s.id === source.id ? source : s))
         : [source, ...db.sources],
+    };
+  },
+
+  // --- Mystery bodies (versions) ---------------------------------------
+  upsertMysteryContent(db: Database, content: MysteryContent): Database {
+    const exists = db.mystery_contents.some((c) => c.id === content.id);
+    return {
+      ...db,
+      mystery_contents: exists
+        ? db.mystery_contents.map((c) => (c.id === content.id ? content : c))
+        : [...db.mystery_contents, content],
+    };
+  },
+  /** Remove one mystery body (all rows sharing a body_key) — its whole version. */
+  deleteMysteryBody(db: Database, bodyKey: string): Database {
+    return {
+      ...db,
+      mystery_contents: db.mystery_contents.filter((c) => (c.body_key ?? "reflection") !== bodyKey),
     };
   },
 

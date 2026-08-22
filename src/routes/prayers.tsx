@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   ChevronDown,
+  ChevronRight,
   ExternalLink,
   FilePlus2,
   Hand,
@@ -29,7 +30,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useApp, variantGroupId } from "@/lib/prayer/store";
 import type { HowTo, PrayerHour, PrayerTemplate, Prayer } from "@/lib/prayer/types";
 import { toast } from "sonner";
-import { newId, recurrenceLabel, templateOutline } from "@/lib/prayer/compiler";
+import { mysteryVersions, newId, recurrenceLabel, templateOutline } from "@/lib/prayer/compiler";
 
 const HOUR_LABEL: Record<PrayerHour, string> = {
   office_of_readings: "Office of Readings",
@@ -612,6 +613,9 @@ function LibraryPage() {
           <TabsTrigger value="templates" className="flex-1">
             Devotions
           </TabsTrigger>
+          <TabsTrigger value="mysteries" className="flex-1">
+            Mysteries
+          </TabsTrigger>
           <TabsTrigger value="howto" className="flex-1">
             How To
           </TabsTrigger>
@@ -697,6 +701,40 @@ function LibraryPage() {
                 No devotions yet. Add one from the ⋯ menu.
               </li>
             ) : null}
+          </ul>
+        </TabsContent>
+
+        <TabsContent value="mysteries" className="mt-4 space-y-3">
+          <p className="text-sm text-muted-foreground">
+            A <span className="font-medium text-foreground">version</span> is one body of every
+            mystery — its Scripture, meditation, and fruit — named for its source (USCCB, Ascension,
+            your family). Devotions and sessions pick which version to pray.
+          </p>
+          <Link
+            to="/mystery-version/$bodyKey"
+            params={{ bodyKey: "new" }}
+            className="flex h-12 items-center justify-center gap-2 rounded-md border border-dashed border-input text-sm font-medium text-muted-foreground hover:bg-accent"
+          >
+            <Plus className="size-4" /> Add a version
+          </Link>
+          <ul className="space-y-3">
+            {mysteryVersions(db).map((v) => (
+              <li key={v.key}>
+                <Link
+                  to="/mystery-version/$bodyKey"
+                  params={{ bodyKey: v.key }}
+                  className="soft-card flex items-center justify-between p-4 hover:bg-accent"
+                >
+                  <div>
+                    <p className="font-medium">{v.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {v.count} {v.count === 1 ? "mystery" : "mysteries"}
+                    </p>
+                  </div>
+                  <ChevronRight className="size-4 text-muted-foreground" />
+                </Link>
+              </li>
+            ))}
           </ul>
         </TabsContent>
 
