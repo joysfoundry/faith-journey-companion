@@ -370,9 +370,14 @@ function DecadeTag({ decade }: { decade: number | undefined }) {
 function ItemView({ item, showMeditation }: { item: SessionItem; showMeditation: boolean }) {
   const decade = (item.configuration as { decade?: number } | undefined)?.decade;
   if (item.kind === "mystery") {
-    const config = (item.configuration ?? {}) as { heading?: string; presentation?: string };
-    const showBody =
-      item.body && (config.presentation !== "choose_during_session" || showMeditation);
+    const config = (item.configuration ?? {}) as {
+      heading?: string;
+      presentation?: string;
+      fruit?: string;
+      scripture_text?: string;
+    };
+    // Reveal the text unless we're waiting for the tap in "choose during session".
+    const showText = config.presentation !== "choose_during_session" || showMeditation;
     return (
       <div className="text-center">
         <DecadeTag decade={decade} />
@@ -380,9 +385,27 @@ function ItemView({ item, showMeditation }: { item: SessionItem; showMeditation:
           {config.heading ?? `${ordinalWord(item.mystery_ordinal ?? 1)} Mystery`}
         </p>
         <h2 className="mt-3 font-display text-3xl leading-tight">{item.title}</h2>
-        {showBody ? (
-          <p className="prayer-text mt-6 text-left text-[1.25rem] text-muted-foreground">
+        {showText && config.scripture_text ? (
+          <>
+            <p className="prayer-text mt-6 text-left text-[1.25rem] text-muted-foreground">
+              {config.scripture_text}
+            </p>
+            {item.reference ? (
+              <p className="mt-2 text-right text-sm italic text-muted-foreground">
+                — {item.reference}
+              </p>
+            ) : null}
+          </>
+        ) : null}
+        {showText && item.body ? (
+          <p className="prayer-text mt-4 text-left text-[1.25rem] text-muted-foreground">
             {item.body}
+          </p>
+        ) : null}
+        {config.fruit ? (
+          <p className="mt-4 text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">Fruit of the mystery:</span>{" "}
+            {config.fruit}
           </p>
         ) : null}
       </div>

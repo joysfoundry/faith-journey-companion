@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DevotionItemsEditor, ordinal } from "@/components/prayer/DevotionItemsEditor";
 import { useApp } from "@/lib/prayer/store";
-import { generatePrayerSession, newId } from "@/lib/prayer/compiler";
+import { allMysteryBodies, generatePrayerSession, newId } from "@/lib/prayer/compiler";
 import {
   buildRecurrence,
   FREQ_OPTIONS,
@@ -113,6 +113,7 @@ function TemplateBuilder() {
     existing?.mystery_presentation ?? "title_and_description",
   );
   const [fixedSetId, setFixedSetId] = useState(existing?.fixed_mystery_set_id ?? "");
+  const [bodyKey, setBodyKey] = useState(existing?.default_mystery_body ?? "");
   const [media, setMedia] = useState<PrayerMedia[]>(existing?.media ?? []);
   const [sourceName, setSourceName] = useState(existingSource?.name ?? "");
   const [sourceUrl, setSourceUrl] = useState(existingSource?.url ?? "");
@@ -151,6 +152,7 @@ function TemplateBuilder() {
       ...(description.trim() ? { description: description.trim() } : {}),
       ...(notes.trim() ? { notes: notes.trim() } : {}),
       ...(fixedSetId ? { fixed_mystery_set_id: fixedSetId } : {}),
+      ...(bodyKey ? { default_mystery_body: bodyKey } : {}),
       ...(media.length ? { media } : {}),
       ...(freq !== "none"
         ? {
@@ -518,6 +520,26 @@ function TemplateBuilder() {
                 <option value="title_and_description">Title and description</option>
                 <option value="choose_during_session">Choose during session</option>
               </select>
+            </div>
+            <div>
+              <Label htmlFor="mbody" className="text-xs text-muted-foreground">
+                Which version
+              </Label>
+              <select
+                id="mbody"
+                value={bodyKey}
+                onChange={(e) => setBodyKey(e.target.value)}
+                className="mt-1 h-11 w-full rounded-md border border-input bg-card px-3 text-sm"
+              >
+                {allMysteryBodies(db).map((b) => (
+                  <option key={b.key} value={b.key}>
+                    {b.label}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Which body of each mystery to pray — Scripture, a meditation, or the reflection.
+              </p>
             </div>
           </div>
         ) : null}

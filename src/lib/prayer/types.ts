@@ -137,6 +137,22 @@ export interface MysteryContent {
   id: ID;
   mystery_id: ID;
   variant: MysteryContentVariant;
+  /**
+   * Stable slug identifying this *body* (version) across every mystery in a set
+   * — e.g. `"usccb-scripture"`, `"ascension-meditation"`, `"reflection"`. The
+   * devotion/session "which body" pick keys off this: pick a body once and the
+   * compiler resolves the matching content for each decade. Absent = the
+   * built-in reflection body.
+   */
+  body_key?: string | undefined;
+  /** Human name for the body picker (e.g. "USCCB — Scripture"). Falls back to the source name. */
+  label?: string | undefined;
+  /** Scripture citation for this body (e.g. "Luke 1:26-27"), when it quotes Scripture. */
+  scripture_ref?: string | undefined;
+  /** The Scripture quote for this body, kept apart from the meditation prose. */
+  scripture_text?: string | undefined;
+  /** Fruit of the mystery for this body — may differ in wording between bodies. */
+  fruit?: string | undefined;
   body: string;
   source_id?: ID | undefined;
 }
@@ -251,6 +267,12 @@ export interface PrayerTemplate {
   default_start_time?: string | undefined;
   /** Pin the mysteries to one set (e.g. Luminous); absent = resolve by day. */
   fixed_mystery_set_id?: ID | undefined;
+  /**
+   * Default mystery *body* (a `MysteryContent.body_key`) this devotion prays —
+   * e.g. a Scriptural Rosary defaults to `"usccb-scripture"`. Absent = the
+   * built-in reflection body. Overridable per session via `mystery_body`.
+   */
+  default_mystery_body?: string | undefined;
   /** Audio of the whole devotion — links now; uploads later. */
   media?: PrayerMedia[] | undefined;
   source_id?: ID | undefined;
@@ -288,6 +310,8 @@ export interface SessionContext {
   mystery_set_id?: ID | undefined;
   progress_mode: ProgressMode;
   mystery_presentation?: MysteryPresentation | undefined;
+  /** Chosen mystery body (a `MysteryContent.body_key`); overrides the devotion default. */
+  mystery_body?: string | undefined;
   include_optional: boolean;
   condition_tags: string[];
   prayer_version_overrides: Record<ID, ID>;

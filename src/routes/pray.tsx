@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DevotionItemsEditor } from "@/components/prayer/DevotionItemsEditor";
 import { useApp } from "@/lib/prayer/store";
 import {
+  allMysteryBodies,
   estimateMinutes,
   generatePrayerSession,
   listenSourcesFromItems,
@@ -108,6 +109,7 @@ function PrayPage() {
   const [progressMode, setProgressMode] = useState<ProgressMode>("scroll");
   const [mysterySet, setMysterySet] = useState("auto");
   const [presentation, setPresentation] = useState<MysteryPresentation | "template">("template");
+  const [mysteryBody, setMysteryBody] = useState("template");
   const [listenIndex, setListenIndex] = useState("");
 
   const baseTemplate = templateId ? db.templates.find((t) => t.id === templateId) : undefined;
@@ -162,6 +164,7 @@ function PrayPage() {
     setListenIndex("");
     setMysterySet("auto");
     setPresentation("template");
+    setMysteryBody("template");
     // Pre-fill the schedule from the devotion's defaults (user can override).
     const tpl = id ? db.templates.find((t) => t.id === id) : undefined;
     applyRecurrence(tpl?.default_recurrence);
@@ -194,6 +197,7 @@ function PrayPage() {
     setProgressMode(plan.context.progress_mode ?? "scroll");
     setMysterySet(plan.context.mystery_set_id ?? "auto");
     setPresentation(plan.context.mystery_presentation ?? "template");
+    setMysteryBody(plan.context.mystery_body ?? "template");
     const srcs = listenSourcesFromItems(
       db,
       planItems,
@@ -208,6 +212,7 @@ function PrayPage() {
     progress_mode: progressMode,
     ...(mysterySet !== "auto" ? { mystery_set_id: mysterySet } : {}),
     ...(presentation !== "template" ? { mystery_presentation: presentation } : {}),
+    ...(mysteryBody !== "template" ? { mystery_body: mysteryBody } : {}),
     ...(chosenSource ? { listen_source: chosenSource, audio_enabled: true } : {}),
   });
 
@@ -570,6 +575,22 @@ function PrayPage() {
                     <option value="title_only">Title only</option>
                     <option value="title_and_description">Title and description</option>
                     <option value="choose_during_session">Ask me during the session</option>
+                  </select>
+                </div>
+                <div>
+                  <Label htmlFor="mysteryBody">Which version</Label>
+                  <select
+                    id="mysteryBody"
+                    value={mysteryBody}
+                    onChange={(e) => setMysteryBody(e.target.value)}
+                    className="mt-2 h-12 w-full rounded-md border border-input bg-card px-3"
+                  >
+                    <option value="template">As saved in the devotion</option>
+                    {allMysteryBodies(db).map((b) => (
+                      <option key={b.key} value={b.key}>
+                        {b.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>

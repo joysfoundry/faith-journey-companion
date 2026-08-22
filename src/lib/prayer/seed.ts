@@ -721,21 +721,266 @@ const mystery_sets = mysteryData.map((m, i) => ({
   position: i,
 }));
 
+// AUTO-GENERATED from Mysteries 1.md (USCCB) & Mysteries 2.md (Ascension). Regen; do not hand-edit.
+const usccbBodies: Record<string, Array<{ ref: string; text: string; fruit: string }>> = {
+  joyful: [
+    {
+      ref: `Luke 1:26-27`,
+      fruit: `Humility`,
+      text: `In the sixth month, the angel Gabriel was sent from God to a town of Galilee called Nazareth, to a virgin betrothed to a man named Joseph, of the house of David, and the virgin’s name was Mary.`,
+    },
+    {
+      ref: `Luke 1:39-42`,
+      fruit: `Love of Neighbor`,
+      text: `During those days Mary set out and traveled to the hill country in haste to a town of Judah, where she entered the house of Zechariah and greeted Elizabeth. When Elizabeth heard Mary’s greeting, the infant leaped in her womb, and Elizabeth, filled with the holy Spirit, cried out in a loud voice and said, 'Most blessed are you among women, and blessed is the fruit of your womb.'`,
+    },
+    {
+      ref: `Luke 2:1-7`,
+      fruit: `Poverty`,
+      text: `In those days a decree went out from Caesar Augustus that the whole world should be enrolled. This was the first enrollment, when Quirinius was governor of Syria. So all went to be enrolled, each to his own town. And Joseph too went up from Galilee from the town of Nazareth to Judea, to the city of David that is called Bethlehem, because he was of the house and family of David, to be enrolled with Mary, his betrothed, who was with child. While they were there, the time came for her to have her child, and she gave birth to her firstborn son. She wrapped him in swaddling clothes and laid him in a manger, because there was no room for them in the inn.`,
+    },
+    {
+      ref: `Luke 2:21-24`,
+      fruit: `Purity of Heart and Body`,
+      text: `When eight days were completed for his circumcision, he was named Jesus, the name given him by the angel before he was conceived in the womb. "When the days were completed for their purification according to the law of Moses, they took him up to Jerusalem to present him to the Lord, just as it is written in the law of the Lord, 'Every male that opens the womb shall be consecrated to the Lord,' and to offer the sacrifice of 'a pair of turtledoves or two young pigeons,' in accordance with the dictate in the law of the Lord.`,
+    },
+    {
+      ref: `Luke 2:41-47`,
+      fruit: `Devotion to Jesus`,
+      text: `Each year his parents went to Jerusalem for the feast of Passover, and when he was twelve years old, they went up according to festival custom. After they had completed its days, as they were returning, the boy Jesus remained behind in Jerusalem, but his parents did not know it. Thinking that he was in the caravan, they journeyed for a day and looked for him among their relatives and acquaintances, but not finding him, they returned to Jerusalem to look for him. After three days they found him in the temple, sitting in the midst of the teachers, listening to them and asking them questions, and all who heard him were astounded at his understanding and his answers.`,
+    },
+  ],
+  sorrowful: [
+    {
+      ref: `Matthew 26:36-39`,
+      fruit: `Obedience to God’s Will`,
+      text: `Then Jesus came with them to a place called Gethsemane, and he said to his disciples, 'Sit here while I go over there and pray.' He took along Peter and the two sons of Zebedee, and began to feel sorrow and distress. Then he said to them, 'My soul is sorrowful even to death. Remain here and keep watch with me.' He advanced a little and fell prostrate in prayer, saying, 'My Father, if it is possible, let this cup pass from me; yet, not as I will, but as you will.'`,
+    },
+    {
+      ref: `Matthew 27:26`,
+      fruit: `Mortification`,
+      text: `Then he released Barabbas to them, but after he had Jesus scourged, he handed him over to be crucified.`,
+    },
+    {
+      ref: `Matthew 27:27-29`,
+      fruit: `Courage`,
+      text: `Then the soldiers of the governor took Jesus inside the praetorium and gathered the whole cohort around him. They stripped off his clothes and threw a scarlet military cloak about him. Weaving a crown out of thorns, they placed it on his head, and a reed in his right hand. And kneeling before him, they mocked him, saying, 'Hail, King of the Jews!'`,
+    },
+    {
+      ref: `Mark 15:21-22`,
+      fruit: `Patience`,
+      text: `They pressed into service a passer-by, Simon, a Cyrenian, who was coming in from the country, the father of Alexander and Rufus, to carry his cross. They brought him to the place of Golgotha (which is translated Place of the Skull).`,
+    },
+    {
+      ref: `Luke 23:33-46`,
+      fruit: `Sorrow for our Sins`,
+      text: `When they came to the place called the Skull, they crucified him and the criminals there, one on his right, the other on his left. [Then Jesus said, 'Father, forgive them, they know not what they do.'] They divided his garments by casting lots. The people stood by and watched; the rulers, meanwhile, sneered at him and said, 'He saved others, let him save himself if he is the chosen one, the Messiah of God.' Even the soldiers jeered at him. As they approached to offer him wine they called out, 'If you are King of the Jews, save yourself.' Above him there was an inscription that read, 'This is the King of the Jews.' Now one of the criminals hanging there reviled Jesus, saying, 'Are you not the Messiah? Save yourself and us.' The other, however, rebuking him, said in reply, 'Have you no fear of God, for you are subject to the same condemnation? And indeed, we have been condemned justly, for the sentence we received corresponds to our crimes, but this man has done nothing criminal.' Then he said, 'Jesus, remember me when you come into your kingdom.' He replied to him, 'Amen, I say to you, today you will be with me in Paradise.' "It was now about noon and darkness came over the whole land until three in the afternoon because of an eclipse of the sun. Then the veil of the temple was torn down the middle. Jesus cried out in a loud voice, 'Father, into your hands I commend my spirit'; and when he had said this he breathed his last.`,
+    },
+  ],
+  glorious: [
+    {
+      ref: `Luke 24:1-5`,
+      fruit: `Faith`,
+      text: `But at daybreak on the first day of the week they took the spices they had prepared and went to the tomb.They found the stone rolled away from the tomb; but when they entered, they did not find the body of the Lord Jesus. While they were puzzling over this, behold, two men in dazzling garments appeared to them. They were terrified and bowed their faces to the ground. They said to them, 'Why do you seek the living one among the dead? He is not here, but he has been raised.'`,
+    },
+    {
+      ref: `Mark 16:19`,
+      fruit: `Hope`,
+      text: `So then the Lord Jesus, after he spoke to them, was taken up into heaven and took his seat at the right hand of God.`,
+    },
+    {
+      ref: `Acts 2:1-4`,
+      fruit: `Wisdom`,
+      text: `When the time for Pentecost was fulfilled, they were all in one place together. And suddenly there came from the sky a noise like a strong driving wind, and it filled the entire house in which they were. Then there appeared to them tongues as of fire, which parted and came to rest on each one of them. And they were all filled with the holy Spirit and began to speak in different tongues, as the Spirit enabled them to proclaim.`,
+    },
+    {
+      ref: `Luke 1:48-49`,
+      fruit: `Devotion to Mary`,
+      text: `Behold, from now on will all ages call me blessed. The Mighty One has done great things for me, and holy is his name.`,
+    },
+    {
+      ref: `Revelation 12:1`,
+      fruit: `Grace of a happy death`,
+      text: `A great sign appeared in the sky, a woman clothed with the sun, with the moon under her feet, and on her head a crown of twelve stars.`,
+    },
+  ],
+  luminous: [
+    {
+      ref: `Matthew 3:16-17`,
+      fruit: `Openness to the Holy Spirit`,
+      text: `After Jesus was baptized, he came up from the water and behold, the heavens were opened [for him], and he saw the Spirit of God descending like a dove [and] coming upon him. And a voice came from the heavens, saying, 'This is my beloved Son, with whom I am well pleased.'`,
+    },
+    {
+      ref: `John 2:1-5`,
+      fruit: `To Jesus through Mary`,
+      text: `On the third day there was a wedding in Cana in Galilee, and the mother of Jesus was there. Jesus and his disciples were also invited to the wedding. When the wine ran short, the mother of Jesus said to him, 'They have no wine.' [And] Jesus said to her, 'Woman, how does your concern affect me? My hour has not yet come.' His mother said to the servers, 'Do whatever he tells you.'`,
+    },
+    {
+      ref: `Mark 1:15`,
+      fruit: `Conversion`,
+      text: `'This is the time of fulfillment. The kingdom of God is at hand. Repent, and believe in the gospel.'`,
+    },
+    {
+      ref: `Matthew 17:1-2`,
+      fruit: `Desire for holiness`,
+      text: `After six days Jesus took Peter, James, and John his brother, and led them up a high mountain by themselves. And he was transfigured before them; his face shone like the sun and his clothes became white as light.`,
+    },
+    {
+      ref: `Matthew 26:26`,
+      fruit: `Adoration`,
+      text: `While they were eating, Jesus took bread, said the blessing, broke it, and giving it to his disciples said, 'Take and eat; this is my body.'`,
+    },
+  ],
+};
+const ascensionBodies: Record<string, Array<{ fruit: string; body: string }>> = {
+  joyful: [
+    {
+      fruit: `Fruit of Humility`,
+      body: `Mary said yes. God was asking a great amount of her. She could face disapproval. Joseph could abandon her. She might not be believed. Mary risked a lot because she had faith in God’s goodness. I imagine her kneeling in wonderment at the angel Gabriel, his hands encompassing hers, his forehead pressed against hers as he tells her of God’s great plan. She whispers “yes” knowing that her life is forever changed and possibly going to be much harder. She allows God’s will to be done and with that fiat the salvation of the world is set in motion. I pray that I can put God’s will before my own.`,
+    },
+    {
+      fruit: `Love of Neighbor`,
+      body: `Newly pregnant, Mary walks several days to visit her cousin Elizabeth. Elizabeth greets her with great joy and Mary exclaims her Magnificat. While knowing that all will call her blessed, she spends several months serving Elizabeth. I imagine her performing the tasks of life so that Elizabeth, in her third trimester when the physical burden of pregnancy is greatest, can rest. Despite her own possible exhaustion and morning sickness, she serves her cousin. I imagine them at the end of the day sitting together and sharing their feelings about these two miraculous babies. I pray that I can serve as Mary did.`,
+    },
+    {
+      fruit: `Poverty of Spirit`,
+      body: `Mary and Joseph are far from home and she is about to give birth. They find nowhere to stay. Rather than panicking, they rely on God who leads them to a safe, warm place for his son’s birth. I imagine their worry but also their sense of calm. They know God cares for them and he will not abandon them on this holy journey. As the angels announce Jesus’ birth and the shepherds come to pay him homage, Mary and Joseph are surrounded by God’s love. I pray for the grace to depend on God completely.`,
+    },
+    {
+      fruit: `Obedience`,
+      body: `Mary and Joseph obey the law and bring their newborn son to the temple and offer a sacrifice. There they meet Simeon who has waited many years to meet the Messiah. I imagine Simeon gazing at Jesus. The Christ for whom he has waited has arrived just as God promised. He raises his eyes to heaven in thanks. He also warns Mary that her own heart will be pierced. She continues to trust God, not knowing what lies ahead. I pray for trust in God’s plan and patience in waiting for it to unfold.`,
+    },
+    {
+      fruit: `Piety`,
+      body: `After not knowing where he was for three days, Mary and Joseph find Jesus in the temple. I imagine the fear they felt when they realized Jesus was not with them as they returned from Jerusalem. I imagine how scared they felt as they looked for him and the increasing anxiety they experience as time passed. At last they find him in his father’s home. What relief and joy. We look for Jesus too and we can always find him in church. He is there waiting for us. I pray that I will not find reasons to avoid visiting Jesus regularly.`,
+    },
+  ],
+  sorrowful: [
+    {
+      fruit: `conformity to God’s will`,
+      body: `Jesus knows torture and death lie ahead and he prays that the cup will pass. He also prays God’s will be done. In his agony, he carries the weight of our sins so that we may be saved. I imagine the courage it took to give himself to God’s plan. We too suffer and while we may pray the suffering will end, we are given support from Our Lord to endure, as Jesus received strength from the angel in the garden. I pray for the courage to conform to God’s will especially when it may be difficult.`,
+    },
+    {
+      fruit: `Mortification`,
+      body: `Jesus is brutally tortured to near death. Scourging was more than mere beating; it involved using instruments to inflict the most pain and blood loss possible without actually killing. Jesus was beaten for our sins. His mother watched as her son’s blood spilled on the ground. I imagine the horror she felt watching her precious child be brutalized, and how hard it must have been to not run to his rescue. I pray for forgiveness for my sins, the sins that contributed to the torture of my Lord.`,
+    },
+    {
+      fruit: `Moral Courage`,
+      body: `Jesus is stripped, reclothed with a scarlet robe and crowned with thorns. He is mocked and spit upon by the soldiers. The people demand his crucifixion. Despite his innocence, he does not defend himself. He is strong in the face of hatred. I imagine his sadness at the people’s ignorance, his sorrow at their contempt. I pray for courage to defend God’s truth and strength to withstand the criticism and hatred of others.`,
+    },
+    {
+      fruit: `Patience`,
+      body: `Jesus’ humiliation continues as he carries the Cross he will be crucified on through the town and people continue to mock him. I imagine the pain of the heavy wood against his back, rubbing against the open wounds from the scourging, the hot sun on him, the thirst, and hunger. I imagine his grief at seeing Mary, knowing she is watching her son die. Jesus is patient in enduring this suffering for us. I pray for more forgiveness, knowing my sins add to the weight of that Cross. I pray for patience in my own times of difficulty.`,
+    },
+    {
+      fruit: `Salvation`,
+      body: `Jesus arrives and is nailed to the cross. As he hangs, slowly dying, he is comforted by the presence of Mary, her sister, John and Mary Magdalene. Mary is strong. She has watched him suffer and now die and she never leaves him. I imagine her heartache. In his words to Mary, “Woman, behold, your son” all of us are entrusted to her love. I pray in thanksgiving for Christ’s suffering and sacrifice so that I may be saved.`,
+    },
+  ],
+  glorious: [
+    {
+      fruit: `Faith`,
+      body: `Jesus did as he foretold, he rose from death, thus securing for us everlasting life in heaven with him and his father. An angel greets the women who went to visit him. He gives them this good news. They see him on their way to Galilee and he tells them to tell the disciples of his resurrection. I imagine the joy they feel when they see the one they love living again, the celebration of the disciples and Mary when they are able to touch him and talk to him. I pray for faith that I too may one day be with Jesus in heaven.`,
+    },
+    {
+      fruit: `Hope`,
+      body: `As Jesus ascends to heaven he tells his followers to go and make disciples. He sends them to the world to share his story and he promises he will always be with them. I imagine their surprise to see him lifted up and away to the clouds and their wonderment as all that occurred. I imagine them considering what will happen next and how they will do as he told them. They are filled with hope and maybe fear. I pray for hope when I don’t know the way forward or when times seem dark.`,
+    },
+    {
+      fruit: `Wisdom`,
+      body: `The apostles and Mary are hiding in the upper room in fear of the future. When the Holy Spirit, the Advocate Jesus said he would send, comes to them, they are filled with the seven gifts of the Holy Spirit. These are the gifts they need to go out into the world and spread the Good News of the Gospel: wisdom, understanding, counsel, fortitude, knowledge, piety, and fear of the Lord. We receive these same gifts at our baptism and confirmation. I pray that I can use these gifts to share the love of Jesus and the story of his Good News.`,
+    },
+    {
+      fruit: `Devotion to Mary`,
+      body: `Mary is taken to heaven to her rightful place with Jesus where she intercedes for us in prayer. I imagine her excitement at being with her son again, and her pleasure at being in heaven with God. I pray for her intercession and help in growing closer to Jesus, while asking her to help me love him more. She will keep pointing the way toward her son.`,
+    },
+    {
+      fruit: `Eternal Happiness`,
+      body: `Mary is the Queen of Heaven and Earth. She listened to God’s will and stayed true to his plan for her life. Mary suffered but her reward in heaven is great. She is our queen too, and if asked she will help us in all facets of our life. I imagine her lovingly looking down at us and her happiness at our requests for help. I pray for her humility, patience, and trust.`,
+    },
+  ],
+  luminous: [
+    {
+      fruit: `Openness to the Holy Spirit`,
+      body: `Though Jesus is without original sin, John baptizes him and God announces that Jesus is his son and he is pleased. I imagine standing in that cool river, feeling the water rush past me. The sounds of the crowd are muffled as my head goes below the surface. I imagine hearing God’s great voice proclaiming he is pleased with his son. I desire God to be pleased with me too, and pray that I can accept the movement of the Holy Spirit in my life.`,
+    },
+    {
+      fruit: `Jesus Through Mary`,
+      body: `It is here Jesus’ public life is put into motion. I imagine Mary noticing that the wine is running out and hearing her ask Jesus for help, confident in his assistance. His respect for Mary is so high, he performs his first miracle at her request. Her command, “Do whatever he tells you” is for us too. The wine stewards listen and water is turned into wine. When we pray the Rosary she intercedes with her Son on our behalf. I pray to grow closer to Jesus with Mary’s help.`,
+    },
+    {
+      fruit: `Repentance`,
+      body: `Jesus went about the land preaching the coming of the kingdom of heaven. He healed the sick and cast out demons. I imagine the awe of the people watching this man proclaim the importance of repenting of our sins as he healed people of their paralysis or leprosy. He preached about love and forgiveness. We too need healing and repentance. I pray for the ability to be humbly and genuinely sorry for my sins against others and against the God who loves me and made me.`,
+    },
+    {
+      fruit: `Desire for Holiness`,
+      body: `Peter, James and John accompany Jesus up Mount Tabor where Jesus is transformed before them in glorious light and Moses and Elijah appear. Peter desires to build tents for them so they may stay. God again proclaims pleasure in Jesus, his beloved Son and tells them to listen to him. I imagine the disciples seeing Jesus with the prophets of the past and hearing God’s voice. They received a beautiful gift from God and comforting words from Jesus to not be afraid. I pray for the desire to spend time with Christ thinking about his message and striving for holiness.`,
+    },
+    {
+      fruit: `Eucharistic Adoration`,
+      body: `Jesus gives us the greatest of gifts in his presence in the Eucharist—body, blood, soul and divinity. I imagine the disciples hearing these words of the New Covenant and the directive to do this in his remembrance. We reflect on this at every Mass as we genuflect before the tabernacle. We are also invited to visit Jesus in adoration. It takes great faith to believe in the Real Presence. I pray for the grace to have that faith, to seek him in adoration and surrender myself humbly to his service.`,
+    },
+  ],
+};
+
 const mysteries: Mystery[] = [];
 const mystery_contents: MysteryContent[] = [];
 mysteryData.forEach((set) => {
+  const key = set.set.toLowerCase();
   set.items.forEach(([title, short, full], idx) => {
-    const id = `${set.set.toLowerCase()}-${idx + 1}`;
-    mysteries.push({
-      id,
-      mystery_set_id: `set-${set.set.toLowerCase()}`,
-      title,
-      position: idx,
-    });
+    const id = `${key}-${idx + 1}`;
+    mysteries.push({ id, mystery_set_id: `set-${key}`, title, position: idx });
+    // Built-in reflection body (the default): short + full lengths.
     mystery_contents.push(
-      { id: `${id}-short`, mystery_id: id, variant: "short_description", body: short },
-      { id: `${id}-full`, mystery_id: id, variant: "full_meditation", body: full },
+      {
+        id: `${id}-short`,
+        mystery_id: id,
+        variant: "short_description",
+        body_key: "reflection",
+        label: "Reflection",
+        body: short,
+      },
+      {
+        id: `${id}-full`,
+        mystery_id: id,
+        variant: "full_meditation",
+        body_key: "reflection",
+        label: "Reflection",
+        body: full,
+      },
     );
+    // USCCB Scripture body — a scripture line + its fruit.
+    const u = usccbBodies[key]?.[idx];
+    if (u) {
+      mystery_contents.push({
+        id: `${id}-usccb`,
+        mystery_id: id,
+        variant: "scripture",
+        body_key: "usccb-scripture",
+        label: "USCCB \u2014 Scripture",
+        scripture_ref: u.ref,
+        scripture_text: u.text,
+        fruit: u.fruit,
+        // USCCB gives only the exact Scripture (no separate description) \u2014 the
+        // passage lives in scripture_text; body stays empty.
+        body: "",
+        source_id: "src-usccb-rosary",
+      });
+    }
+    // Ascension Press meditation body.
+    const a = ascensionBodies[key]?.[idx];
+    if (a) {
+      mystery_contents.push({
+        id: `${id}-ascension`,
+        mystery_id: id,
+        variant: "full_meditation",
+        body_key: "ascension-meditation",
+        label: "Ascension \u2014 Meditation",
+        fruit: a.fruit,
+        body: a.body,
+        source_id: "src-ascension",
+      });
+    }
   });
 });
 
@@ -1033,6 +1278,22 @@ export function createSeedDatabase(): Database {
         attribution: "United States Conference of Catholic Bishops",
         created_at: now,
       },
+      {
+        id: "src-usccb-rosary",
+        source_type: "web",
+        name: "USCCB — Scripture",
+        url: "https://www.usccb.org/how-to-pray-the-rosary",
+        attribution: "United States Conference of Catholic Bishops",
+        created_at: now,
+      },
+      {
+        id: "src-ascension",
+        source_type: "web",
+        name: "Ascension — Meditation",
+        url: "https://ascensionpress.com/blogs/articles/quick-meditations-on-every-mystery-of-the-rosary",
+        attribution: "Ascension Press",
+        created_at: now,
+      },
     ],
     prayers: allPrayers.map((p) => p.prayer),
     prayer_versions: allPrayers.map((p) => p.version),
@@ -1046,6 +1307,7 @@ export function createSeedDatabase(): Database {
         description: "Five decades with the mysteries of the day.",
         kind: "rosary",
         mystery_presentation: "title_and_description",
+        default_mystery_body: "usccb-scripture",
         mystery_count: 5,
         built_in: true,
         created_at: now,

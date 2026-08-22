@@ -160,17 +160,88 @@ export function mysteriesForSet(db: Database, setId: ID): Mystery[] {
     .sort((a, b) => a.position - b.position);
 }
 
+/** The built-in body used when a devotion/session names none. */
+export const DEFAULT_MYSTERY_BODY = "reflection";
+
+/**
+ * The distinct bodies (versions) offered across a mystery set — e.g. the
+ * reflection, the USCCB Scripture, an Ascension meditation. Deduped by
+ * `body_key`, labelled for the "which body" picker, ordered by first appearance.
+ */
+export function mysteryBodiesForSet(
+  db: Database,
+  setId: ID,
+): Array<{ key: string; label: string }> {
+  const mysteryIds = new Set(mysteriesForSet(db, setId).map((m) => m.id));
+  const seen = new Map<string, string>();
+  for (const c of db.mystery_contents) {
+    if (!mysteryIds.has(c.mystery_id)) continue;
+    const key = c.body_key ?? DEFAULT_MYSTERY_BODY;
+    if (seen.has(key)) continue;
+    const source = c.source_id ? db.sources.find((s) => s.id === c.source_id) : undefined;
+    seen.set(key, c.label ?? source?.name ?? "Reflection");
+  }
+  return [...seen].map(([key, label]) => ({ key, label }));
+}
+
+/**
+ * The mystery bodies as editable "version" records — name taken from the body's
+ * source (falling back to its label), plus how many mysteries it currently covers.
+ * Powers the Mysteries authoring list.
+ */
+export function mysteryVersions(
+  db: Database,
+): Array<{ key: string; name: string; sourceId?: ID | undefined; count: number }> {
+  const acc = new Map<string, { name: string; sourceId?: ID | undefined; ids: Set<ID> }>();
+  for (const c of db.mystery_contents) {
+    const key = c.body_key ?? DEFAULT_MYSTERY_BODY;
+    const entry = acc.get(key);
+    if (entry) {
+      entry.ids.add(c.mystery_id);
+      continue;
+    }
+    const source = c.source_id ? db.sources.find((s) => s.id === c.source_id) : undefined;
+    acc.set(key, {
+      name: source?.name ?? c.label ?? "Reflection",
+      sourceId: c.source_id,
+      ids: new Set([c.mystery_id]),
+    });
+  }
+  return [...acc].map(([key, v]) => ({
+    key,
+    name: v.name,
+    sourceId: v.sourceId,
+    count: v.ids.size,
+  }));
+}
+
+/** Every distinct body offered anywhere (across all sets), for the devotion-level picker. */
+export function allMysteryBodies(db: Database): Array<{ key: string; label: string }> {
+  const seen = new Map<string, string>();
+  for (const c of db.mystery_contents) {
+    const key = c.body_key ?? DEFAULT_MYSTERY_BODY;
+    if (seen.has(key)) continue;
+    const source = c.source_id ? db.sources.find((s) => s.id === c.source_id) : undefined;
+    seen.set(key, c.label ?? source?.name ?? "Reflection");
+  }
+  return [...seen].map(([key, label]) => ({ key, label }));
+}
+
 export function mysteryContentFor(
   db: Database,
   mysteryId: ID,
   presentation: MysteryPresentation,
+  bodyKey?: string,
 ): MysteryContent | undefined {
-  const all = db.mystery_contents.filter((c) => c.mystery_id === mysteryId);
   if (presentation === "title_only") return undefined;
+  const all = db.mystery_contents.filter((c) => c.mystery_id === mysteryId);
+  const key = bodyKey ?? DEFAULT_MYSTERY_BODY;
+  const pool = all.filter((c) => (c.body_key ?? DEFAULT_MYSTERY_BODY) === key);
+  const src = pool.length ? pool : all;
   return (
-    all.find((c) => c.variant === "short_description") ??
-    all.find((c) => c.variant === "full_meditation") ??
-    all[0]
+    src.find((c) => c.variant === "short_description") ??
+    src.find((c) => c.variant === "full_meditation") ??
+    src[0]
   );
 }
 
@@ -335,6 +406,10 @@ export function generatePrayerSession(
   }
   const presentation = ctx.mystery_presentation ?? template.mystery_presentation;
   ctx.mystery_presentation = presentation;
+  // Which *body* (version) of each mystery to pray: session choice, else the
+  // devotion default, else the built-in reflection.
+  const bodyKey = ctx.mystery_body ?? template.default_mystery_body ?? DEFAULT_MYSTERY_BODY;
+  ctx.mystery_body = bodyKey;
   const setId = template.mystery_count > 0 ? resolveMysterySet(db, ctx) : undefined;
   if (setId) ctx.mystery_set_id = setId;
   const mysteries = setId ? mysteriesForSet(db, setId) : [];
@@ -455,11 +530,15 @@ export function generatePrayerSession(
       const mystery = mysteries[ordinal - 1];
       if (!mystery) continue;
       decade = ordinal;
-      const content = mysteryContentFor(db, mystery.id, presentation);
+      const content = mysteryContentFor(db, mystery.id, presentation, bodyKey);
+      const hideText = presentation === "title_only";
       push({
         kind: "mystery",
         title: mystery.title,
-        body: presentation === "title_only" ? undefined : content?.body,
+        // body is the *description* of the mystery (may be empty for a
+        // Scripture-only version); the exact passage rides in configuration.
+        body: hideText ? undefined : content?.body || undefined,
+        reference: content?.scripture_ref,
         mystery_id: mystery.id,
         mystery_content_id: content?.id,
         mystery_ordinal: ordinal,
@@ -467,6 +546,9 @@ export function generatePrayerSession(
           presentation,
           set_name: setName,
           decade,
+          fruit: content?.fruit,
+          scripture_ref: content?.scripture_ref,
+          scripture_text: hideText ? undefined : content?.scripture_text,
           heading:
             `${ordinalWord(ordinal)} ${setName?.replace(" Mysteries", "") ?? ""} Mystery`.trim(),
         },
