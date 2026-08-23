@@ -29,7 +29,14 @@ export function newId(prefix: string): string {
 }
 
 export function todayISO(): string {
-  return new Date().toISOString().slice(0, 10);
+  // Local calendar date, not UTC. `toISOString()` is UTC, which rolls to the
+  // next day in the evening for negative-offset zones — that made Saturday
+  // evening resolve to Sunday's mysteries (Glorious instead of Joyful).
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 function isoWeekday(dateISO: string): number {
