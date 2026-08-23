@@ -1,11 +1,18 @@
 # Handoff — PRD gap-merge
 
-_Last updated: 2026-08-21T16:22-07:00 · branch `prd-gap-merge` (**committed, NOT pushed** — `0684468`, `f00ec43`, + this handoff commit need a push from a git client with GitHub auth)_
+_Last updated: 2026-08-22 · branch `prd-gap-merge` (litany work **uncommitted** in the working tree; prior `0684468`, `f00ec43` committed NOT pushed — push needs a git client with GitHub auth)_
 
 ## What this is
 Merging the **ACTS PRD** capabilities into **faith-journey-companion** (the app whose UX we're keeping). The ACTS Next.js build in `../acts` is now just the reference/spec + test oracle. Decision: **gap-merge into fjc, keep the localStorage store** (no Supabase persistence yet).
 
-## Done this session — Song prayer type + Caro family prayers (2026-08-21, `0684468`, `f00ec43`)
+## Done this session — Litany devotions (2026-08-22, uncommitted)
+Seeded **3 public-domain litanies** as devotions. Memory: `litany-model`.
+- **Model:** a litany = a **devotion** (`PrayerTemplate`, `kind:"standard"`) built from **`salutation` items** — per the user, "a string of salutations, sometimes combined with prayers." Same item kind the St. Michael Chaplet uses. Each invocation = one `salutation` with `salutation_vr:false`, `label` = the **call** (renders as the heading), `body` = the shared **refrain** (renders beneath) — reads exactly like a printed litany. Kyrie / Lamb of God / closing collect = grouped `custom` blocks. One salutation = one prayable step.
+- **Seed** (`seed.ts`): builder `litanyItems(templateId, sections)` + `LAMB_OF_GOD(mercy)` helper. Three devotions: `tpl-litany-humility` (Merry del Val, 24 steps, PDF source), `tpl-litany-sacred-heart` (Leo XIII 1899, 43 steps, YouTube audio `5xjFIKo7ywQ`), `tpl-litany-immaculate-heart` (traditional, 27 steps, YouTube audio `c7F6ExYjsZM`). Audio on `PrayerTemplate.media`. Sources added: `src-focus-humility`, `src-ascension-litany`, `src-catholic-crusade`. **`STORAGE_KEY` bumped v17 → v18.**
+- **Excluded the Litany of Trust** (Sisters of Life — modern copyright): user said "only proceed with ones I can use, that is public use." Text is captured (two blocks: "Deliver me, Jesus" ×15, "Jesus, I trust in You" ×14) if rights are cleared later. Audio was `iTEM1m3TRqg`.
+- **Verified:** `tsc --noEmit` clean; compiler emits 24/43/27 steps with call=title / refrain=body and audio listen-sources resolving; in-browser (v18) all 3 show in Prayers→Devotions with correct counts, call/response rendering, audio+source blocks, no console errors.
+
+## Done (prior session) — Song prayer type + Caro family prayers (2026-08-21, `0684468`, `f00ec43`)
 Added **songs/hymns** as a first-class kind, and baked the family's real Caro rosary into the seed. Memory: `song-prayer-model`.
 - **Model (no new entity):** a song is a `Prayer` with `expression_type: "song"` (new value in `taxonomy.ts`). Verses/chorus live on the **wording** — `PrayerVersion.segments?: SongSegment[]` (`{ ordinal, kind: verse|chorus|bridge, label, body }`); `body` stays the joined full text. Chose this over a parallel `Song` entity (would fork versions/media/import/UI) and over a new `prayer_type` (that axis is liturgical/devotional/…, orthogonal to "sung").
 - **Placement = one box = one step:** `TemplateItem.kind: "song"` + `song_segments?: number[]` — an **ordered** subset of segment ordinals (e.g. `[2,5]` = Verse II then Chorus), or absent = whole song. Compiler `resolveSong` + a `kind:"song"` branch emit **one** `SessionItem` (kind `"song"`, counts as prayable, one completion) — no repetition expansion. `configuration.segment_labels` set only for a chosen subset (whole song reads just "Song"). `songSegmentLabel()` exported from `compiler.ts`.
