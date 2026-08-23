@@ -1702,13 +1702,32 @@ export function createSeedDatabase(): Database {
         ],
         created_at: now,
       },
+      // Authors are Voices too — their books/content live under them.
+      {
+        id: "voice-francis-de-sales",
+        name: "St. Francis de Sales",
+        kind: "individual",
+        created_at: now,
+      },
+      {
+        id: "voice-trent-horn",
+        name: "Trent Horn",
+        kind: "individual",
+        created_at: now,
+      },
+      {
+        id: "voice-fr-mike",
+        name: "Fr. Mike Schmitz",
+        kind: "individual",
+        created_at: now,
+      },
     ],
     knowledge_items: [
       {
         id: "know-devout-life",
         title: "Introduction to the Devout Life",
         category: "book",
-        creator: "St. Francis de Sales",
+        voice_id: "voice-francis-de-sales",
         source: "TAN Books",
         status: "in_progress",
         created_at: now,
@@ -1717,7 +1736,7 @@ export function createSeedDatabase(): Database {
         id: "know-why-we-are-catholic",
         title: "Why We Are Catholic",
         category: "book",
-        creator: "Trent Horn",
+        voice_id: "voice-trent-horn",
         source: "Catholic Answers Press",
         links: [{ platform: "store", url: "https://a.co/d/0iRtwemk", label: "Amazon" }],
         status: "not_started",
@@ -1727,7 +1746,7 @@ export function createSeedDatabase(): Database {
         id: "know-bible-in-a-year",
         title: "Bible in a Year",
         category: "program",
-        creator: "Fr. Mike Schmitz",
+        voice_id: "voice-fr-mike",
         source: "Ascension",
         links: [
           {
