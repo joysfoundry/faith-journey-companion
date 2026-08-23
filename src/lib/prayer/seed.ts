@@ -583,6 +583,199 @@ function chapletItems(): TemplateItem[] {
 }
 const chapletItemsList = chapletItems();
 
+/**
+ * A litany is a string of salutations: each invocation (the "call") is answered
+ * by a shared refrain (the "response"). We model each litany as a devotion built
+ * from `salutation` items — the call is the item label (rendered as the heading),
+ * the refrain is the body. Fixed formulae (Kyrie, Lamb of God, the closing
+ * collect) are grouped `custom` blocks. One salutation = one prayable step.
+ */
+type LitanyLine = readonly [call: string, response: string];
+type LitanySection =
+  | { kind: "block"; lines: readonly LitanyLine[] }
+  | { kind: "text"; label: string; body: string };
+
+function litanyItems(templateId: string, sections: readonly LitanySection[]): TemplateItem[] {
+  const items: TemplateItem[] = [];
+  let p = 0;
+  const add = (partial: Partial<TemplateItem> & { kind: TemplateItem["kind"] }) =>
+    items.push(ti(templateId, p++, partial));
+  for (const section of sections) {
+    if (section.kind === "text") {
+      add({ kind: "custom", label: section.label, body: section.body });
+      continue;
+    }
+    for (const [call, response] of section.lines) {
+      add({ kind: "salutation", label: call, salutation_vr: false, body: response });
+    }
+  }
+  return items;
+}
+
+const LAMB_OF_GOD = (mercy: string): LitanySection => ({
+  kind: "block",
+  lines: [
+    ["Lamb of God, who takest away the sins of the world,", "spare us, O Lord."],
+    ["Lamb of God, who takest away the sins of the world,", "graciously hear us, O Lord."],
+    ["Lamb of God, who takest away the sins of the world,", mercy],
+  ],
+});
+
+// Litany of Humility — Cardinal Rafael Merry del Val (d. 1930), public domain.
+const litanyHumilityItems = litanyItems("tpl-litany-humility", [
+  { kind: "block", lines: [["O Jesus, meek and humble of Heart,", "Hear me."]] },
+  {
+    kind: "block",
+    lines: [
+      "From the desire of being esteemed,",
+      "From the desire of being loved,",
+      "From the desire of being extolled,",
+      "From the desire of being honored,",
+      "From the desire of being praised,",
+      "From the desire of being preferred to others,",
+      "From the desire of being consulted,",
+      "From the desire of being approved,",
+      "From the fear of being humiliated,",
+      "From the fear of being despised,",
+      "From the fear of suffering rebukes,",
+      "From the fear of being calumniated,",
+      "From the fear of being forgotten,",
+      "From the fear of being ridiculed,",
+      "From the fear of being wronged,",
+      "From the fear of being suspected,",
+    ].map((call): LitanyLine => [call, "Deliver me, Jesus."]),
+  },
+  {
+    kind: "block",
+    lines: [
+      "That others may be loved more than I,",
+      "That others may be esteemed more than I,",
+      "That, in the opinion of the world, others may increase and I may decrease,",
+      "That others may be chosen and I set aside,",
+      "That others may be praised and I unnoticed,",
+      "That others may be preferred to me in everything,",
+      "That others may become holier than I, provided that I may become as holy as I should,",
+    ].map((call): LitanyLine => [call, "Jesus, grant me the grace to desire it."]),
+  },
+]);
+
+// Litany of the Sacred Heart of Jesus — approved for public use by Leo XIII, 1899.
+const litanySacredHeartItems = litanyItems("tpl-litany-sacred-heart", [
+  {
+    kind: "text",
+    label: "Kyrie",
+    body: "Lord, have mercy on us.\nChrist, have mercy on us.\nLord, have mercy on us.\nChrist, hear us.\nChrist, graciously hear us.",
+  },
+  {
+    kind: "block",
+    lines: [
+      ["God the Father of Heaven,", "have mercy on us."],
+      ["God the Son, Redeemer of the world,", "have mercy on us."],
+      ["God the Holy Spirit,", "have mercy on us."],
+      ["Holy Trinity, one God,", "have mercy on us."],
+      ...[
+        "Son of the Eternal Father,",
+        "formed by the Holy Spirit in the womb of the Virgin Mother,",
+        "substantially united to the Word of God,",
+        "of infinite majesty,",
+        "holy temple of God,",
+        "tabernacle of the Most High,",
+        "house of God and gate of Heaven,",
+        "burning furnace of charity,",
+        "vessel of justice and love,",
+        "full of goodness and love,",
+        "abyss of all virtues,",
+        "most worthy of all praise,",
+        "king and center of all hearts,",
+        "in whom are all the treasures of wisdom and knowledge,",
+        "in whom dwells all the fullness of the Divinity,",
+        "in whom the Father is well pleased,",
+        "of whose fullness we have all received,",
+        "desire of the everlasting hills,",
+        "patient and abounding in mercy,",
+        "rich unto all who call upon Thee,",
+        "fountain of life and holiness,",
+        "atonement for our sins,",
+        "filled with reproaches,",
+        "bruised for our offenses,",
+        "made obedient unto death,",
+        "pierced with a lance,",
+        "source of all consolation,",
+        "our life and resurrection,",
+        "our peace and reconciliation,",
+        "victim for our sins,",
+        "salvation of those who hope in Thee,",
+        "hope of those who die in Thee,",
+        "delight of all the Saints,",
+      ].map((title): LitanyLine => [`Heart of Jesus, ${title}`, "have mercy on us."]),
+    ],
+  },
+  LAMB_OF_GOD("have mercy on us."),
+  { kind: "block", lines: [["Jesus, meek and humble of Heart,", "Make our hearts like unto Thine."]] },
+  {
+    kind: "text",
+    label: "Let us pray",
+    body: "Almighty and eternal God, look upon the Heart of Thy most beloved Son, and upon the praises and satisfaction He offers Thee in the name of sinners; and being appeased, grant pardon to those who seek Thy mercy, in the name of the same Jesus Christ Thy Son, who liveth and reigneth with Thee, in the unity of the Holy Spirit, world without end. Amen.",
+  },
+]);
+
+// Litany of the Immaculate Heart of Mary — traditional, public domain.
+const litanyImmaculateHeartItems = litanyItems("tpl-litany-immaculate-heart", [
+  {
+    kind: "text",
+    label: "Kyrie",
+    body: "Lord, have mercy on us.\nChrist, have mercy on us.\nLord, have mercy on us.\nChrist, hear us.\nChrist, graciously hear us.",
+  },
+  {
+    kind: "block",
+    lines: [
+      ["God the Father of Heaven,", "have mercy on us."],
+      ["God the Son, Redeemer of the world,", "have mercy on us."],
+      ["God the Holy Spirit,", "have mercy on us."],
+      ["Holy Trinity, one God,", "have mercy on us."],
+      ...[
+        "",
+        "like unto the Heart of God,",
+        "united to the Heart of Jesus,",
+        "instrument of the Holy Spirit,",
+        "sanctuary of the Divine Trinity,",
+        "tabernacle of God Incarnate,",
+        "immaculate from thy creation,",
+        "full of grace,",
+        "blessed among all hearts,",
+        "throne of glory,",
+        "most humble,",
+        "holocaust of Divine Love,",
+        "fastened to the Cross with Jesus Crucified,",
+        "comfort of the afflicted,",
+        "refuge of sinners,",
+        "hope of the agonizing,",
+        "seat of mercy,",
+      ].map(
+        (title): LitanyLine => [
+          title ? `Heart of Mary, ${title}` : "Heart of Mary,",
+          "pray for us.",
+        ],
+      ),
+    ],
+  },
+  LAMB_OF_GOD("have mercy on us."),
+  {
+    kind: "block",
+    lines: [
+      [
+        "Immaculate Mary, meek and humble of heart,",
+        "make our hearts like unto the Heart of Jesus.",
+      ],
+    ],
+  },
+  {
+    kind: "text",
+    label: "Let us pray",
+    body: "O most merciful God, who, for the salvation of sinners and the refuge of the miserable, wast pleased that the most pure Heart of Mary should be most like in charity and pity to the Divine Heart of Thy Son, Jesus Christ: grant that we who commemorate this sweet and loving Heart may, by the merits and intercession of the same Blessed Virgin, merit to be found like unto the Heart of Jesus, through the same Christ our Lord. Amen.",
+  },
+]);
+
 const mysteryData: Array<{
   set: string;
   weekdays: number[];
@@ -1294,6 +1487,30 @@ export function createSeedDatabase(): Database {
         attribution: "Ascension Press",
         created_at: now,
       },
+      {
+        id: "src-focus-humility",
+        source_type: "document",
+        name: "Litany of Humility",
+        file_reference: "How-to-Pray_-The-Litany-of-Humility-FOCUS.pdf",
+        attribution: "Cardinal Rafael Merry del Val (public domain)",
+        created_at: now,
+      },
+      {
+        id: "src-ascension-litany",
+        source_type: "web",
+        name: "Litany of the Sacred Heart of Jesus",
+        url: "https://ascensionpress.com/blogs/articles/litany-of-the-sacred-heart-of-jesus-full-prayer-text-video-and-meaning",
+        attribution: "Approved for public use by Pope Leo XIII, 1899 (public domain)",
+        created_at: now,
+      },
+      {
+        id: "src-catholic-crusade",
+        source_type: "web",
+        name: "Litany of the Immaculate Heart of Mary",
+        url: "https://thecatholiccrusade.com/litany-of-the-immaculate-heart-of-mary/",
+        attribution: "Traditional (public domain)",
+        created_at: now,
+      },
     ],
     prayers: allPrayers.map((p) => p.prayer),
     prayer_versions: allPrayers.map((p) => p.version),
@@ -1372,6 +1589,66 @@ export function createSeedDatabase(): Database {
         built_in: true,
         created_at: now,
       },
+      {
+        id: "tpl-litany-humility",
+        name: "Litany of Humility",
+        description:
+          "Cardinal Merry del Val's prayer for a humble heart — to be freed from the desire for esteem and the fear of humiliation.",
+        kind: "standard",
+        mystery_presentation: "title_only",
+        mystery_count: 0,
+        notes:
+          "Especially fruitful during Lent. Pray it slowly, reflecting on each line — let it become an examination of conscience and a conversation with the Lord.",
+        source_id: "src-focus-humility",
+        built_in: true,
+        created_at: now,
+      },
+      {
+        id: "tpl-litany-sacred-heart",
+        name: "Litany of the Sacred Heart of Jesus",
+        description:
+          "The traditional litany to the Sacred Heart — thirty-three invocations, each answered “Have mercy on us.”",
+        kind: "standard",
+        mystery_presentation: "title_only",
+        mystery_count: 0,
+        notes:
+          "Prayed especially on the First Friday of each month, on the Feast of the Sacred Heart, and during Eucharistic Adoration.",
+        media: [
+          {
+            id: "media-litany-sacred-heart",
+            kind: "video",
+            source: "link",
+            label: "Pray along — Fr. Mark-Mary & Mother Clare",
+            url: "https://www.youtube.com/watch?v=5xjFIKo7ywQ",
+            created_at: now,
+          },
+        ],
+        source_id: "src-ascension-litany",
+        built_in: true,
+        created_at: now,
+      },
+      {
+        id: "tpl-litany-immaculate-heart",
+        name: "Litany of the Immaculate Heart of Mary",
+        description:
+          "Invocations to the Immaculate Heart of Mary, each answered “pray for us.”",
+        kind: "standard",
+        mystery_presentation: "title_only",
+        mystery_count: 0,
+        media: [
+          {
+            id: "media-litany-immaculate-heart",
+            kind: "video",
+            source: "link",
+            label: "Pray along (video)",
+            url: "https://youtu.be/c7F6ExYjsZM",
+            created_at: now,
+          },
+        ],
+        source_id: "src-catholic-crusade",
+        built_in: true,
+        created_at: now,
+      },
     ],
     template_items: [
       ...rosaryItemsList,
@@ -1380,6 +1657,9 @@ export function createSeedDatabase(): Database {
       ...popeItems,
       ...chapletItemsList,
       ...scripturalRosaryItemsList,
+      ...litanyHumilityItems,
+      ...litanySacredHeartItems,
+      ...litanyImmaculateHeartItems,
     ],
     sessions: [],
     session_items: [],
