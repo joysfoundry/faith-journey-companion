@@ -5,6 +5,7 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
+  ExternalLink,
   MoreVertical,
   Notebook,
   NotebookPen,
@@ -35,15 +36,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { todaysWord, type LinkableItem } from "@/domain/placeholderData";
-import {
-  GROUP_LABELS,
-  GROUP_ORDER,
-  byStatusThenRecent,
-  groupOf,
-  isScriptureProgram,
-  knowledgeSubtitle,
-} from "@/lib/prayer/knowledge";
-import type { KnowledgeItem } from "@/lib/prayer/types";
+import { LINK_PLATFORM_LABELS, pinnedLinks, type PinnedLink } from "@/lib/prayer/knowledge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { defaultContext, planTitle, resolveMysterySet, todayISO } from "@/lib/prayer/compiler";
 import { useApp } from "@/lib/prayer/store";
@@ -69,73 +62,50 @@ export const Route = createFileRoute("/")({
 });
 
 /**
- * One expandable Knowledge group on Home (Programs / Books / Media / Resources).
- * Shows its items in-progress-first; completed items are already filtered out by
- * the caller. Starts expanded.
+ * One pinned link on Home — a favorited Voice channel or Content link. Opens the
+ * link out; a chevron leads to the owning record (a Voice or a Content page).
  */
-function KnowledgeGroupRow({
-  label,
-  items,
-  onReflect,
-}: {
-  label: string;
-  items: KnowledgeItem[];
-  onReflect: (linkId: string) => void;
-}) {
-  const [open, setOpen] = useState(true);
+function PinnedLinkRow({ pin }: { pin: PinnedLink }) {
   return (
-    <Collapsible open={open} onOpenChange={setOpen} className="border-t border-border/60">
-      <CollapsibleTrigger className="flex w-full items-center justify-between gap-2 px-5 pb-1.5 pt-3 text-left transition-colors hover:bg-accent/40">
-        <span className="flex items-center gap-2">
-          <span className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-            {label}
+    <SectionRow className="border-t border-border/60 pl-6">
+      <div className="flex items-center justify-between gap-3">
+        <a
+          href={pin.url}
+          target="_blank"
+          rel="noreferrer"
+          className="flex min-w-0 flex-1 items-center gap-2 transition-colors hover:text-primary"
+        >
+          <span className="min-w-0">
+            <span className="block truncate text-sm font-medium text-foreground">
+              {pin.ownerName}
+            </span>
+            <span className="block truncate text-xs text-muted-foreground">
+              {pin.label || LINK_PLATFORM_LABELS[pin.platform]}
+            </span>
           </span>
-          <span className="rounded-full bg-secondary px-1.5 text-[11px] text-muted-foreground">
-            {items.length}
-          </span>
-        </span>
-        <ChevronDown
-          className={`size-4 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`}
-          aria-hidden
-        />
-      </CollapsibleTrigger>
-      <CollapsibleContent>
-        {items.map((item) => (
-          <div key={item.id} className="flex items-center justify-between gap-3 px-5 pb-3 pl-6">
-            <Link
-              to="/formation"
-              className="flex min-w-0 flex-1 items-center gap-2 transition-colors hover:text-primary"
-            >
-              <span className="min-w-0">
-                <span className="block truncate text-sm font-medium text-foreground">
-                  {item.title}
-                </span>
-                <span className="block truncate text-xs text-muted-foreground">
-                  {knowledgeSubtitle(item)}
-                </span>
-              </span>
-            </Link>
-            <div className="flex shrink-0 items-center gap-0.5">
-              <IconAction
-                label={`Write a reflection about ${item.title}`}
-                onClick={() => onReflect(item.id)}
-              >
-                <span>
-                  <NotebookPen className="size-4" aria-hidden />
-                </span>
-              </IconAction>
-              <Link
-                to="/formation"
-                aria-label={`Open ${item.title} in Knowledge`}
-                className="p-1 text-muted-foreground hover:text-foreground"
-              >
-                <ChevronRight className="size-4" aria-hidden />
-              </Link>
-            </div>
-          </div>
-        ))}
-      </CollapsibleContent>
-    </Collapsible>
+          <ExternalLink className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+        </a>
+        {pin.ownerType === "voice" ? (
+          <Link
+            to="/voice/$voiceId"
+            params={{ voiceId: pin.ownerId }}
+            aria-label={`Open ${pin.ownerName}`}
+            className="p-1 text-muted-foreground hover:text-foreground"
+          >
+            <ChevronRight className="size-4" aria-hidden />
+          </Link>
+        ) : (
+          <Link
+            to="/knowledge/$knowledgeId"
+            params={{ knowledgeId: pin.ownerId }}
+            aria-label={`Open ${pin.ownerName}`}
+            className="p-1 text-muted-foreground hover:text-foreground"
+          >
+            <ChevronRight className="size-4" aria-hidden />
+          </Link>
+        )}
+      </div>
+    </SectionRow>
   );
 }
 
@@ -359,16 +329,9 @@ function Index() {
     ...db.knowledge_items.map((k) => ({ id: k.id, label: k.title, group: "Knowledge" })),
   ];
 
-  // Home Knowledge card: one expandable group per display group. Resources show
-  // only when favorited; everything else hides completed items. Scripture-reading
-  // programs are surfaced under the Word section instead, so exclude them here.
-  const homeKnowledge = GROUP_ORDER.map((g) => {
-    const list = db.knowledge_items
-      .filter((i) => groupOf(i.category) === g && !isScriptureProgram(i))
-      .filter((i) => (g === "resource" ? i.favorite : i.status !== "finished"))
-      .sort(byStatusThenRecent);
-    return { group: g, items: list };
-  }).filter((x) => x.items.length > 0);
+  // Home Knowledge card: the links you've pinned — favorited Voice channels and
+  // Content links. Curated by the star, not auto-surfaced.
+  const homePins = pinnedLinks(db.voices, db.knowledge_items);
 
   return (
     <AppShell>
@@ -556,21 +519,14 @@ function Index() {
             </IconAction>
           }
         >
-          {homeKnowledge.length === 0 ? (
+          {homePins.length === 0 ? (
             <SectionRow className="border-t border-border/60">
               <p className="text-sm text-muted-foreground">
-                Programs, books, media, and resources forming your faith.
+                Star a channel or link in your library to pin it here.
               </p>
             </SectionRow>
           ) : (
-            homeKnowledge.map(({ group, items }) => (
-              <KnowledgeGroupRow
-                key={group}
-                label={GROUP_LABELS[group]}
-                items={items}
-                onReflect={openJournal}
-              />
-            ))
+            homePins.map((pin) => <PinnedLinkRow key={`${pin.ownerId}-${pin.url}`} pin={pin} />)
           )}
         </SectionCard>
 

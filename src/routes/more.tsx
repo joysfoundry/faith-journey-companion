@@ -36,7 +36,7 @@ function MorePage() {
       to: "/formation",
       icon: Lightbulb,
       title: "Knowledge",
-      desc: `${db.knowledge_items.filter((i) => i.category !== "resource" && i.status === "in_progress").length} in progress · ${db.knowledge_items.length} saved`,
+      desc: `${db.knowledge_items.filter((i) => i.status === "in_progress").length} in progress · ${db.knowledge_items.length} saved · ${db.voices.length} voices`,
     },
     {
       to: "/import",

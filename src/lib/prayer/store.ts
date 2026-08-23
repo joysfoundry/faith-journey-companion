@@ -13,6 +13,9 @@ import type {
   KnowledgeItem,
   KnowledgeStatus,
   MassExperience,
+  Channel,
+  KnowledgeLink,
+  LinkPlatform,
   MysteryContent,
   Prayer,
   PrayerSession,
@@ -24,6 +27,8 @@ import type {
   SessionPlan,
   Source,
   TemplateItem,
+  Voice,
+  VoiceKind,
 } from "./types";
 import { RECURRENCE_ONCE, type Recurrence } from "./types";
 import { createSeedDatabase } from "./seed";
@@ -38,7 +43,7 @@ import {
   uncompleteSessionItem,
 } from "./compiler";
 
-export const STORAGE_KEY = "prayer-companion-db-v18";
+export const STORAGE_KEY = "prayer-companion-db-v20";
 
 /**
  * Migrate a legacy string recurrence ("daily"/"custom"/…) to the structured
@@ -140,44 +145,160 @@ export function normalizeVariants(db: Database): Database {
     ...(plan.starts_on ? {} : plan.date ? { starts_on: plan.date } : {}),
   }));
 
-  // Knowledge library: migrate any legacy `learning_items` (content_type/
-  // has_transcript) onto the unified `knowledge_items` shape, and backfill
-  // defaults on partial records. Idempotent.
+  // Knowledge library: migrate the store onto the three-level model
+  // (Voice → Channel → Content). Legacy `person`/`resource` knowledge_items
+  // become Voices; the rest stay Content (with `author_id` → `voice_id` and
+  // `url` folded into `links`). Also handles legacy `learning_items`. Idempotent.
   const legacy = (db as { learning_items?: unknown }).learning_items;
   const rawKnowledge = Array.isArray(db.knowledge_items)
     ? db.knowledge_items
     : Array.isArray(legacy)
       ? (legacy as unknown[])
       : [];
-  const knowledge_items: KnowledgeItem[] = rawKnowledge.map((raw) =>
-    normalizeKnowledgeItem(raw as Record<string, unknown>),
+  const rawVoices = Array.isArray(db.voices) ? db.voices : [];
+
+  const voices: Voice[] = rawVoices.map((v) =>
+    normalizeVoice(v as unknown as Record<string, unknown>),
   );
+  const knowledge_items: KnowledgeItem[] = [];
+  for (const raw of rawKnowledge) {
+    const rec = raw as Record<string, unknown>;
+    const cat = (typeof rec["category"] === "string" ? rec["category"] : "") as string;
+    if (cat === "person" || cat === "resource") {
+      voices.push(voiceFromLegacyItem(rec));
+    } else {
+      knowledge_items.push(normalizeContent(rec));
+    }
+  }
 
   return {
     ...db,
     prayers: withDefaults,
     prayer_versions: versions,
     session_plans,
+    voices,
     knowledge_items,
   };
 }
 
-const KNOWLEDGE_CATEGORIES: KnowledgeCategory[] = [
+const LINK_PLATFORMS: LinkPlatform[] = [
+  "instagram",
+  "tiktok",
+  "youtube",
+  "x",
+  "facebook",
+  "podcast",
+  "website",
+  "store",
+  "other",
+];
+
+const VOICE_KINDS: VoiceKind[] = ["individual", "organization", "ministry"];
+
+const CONTENT_CATEGORIES: KnowledgeCategory[] = [
   "book",
   "article",
   "video",
   "podcast",
   "post",
   "program",
-  "resource",
 ];
 
-/** Coerce a stored/legacy record into a valid KnowledgeItem. */
-function normalizeKnowledgeItem(raw: Record<string, unknown>): KnowledgeItem {
-  const str = (k: string): string | undefined =>
-    typeof raw[k] === "string" && raw[k] ? (raw[k] as string) : undefined;
-  const candidate = str("category") ?? str("content_type") ?? "book";
-  // Map legacy content types that no longer exist as categories.
+const coercePlatform = (p: unknown): LinkPlatform =>
+  typeof p === "string" && (LINK_PLATFORMS as string[]).includes(p) ? (p as LinkPlatform) : "other";
+
+const detectPlatformSimple = (url: string): LinkPlatform => {
+  const u = url.toLowerCase();
+  if (u.includes("instagram.com")) return "instagram";
+  if (u.includes("tiktok.com")) return "tiktok";
+  if (u.includes("youtube.com") || u.includes("youtu.be")) return "youtube";
+  if (u.includes("x.com") || u.includes("twitter.com")) return "x";
+  if (u.includes("facebook.com")) return "facebook";
+  if (u.includes("podcasts.apple.com") || u.includes("open.spotify.com")) return "podcast";
+  if (u.includes("amazon.") || u.includes("a.co") || u.includes("audible.")) return "store";
+  return "website";
+};
+
+const genId = (prefix: string): string => `${prefix}-${Math.random().toString(36).slice(2)}`;
+
+const strOf = (raw: Record<string, unknown>, k: string): string | undefined =>
+  typeof raw[k] === "string" && raw[k] ? (raw[k] as string) : undefined;
+
+/** Normalize a raw links array into Content links (platform/url/label/favorite). */
+function normalizeLinks(raw: unknown): KnowledgeLink[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter(
+      (l): l is Record<string, unknown> =>
+        !!l && typeof l === "object" && typeof (l as { url?: unknown }).url === "string",
+    )
+    .map((l) => ({
+      platform: coercePlatform(l["platform"]),
+      url: l["url"] as string,
+      label: typeof l["label"] === "string" && l["label"] ? (l["label"] as string) : undefined,
+      favorite: Boolean(l["favorite"]) || undefined,
+    }));
+}
+
+/** Normalize raw channels (links with a stable id). */
+function normalizeChannels(raw: unknown): Channel[] {
+  return normalizeLinks(raw).map((l) => ({ ...l, id: genId("chan") }));
+}
+
+/** Normalize a stored Voice record. */
+function normalizeVoice(raw: Record<string, unknown>): Voice {
+  const kindRaw = strOf(raw, "kind") ?? "";
+  const kind = (VOICE_KINDS as string[]).includes(kindRaw) ? (kindRaw as VoiceKind) : "individual";
+  const channels = Array.isArray(raw["channels"])
+    ? (raw["channels"] as unknown[]).map((c) => {
+        const rec = c as Record<string, unknown>;
+        const id = strOf(rec, "id") ?? genId("chan");
+        const url = strOf(rec, "url") ?? "";
+        return {
+          id,
+          platform: coercePlatform(rec["platform"]),
+          url,
+          label: strOf(rec, "label"),
+          favorite: Boolean(rec["favorite"]) || undefined,
+        };
+      })
+    : [];
+  return {
+    id: strOf(raw, "id") ?? genId("voice"),
+    name: strOf(raw, "name") ?? strOf(raw, "title") ?? "Untitled",
+    kind,
+    channels: channels.length ? channels : undefined,
+    notes: strOf(raw, "notes"),
+    created_at: strOf(raw, "created_at") ?? new Date().toISOString(),
+  };
+}
+
+/** Convert a legacy `person`/`resource` knowledge_item into a Voice. */
+function voiceFromLegacyItem(raw: Record<string, unknown>): Voice {
+  const isOrg = Boolean(raw["is_organization"]) || strOf(raw, "category") === "resource";
+  const favorite = Boolean(raw["favorite"]) || undefined;
+  // person: accounts came in `links`; resource: a single `url`.
+  const channels: Channel[] = normalizeChannels(raw["links"]);
+  const url = strOf(raw, "url");
+  if (url) {
+    channels.push({ id: genId("chan"), platform: detectPlatformSimple(url), url, favorite });
+  } else if (favorite && channels[0]) {
+    // A favorited person had no scalar url — keep it on Home via its first channel.
+    channels[0] = { ...channels[0], favorite: true };
+  }
+  return {
+    id: strOf(raw, "id") ?? genId("voice"),
+    name: strOf(raw, "title") ?? strOf(raw, "name") ?? "Untitled",
+    kind: isOrg ? "organization" : "individual",
+    channels: channels.length ? channels : undefined,
+    notes: strOf(raw, "notes"),
+    created_at: strOf(raw, "created_at") ?? new Date().toISOString(),
+  };
+}
+
+/** Coerce a stored/legacy record into a valid Content KnowledgeItem. */
+function normalizeContent(raw: Record<string, unknown>): KnowledgeItem {
+  const candidate = strOf(raw, "category") ?? strOf(raw, "content_type") ?? "book";
   const mapped =
     candidate === "sermon" || candidate === "show" || candidate === "newsletter"
       ? "video"
@@ -186,26 +307,41 @@ function normalizeKnowledgeItem(raw: Record<string, unknown>): KnowledgeItem {
         : candidate === "other"
           ? "article"
           : candidate;
-  const category = (KNOWLEDGE_CATEGORIES as string[]).includes(mapped)
+  const category = (CONTENT_CATEGORIES as string[]).includes(mapped)
     ? (mapped as KnowledgeCategory)
     : "book";
-  const status = ["not_started", "in_progress", "finished"].includes(str("status") ?? "")
+  const status = ["not_started", "in_progress", "finished"].includes(strOf(raw, "status") ?? "")
     ? (raw["status"] as KnowledgeStatus)
     : "not_started";
+  // Fold a legacy scalar `url` into links (carrying its favorite state).
+  const links = normalizeLinks(raw["links"]);
+  const url = strOf(raw, "url");
+  if (url && !links.some((l) => l.url === url)) {
+    links.unshift({
+      platform: detectPlatformSimple(url),
+      url,
+      favorite: Boolean(raw["favorite"]) || undefined,
+    });
+  }
+  const tags = Array.isArray(raw["tags"])
+    ? (raw["tags"] as unknown[]).filter((t): t is string => typeof t === "string" && !!t)
+    : undefined;
   return {
-    id: str("id") ?? `know-${Math.random().toString(36).slice(2)}`,
-    title: str("title") ?? "Untitled",
+    id: strOf(raw, "id") ?? genId("know"),
+    title: strOf(raw, "title") ?? "Untitled",
     category,
-    creator: str("creator"),
-    source: str("source"),
-    url: str("url"),
-    notes: str("notes"),
+    voice_id: strOf(raw, "voice_id") ?? strOf(raw, "author_id"),
+    channel_id: strOf(raw, "channel_id"),
+    creator: strOf(raw, "creator"),
+    source: strOf(raw, "source"),
+    notes: strOf(raw, "notes"),
     status,
-    favorite: Boolean(raw["favorite"]) || undefined,
-    start_date: str("start_date"),
-    target_date: str("target_date"),
+    start_date: strOf(raw, "start_date"),
+    target_date: strOf(raw, "target_date"),
     reads_scripture: Boolean(raw["reads_scripture"]) || undefined,
-    created_at: str("created_at") ?? new Date().toISOString(),
+    links: links.length ? links : undefined,
+    tags: tags && tags.length ? tags : undefined,
+    created_at: strOf(raw, "created_at") ?? new Date().toISOString(),
   };
 }
 
@@ -274,8 +410,11 @@ export interface AppStore {
   addKnowledgeItem: (item: KnowledgeItem) => void;
   updateKnowledgeItem: (item: KnowledgeItem) => void;
   setKnowledgeStatus: (id: ID, status: KnowledgeStatus) => void;
-  toggleKnowledgeFavorite: (id: ID) => void;
   deleteKnowledgeItem: (id: ID) => void;
+  toggleContentLinkFavorite: (itemId: ID, linkIndex: number) => void;
+  upsertVoice: (voice: Voice) => void;
+  deleteVoice: (id: ID) => void;
+  toggleChannelFavorite: (voiceId: ID, channelId: ID) => void;
   addMassExperience: (mass: MassExperience) => void;
   /** Pin the devotion the Home "daily" prayer card starts; undefined = the default Rosary. */
   setDailyTemplate: (templateId: ID | undefined) => void;
@@ -1045,16 +1184,59 @@ export const mutations = {
       knowledge_items: db.knowledge_items.map((i) => (i.id === id ? { ...i, status } : i)),
     };
   },
-  toggleKnowledgeFavorite(db: Database, id: ID): Database {
+  deleteKnowledgeItem(db: Database, id: ID): Database {
+    return { ...db, knowledge_items: db.knowledge_items.filter((i) => i.id !== id) };
+  },
+  /** Toggle a Home pin on one Content link (by item + link index). */
+  toggleContentLinkFavorite(db: Database, itemId: ID, linkIndex: number): Database {
     return {
       ...db,
       knowledge_items: db.knowledge_items.map((i) =>
-        i.id === id ? { ...i, favorite: !i.favorite } : i,
+        i.id === itemId
+          ? {
+              ...i,
+              links: (i.links ?? []).map((l, idx) =>
+                idx === linkIndex ? { ...l, favorite: !l.favorite } : l,
+              ),
+            }
+          : i,
       ),
     };
   },
-  deleteKnowledgeItem(db: Database, id: ID): Database {
-    return { ...db, knowledge_items: db.knowledge_items.filter((i) => i.id !== id) };
+  upsertVoice(db: Database, voice: Voice): Database {
+    const exists = db.voices.some((v) => v.id === voice.id);
+    return {
+      ...db,
+      voices: exists
+        ? db.voices.map((v) => (v.id === voice.id ? voice : v))
+        : [voice, ...db.voices],
+    };
+  },
+  deleteVoice(db: Database, id: ID): Database {
+    return {
+      ...db,
+      voices: db.voices.filter((v) => v.id !== id),
+      // Orphan any content that pointed at this Voice, rather than delete it.
+      knowledge_items: db.knowledge_items.map((i) =>
+        i.voice_id === id ? { ...i, voice_id: undefined, channel_id: undefined } : i,
+      ),
+    };
+  },
+  /** Toggle a Home pin on one Voice channel (by voice + channel id). */
+  toggleChannelFavorite(db: Database, voiceId: ID, channelId: ID): Database {
+    return {
+      ...db,
+      voices: db.voices.map((v) =>
+        v.id === voiceId
+          ? {
+              ...v,
+              channels: (v.channels ?? []).map((c) =>
+                c.id === channelId ? { ...c, favorite: !c.favorite } : c,
+              ),
+            }
+          : v,
+      ),
+    };
   },
   addMassExperience(db: Database, mass: MassExperience): Database {
     return { ...db, mass_experiences: [mass, ...db.mass_experiences] };

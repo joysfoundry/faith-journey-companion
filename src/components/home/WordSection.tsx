@@ -9,7 +9,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { todaysWord } from "@/domain/placeholderData";
 import { newId, todayISO } from "@/lib/prayer/compiler";
-import { byStatusThenRecent, isScriptureProgram, knowledgeSubtitle } from "@/lib/prayer/knowledge";
+import {
+  byStatusThenRecent,
+  isScriptureProgram,
+  knowledgeSubtitle,
+  primaryUrl,
+} from "@/lib/prayer/knowledge";
 import { getLiturgicalDay, type LiturgicalDay } from "@/lib/liturgical/calendar";
 import { useApp } from "@/lib/prayer/store";
 
@@ -221,9 +226,9 @@ export function WordSection({ onReflect }: { onReflect: (linkId: string) => void
             {readingPrograms.map((program) => (
               <li key={program.id} className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  {program.url ? (
+                  {primaryUrl(program) ? (
                     <a
-                      href={program.url}
+                      href={primaryUrl(program)}
                       target="_blank"
                       rel="noreferrer"
                       className="inline-flex items-center gap-1 text-sm font-medium text-foreground underline-offset-4 hover:text-primary hover:underline"

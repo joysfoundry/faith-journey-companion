@@ -552,26 +552,89 @@ export type KnowledgeStatus = "not_started" | "in_progress" | "finished";
  * plans (program) carry a real `status`; `resource` items are ongoing tools
  * (apps/sites) with no completion, surfaced on Home only when favorited.
  */
-export type KnowledgeCategory =
-  "book" | "article" | "video" | "podcast" | "post" | "program" | "resource";
+/**
+ * Content kinds — the *what* you read/watch/listen to. The *who* behind it is a
+ * separate `Voice` record (see below), referenced by `KnowledgeItem.voice_id`.
+ */
+export type KnowledgeCategory = "book" | "article" | "video" | "podcast" | "post" | "program";
 
 /**
- * One item in the Knowledge library (formerly the "Life Library"). Books,
- * media, guided programs, and ongoing resources all share this shape:
- * - completable categories use `status` (not_started → in_progress → finished);
- * - `resource` ignores `status` and instead uses `favorite` to appear on Home;
- * - `start_date`/`target_date` apply to programs (absent = open-ended plan).
+ * The platform a Channel or a Content link points at. Drives the icon/label and
+ * the auto-detect that matches a pasted URL back to a Voice's channel.
+ */
+export type LinkPlatform =
+  "instagram" | "tiktok" | "youtube" | "x" | "facebook" | "podcast" | "website" | "store" | "other";
+
+/**
+ * A Channel — the middle level. A Voice's account/presence on one platform
+ * (its Instagram, its podcast, its website). A Voice has many. `favorite` pins
+ * this one channel to Home ("show me their podcast").
+ */
+export interface Channel {
+  id: ID;
+  platform: LinkPlatform;
+  url: string;
+  /** Optional human note ("main channel", "Spanish account"). */
+  label?: string | undefined;
+  /** Pinned to Home. Favoriting is per-channel, not per-Voice. */
+  favorite?: boolean | undefined;
+}
+
+/**
+ * Where a specific piece of Content lives — an Amazon / Audible page, a YouTube
+ * video, an episode link. Distinct from a Channel (a Voice's ongoing account):
+ * this points at the one work. `favorite` pins the link to Home.
+ */
+export interface KnowledgeLink {
+  platform: LinkPlatform;
+  url: string;
+  label?: string | undefined;
+  favorite?: boolean | undefined;
+}
+
+/** What kind of Voice this is — an individual, an organization/company, or a ministry. */
+export type VoiceKind = "individual" | "organization" | "ministry";
+
+/**
+ * A Voice = the *who* behind content: a person, an organization/company, or a
+ * ministry you follow (Fr. Mike, the Vatican, Sisters of Life, Hallow). It owns
+ * its `channels` (accounts on each platform) and is the parent of any
+ * `KnowledgeItem` attributed to it. The display label for the whole concept
+ * ("Voices") lives in a single constant in `knowledge.ts` for easy renaming.
+ */
+export interface Voice {
+  id: ID;
+  name: string;
+  kind: VoiceKind;
+  /** This Voice's accounts, one per platform presence. */
+  channels?: Channel[] | undefined;
+  notes?: string | undefined;
+  created_at: string;
+}
+
+/**
+ * One piece of Content in the library — a book, article, video, podcast, post,
+ * or guided program (the *what*). It may belong to a `Voice` (`voice_id`, the
+ * *who* — optional; content can sit unattributed), may name the specific
+ * `channel_id` it came from, and may carry its own `links` (where to get it —
+ * an Amazon page, a video), or be linkless.
+ * - `status` (not_started → in_progress → finished) tracks progress;
+ * - `start_date`/`target_date` apply to programs (absent = open-ended plan);
+ * - `links[].favorite` pins a specific link to Home.
  */
 export interface KnowledgeItem {
   id: ID;
   title: string;
   category: KnowledgeCategory;
-  creator?: string | undefined; // author / channel / host
+  /** The Voice this content is attributed to. Optional — content can be unattributed. */
+  voice_id?: ID | undefined;
+  /** Which of the Voice's channels this came from (e.g. their Instagram). Optional. */
+  channel_id?: ID | undefined;
+  /** Free-text author/creator, used when no `voice_id` is set (or as a quick label). */
+  creator?: string | undefined;
   source?: string | undefined; // publisher / platform ("YouVersion", "Ascension")
-  url?: string | undefined;
   notes?: string | undefined;
   status: KnowledgeStatus;
-  favorite?: boolean | undefined; // resources on Home; a "star" for anything else
   start_date?: string | undefined; // programs
   target_date?: string | undefined; // programs
   /**
@@ -580,6 +643,10 @@ export interface KnowledgeItem {
    * (it's still a `program` in the Library). E.g. Bible in a Year.
    */
   reads_scripture?: boolean | undefined;
+  /** Where to get / access this content — Amazon, Audible, a video, … */
+  links?: KnowledgeLink[] | undefined;
+  /** Free-form tags for finding a saved item later ("praying", "becomingcatholic"). */
+  tags?: string[] | undefined;
   created_at: string;
 }
 
@@ -625,6 +692,7 @@ export interface Database {
   intentions: Intention[];
   import_drafts: ImportDraft[];
   reflections: Reflection[];
+  voices: Voice[];
   knowledge_items: KnowledgeItem[];
   mass_experiences: MassExperience[];
 }

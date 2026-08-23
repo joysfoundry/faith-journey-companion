@@ -19,10 +19,12 @@ import { Route as PrayersRouteImport } from './routes/prayers'
 import { Route as ReflectionsRouteImport } from './routes/reflections'
 import { Route as WordRouteImport } from './routes/word'
 import { Route as DevotionDevotionIdRouteImport } from './routes/devotion.$devotionId'
+import { Route as KnowledgeKnowledgeIdRouteImport } from './routes/knowledge.$knowledgeId'
 import { Route as MysteryVersionBodyKeyRouteImport } from './routes/mystery-version.$bodyKey'
 import { Route as PrayerPrayerIdRouteImport } from './routes/prayer.$prayerId'
 import { Route as SessionSessionIdRouteImport } from './routes/session.$sessionId'
 import { Route as TemplateTemplateIdRouteImport } from './routes/template.$templateId'
+import { Route as VoiceVoiceIdRouteImport } from './routes/voice.$voiceId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -74,6 +76,11 @@ const DevotionDevotionIdRoute = DevotionDevotionIdRouteImport.update({
   path: '/devotion/$devotionId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const KnowledgeKnowledgeIdRoute = KnowledgeKnowledgeIdRouteImport.update({
+  id: '/knowledge/$knowledgeId',
+  path: '/knowledge/$knowledgeId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MysteryVersionBodyKeyRoute = MysteryVersionBodyKeyRouteImport.update({
   id: '/mystery-version/$bodyKey',
   path: '/mystery-version/$bodyKey',
@@ -94,6 +101,11 @@ const TemplateTemplateIdRoute = TemplateTemplateIdRouteImport.update({
   path: '/template/$templateId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VoiceVoiceIdRoute = VoiceVoiceIdRouteImport.update({
+  id: '/voice/$voiceId',
+  path: '/voice/$voiceId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -106,10 +118,12 @@ export interface FileRoutesByFullPath {
   '/reflections': typeof ReflectionsRoute
   '/word': typeof WordRoute
   '/devotion/$devotionId': typeof DevotionDevotionIdRoute
+  '/knowledge/$knowledgeId': typeof KnowledgeKnowledgeIdRoute
   '/mystery-version/$bodyKey': typeof MysteryVersionBodyKeyRoute
   '/prayer/$prayerId': typeof PrayerPrayerIdRoute
   '/session/$sessionId': typeof SessionSessionIdRoute
   '/template/$templateId': typeof TemplateTemplateIdRoute
+  '/voice/$voiceId': typeof VoiceVoiceIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -122,10 +136,12 @@ export interface FileRoutesByTo {
   '/reflections': typeof ReflectionsRoute
   '/word': typeof WordRoute
   '/devotion/$devotionId': typeof DevotionDevotionIdRoute
+  '/knowledge/$knowledgeId': typeof KnowledgeKnowledgeIdRoute
   '/mystery-version/$bodyKey': typeof MysteryVersionBodyKeyRoute
   '/prayer/$prayerId': typeof PrayerPrayerIdRoute
   '/session/$sessionId': typeof SessionSessionIdRoute
   '/template/$templateId': typeof TemplateTemplateIdRoute
+  '/voice/$voiceId': typeof VoiceVoiceIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -139,10 +155,12 @@ export interface FileRoutesById {
   '/reflections': typeof ReflectionsRoute
   '/word': typeof WordRoute
   '/devotion/$devotionId': typeof DevotionDevotionIdRoute
+  '/knowledge/$knowledgeId': typeof KnowledgeKnowledgeIdRoute
   '/mystery-version/$bodyKey': typeof MysteryVersionBodyKeyRoute
   '/prayer/$prayerId': typeof PrayerPrayerIdRoute
   '/session/$sessionId': typeof SessionSessionIdRoute
   '/template/$templateId': typeof TemplateTemplateIdRoute
+  '/voice/$voiceId': typeof VoiceVoiceIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -157,10 +175,12 @@ export interface FileRouteTypes {
     | '/reflections'
     | '/word'
     | '/devotion/$devotionId'
+    | '/knowledge/$knowledgeId'
     | '/mystery-version/$bodyKey'
     | '/prayer/$prayerId'
     | '/session/$sessionId'
     | '/template/$templateId'
+    | '/voice/$voiceId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -173,10 +193,12 @@ export interface FileRouteTypes {
     | '/reflections'
     | '/word'
     | '/devotion/$devotionId'
+    | '/knowledge/$knowledgeId'
     | '/mystery-version/$bodyKey'
     | '/prayer/$prayerId'
     | '/session/$sessionId'
     | '/template/$templateId'
+    | '/voice/$voiceId'
   id:
     | '__root__'
     | '/'
@@ -189,10 +211,12 @@ export interface FileRouteTypes {
     | '/reflections'
     | '/word'
     | '/devotion/$devotionId'
+    | '/knowledge/$knowledgeId'
     | '/mystery-version/$bodyKey'
     | '/prayer/$prayerId'
     | '/session/$sessionId'
     | '/template/$templateId'
+    | '/voice/$voiceId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -206,10 +230,12 @@ export interface RootRouteChildren {
   ReflectionsRoute: typeof ReflectionsRoute
   WordRoute: typeof WordRoute
   DevotionDevotionIdRoute: typeof DevotionDevotionIdRoute
+  KnowledgeKnowledgeIdRoute: typeof KnowledgeKnowledgeIdRoute
   MysteryVersionBodyKeyRoute: typeof MysteryVersionBodyKeyRoute
   PrayerPrayerIdRoute: typeof PrayerPrayerIdRoute
   SessionSessionIdRoute: typeof SessionSessionIdRoute
   TemplateTemplateIdRoute: typeof TemplateTemplateIdRoute
+  VoiceVoiceIdRoute: typeof VoiceVoiceIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -284,6 +310,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DevotionDevotionIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/knowledge/$knowledgeId': {
+      id: '/knowledge/$knowledgeId'
+      path: '/knowledge/$knowledgeId'
+      fullPath: '/knowledge/$knowledgeId'
+      preLoaderRoute: typeof KnowledgeKnowledgeIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/mystery-version/$bodyKey': {
       id: '/mystery-version/$bodyKey'
       path: '/mystery-version/$bodyKey'
@@ -312,6 +345,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TemplateTemplateIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/voice/$voiceId': {
+      id: '/voice/$voiceId'
+      path: '/voice/$voiceId'
+      fullPath: '/voice/$voiceId'
+      preLoaderRoute: typeof VoiceVoiceIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -326,10 +366,12 @@ const rootRouteChildren: RootRouteChildren = {
   ReflectionsRoute: ReflectionsRoute,
   WordRoute: WordRoute,
   DevotionDevotionIdRoute: DevotionDevotionIdRoute,
+  KnowledgeKnowledgeIdRoute: KnowledgeKnowledgeIdRoute,
   MysteryVersionBodyKeyRoute: MysteryVersionBodyKeyRoute,
   PrayerPrayerIdRoute: PrayerPrayerIdRoute,
   SessionSessionIdRoute: SessionSessionIdRoute,
   TemplateTemplateIdRoute: TemplateTemplateIdRoute,
+  VoiceVoiceIdRoute: VoiceVoiceIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

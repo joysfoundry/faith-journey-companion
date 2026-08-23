@@ -134,9 +134,14 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
         id: string,
         status: Parameters<typeof mutations.setKnowledgeStatus>[2],
       ) => setDb((d) => mutations.setKnowledgeStatus(d, id, status)),
-      toggleKnowledgeFavorite: (id: string) =>
-        setDb((d) => mutations.toggleKnowledgeFavorite(d, id)),
       deleteKnowledgeItem: (id: string) => setDb((d) => mutations.deleteKnowledgeItem(d, id)),
+      toggleContentLinkFavorite: (itemId: string, linkIndex: number) =>
+        setDb((d) => mutations.toggleContentLinkFavorite(d, itemId, linkIndex)),
+      upsertVoice: (v: Parameters<typeof mutations.upsertVoice>[1]) =>
+        setDb((d) => mutations.upsertVoice(d, v)),
+      deleteVoice: (id: string) => setDb((d) => mutations.deleteVoice(d, id)),
+      toggleChannelFavorite: (voiceId: string, channelId: string) =>
+        setDb((d) => mutations.toggleChannelFavorite(d, voiceId, channelId)),
       addMassExperience: (m: Parameters<typeof mutations.addMassExperience>[1]) =>
         setDb((d) => mutations.addMassExperience(d, m)),
       setDailyTemplate: (templateId: string | undefined) =>

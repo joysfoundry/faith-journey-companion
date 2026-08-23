@@ -592,8 +592,7 @@ const chapletItemsList = chapletItems();
  */
 type LitanyLine = readonly [call: string, response: string];
 type LitanySection =
-  | { kind: "block"; lines: readonly LitanyLine[] }
-  | { kind: "text"; label: string; body: string };
+  { kind: "block"; lines: readonly LitanyLine[] } | { kind: "text"; label: string; body: string };
 
 function litanyItems(templateId: string, sections: readonly LitanySection[]): TemplateItem[] {
   const items: TemplateItem[] = [];
@@ -711,7 +710,10 @@ const litanySacredHeartItems = litanyItems("tpl-litany-sacred-heart", [
     ],
   },
   LAMB_OF_GOD("have mercy on us."),
-  { kind: "block", lines: [["Jesus, meek and humble of Heart,", "Make our hearts like unto Thine."]] },
+  {
+    kind: "block",
+    lines: [["Jesus, meek and humble of Heart,", "Make our hearts like unto Thine."]],
+  },
   {
     kind: "text",
     label: "Let us pray",
@@ -751,12 +753,10 @@ const litanyImmaculateHeartItems = litanyItems("tpl-litany-immaculate-heart", [
         "refuge of sinners,",
         "hope of the agonizing,",
         "seat of mercy,",
-      ].map(
-        (title): LitanyLine => [
-          title ? `Heart of Mary, ${title}` : "Heart of Mary,",
-          "pray for us.",
-        ],
-      ),
+      ].map((title): LitanyLine => [
+        title ? `Heart of Mary, ${title}` : "Heart of Mary,",
+        "pray for us.",
+      ]),
     ],
   },
   LAMB_OF_GOD("have mercy on us."),
@@ -1630,8 +1630,7 @@ export function createSeedDatabase(): Database {
       {
         id: "tpl-litany-immaculate-heart",
         name: "Litany of the Immaculate Heart of Mary",
-        description:
-          "Invocations to the Immaculate Heart of Mary, each answered “pray for us.”",
+        description: "Invocations to the Immaculate Heart of Mary, each answered “pray for us.”",
         kind: "standard",
         mystery_presentation: "title_only",
         mystery_count: 0,
@@ -1668,6 +1667,42 @@ export function createSeedDatabase(): Database {
     import_drafts: [],
     reflections: [],
     mass_experiences: [],
+    // Voices = the who behind content (individual/org/ministry), each with its
+    // channels. Favorited channels surface on Home.
+    voices: [
+      {
+        id: "voice-usccb",
+        name: "USCCB",
+        kind: "organization",
+        channels: [
+          {
+            id: "chan-usccb-web",
+            platform: "website",
+            url: "https://www.usccb.org",
+            favorite: true,
+          },
+        ],
+        created_at: now,
+      },
+      {
+        id: "voice-hallow",
+        name: "Hallow",
+        kind: "organization",
+        channels: [
+          { id: "chan-hallow-web", platform: "website", url: "https://hallow.com", favorite: true },
+        ],
+        created_at: now,
+      },
+      {
+        id: "voice-youversion",
+        name: "YouVersion",
+        kind: "organization",
+        channels: [
+          { id: "chan-youversion-web", platform: "website", url: "https://www.bible.com" },
+        ],
+        created_at: now,
+      },
+    ],
     knowledge_items: [
       {
         id: "know-devout-life",
@@ -1684,7 +1719,7 @@ export function createSeedDatabase(): Database {
         category: "book",
         creator: "Trent Horn",
         source: "Catholic Answers Press",
-        url: "https://a.co/d/0iRtwemk",
+        links: [{ platform: "store", url: "https://a.co/d/0iRtwemk", label: "Amazon" }],
         status: "not_started",
         created_at: now,
       },
@@ -1694,38 +1729,14 @@ export function createSeedDatabase(): Database {
         category: "program",
         creator: "Fr. Mike Schmitz",
         source: "Ascension",
-        url: "https://podcasts.apple.com/us/podcast/the-bible-in-a-year-with-fr-mike-schmitz/id1539568321",
+        links: [
+          {
+            platform: "podcast",
+            url: "https://podcasts.apple.com/us/podcast/the-bible-in-a-year-with-fr-mike-schmitz/id1539568321",
+          },
+        ],
         status: "in_progress",
         reads_scripture: true,
-        created_at: now,
-      },
-      {
-        id: "know-usccb",
-        title: "USCCB",
-        category: "resource",
-        source: "usccb.org",
-        url: "https://www.usccb.org",
-        status: "not_started",
-        favorite: true,
-        created_at: now,
-      },
-      {
-        id: "know-hallow",
-        title: "Hallow",
-        category: "resource",
-        source: "Prayer & meditation app",
-        url: "https://hallow.com",
-        status: "not_started",
-        favorite: true,
-        created_at: now,
-      },
-      {
-        id: "know-bible-app",
-        title: "Bible App",
-        category: "resource",
-        source: "YouVersion",
-        url: "https://www.bible.com",
-        status: "not_started",
         created_at: now,
       },
     ],

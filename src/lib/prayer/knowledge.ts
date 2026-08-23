@@ -1,6 +1,24 @@
-import type { KnowledgeCategory, KnowledgeItem, KnowledgeStatus } from "./types";
+import type {
+  Channel,
+  ID,
+  KnowledgeCategory,
+  KnowledgeItem,
+  KnowledgeStatus,
+  LinkPlatform,
+  Voice,
+  VoiceKind,
+} from "./types";
 
-/** Human labels for a single item's category (used in rows, the Add picker). */
+/**
+ * The user-facing name for the "who" concept. Kept in ONE place so it can be
+ * renamed (Voices → whatever) without touching the rest of the app.
+ */
+export const VOICE_LABEL = "Voices";
+export const VOICE_LABEL_SINGULAR = "Voice";
+
+/* -------------------------------- Content -------------------------------- */
+
+/** Human labels for a content item's category (used in rows, the Add picker). */
 export const CATEGORY_LABELS: Record<KnowledgeCategory, string> = {
   book: "Book",
   article: "Article",
@@ -8,10 +26,9 @@ export const CATEGORY_LABELS: Record<KnowledgeCategory, string> = {
   podcast: "Podcast",
   post: "Post",
   program: "Program",
-  resource: "Resource",
 };
 
-/** The categories offered in the Add form, in menu order. */
+/** The content categories offered in the Add form, in menu order. */
 export const CATEGORY_OPTIONS: KnowledgeCategory[] = [
   "book",
   "article",
@@ -19,36 +36,27 @@ export const CATEGORY_OPTIONS: KnowledgeCategory[] = [
   "podcast",
   "post",
   "program",
-  "resource",
 ];
 
 /**
- * Home-page / Library grouping. Several item categories collapse into one
- * display group ("Media" gathers video/podcast/article/post). Order here is the
- * display order of the groups.
+ * Home / Library grouping for Content. Several categories collapse into one
+ * display group ("Media" gathers video/podcast/article/post).
  */
-export type KnowledgeGroup = "program" | "book" | "media" | "resource";
+export type KnowledgeGroup = "program" | "book" | "media";
 
 export const GROUP_LABELS: Record<KnowledgeGroup, string> = {
   program: "Programs",
   book: "Books",
   media: "Media",
-  resource: "Resources",
 };
 
-export const GROUP_ORDER: KnowledgeGroup[] = ["program", "book", "media", "resource"];
+export const GROUP_ORDER: KnowledgeGroup[] = ["program", "book", "media"];
 
-/** Which display group an item belongs to. */
+/** Which display group a content item belongs to. */
 export function groupOf(category: KnowledgeCategory): KnowledgeGroup {
   if (category === "program") return "program";
   if (category === "book") return "book";
-  if (category === "resource") return "resource";
   return "media"; // video | podcast | article | post
-}
-
-/** Resources are ongoing tools — they never carry a meaningful status. */
-export function isCompletable(category: KnowledgeCategory): boolean {
-  return category !== "resource";
 }
 
 /**
@@ -66,21 +74,181 @@ export function detectScriptureProgram(url?: string, title?: string, source?: st
   return /\bbible\b|\bscripture\b|\bgospel\b|\bnew testament\b|\bold testament\b/.test(hay);
 }
 
-/** Sort key so in-progress floats above not-started above finished. */
+/* -------------------------------- Voices --------------------------------- */
+
+export const VOICE_KIND_LABELS: Record<VoiceKind, string> = {
+  individual: "Individual",
+  organization: "Organization",
+  ministry: "Ministry",
+};
+
+export const VOICE_KIND_OPTIONS: VoiceKind[] = ["individual", "organization", "ministry"];
+
+/* ------------------------- Channels / link platforms ---------------------- */
+
+/** Human labels for a channel/link platform. */
+export const LINK_PLATFORM_LABELS: Record<LinkPlatform, string> = {
+  instagram: "Instagram",
+  tiktok: "TikTok",
+  youtube: "YouTube",
+  x: "X",
+  facebook: "Facebook",
+  podcast: "Podcast",
+  website: "Website",
+  store: "Store",
+  other: "Link",
+};
+
+/** Platforms offered in the channel/link editor, in menu order. */
+export const LINK_PLATFORM_OPTIONS: LinkPlatform[] = [
+  "instagram",
+  "tiktok",
+  "youtube",
+  "x",
+  "facebook",
+  "podcast",
+  "website",
+  "store",
+  "other",
+];
+
+function hostAndPath(url?: string): { host: string; path: string } {
+  const raw = (url ?? "").trim().toLowerCase();
+  if (!raw) return { host: "", path: "" };
+  try {
+    const u = new URL(raw.startsWith("http") ? raw : `https://${raw}`);
+    return { host: u.hostname.replace(/^www\./, ""), path: u.pathname };
+  } catch {
+    return { host: raw, path: "" };
+  }
+}
+
+/** Best-guess platform for a pasted link. */
+export function detectPlatform(url?: string): LinkPlatform {
+  const { host } = hostAndPath(url);
+  if (!host) return "website";
+  if (host.includes("instagram.com")) return "instagram";
+  if (host.includes("tiktok.com")) return "tiktok";
+  if (host.includes("youtube.com") || host.includes("youtu.be")) return "youtube";
+  if (host.includes("x.com") || host.includes("twitter.com")) return "x";
+  if (host.includes("facebook.com") || host.includes("fb.com")) return "facebook";
+  if (host.includes("podcasts.apple.com") || host.includes("open.spotify.com")) return "podcast";
+  if (host.includes("amazon.") || host.includes("a.co") || host.includes("audible."))
+    return "store";
+  return "website";
+}
+
+/** A "/p/", "/reel/", "/status/"… segment anywhere in the path = a single post. */
+const POST_PATH = /\/(p|reel|reels|tv|status|watch|video|shorts|posts?)\//;
+
+/**
+ * A stable identity ("who posted this") pulled from a social URL: the platform
+ * plus the account handle. Two URLs from the same account resolve to the same
+ * identity, so a pasted post can be matched back to a saved Voice's channel.
+ */
+export function identityFromUrl(url?: string): { platform: LinkPlatform; handle: string } | null {
+  const { host, path } = hostAndPath(url);
+  if (!host) return null;
+  const platform = detectPlatform(url);
+  const segments = path.split("/").filter(Boolean);
+  if (segments.length === 0) return null;
+
+  if (platform === "youtube") {
+    const seg = segments[0];
+    if (!seg) return null;
+    if (seg === "watch" || seg === "shorts") return null;
+    if ((seg === "c" || seg === "channel" || seg === "user") && segments[1]) {
+      return { platform, handle: segments[1].replace(/^@/, "") };
+    }
+    return { platform, handle: seg.replace(/^@/, "") };
+  }
+
+  if (POST_PATH.test(path)) {
+    const lead = segments[0];
+    if (lead && !/^(p|reel|reels|tv|status|watch|video|shorts|posts?)$/.test(lead)) {
+      return { platform, handle: lead.replace(/^@/, "") };
+    }
+    return null;
+  }
+  const handle = segments[0];
+  if (!handle) return null;
+  return { platform, handle: handle.replace(/^@/, "") };
+}
+
+function sameIdentity(
+  a: { platform: LinkPlatform; handle: string },
+  b: { platform: LinkPlatform; handle: string },
+): boolean {
+  return a.platform === b.platform && a.handle.toLowerCase() === b.handle.toLowerCase();
+}
+
+/**
+ * Find the saved Voice (and matching channel) a URL belongs to, by matching the
+ * URL's identity against each Voice's channels. Powers auto-linking a pasted
+ * post to its Voice.
+ */
+export function matchVoice(
+  url: string | undefined,
+  voices: Voice[],
+): { voice: Voice; channel: Channel } | undefined {
+  const id = identityFromUrl(url);
+  if (!id) return undefined;
+  for (const voice of voices) {
+    for (const channel of voice.channels ?? []) {
+      const ci = identityFromUrl(channel.url);
+      if (ci && sameIdentity(ci, id)) return { voice, channel };
+    }
+  }
+  return undefined;
+}
+
+/** Known org/company/reference hosts → an organization Voice by default. */
+const ORG_HOSTS = [
+  "hallow.com",
+  "usccb.org",
+  "vatican.va",
+  "magnificat.com",
+  "ewtn.com",
+  "catholic.com",
+  "ascensionpress.com",
+  "bible.com",
+  "youversion",
+];
+
+/** Best-guess kind for a Voice created from a pasted URL. */
+export function detectVoiceKind(url?: string): VoiceKind {
+  const { host } = hostAndPath(url);
+  if (ORG_HOSTS.some((h) => host.includes(h))) return "organization";
+  return "individual";
+}
+
+/** A Voice seed built from a single pasted link — the "create from this URL" tap. */
+export function voiceFromLink(url: string): {
+  name: string;
+  kind: VoiceKind;
+  platform: LinkPlatform;
+} {
+  const id = identityFromUrl(url);
+  const platform = detectPlatform(url);
+  const name = id?.handle ? `@${id.handle}` : hostAndPath(url).host || "New voice";
+  return { name, kind: detectVoiceKind(url), platform };
+}
+
+/* -------------------------------- Sorting -------------------------------- */
+
 const STATUS_RANK: Record<KnowledgeStatus, number> = {
   in_progress: 0,
   not_started: 1,
   finished: 2,
 };
 
-/** Order a list: in-progress first, then not-started, then finished; newest within. */
+/** Order content: in-progress first, then not-started, then finished; newest within. */
 export function byStatusThenRecent(a: KnowledgeItem, b: KnowledgeItem): number {
   const s = STATUS_RANK[a.status] - STATUS_RANK[b.status];
   if (s !== 0) return s;
   return (b.created_at ?? "").localeCompare(a.created_at ?? "");
 }
 
-/** Status labels for the stepper / filters. */
 export const STATUS_STEPS: { key: KnowledgeStatus; label: string }[] = [
   { key: "not_started", label: "Not started" },
   { key: "in_progress", label: "In progress" },
@@ -88,47 +256,27 @@ export const STATUS_STEPS: { key: KnowledgeStatus; label: string }[] = [
 ];
 
 /**
- * Heuristic auto-categorization from a URL and/or title — no AI. Returns a
- * best-guess category the user can override. URL host/path wins; a bare title
- * with no URL is assumed to be a book.
+ * Heuristic auto-categorization of a piece of Content from a URL — no AI.
+ * Returns a best-guess content category the user can override. (Deciding
+ * whether something is a Voice vs Content is a separate, explicit choice.)
  */
 export function detectCategory(url?: string, _title?: string): KnowledgeCategory {
   const raw = (url ?? "").trim().toLowerCase();
   if (!raw) return "book"; // title-only entries are usually books
 
-  let host = "";
-  let path = "";
-  try {
-    const u = new URL(raw.startsWith("http") ? raw : `https://${raw}`);
-    host = u.hostname.replace(/^www\./, "");
-    path = u.pathname;
-  } catch {
-    host = raw;
-  }
+  const { host, path } = hostAndPath(raw);
 
-  // Known ongoing tools / apps / reference sites → resource.
-  const RESOURCE_HOSTS = [
-    "hallow.com",
-    "usccb.org",
-    "vatican.va",
-    "magnificat.com",
-    "laudate",
-    "ewtn.com",
-    "catholic.com",
-  ];
-  if (RESOURCE_HOSTS.some((h) => host.includes(h))) return "resource";
-
-  // Bible apps: a reading *plan* is a program; the app root is a resource.
-  if (host.includes("bible.com") || host.includes("youversion")) {
-    return /reading-plans?/.test(path) ? "program" : "resource";
+  // Bible reading plans → program.
+  if ((host.includes("bible.com") || host.includes("youversion")) && /reading-plans?/.test(path)) {
+    return "program";
   }
   if (host.includes("ascensionpress.com") || /reading-plans?|\/plan(s)?\//.test(path)) {
     return "program";
   }
 
-  // Media hosts.
-  if (host.includes("youtube.com") || host.includes("youtu.be")) return "video";
-  if (host.includes("vimeo.com")) return "video";
+  if (host.includes("youtube.com") || host.includes("youtu.be") || host.includes("vimeo.com")) {
+    return "video";
+  }
   if (host.includes("podcasts.apple.com") || host.includes("open.spotify.com")) return "podcast";
   if (
     host.includes("instagram.com") ||
@@ -139,14 +287,73 @@ export function detectCategory(url?: string, _title?: string): KnowledgeCategory
   ) {
     return "post";
   }
-
-  // A bare domain root (no real path) is more likely a tool than an article.
-  if (path === "" || path === "/") return "resource";
-
+  if (host.includes("amazon.") || host.includes("a.co") || host.includes("audible.")) return "book";
   return "article";
 }
 
-/** Pretty one-line detail for a Knowledge row. */
-export function knowledgeSubtitle(item: KnowledgeItem): string {
-  return [CATEGORY_LABELS[item.category], item.creator, item.source].filter(Boolean).join(" · ");
+/* ------------------------------- Subtitles ------------------------------- */
+
+/** Pretty one-line detail for a Content row. */
+export function knowledgeSubtitle(item: KnowledgeItem, voices?: Voice[]): string {
+  const voiceName = item.voice_id ? voices?.find((v) => v.id === item.voice_id)?.name : undefined;
+  return [CATEGORY_LABELS[item.category], voiceName ?? item.creator, item.source]
+    .filter(Boolean)
+    .join(" · ");
+}
+
+/** The best single URL to open for a content item (favorited link first). */
+export function primaryUrl(item: KnowledgeItem): string | undefined {
+  const links = item.links ?? [];
+  return (links.find((l) => l.favorite) ?? links[0])?.url;
+}
+
+/** Pretty one-line detail for a Voice row. */
+export function voiceSubtitle(voice: Voice): string {
+  const count = voice.channels?.length ?? 0;
+  const channels = count ? `${count} ${count === 1 ? "channel" : "channels"}` : undefined;
+  return [VOICE_KIND_LABELS[voice.kind], channels].filter(Boolean).join(" · ");
+}
+
+/* -------------------------------- Home ----------------------------------- */
+
+/** A favorited link surfaced on Home, with the record it belongs to. */
+export interface PinnedLink {
+  ownerId: ID;
+  ownerName: string;
+  ownerType: "voice" | "content";
+  platform: LinkPlatform;
+  url: string;
+  label?: string | undefined;
+}
+
+/** Every favorited channel + content link, for the Home library section. */
+export function pinnedLinks(voices: Voice[], items: KnowledgeItem[]): PinnedLink[] {
+  const out: PinnedLink[] = [];
+  for (const v of voices) {
+    for (const c of v.channels ?? []) {
+      if (c.favorite)
+        out.push({
+          ownerId: v.id,
+          ownerName: v.name,
+          ownerType: "voice",
+          platform: c.platform,
+          url: c.url,
+          label: c.label,
+        });
+    }
+  }
+  for (const it of items) {
+    for (const l of it.links ?? []) {
+      if (l.favorite)
+        out.push({
+          ownerId: it.id,
+          ownerName: it.title,
+          ownerType: "content",
+          platform: l.platform,
+          url: l.url,
+          label: l.label,
+        });
+    }
+  }
+  return out;
 }
