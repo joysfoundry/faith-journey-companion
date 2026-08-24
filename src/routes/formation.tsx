@@ -1,6 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ExternalLink, MoreVertical, Pencil, Star, Trash2 } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  ExternalLink,
+  MoreVertical,
+  Pencil,
+  Star,
+  Trash2,
+} from "lucide-react";
 
 import { AppShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
@@ -30,6 +38,7 @@ import {
   type KnowledgeGroup,
 } from "@/lib/prayer/knowledge";
 import { useApp } from "@/lib/prayer/store";
+import type { Channel, KnowledgeItem, Voice } from "@/lib/prayer/types";
 
 export const Route = createFileRoute("/formation")({
   validateSearch: (search: Record<string, unknown>): { add?: boolean } =>
@@ -51,8 +60,19 @@ type FilterKey = "all" | KnowledgeGroup | "voice";
 const FILTERS: { key: FilterKey; label: string }[] = [
   { key: "all", label: "All" },
   ...GROUP_ORDER.map((g) => ({ key: g, label: GROUP_LABELS[g] })),
-  { key: "voice", label: VOICE_LABEL },
+  { key: "voice", label: `By ${VOICE_LABEL_SINGULAR}` },
 ];
+
+/** The virtual bucket id for content with no Voice. */
+const GENERAL_ID = "general";
+
+/** A Voice (or the virtual General bucket) with its content, for the grouped view. */
+interface VoiceGroup {
+  id: string;
+  name: string;
+  voice?: Voice; // absent = the General bucket
+  items: KnowledgeItem[];
+}
 
 function KnowledgePage() {
   const {
@@ -70,6 +90,7 @@ function KnowledgePage() {
   const [tab, setTab] = useState<"add" | "library">(add ? "add" : "library");
   const [filter, setFilter] = useState<FilterKey>("all");
   const [draftVoiceId, setDraftVoiceId] = useState<string | null>(null);
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
 
   const items = db.knowledge_items;
   const voices = db.voices;
@@ -93,24 +114,66 @@ function KnowledgePage() {
     if (tab === "add" && next !== "add") leaveAdd();
     setTab(next);
   }
+  function toggleCollapsed(id: string) {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
+  const editItem = (id: string) =>
+    navigate({
+      to: "/knowledge/$knowledgeId",
+      params: { knowledgeId: id },
+      search: { edit: true },
+    });
+  const editVoice = (id: string) =>
+    navigate({ to: "/voice/$voiceId", params: { voiceId: id }, search: { edit: true } });
+
+  // Flat list (All / Programs / Books / Media).
   const visibleContent = useMemo(() => {
-    const filtered =
-      filter === "all"
-        ? items
-        : filter === "voice"
-          ? []
-          : items.filter((i) => groupOf(i.category) === filter);
+    const filtered = filter === "all" ? items : items.filter((i) => groupOf(i.category) === filter);
     return [...filtered].sort(byStatusThenRecent);
   }, [items, filter]);
-
   const visibleVoices = useMemo(
-    () =>
-      filter === "all" || filter === "voice" ? voices.filter((v) => v.id !== draftVoiceId) : [],
+    () => (filter === "all" ? voices.filter((v) => v.id !== draftVoiceId) : []),
     [voices, filter, draftVoiceId],
   );
+
   const orphanCount = useMemo(() => items.filter((i) => !i.voice_id).length, [items]);
-  const showGeneral = (filter === "all" || filter === "voice") && orphanCount > 0;
+  const showGeneral = filter === "all" && orphanCount > 0;
+
+  // Grouped view (By Voice): every Voice with its content nested, content-bearing
+  // voices first, then the General bucket for unattributed content.
+  const voiceGroups = useMemo<VoiceGroup[]>(() => {
+    const groups: VoiceGroup[] = voices
+      .filter((v) => v.id !== draftVoiceId)
+      .map((v) => ({
+        id: v.id,
+        name: v.name || "Untitled",
+        voice: v,
+        items: items.filter((i) => i.voice_id === v.id).sort(byStatusThenRecent),
+      }))
+      .sort((a, b) => {
+        const byHas = Number(b.items.length > 0) - Number(a.items.length > 0);
+        return byHas !== 0 ? byHas : a.name.localeCompare(b.name);
+      });
+    const orphans = items.filter((i) => !i.voice_id).sort(byStatusThenRecent);
+    if (orphans.length) groups.push({ id: GENERAL_ID, name: "General", items: orphans });
+    return groups;
+  }, [voices, items, draftVoiceId]);
+
+  const contentHandlers = {
+    voices,
+    setKnowledgeStatus,
+    toggleContentLinkFavorite,
+    onEdit: editItem,
+    onDelete: deleteKnowledgeItem,
+  };
+
+  const flatEmpty = visibleContent.length === 0 && visibleVoices.length === 0 && !showGeneral;
 
   return (
     <AppShell
@@ -154,18 +217,98 @@ function KnowledgePage() {
             ))}
           </div>
 
-          {visibleContent.length === 0 && visibleVoices.length === 0 && !showGeneral ? (
+          {filter === "voice" ? (
+            /* GROUPED BY VOICE ------------------------------------------- */
+            voiceGroups.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Nothing here yet — add a {VOICE_LABEL_SINGULAR.toLowerCase()} from the Add tab.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {voiceGroups.map((g) => {
+                  const isCollapsed = collapsed.has(g.id);
+                  return (
+                    <section
+                      key={g.id}
+                      className="overflow-hidden rounded-lg border border-border/60"
+                    >
+                      <div className="flex items-start gap-2 bg-muted/30 px-3 py-2.5">
+                        <button
+                          onClick={() => toggleCollapsed(g.id)}
+                          aria-label={isCollapsed ? "Expand" : "Collapse"}
+                          aria-expanded={!isCollapsed}
+                          className="mt-0.5 shrink-0 text-muted-foreground hover:text-foreground"
+                        >
+                          {isCollapsed ? (
+                            <ChevronRight className="size-4" aria-hidden />
+                          ) : (
+                            <ChevronDown className="size-4" aria-hidden />
+                          )}
+                        </button>
+                        <div className="min-w-0 flex-1">
+                          <Link
+                            to="/voice/$voiceId"
+                            params={{ voiceId: g.id }}
+                            className="truncate text-sm font-medium text-foreground hover:text-primary"
+                          >
+                            {g.name}
+                          </Link>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {g.voice ? voiceSubtitle(g.voice) : "Unattributed"} · {g.items.length}{" "}
+                            {g.items.length === 1 ? "item" : "items"}
+                          </p>
+                          {g.voice?.channels?.length ? (
+                            <ChannelChips
+                              voiceId={g.voice.id}
+                              channels={g.voice.channels}
+                              toggle={toggleChannelFavorite}
+                            />
+                          ) : null}
+                        </div>
+                        {g.voice ? (
+                          <RowMenu
+                            onEdit={() => editVoice(g.voice!.id)}
+                            onDelete={() => deleteVoice(g.voice!.id)}
+                          />
+                        ) : null}
+                      </div>
+
+                      {!isCollapsed ? (
+                        g.items.length ? (
+                          <ul className="divide-y divide-border/60 border-t border-border/60">
+                            {g.items.map((item) => (
+                              <ContentRow
+                                key={item.id}
+                                item={item}
+                                hideVoice
+                                {...contentHandlers}
+                              />
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="border-t border-border/60 px-4 py-3 text-xs text-muted-foreground">
+                            No saved content yet.
+                          </p>
+                        )
+                      ) : null}
+                    </section>
+                  );
+                })}
+              </div>
+            )
+          ) : flatEmpty ? (
             <p className="text-sm text-muted-foreground">
               Nothing here yet — add a {VOICE_LABEL_SINGULAR.toLowerCase()} from the Add tab.
             </p>
           ) : (
+            /* FLAT LIST (All / Programs / Books / Media) ----------------- */
             <ul className="divide-y divide-border/60 overflow-hidden rounded-lg border border-border/60">
               {showGeneral ? (
                 <li className="flex items-start gap-3 px-4 py-3">
                   <div className="min-w-0 flex-1">
                     <Link
                       to="/voice/$voiceId"
-                      params={{ voiceId: "general" }}
+                      params={{ voiceId: GENERAL_ID }}
                       className="truncate text-sm font-medium text-foreground hover:text-primary"
                     >
                       General
@@ -189,138 +332,162 @@ function KnowledgePage() {
                     </Link>
                     <p className="truncate text-xs text-muted-foreground">{voiceSubtitle(v)}</p>
                     {v.channels?.length ? (
-                      <div className="mt-1.5 flex flex-wrap gap-1">
-                        {v.channels.map((c) => (
-                          <span key={c.id} className="inline-flex items-center">
-                            <a
-                              href={c.url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex items-center gap-1 rounded-l-full bg-secondary py-0.5 pl-2 pr-1 text-[11px] font-medium text-muted-foreground hover:text-primary"
-                            >
-                              {c.label || LINK_PLATFORM_LABELS[c.platform]}
-                              <ExternalLink className="size-3" aria-hidden />
-                            </a>
-                            <button
-                              onClick={() => toggleChannelFavorite(v.id, c.id)}
-                              aria-label={c.favorite ? "Unpin from Home" : "Pin to Home"}
-                              className="rounded-r-full bg-secondary py-0.5 pl-1 pr-2"
-                            >
-                              <Star
-                                className={`size-3 ${c.favorite ? "fill-primary text-primary" : "text-muted-foreground"}`}
-                                aria-hidden
-                              />
-                            </button>
-                          </span>
-                        ))}
-                      </div>
+                      <ChannelChips
+                        voiceId={v.id}
+                        channels={v.channels}
+                        toggle={toggleChannelFavorite}
+                      />
                     ) : null}
                   </div>
-                  <RowMenu
-                    onEdit={() =>
-                      navigate({
-                        to: "/voice/$voiceId",
-                        params: { voiceId: v.id },
-                        search: { edit: true },
-                      })
-                    }
-                    onDelete={() => deleteVoice(v.id)}
-                  />
+                  <RowMenu onEdit={() => editVoice(v.id)} onDelete={() => deleteVoice(v.id)} />
                 </li>
               ))}
 
               {visibleContent.map((item) => (
-                <li key={item.id} className="flex items-start gap-3 px-4 py-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <Link
-                        to="/knowledge/$knowledgeId"
-                        params={{ knowledgeId: item.id }}
-                        className="truncate text-sm font-medium text-foreground hover:text-primary"
-                      >
-                        {item.title}
-                      </Link>
-                      {isScriptureProgram(item) ? (
-                        <span className="shrink-0 rounded-full bg-secondary px-1.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                          Word
-                        </span>
-                      ) : null}
-                    </div>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {knowledgeSubtitle(item, voices)}
-                    </p>
-                    {item.links?.length ? (
-                      <div className="mt-1.5 flex flex-wrap gap-1">
-                        {item.links.map((l, i) => (
-                          <span key={i} className="inline-flex items-center">
-                            <a
-                              href={l.url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex items-center gap-1 rounded-l-full bg-secondary py-0.5 pl-2 pr-1 text-[11px] font-medium text-muted-foreground hover:text-primary"
-                            >
-                              {l.label || LINK_PLATFORM_LABELS[l.platform]}
-                              <ExternalLink className="size-3" aria-hidden />
-                            </a>
-                            <button
-                              onClick={() => toggleContentLinkFavorite(item.id, i)}
-                              aria-label={l.favorite ? "Unpin from Home" : "Pin to Home"}
-                              className="rounded-r-full bg-secondary py-0.5 pl-1 pr-2"
-                            >
-                              <Star
-                                className={`size-3 ${l.favorite ? "fill-primary text-primary" : "text-muted-foreground"}`}
-                                aria-hidden
-                              />
-                            </button>
-                          </span>
-                        ))}
-                      </div>
-                    ) : null}
-                    {item.tags?.length ? (
-                      <div className="mt-1.5 flex flex-wrap gap-1">
-                        {item.tags.map((t) => (
-                          <span
-                            key={t}
-                            className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
-                          >
-                            #{t}
-                          </span>
-                        ))}
-                      </div>
-                    ) : null}
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {STATUS_STEPS.map((s) => (
-                        <button
-                          key={s.key}
-                          onClick={() => setKnowledgeStatus(item.id, s.key)}
-                          className={`rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors ${
-                            item.status === s.key
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-secondary text-muted-foreground hover:text-foreground"
-                          }`}
-                        >
-                          {s.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <RowMenu
-                    onEdit={() =>
-                      navigate({
-                        to: "/knowledge/$knowledgeId",
-                        params: { knowledgeId: item.id },
-                        search: { edit: true },
-                      })
-                    }
-                    onDelete={() => deleteKnowledgeItem(item.id)}
-                  />
-                </li>
+                <ContentRow key={item.id} item={item} {...contentHandlers} />
               ))}
             </ul>
           )}
         </TabsContent>
       </Tabs>
     </AppShell>
+  );
+}
+
+/** A Voice's channel chips (favoritable), shared by the flat list and grouped header. */
+function ChannelChips({
+  voiceId,
+  channels,
+  toggle,
+}: {
+  voiceId: string;
+  channels: Channel[];
+  toggle: (voiceId: string, channelId: string) => void;
+}) {
+  return (
+    <div className="mt-1.5 flex flex-wrap gap-1">
+      {channels.map((c) => (
+        <span key={c.id} className="inline-flex items-center">
+          <a
+            href={c.url}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 rounded-l-full bg-secondary py-0.5 pl-2 pr-1 text-[11px] font-medium text-muted-foreground hover:text-primary"
+          >
+            {c.label || LINK_PLATFORM_LABELS[c.platform]}
+            <ExternalLink className="size-3" aria-hidden />
+          </a>
+          <button
+            onClick={() => toggle(voiceId, c.id)}
+            aria-label={c.favorite ? "Unpin from Home" : "Pin to Home"}
+            className="rounded-r-full bg-secondary py-0.5 pl-1 pr-2"
+          >
+            <Star
+              className={`size-3 ${c.favorite ? "fill-primary text-primary" : "text-muted-foreground"}`}
+              aria-hidden
+            />
+          </button>
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/** One content item as a library row — used by both the flat list and the grouped view. */
+function ContentRow({
+  item,
+  voices,
+  hideVoice,
+  setKnowledgeStatus,
+  toggleContentLinkFavorite,
+  onEdit,
+  onDelete,
+}: {
+  item: KnowledgeItem;
+  voices: Voice[];
+  hideVoice?: boolean;
+  setKnowledgeStatus: (id: string, status: KnowledgeItem["status"]) => void;
+  toggleContentLinkFavorite: (itemId: string, index: number) => void;
+  onEdit: (id: string) => void;
+  onDelete: (id: string) => void;
+}) {
+  return (
+    <li className="flex items-start gap-3 px-4 py-3">
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-1.5">
+          <Link
+            to="/knowledge/$knowledgeId"
+            params={{ knowledgeId: item.id }}
+            className="truncate text-sm font-medium text-foreground hover:text-primary"
+          >
+            {item.title}
+          </Link>
+          {isScriptureProgram(item) ? (
+            <span className="shrink-0 rounded-full bg-secondary px-1.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+              Word
+            </span>
+          ) : null}
+        </div>
+        <p className="truncate text-xs text-muted-foreground">
+          {knowledgeSubtitle(item, hideVoice ? undefined : voices)}
+        </p>
+        {item.links?.length ? (
+          <div className="mt-1.5 flex flex-wrap gap-1">
+            {item.links.map((l, i) => (
+              <span key={i} className="inline-flex items-center">
+                <a
+                  href={l.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 rounded-l-full bg-secondary py-0.5 pl-2 pr-1 text-[11px] font-medium text-muted-foreground hover:text-primary"
+                >
+                  {l.label || LINK_PLATFORM_LABELS[l.platform]}
+                  <ExternalLink className="size-3" aria-hidden />
+                </a>
+                <button
+                  onClick={() => toggleContentLinkFavorite(item.id, i)}
+                  aria-label={l.favorite ? "Unpin from Home" : "Pin to Home"}
+                  className="rounded-r-full bg-secondary py-0.5 pl-1 pr-2"
+                >
+                  <Star
+                    className={`size-3 ${l.favorite ? "fill-primary text-primary" : "text-muted-foreground"}`}
+                    aria-hidden
+                  />
+                </button>
+              </span>
+            ))}
+          </div>
+        ) : null}
+        {item.tags?.length ? (
+          <div className="mt-1.5 flex flex-wrap gap-1">
+            {item.tags.map((t) => (
+              <span
+                key={t}
+                className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
+              >
+                #{t}
+              </span>
+            ))}
+          </div>
+        ) : null}
+        <div className="mt-2 flex flex-wrap gap-1">
+          {STATUS_STEPS.map((s) => (
+            <button
+              key={s.key}
+              onClick={() => setKnowledgeStatus(item.id, s.key)}
+              className={`rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors ${
+                item.status === s.key
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <RowMenu onEdit={() => onEdit(item.id)} onDelete={() => onDelete(item.id)} />
+    </li>
   );
 }
 
