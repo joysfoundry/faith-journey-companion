@@ -265,7 +265,13 @@ function normalizeVoice(raw: Record<string, unknown>): Voice {
     : [];
   return {
     id: strOf(raw, "id") ?? genId("voice"),
-    name: strOf(raw, "name") ?? strOf(raw, "title") ?? "Untitled",
+    // Preserve an empty name verbatim — a fresh draft saves `name: ""`, and
+    // rewriting that to "Untitled" here (strOf treats "" as absent) would make
+    // the empty draft undiscardable. The UI falls back to "Untitled" for display.
+    name:
+      typeof raw["name"] === "string"
+        ? (raw["name"] as string)
+        : (strOf(raw, "title") ?? "Untitled"),
     kind,
     channels: channels.length ? channels : undefined,
     notes: strOf(raw, "notes"),

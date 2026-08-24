@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ChevronDown,
   ChevronRight,
@@ -80,6 +80,7 @@ interface VoiceGroup {
 function KnowledgePage() {
   const {
     db,
+    ready,
     setKnowledgeStatus,
     deleteKnowledgeItem,
     toggleContentLinkFavorite,
@@ -94,9 +95,22 @@ function KnowledgePage() {
   const [filter, setFilter] = useState<FilterKey>("all");
   const [draftVoiceId, setDraftVoiceId] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
+  const prunedRef = useRef(false);
 
   const items = db.knowledge_items;
   const voices = db.voices;
+
+  // Prune empty draft Voices once on landing — abandoned drafts (left via nav
+  // rather than the Done button) and legacy "Untitled" ghosts. Skipped when
+  // landing on the Add tab, which creates its own draft we must not delete.
+  useEffect(() => {
+    if (!ready || add || prunedRef.current) return;
+    prunedRef.current = true;
+    for (const v of db.voices) {
+      if (isEmptyDraftVoice(db.voices, db.knowledge_items, v.id)) deleteVoice(v.id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, add]);
 
   // The Add tab IS a Voice form: create a fresh draft to edit in place.
   useEffect(() => {

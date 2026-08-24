@@ -253,7 +253,10 @@ export function isEmptyDraftVoice(
 ): boolean {
   const v = voices.find((x) => x.id === voiceId);
   if (!v) return false;
-  const untouchedName = !v.name.trim() || v.name === "New voice";
+  // "Untitled" = a legacy ghost: an empty draft whose "" name was rewritten on
+  // an older hydration (see normalizeVoice). Treat it as untouched so it can be
+  // pruned like any other empty draft.
+  const untouchedName = !v.name.trim() || v.name === "New voice" || v.name === "Untitled";
   const noChannels = !(v.channels ?? []).length;
   const noContent = !items.some((i) => i.voice_id === voiceId);
   return untouchedName && noChannels && noContent;
