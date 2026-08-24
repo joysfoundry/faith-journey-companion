@@ -469,7 +469,7 @@ function ContentRow({
           ) : null}
         </div>
         <p className="truncate text-xs text-muted-foreground">
-          {knowledgeSubtitle(item, hideVoice ? undefined : voices)}
+          {knowledgeSubtitle(item, voices, { hideVoice })}
         </p>
         {item.links?.length ? (
           <div className="mt-1.5 flex flex-wrap gap-1">

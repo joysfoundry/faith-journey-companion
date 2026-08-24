@@ -321,12 +321,34 @@ export function detectCategory(url?: string, _title?: string): KnowledgeCategory
 
 /* ------------------------------- Subtitles ------------------------------- */
 
-/** Pretty one-line detail for a Content row. */
-export function knowledgeSubtitle(item: KnowledgeItem, voices?: Voice[]): string {
-  const voiceName = item.voice_id ? voices?.find((v) => v.id === item.voice_id)?.name : undefined;
-  return [CATEGORY_LABELS[item.category], voiceName ?? item.creator, item.source]
-    .filter(Boolean)
-    .join(" · ");
+/** The platform of a content item's primary link, as a byline — "Instagram". */
+function primaryLinkPlatformLabel(item: KnowledgeItem): string | undefined {
+  const links = item.links ?? [];
+  const link = links.find((l) => l.favorite) ?? links[0];
+  // "other" ("Link") is meaningless as a byline; skip it.
+  return link && link.platform !== "other" ? LINK_PLATFORM_LABELS[link.platform] : undefined;
+}
+
+/**
+ * Pretty one-line detail for a Content row: "Category · who · source". The
+ * "who" is the Voice, else a typed creator, else — for unattributed content
+ * only — the platform of its primary link (so an Instagram post with no author
+ * reads "Post · Instagram"). Pass `hideVoice` (e.g. under a Voice's own group,
+ * where the header already names it) to drop the Voice name while still showing
+ * the platform for unattributed items.
+ */
+export function knowledgeSubtitle(
+  item: KnowledgeItem,
+  voices?: Voice[],
+  opts?: { hideVoice?: boolean | undefined },
+): string {
+  const voiceName =
+    !opts?.hideVoice && item.voice_id
+      ? voices?.find((v) => v.id === item.voice_id)?.name
+      : undefined;
+  const platform = item.voice_id ? undefined : primaryLinkPlatformLabel(item);
+  const who = voiceName ?? item.creator ?? platform;
+  return [CATEGORY_LABELS[item.category], who, item.source].filter(Boolean).join(" · ");
 }
 
 /** The best single URL to open for a content item (favorited link first). */
