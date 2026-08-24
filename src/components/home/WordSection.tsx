@@ -240,7 +240,7 @@ export function WordSection({ onReflect }: { onReflect: (linkId: string) => void
                     <p className="text-sm font-medium text-foreground">{program.title}</p>
                   )}
                   <p className="truncate text-sm text-muted-foreground">
-                    {knowledgeSubtitle(program)}
+                    {knowledgeSubtitle(program, db.voices)}
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-0.5">
