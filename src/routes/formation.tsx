@@ -225,6 +225,25 @@ function KnowledgePage() {
               </p>
             ) : (
               <div className="space-y-3">
+                <div className="flex items-center justify-end gap-3 text-xs">
+                  <button
+                    onClick={() => setCollapsed(new Set())}
+                    disabled={collapsed.size === 0}
+                    className="font-medium text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+                  >
+                    Expand all
+                  </button>
+                  <span className="text-muted-foreground/40" aria-hidden>
+                    |
+                  </span>
+                  <button
+                    onClick={() => setCollapsed(new Set(voiceGroups.map((g) => g.id)))}
+                    disabled={voiceGroups.every((g) => collapsed.has(g.id))}
+                    className="font-medium text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+                  >
+                    Collapse all
+                  </button>
+                </div>
                 {voiceGroups.map((g) => {
                   const isCollapsed = collapsed.has(g.id);
                   return (
