@@ -1,9 +1,22 @@
 # Handoff — PRD gap-merge
 
-_Last updated: 2026-08-22 · branch `prd-gap-merge` (litany work **uncommitted** in the working tree; prior `0684468`, `f00ec43` committed NOT pushed — push needs a git client with GitHub auth)_
+_Last updated: 2026-08-23 · branch `prd-gap-merge` (7 commits **committed, NOT pushed** — push needs a git client with GitHub auth: `git push -u origin prd-gap-merge`)_
 
 ## What this is
 Merging the **ACTS PRD** capabilities into **faith-journey-companion** (the app whose UX we're keeping). The ACTS Next.js build in `../acts` is now just the reference/spec + test oracle. Decision: **gap-merge into fjc, keep the localStorage store** (no Supabase persistence yet).
+
+## Done this session — Knowledge → Voice / Channel / Content model (2026-08-23, committed `01b1ad8`…`<tip>`, NOT pushed)
+Big rewrite of the Knowledge library into a **three-level graph** (commits `01b1ad8`…`ce488e4`). Full details in memory `knowledge-model` (rewritten this session). Commits, oldest→newest:
+- `01b1ad8` **Fix:** `todayISO()` computes the local calendar date, not UTC (evening negative-offset zones were rolling to the next day → wrong mystery-of-the-day). Pre-existing uncommitted fix, committed as its own change.
+- `fc3dc0c` **Voice → Channel → Content model.** New `Voice` entity (individual/organization/ministry) with nested `Channel[]` (its platform accounts); `KnowledgeItem` becomes Content (book/article/video/podcast/post/program) with an optional `voice_id` parent + its own `links[]` (where to get it). **Favorites are per-link** (`Channel.favorite` / link `favorite`) — Home shows `pinnedLinks(voices, items)`. Categories `person`/`resource` removed; migration in `store.ts normalizeVariants` splits legacy person/resource → Voices and folds `url→links` / `author_id→voice_id`. **`STORAGE_KEY` → v21** (v20 introduced the model; v21 added seeded author Voices). Auto-link: `matchVoice(url)` ties a pasted post to a Voice by platform+handle; unmatched → "create voice from link". Unattributed content buckets under a virtual **General** voice (`/voice/general`).
+- `ba2e444` **Seed author Voices.** St. Francis de Sales, Trent Horn, Fr. Mike Schmitz seeded as individual Voices; the 3 seed content items attributed via `voice_id` (books live under their author, General empty on a fresh seed).
+- `2df7588` **Unify add+edit onto one record page** (content page got a view/edit split), then…
+- `effc1c3` **…superseded:** the Knowledge screen is now **Add | Library tabs** where the **Add tab renders the shared `VoiceEditor`** (name/kind + Channels table + Content table, all inline) — same form as the Voice hub's edit mode. No Content/Voice toggle, no "new content" (content is only added under a Voice). `VoiceEditor` lives in `src/components/knowledge/VoiceEditor.tsx`; an untouched draft Voice is discarded on leaving Add (`isEmptyDraftVoice`).
+- `aa61f04`+`ce488e4` **Word polish:** reading-program subtitle shows the author Voice (`knowledgeSubtitle(program, db.voices)`); removed the redundant "Today's Mass readings" line under Daily Readings (kept the rank/ferial line for feasts).
+
+**Routes:** `formation.tsx` (Add|Library), `voice.$voiceId.tsx` (Voice hub: view + edit-via-`VoiceEditor`; `general` = virtual bucket), `knowledge.$knowledgeId.tsx` (content record, view/edit). **Verified in-browser** throughout; `tsc`+`eslint` clean. Dev-server HMR desyncs badly on big refactors (stale `PLATFORM_LABELS`-style errors, ref churn) — **restart the preview** to clear.
+
+**Open / next:** (1) the user is still settling the **name for "Voices"** — it's the single constant `VOICE_LABEL` in `knowledge.ts`; swap there. (2) `channel_id` on content is modeled but not surfaced in UI. (3) A **"By Voice" grouped Library view** was discussed (pass B), not built. (4) Consider whether unattributed content should be allowed at all vs. always requiring a Voice (General currently allows it).
 
 ## Done this session — Litany devotions (2026-08-22, uncommitted)
 Seeded **3 public-domain litanies** as devotions. Memory: `litany-model`.
