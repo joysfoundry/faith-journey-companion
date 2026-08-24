@@ -8,12 +8,14 @@ import {
   ExternalLink,
   MoreVertical,
   Pencil,
+  Search,
   Star,
   Trash2,
 } from "lucide-react";
 
 import { AppShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -73,6 +75,19 @@ const GENERAL_ID = "general";
 /** "1 piece of content" / "3 pieces of content" — counts saved content, not channels. */
 const contentCountLabel = (n: number) => `${n} ${n === 1 ? "piece" : "pieces"} of content`;
 
+/**
+ * Does a content item match a (lowercased) search query? Searches its title,
+ * quote body, creator, its Voice's name, source, and tags. Empty query matches.
+ */
+function contentMatches(item: KnowledgeItem, voiceName: string | undefined, q: string): boolean {
+  if (!q) return true;
+  return [item.title, item.body, item.creator, voiceName, item.source, ...(item.tags ?? [])]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase()
+    .includes(q);
+}
+
 /** A Voice (or the virtual General bucket) with its content, for the grouped view. */
 interface VoiceGroup {
   id: string;
@@ -99,10 +114,13 @@ function KnowledgePage() {
   const [filter, setFilter] = useState<FilterKey>("all");
   const [draftVoiceId, setDraftVoiceId] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
+  const [query, setQuery] = useState("");
   const prunedRef = useRef(false);
 
   const items = db.knowledge_items;
   const voices = db.voices;
+  const q = query.trim().toLowerCase();
+  const voiceNameById = useMemo(() => new Map(voices.map((v) => [v.id, v.name])), [voices]);
 
   // Prune empty draft Voices once on landing — abandoned drafts (left via nav
   // rather than the Done button) and legacy "Untitled" ghosts. Skipped when
@@ -153,38 +171,50 @@ function KnowledgePage() {
   const editVoice = (id: string) =>
     navigate({ to: "/voice/$voiceId", params: { voiceId: id }, search: { edit: true } });
 
-  // Flat list (All / Programs / Books / Media).
+  // Flat list (All / Programs / Books / Media / Quotes), filtered by search.
   const visibleContent = useMemo(() => {
-    const filtered = filter === "all" ? items : items.filter((i) => groupOf(i.category) === filter);
-    return [...filtered].sort(byStatusThenRecent);
-  }, [items, filter]);
+    const base = filter === "all" ? items : items.filter((i) => groupOf(i.category) === filter);
+    return base
+      .filter((i) => contentMatches(i, voiceNameById.get(i.voice_id ?? ""), q))
+      .sort(byStatusThenRecent);
+  }, [items, filter, q, voiceNameById]);
   const visibleVoices = useMemo(
-    () => (filter === "all" ? voices.filter((v) => v.id !== draftVoiceId) : []),
-    [voices, filter, draftVoiceId],
+    () =>
+      filter === "all"
+        ? voices.filter((v) => v.id !== draftVoiceId && (!q || v.name.toLowerCase().includes(q)))
+        : [],
+    [voices, filter, draftVoiceId, q],
   );
 
-  const orphanCount = useMemo(() => items.filter((i) => !i.voice_id).length, [items]);
+  const orphanCount = useMemo(
+    () => items.filter((i) => !i.voice_id && contentMatches(i, undefined, q)).length,
+    [items, q],
+  );
   const showGeneral = filter === "all" && orphanCount > 0;
 
   // Grouped view (By Voice): every Voice with its content nested, content-bearing
-  // voices first, then the General bucket for unattributed content.
+  // voices first, then the General bucket for unattributed content. Search keeps a
+  // Voice whose name matches (with all its content) or that has matching content.
   const voiceGroups = useMemo<VoiceGroup[]>(() => {
-    const groups: VoiceGroup[] = voices
-      .filter((v) => v.id !== draftVoiceId)
-      .map((v) => ({
-        id: v.id,
-        name: v.name || "Untitled",
-        voice: v,
-        items: items.filter((i) => i.voice_id === v.id).sort(byStatusThenRecent),
-      }))
-      .sort((a, b) => {
-        const byHas = Number(b.items.length > 0) - Number(a.items.length > 0);
-        return byHas !== 0 ? byHas : a.name.localeCompare(b.name);
-      });
-    const orphans = items.filter((i) => !i.voice_id).sort(byStatusThenRecent);
+    const groups: VoiceGroup[] = [];
+    for (const v of voices) {
+      if (v.id === draftVoiceId) continue;
+      const all = items.filter((i) => i.voice_id === v.id).sort(byStatusThenRecent);
+      const voiceHit = !q || (v.name || "").toLowerCase().includes(q);
+      const shown = voiceHit ? all : all.filter((i) => contentMatches(i, v.name, q));
+      if (voiceHit || shown.length)
+        groups.push({ id: v.id, name: v.name || "Untitled", voice: v, items: shown });
+    }
+    groups.sort((a, b) => {
+      const byHas = Number(b.items.length > 0) - Number(a.items.length > 0);
+      return byHas !== 0 ? byHas : a.name.localeCompare(b.name);
+    });
+    const orphans = items
+      .filter((i) => !i.voice_id && contentMatches(i, undefined, q))
+      .sort(byStatusThenRecent);
     if (orphans.length) groups.push({ id: GENERAL_ID, name: "General", items: orphans });
     return groups;
-  }, [voices, items, draftVoiceId]);
+  }, [voices, items, draftVoiceId, q]);
 
   const contentHandlers = {
     voices,
@@ -222,6 +252,16 @@ function KnowledgePage() {
 
         {/* LIBRARY --------------------------------------------------------- */}
         <TabsContent value="library" className="mt-0">
+          <div className="relative mb-3">
+            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search your library"
+              className="h-12 pl-9"
+              aria-label="Search your library"
+            />
+          </div>
           <div className="mb-3 flex flex-wrap gap-1.5">
             {FILTERS.map((f) => (
               <button
@@ -242,7 +282,9 @@ function KnowledgePage() {
             /* GROUPED BY VOICE ------------------------------------------- */
             voiceGroups.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                Nothing here yet — add a {VOICE_LABEL_SINGULAR.toLowerCase()} from the Add tab.
+                {q
+                  ? "Nothing matches that search."
+                  : `Nothing here yet — add a ${VOICE_LABEL_SINGULAR.toLowerCase()} from the Add tab.`}
               </p>
             ) : (
               <div className="space-y-3">
@@ -345,7 +387,9 @@ function KnowledgePage() {
             )
           ) : flatEmpty ? (
             <p className="text-sm text-muted-foreground">
-              Nothing here yet — add a {VOICE_LABEL_SINGULAR.toLowerCase()} from the Add tab.
+              {q
+                ? "Nothing matches that search."
+                : `Nothing here yet — add a ${VOICE_LABEL_SINGULAR.toLowerCase()} from the Add tab.`}
             </p>
           ) : (
             /* FLAT LIST (All / Programs / Books / Media) ----------------- */
