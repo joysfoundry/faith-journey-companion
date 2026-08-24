@@ -100,13 +100,11 @@ export function WordSection({ onReflect }: { onReflect: (linkId: string) => void
               {litDay ? litDay.title : "Today's readings"}
               <ExternalLink className="mt-1 size-4 shrink-0 text-muted-foreground" aria-hidden />
             </a>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              {litDay
-                ? isNamedCelebration
-                  ? `${litDay.rankLabel} · ${litDay.ferialTitle}`
-                  : "Today's Mass readings"
-                : "Today's Mass readings"}
-            </p>
+            {litDay && isNamedCelebration ? (
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {`${litDay.rankLabel} · ${litDay.ferialTitle}`}
+              </p>
+            ) : null}
             {litDay && litDay.optionalMemorials.length > 0 ? (
               <p className="mt-1 text-[11px] leading-snug text-muted-foreground/80">
                 Also today: {litDay.optionalMemorials.join(" · ")}
