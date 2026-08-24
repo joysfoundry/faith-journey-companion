@@ -556,7 +556,8 @@ export type KnowledgeStatus = "not_started" | "in_progress" | "finished";
  * Content kinds — the *what* you read/watch/listen to. The *who* behind it is a
  * separate `Voice` record (see below), referenced by `KnowledgeItem.voice_id`.
  */
-export type KnowledgeCategory = "book" | "article" | "video" | "podcast" | "post" | "program";
+export type KnowledgeCategory =
+  "book" | "article" | "video" | "podcast" | "post" | "quote" | "program";
 
 /**
  * The platform a Channel or a Content link points at. Drives the icon/label and
@@ -630,6 +631,11 @@ export interface KnowledgeItem {
   voice_id?: ID | undefined;
   /** Which of the Voice's channels this came from (e.g. their Instagram). Optional. */
   channel_id?: ID | undefined;
+  /**
+   * The quotation text — the primary payload of a `quote`, which has no title,
+   * link, or progress. Empty for other categories.
+   */
+  body?: string | undefined;
   /** Free-text author/creator, used when no `voice_id` is set (or as a quick label). */
   creator?: string | undefined;
   source?: string | undefined; // publisher / platform ("YouVersion", "Ascension")

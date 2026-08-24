@@ -201,6 +201,7 @@ const CONTENT_CATEGORIES: KnowledgeCategory[] = [
   "video",
   "podcast",
   "post",
+  "quote",
   "program",
 ];
 
@@ -334,10 +335,12 @@ function normalizeContent(raw: Record<string, unknown>): KnowledgeItem {
     : undefined;
   return {
     id: strOf(raw, "id") ?? genId("know"),
-    title: strOf(raw, "title") ?? "Untitled",
+    // A quote has no title (its text lives in `body`); don't fabricate one.
+    title: strOf(raw, "title") ?? (category === "quote" ? "" : "Untitled"),
     category,
     voice_id: strOf(raw, "voice_id") ?? strOf(raw, "author_id"),
     channel_id: strOf(raw, "channel_id"),
+    body: strOf(raw, "body"),
     creator: strOf(raw, "creator"),
     source: strOf(raw, "source"),
     notes: strOf(raw, "notes"),

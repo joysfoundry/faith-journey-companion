@@ -34,8 +34,10 @@ import {
   byStatusThenRecent,
   groupOf,
   isEmptyDraftVoice,
+  isQuote,
   isScriptureProgram,
   knowledgeSubtitle,
+  quoteBody,
   voiceSubtitle,
   type KnowledgeGroup,
 } from "@/lib/prayer/knowledge";
@@ -456,6 +458,40 @@ function ContentRow({
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
 }) {
+  if (isQuote(item)) {
+    const who = hideVoice
+      ? item.creator
+      : ((item.voice_id ? voices.find((v) => v.id === item.voice_id)?.name : undefined) ??
+        item.creator);
+    return (
+      <li className="flex items-start gap-3 px-4 py-3">
+        <div className="min-w-0 flex-1">
+          <Link
+            to="/knowledge/$knowledgeId"
+            params={{ knowledgeId: item.id }}
+            className="block border-l-2 border-border pl-3 text-sm italic text-foreground hover:text-primary"
+          >
+            &ldquo;{quoteBody(item)}&rdquo;
+          </Link>
+          {who ? <p className="mt-1 pl-3 text-xs text-muted-foreground">— {who}</p> : null}
+          {item.tags?.length ? (
+            <div className="mt-1.5 flex flex-wrap gap-1 pl-3">
+              {item.tags.map((t) => (
+                <span
+                  key={t}
+                  className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
+                >
+                  #{t}
+                </span>
+              ))}
+            </div>
+          ) : null}
+        </div>
+        <RowMenu onEdit={() => onEdit(item.id)} onDelete={() => onDelete(item.id)} />
+      </li>
+    );
+  }
+
   return (
     <li className="flex items-start gap-3 px-4 py-3">
       <div className="min-w-0 flex-1">

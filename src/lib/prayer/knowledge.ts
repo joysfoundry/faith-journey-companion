@@ -25,6 +25,7 @@ export const CATEGORY_LABELS: Record<KnowledgeCategory, string> = {
   video: "Video",
   podcast: "Podcast",
   post: "Post",
+  quote: "Quote",
   program: "Program",
 };
 
@@ -35,6 +36,7 @@ export const CATEGORY_OPTIONS: KnowledgeCategory[] = [
   "video",
   "podcast",
   "post",
+  "quote",
   "program",
 ];
 
@@ -42,21 +44,44 @@ export const CATEGORY_OPTIONS: KnowledgeCategory[] = [
  * Home / Library grouping for Content. Several categories collapse into one
  * display group ("Media" gathers video/podcast/article/post).
  */
-export type KnowledgeGroup = "program" | "book" | "media";
+export type KnowledgeGroup = "program" | "book" | "media" | "quote";
 
 export const GROUP_LABELS: Record<KnowledgeGroup, string> = {
   program: "Programs",
   book: "Books",
   media: "Media",
+  quote: "Quotes",
 };
 
-export const GROUP_ORDER: KnowledgeGroup[] = ["program", "book", "media"];
+export const GROUP_ORDER: KnowledgeGroup[] = ["program", "book", "media", "quote"];
 
 /** Which display group a content item belongs to. */
 export function groupOf(category: KnowledgeCategory): KnowledgeGroup {
   if (category === "program") return "program";
   if (category === "book") return "book";
+  if (category === "quote") return "quote";
   return "media"; // video | podcast | article | post
+}
+
+/** A quote = content whose payload is text (`body`), not a title or a link. */
+export function isQuote(item: KnowledgeItem): boolean {
+  return item.category === "quote";
+}
+
+/** The quotation text, from `body` (falls back to `title` for legacy safety). */
+export function quoteBody(item: KnowledgeItem): string {
+  return (item.body ?? item.title ?? "").trim();
+}
+
+/**
+ * The label to show for a content item. A quote has no title, so use a trimmed
+ * snippet of its text; everything else uses its `title`.
+ */
+export function contentTitle(item: KnowledgeItem): string {
+  if (item.category !== "quote") return item.title;
+  const q = quoteBody(item);
+  if (!q) return "Quote";
+  return q.length > 60 ? `${q.slice(0, 57).trimEnd()}…` : q;
 }
 
 /**

@@ -34,10 +34,13 @@ import {
   VOICE_KIND_LABELS,
   channelLabel,
   channelOf,
+  contentTitle,
   detectCategory,
   detectPlatform,
+  isQuote,
   isScriptureProgram,
   matchVoice,
+  quoteBody,
   voiceFromLink,
 } from "@/lib/prayer/knowledge";
 import { newId } from "@/lib/prayer/compiler";
@@ -180,7 +183,11 @@ function KnowledgeRecordPage() {
   );
 
   return (
-    <AppShell title={item.title} back={{ to: "/formation", label: "Knowledge" }} action={menu}>
+    <AppShell
+      title={contentTitle(item)}
+      back={{ to: "/formation", label: "Knowledge" }}
+      action={menu}
+    >
       <div className="space-y-4">
         {editing ? (
           <>
@@ -200,66 +207,77 @@ function KnowledgeRecordPage() {
                 ))}
               </select>
             </div>
-            <Input
-              value={item.title}
-              onChange={(e) => save({ title: e.target.value })}
-              placeholder="Title"
-              className="h-10"
-            />
+            {isQuote(item) ? (
+              <Textarea
+                value={item.body ?? ""}
+                onChange={(e) => save({ body: e.target.value || undefined })}
+                placeholder="The quote"
+                rows={4}
+              />
+            ) : (
+              <Input
+                value={item.title}
+                onChange={(e) => save({ title: e.target.value })}
+                placeholder="Title"
+                className="h-10"
+              />
+            )}
 
             {/* Links */}
-            <div className="space-y-2">
-              <label className="text-xs uppercase tracking-wide text-muted-foreground">
-                Links — where to find it
-              </label>
-              {links.map((l, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <select
-                    value={l.platform}
-                    onChange={(e) => updateLink(i, { platform: e.target.value as LinkPlatform })}
-                    aria-label="Platform"
-                    className="h-9 shrink-0 rounded-md border border-input bg-background px-2 text-sm"
-                  >
-                    {LINK_PLATFORM_OPTIONS.map((p) => (
-                      <option key={p} value={p}>
-                        {LINK_PLATFORM_LABELS[p]}
-                      </option>
-                    ))}
-                  </select>
-                  <Input
-                    value={l.url}
-                    onChange={(e) => onLinkUrlChange(i, e.target.value)}
-                    placeholder="https://…"
-                    className="h-9"
-                  />
-                  <button
-                    onClick={() => toggleContentLinkFavorite(item.id, i)}
-                    aria-label={l.favorite ? "Unpin from Home" : "Pin to Home"}
-                    className="shrink-0 p-1"
-                  >
-                    <Star
-                      className={`size-4 ${l.favorite ? "fill-primary text-primary" : "text-muted-foreground"}`}
-                      aria-hidden
+            {!isQuote(item) ? (
+              <div className="space-y-2">
+                <label className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Links — where to find it
+                </label>
+                {links.map((l, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <select
+                      value={l.platform}
+                      onChange={(e) => updateLink(i, { platform: e.target.value as LinkPlatform })}
+                      aria-label="Platform"
+                      className="h-9 shrink-0 rounded-md border border-input bg-background px-2 text-sm"
+                    >
+                      {LINK_PLATFORM_OPTIONS.map((p) => (
+                        <option key={p} value={p}>
+                          {LINK_PLATFORM_LABELS[p]}
+                        </option>
+                      ))}
+                    </select>
+                    <Input
+                      value={l.url}
+                      onChange={(e) => onLinkUrlChange(i, e.target.value)}
+                      placeholder="https://…"
+                      className="h-9"
                     />
-                  </button>
-                  <button
-                    onClick={() => save({ links: links.filter((_, idx) => idx !== i) })}
-                    aria-label="Remove link"
-                    className="shrink-0 p-1 text-muted-foreground hover:text-destructive"
-                  >
-                    <X className="size-4" aria-hidden />
-                  </button>
-                </div>
-              ))}
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => save({ links: [...links, { platform: "website", url: "" }] })}
-                className="gap-1.5"
-              >
-                <Plus className="size-4" aria-hidden /> Add a link
-              </Button>
-            </div>
+                    <button
+                      onClick={() => toggleContentLinkFavorite(item.id, i)}
+                      aria-label={l.favorite ? "Unpin from Home" : "Pin to Home"}
+                      className="shrink-0 p-1"
+                    >
+                      <Star
+                        className={`size-4 ${l.favorite ? "fill-primary text-primary" : "text-muted-foreground"}`}
+                        aria-hidden
+                      />
+                    </button>
+                    <button
+                      onClick={() => save({ links: links.filter((_, idx) => idx !== i) })}
+                      aria-label="Remove link"
+                      className="shrink-0 p-1 text-muted-foreground hover:text-destructive"
+                    >
+                      <X className="size-4" aria-hidden />
+                    </button>
+                  </div>
+                ))}
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => save({ links: [...links, { platform: "website", url: "" }] })}
+                  className="gap-1.5"
+                >
+                  <Plus className="size-4" aria-hidden /> Add a link
+                </Button>
+              </div>
+            ) : null}
 
             {/* Voice (author) */}
             <div className="space-y-2 rounded-md border border-border/70 bg-muted/30 p-3">
@@ -387,6 +405,12 @@ function KnowledgeRecordPage() {
               ) : null}
             </div>
 
+            {isQuote(item) ? (
+              <blockquote className="border-l-2 border-primary/40 pl-4 text-lg italic leading-relaxed text-foreground">
+                &ldquo;{quoteBody(item)}&rdquo;
+              </blockquote>
+            ) : null}
+
             {voice ? (
               <p className="text-sm text-muted-foreground">
                 by{" "}
@@ -469,22 +493,24 @@ function KnowledgeRecordPage() {
           </>
         )}
 
-        {/* Status — available in both modes */}
-        <div className="flex flex-wrap gap-1.5">
-          {STATUS_STEPS.map((s) => (
-            <button
-              key={s.key}
-              onClick={() => setKnowledgeStatus(item.id, s.key)}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                item.status === s.key
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {s.label}
-            </button>
-          ))}
-        </div>
+        {/* Status — available in both modes (a quote has no progress) */}
+        {!isQuote(item) ? (
+          <div className="flex flex-wrap gap-1.5">
+            {STATUS_STEPS.map((s) => (
+              <button
+                key={s.key}
+                onClick={() => setKnowledgeStatus(item.id, s.key)}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                  item.status === s.key
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        ) : null}
 
         <Button asChild variant="secondary" className="h-11 w-full">
           <Link to="/reflections">

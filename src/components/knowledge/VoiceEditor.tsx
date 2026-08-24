@@ -15,6 +15,7 @@ import {
   byStatusThenRecent,
   channelLabel,
   channelOf,
+  contentTitle,
   detectPlatform,
 } from "@/lib/prayer/knowledge";
 import { newId } from "@/lib/prayer/compiler";
@@ -66,12 +67,18 @@ export function VoiceEditor({ voiceId }: { voiceId: string }) {
 
   function addContent() {
     if (!addTitle.trim()) return;
+    const isQ = addCategory === "quote";
     addKnowledgeItem({
       id: newId("know"),
-      title: addTitle.trim(),
+      // A quote's text lives in `body`, not a title, and carries no link.
+      title: isQ ? "" : addTitle.trim(),
+      body: isQ ? addTitle.trim() : undefined,
       category: addCategory,
       voice_id: voice!.id,
-      links: addUrl.trim() ? [{ platform: detectPlatform(addUrl), url: addUrl.trim() }] : undefined,
+      links:
+        !isQ && addUrl.trim()
+          ? [{ platform: detectPlatform(addUrl), url: addUrl.trim() }]
+          : undefined,
       status: "not_started",
       created_at: new Date().toISOString(),
     });
@@ -219,7 +226,7 @@ export function VoiceEditor({ voiceId }: { voiceId: string }) {
                         params={{ knowledgeId: item.id }}
                         className="truncate text-sm font-medium text-foreground hover:text-primary"
                       >
-                        {item.title}
+                        {contentTitle(item)}
                       </Link>
                       <p className="text-xs text-muted-foreground">
                         {CATEGORY_LABELS[item.category]}
@@ -299,17 +306,23 @@ export function VoiceEditor({ voiceId }: { voiceId: string }) {
               <Input
                 value={addTitle}
                 onChange={(e) => setAddTitle(e.target.value)}
-                placeholder="Title"
+                placeholder={addCategory === "quote" ? "Quote" : "Title"}
                 className="h-9"
               />
             </div>
             <div className="flex items-center gap-2">
-              <Input
-                value={addUrl}
-                onChange={(e) => setAddUrl(e.target.value)}
-                placeholder="Link (optional)"
-                className="h-9"
-              />
+              {addCategory === "quote" ? (
+                <span className="flex-1 text-[11px] text-muted-foreground">
+                  A quote needs no link — add the wording above.
+                </span>
+              ) : (
+                <Input
+                  value={addUrl}
+                  onChange={(e) => setAddUrl(e.target.value)}
+                  placeholder="Link (optional)"
+                  className="h-9"
+                />
+              )}
               <Button
                 size="icon"
                 variant="secondary"
