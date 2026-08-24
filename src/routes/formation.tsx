@@ -3,6 +3,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ChevronDown,
   ChevronRight,
+  ChevronsDownUp,
+  ChevronsUpDown,
   ExternalLink,
   MoreVertical,
   Pencil,
@@ -242,25 +244,28 @@ function KnowledgePage() {
               </p>
             ) : (
               <div className="space-y-3">
-                <div className="flex items-center justify-end gap-3 text-xs">
-                  <button
-                    onClick={() => setCollapsed(new Set())}
-                    disabled={collapsed.size === 0}
-                    className="font-medium text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
-                  >
-                    Expand all
-                  </button>
-                  <span className="text-muted-foreground/40" aria-hidden>
-                    |
-                  </span>
-                  <button
-                    onClick={() => setCollapsed(new Set(voiceGroups.map((g) => g.id)))}
-                    disabled={voiceGroups.every((g) => collapsed.has(g.id))}
-                    className="font-medium text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
-                  >
-                    Collapse all
-                  </button>
-                </div>
+                {(() => {
+                  const anyCollapsed = voiceGroups.some((g) => collapsed.has(g.id));
+                  return (
+                    <div className="flex justify-end">
+                      <button
+                        onClick={() =>
+                          setCollapsed(
+                            anyCollapsed ? new Set() : new Set(voiceGroups.map((g) => g.id)),
+                          )
+                        }
+                        className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+                      >
+                        {anyCollapsed ? (
+                          <ChevronsUpDown className="size-3.5" aria-hidden />
+                        ) : (
+                          <ChevronsDownUp className="size-3.5" aria-hidden />
+                        )}
+                        {anyCollapsed ? "Expand all" : "Collapse all"}
+                      </button>
+                    </div>
+                  );
+                })()}
                 {voiceGroups.map((g) => {
                   const isCollapsed = collapsed.has(g.id);
                   return (
