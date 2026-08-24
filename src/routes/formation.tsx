@@ -66,6 +66,9 @@ const FILTERS: { key: FilterKey; label: string }[] = [
 /** The virtual bucket id for content with no Voice. */
 const GENERAL_ID = "general";
 
+/** "1 piece of content" / "3 pieces of content" — counts saved content, not channels. */
+const contentCountLabel = (n: number) => `${n} ${n === 1 ? "piece" : "pieces"} of content`;
+
 /** A Voice (or the virtual General bucket) with its content, for the grouped view. */
 interface VoiceGroup {
   id: string;
@@ -273,8 +276,12 @@ function KnowledgePage() {
                             {g.name}
                           </Link>
                           <p className="truncate text-xs text-muted-foreground">
-                            {g.voice ? voiceSubtitle(g.voice) : "Unattributed"} · {g.items.length}{" "}
-                            {g.items.length === 1 ? "item" : "items"}
+                            {[
+                              g.voice ? voiceSubtitle(g.voice) : "Unattributed",
+                              g.items.length ? contentCountLabel(g.items.length) : undefined,
+                            ]
+                              .filter(Boolean)
+                              .join(" · ")}
                           </p>
                           {g.voice?.channels?.length ? (
                             <ChannelChips
@@ -333,7 +340,7 @@ function KnowledgePage() {
                       General
                     </Link>
                     <p className="truncate text-xs text-muted-foreground">
-                      Unattributed · {orphanCount} {orphanCount === 1 ? "item" : "items"}
+                      Unattributed · {contentCountLabel(orphanCount)}
                     </p>
                   </div>
                 </li>
