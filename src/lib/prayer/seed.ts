@@ -1721,6 +1721,12 @@ export function createSeedDatabase(): Database {
         kind: "individual",
         created_at: now,
       },
+      {
+        id: "voice-padre-pio",
+        name: "St. Padre Pio",
+        kind: "individual",
+        created_at: now,
+      },
     ],
     knowledge_items: [
       {
@@ -1756,6 +1762,15 @@ export function createSeedDatabase(): Database {
         ],
         status: "in_progress",
         reads_scripture: true,
+        created_at: now,
+      },
+      {
+        id: "know-pio-quote",
+        title: "",
+        category: "quote",
+        voice_id: "voice-padre-pio",
+        body: "Blessed is the crisis that made you grow, the fall that made you gaze up to heaven, the problem that made you look for God!",
+        status: "not_started",
         created_at: now,
       },
     ],
