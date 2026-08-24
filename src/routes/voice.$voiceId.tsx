@@ -18,8 +18,10 @@ import {
   CATEGORY_LABELS,
   CATEGORY_OPTIONS,
   LINK_PLATFORM_LABELS,
+  SECTION_LABEL,
   STATUS_STEPS,
   VOICE_KIND_LABELS,
+  VOICE_LABEL_SINGULAR,
   byStatusThenRecent,
   detectPlatform,
   voiceSubtitle,
@@ -33,7 +35,7 @@ export const Route = createFileRoute("/voice/$voiceId")({
     s["edit"] === true || s["edit"] === "1" ? { edit: true } : {},
   head: () => ({
     meta: [
-      { title: "Voice — Faith Journey" },
+      { title: `${VOICE_LABEL_SINGULAR} — Faith Journey` },
       { name: "description", content: "A person, organization, or ministry you follow." },
     ],
   }),
@@ -64,7 +66,7 @@ function VoiceHubPage() {
 
   if (!ready) {
     return (
-      <AppShell title="Voice" back={{ to: "/formation", label: "Knowledge" }}>
+      <AppShell title={VOICE_LABEL_SINGULAR} back={{ to: "/formation", label: SECTION_LABEL }}>
         <p className="text-sm text-muted-foreground">Loading…</p>
       </AppShell>
     );
@@ -75,7 +77,7 @@ function VoiceHubPage() {
 
   if (!isGeneral && !voice) {
     return (
-      <AppShell title="Voice" back={{ to: "/formation", label: "Knowledge" }}>
+      <AppShell title={VOICE_LABEL_SINGULAR} back={{ to: "/formation", label: SECTION_LABEL }}>
         <p className="text-sm text-muted-foreground">This isn&apos;t in your library.</p>
       </AppShell>
     );
@@ -136,14 +138,14 @@ function VoiceHubPage() {
   // Real Voice, edit mode → the shared editor (same form as the Add tab).
   if (!isGeneral && editing) {
     return (
-      <AppShell title={name} back={{ to: "/formation", label: "Knowledge" }} action={menu}>
+      <AppShell title={name} back={{ to: "/formation", label: SECTION_LABEL }} action={menu}>
         <VoiceEditor voiceId={voice!.id} />
       </AppShell>
     );
   }
 
   return (
-    <AppShell title={name} back={{ to: "/formation", label: "Knowledge" }} action={menu}>
+    <AppShell title={name} back={{ to: "/formation", label: SECTION_LABEL }} action={menu}>
       <div className="space-y-5">
         {isGeneral ? (
           <p className="text-sm text-muted-foreground">

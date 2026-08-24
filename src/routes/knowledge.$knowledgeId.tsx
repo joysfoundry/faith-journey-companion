@@ -30,8 +30,10 @@ import {
   CATEGORY_OPTIONS,
   LINK_PLATFORM_LABELS,
   LINK_PLATFORM_OPTIONS,
+  SECTION_LABEL,
   STATUS_STEPS,
   VOICE_KIND_LABELS,
+  VOICE_LABEL_SINGULAR,
   channelLabel,
   channelOf,
   contentTitle,
@@ -52,7 +54,7 @@ export const Route = createFileRoute("/knowledge/$knowledgeId")({
     s["edit"] === true || s["edit"] === "1" ? { edit: true } : {},
   head: () => ({
     meta: [
-      { title: "Knowledge — Faith Journey" },
+      { title: `${SECTION_LABEL} — Faith Journey` },
       { name: "description", content: "A book, program, post, or other content in your library." },
     ],
   }),
@@ -79,7 +81,7 @@ function KnowledgeRecordPage() {
 
   if (!ready) {
     return (
-      <AppShell title="Knowledge" back={{ to: "/formation", label: "Knowledge" }}>
+      <AppShell title={SECTION_LABEL} back={{ to: "/formation", label: SECTION_LABEL }}>
         <p className="text-sm text-muted-foreground">Loading…</p>
       </AppShell>
     );
@@ -88,7 +90,7 @@ function KnowledgeRecordPage() {
   const item = db.knowledge_items.find((i) => i.id === knowledgeId);
   if (!item) {
     return (
-      <AppShell title="Knowledge" back={{ to: "/formation", label: "Knowledge" }}>
+      <AppShell title={SECTION_LABEL} back={{ to: "/formation", label: SECTION_LABEL }}>
         <p className="text-sm text-muted-foreground">This item isn&apos;t in your library.</p>
       </AppShell>
     );
@@ -185,7 +187,7 @@ function KnowledgeRecordPage() {
   return (
     <AppShell
       title={contentTitle(item)}
-      back={{ to: "/formation", label: "Knowledge" }}
+      back={{ to: "/formation", label: SECTION_LABEL }}
       action={menu}
     >
       <div className="space-y-4">
@@ -279,17 +281,17 @@ function KnowledgeRecordPage() {
               </div>
             ) : null}
 
-            {/* Voice (author) */}
+            {/* Vessel (author) */}
             <div className="space-y-2 rounded-md border border-border/70 bg-muted/30 p-3">
               <label className="text-xs uppercase tracking-wide text-muted-foreground">
-                Voice (author)
+                {VOICE_LABEL_SINGULAR} (author)
               </label>
               <select
                 value={item.voice_id ?? ""}
                 onChange={(e) =>
                   save({ voice_id: e.target.value || undefined, channel_id: undefined })
                 }
-                aria-label="Voice"
+                aria-label={VOICE_LABEL_SINGULAR}
                 className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
               >
                 <option value="">— None —</option>
@@ -337,21 +339,22 @@ function KnowledgeRecordPage() {
                   onClick={() => createVoiceFromUrl(firstUrl)}
                   className="gap-1.5"
                 >
-                  <UserPlus className="size-4" aria-hidden /> Create a voice from this link
+                  <UserPlus className="size-4" aria-hidden /> Create a{" "}
+                  {VOICE_LABEL_SINGULAR.toLowerCase()} from this link
                 </Button>
               ) : null}
               <div className="flex items-center gap-2 pt-1">
                 <Input
                   value={newVoiceName}
                   onChange={(e) => setNewVoiceName(e.target.value)}
-                  placeholder="New voice by name (e.g. an author)"
+                  placeholder={`New ${VOICE_LABEL_SINGULAR.toLowerCase()} by name (e.g. an author)`}
                   className="h-9"
                 />
                 <Button
                   size="icon"
                   variant="secondary"
                   className="size-9 shrink-0"
-                  aria-label="Add voice"
+                  aria-label={`Add ${VOICE_LABEL_SINGULAR.toLowerCase()}`}
                   onClick={createVoiceByName}
                   disabled={!newVoiceName.trim()}
                 >

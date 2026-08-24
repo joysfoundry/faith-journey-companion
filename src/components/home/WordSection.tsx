@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { todaysWord } from "@/domain/placeholderData";
 import { newId, todayISO } from "@/lib/prayer/compiler";
 import {
+  SECTION_LABEL,
   byStatusThenRecent,
   isScriptureProgram,
   knowledgeSubtitle,
@@ -250,7 +251,7 @@ export function WordSection({ onReflect }: { onReflect: (linkId: string) => void
                   </RowIcon>
                   <Link
                     to="/formation"
-                    aria-label={`Open ${program.title} in Knowledge`}
+                    aria-label={`Open ${program.title} in ${SECTION_LABEL}`}
                     className="p-1 text-muted-foreground hover:text-foreground"
                   >
                     <ChevronRight className="size-4" aria-hidden />

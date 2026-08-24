@@ -10,11 +10,18 @@ import type {
 } from "./types";
 
 /**
- * The user-facing name for the "who" concept. Kept in ONE place so it can be
- * renamed (Voices → whatever) without touching the rest of the app.
+ * The user-facing name for the "who" concept — a person/org/ministry God works
+ * through. Kept in ONE place so it can be renamed without touching the app.
  */
-export const VOICE_LABEL = "Voices";
-export const VOICE_LABEL_SINGULAR = "Voice";
+export const VOICE_LABEL = "Vessels";
+export const VOICE_LABEL_SINGULAR = "Vessel";
+
+/**
+ * The user-facing name for the whole *section* (Home card, nav, page title,
+ * back buttons). Separate from the concept label so the two can diverge; both
+ * are "Vessels" today. Route `/formation`, code identifiers stay `Knowledge`.
+ */
+export const SECTION_LABEL = "Vessels";
 
 /* -------------------------------- Content -------------------------------- */
 

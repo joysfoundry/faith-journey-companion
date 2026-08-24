@@ -30,6 +30,7 @@ import {
   GROUP_LABELS,
   GROUP_ORDER,
   LINK_PLATFORM_LABELS,
+  SECTION_LABEL,
   STATUS_STEPS,
   VOICE_LABEL,
   VOICE_LABEL_SINGULAR,
@@ -51,10 +52,10 @@ export const Route = createFileRoute("/formation")({
     search["add"] === "1" || search["add"] === true ? { add: true } : {},
   head: () => ({
     meta: [
-      { title: "Knowledge — Faith Journey" },
+      { title: `${SECTION_LABEL} — Faith Journey` },
       {
         name: "description",
-        content: "Your Knowledge library — the voices you follow and the content that forms you.",
+        content: `The ${VOICE_LABEL.toLowerCase()} you follow and the content that forms you.`,
       },
     ],
   }),
@@ -228,7 +229,7 @@ function KnowledgePage() {
 
   return (
     <AppShell
-      title="Knowledge"
+      title={SECTION_LABEL}
       subtitle={`The ${VOICE_LABEL.toLowerCase()} you follow and the content that forms you`}
       back={{ to: "/more", label: "More" }}
     >

@@ -36,7 +36,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { todaysWord, type LinkableItem } from "@/domain/placeholderData";
-import { LINK_PLATFORM_LABELS, pinnedLinks, type PinnedLink } from "@/lib/prayer/knowledge";
+import {
+  LINK_PLATFORM_LABELS,
+  SECTION_LABEL,
+  pinnedLinks,
+  type PinnedLink,
+} from "@/lib/prayer/knowledge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { defaultContext, planTitle, resolveMysterySet, todayISO } from "@/lib/prayer/compiler";
 import { useApp } from "@/lib/prayer/store";
@@ -508,9 +513,9 @@ function Index() {
           <WordSection onReflect={openJournal} />
         </SectionCard>
 
-        {/* D — Knowledge: Programs, Books, Media, and favorited Resources */}
+        {/* D — Vessels: pinned channels & links from the vessels you follow */}
         <SectionCard
-          title="Knowledge"
+          title={SECTION_LABEL}
           actions={
             <IconAction label="Add & browse your library" asChild>
               <Link to="/formation" search={{ add: true }}>

@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { CalendarDays, Download, Lightbulb } from "lucide-react";
 
 import { AppShell } from "@/components/layout/PageShell";
+import { SECTION_LABEL, VOICE_LABEL } from "@/lib/prayer/knowledge";
 import { useApp } from "@/lib/prayer/store";
 
 export const Route = createFileRoute("/more")({
@@ -35,8 +36,8 @@ function MorePage() {
     {
       to: "/formation",
       icon: Lightbulb,
-      title: "Knowledge",
-      desc: `${db.knowledge_items.filter((i) => i.status === "in_progress").length} in progress · ${db.knowledge_items.length} saved · ${db.voices.length} voices`,
+      title: SECTION_LABEL,
+      desc: `${db.knowledge_items.filter((i) => i.status === "in_progress").length} in progress · ${db.knowledge_items.length} saved · ${db.voices.length} ${VOICE_LABEL.toLowerCase()}`,
     },
     {
       to: "/import",
