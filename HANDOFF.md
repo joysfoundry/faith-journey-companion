@@ -1,6 +1,6 @@
 # Handoff — PRD gap-merge
 
-_Last updated: 2026-08-23 · branch `prd-gap-merge` (7 commits **committed, NOT pushed** — push needs a git client with GitHub auth: `git push -u origin prd-gap-merge`)_
+_Last updated: 2026-08-24 · branch `prd-gap-merge` (pushed earlier; the latest Knowledge commits `ae7024a`+`db17f3a`+`ee12285` may be **unpushed** — run `git push`)_
 
 ## What this is
 Merging the **ACTS PRD** capabilities into **faith-journey-companion** (the app whose UX we're keeping). The ACTS Next.js build in `../acts` is now just the reference/spec + test oracle. Decision: **gap-merge into fjc, keep the localStorage store** (no Supabase persistence yet).
@@ -16,7 +16,12 @@ Big rewrite of the Knowledge library into a **three-level graph** (commits `01b1
 
 **Routes:** `formation.tsx` (Add|Library), `voice.$voiceId.tsx` (Voice hub: view + edit-via-`VoiceEditor`; `general` = virtual bucket), `knowledge.$knowledgeId.tsx` (content record, view/edit). **Verified in-browser** throughout; `tsc`+`eslint` clean. Dev-server HMR desyncs badly on big refactors (stale `PLATFORM_LABELS`-style errors, ref churn) — **restart the preview** to clear.
 
-**Open / next:** (1) the user is still settling the **name for "Voices"** — it's the single constant `VOICE_LABEL` in `knowledge.ts`; swap there. (2) `channel_id` on content is modeled but not surfaced in UI. (3) A **"By Voice" grouped Library view** was discussed (pass B), not built. (4) Consider whether unattributed content should be allowed at all vs. always requiring a Voice (General currently allows it).
+**Open / next — all four resolved 2026-08-24** (commits `6da5038`…`ee12285`; details in memory `knowledge-model`):
+- ✅ (1) **Name for "Voices" — settled as "Voices."** `VOICE_LABEL` stays `"Voices"` in `knowledge.ts`; swap there if it ever changes.
+- ✅ (2) **`channel_id` surfaced.** Content record edit shows a "From which channel" picker when the Voice has channels; view mode reads "by {Voice} · {kind} · from {channel}"; auto-attribution sets it. Helpers `channelLabel`/`channelOf`.
+- ✅ (3) **"By Voice" grouped Library view built.** The Library "Voices" filter is now **"By Voice"**: collapsible Voice sections (name→hub, channel chips, `N piece(s) of content`) with content nested; content-bearing voices first, then empty, then **General** for unattributed. One chevron **Expand/Collapse all** toggle. Shared row markup in `ContentRow`/`ChannelChips`.
+- ✅ (4) **Unattributed policy settled:** allowed, in ONE **General** bucket (not per-platform pseudo-Voices). Item byline falls back Voice → `creator` → `source` → primary link's **platform** ("Post · Instagram"). `knowledgeSubtitle` gained `{ hideVoice }`.
+- ✅ **Bonus:** fixed the **"Untitled" ghost** draft-Voice bug (empty draft `name:""` was rewritten to "Untitled" on hydration and became undiscardable) — `normalizeVoice` preserves the empty name, `isEmptyDraftVoice` also catches "Untitled", and `formation` prunes empty drafts on landing on the Library.
 
 ## Done this session — Litany devotions (2026-08-22, uncommitted)
 Seeded **3 public-domain litanies** as devotions. Memory: `litany-model`.
