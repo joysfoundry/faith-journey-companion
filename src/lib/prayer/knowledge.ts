@@ -234,6 +234,20 @@ export function voiceFromLink(url: string): {
   return { name, kind: detectVoiceKind(url), platform };
 }
 
+/** True when a freshly-created draft Voice was never touched (safe to discard). */
+export function isEmptyDraftVoice(
+  voices: Voice[],
+  items: KnowledgeItem[],
+  voiceId: string,
+): boolean {
+  const v = voices.find((x) => x.id === voiceId);
+  if (!v) return false;
+  const untouchedName = !v.name.trim() || v.name === "New voice";
+  const noChannels = !(v.channels ?? []).length;
+  const noContent = !items.some((i) => i.voice_id === voiceId);
+  return untouchedName && noChannels && noContent;
+}
+
 /* -------------------------------- Sorting -------------------------------- */
 
 const STATUS_RANK: Record<KnowledgeStatus, number> = {
