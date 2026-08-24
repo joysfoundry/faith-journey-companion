@@ -13,6 +13,8 @@ import {
   VOICE_KIND_LABELS,
   VOICE_KIND_OPTIONS,
   byStatusThenRecent,
+  channelLabel,
+  channelOf,
   detectPlatform,
 } from "@/lib/prayer/knowledge";
 import { newId } from "@/lib/prayer/compiler";
@@ -221,6 +223,9 @@ export function VoiceEditor({ voiceId }: { voiceId: string }) {
                       </Link>
                       <p className="text-xs text-muted-foreground">
                         {CATEGORY_LABELS[item.category]}
+                        {channelOf(item, voice)
+                          ? ` · from ${channelLabel(channelOf(item, voice)!)}`
+                          : ""}
                       </p>
                       {item.links?.length ? (
                         <div className="mt-1 flex flex-wrap gap-1">

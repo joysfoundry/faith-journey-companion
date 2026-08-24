@@ -32,6 +32,8 @@ import {
   LINK_PLATFORM_OPTIONS,
   STATUS_STEPS,
   VOICE_KIND_LABELS,
+  channelLabel,
+  channelOf,
   detectCategory,
   detectPlatform,
   isScriptureProgram,
@@ -91,6 +93,7 @@ function KnowledgeRecordPage() {
 
   const voices = db.voices;
   const voice = item.voice_id ? voices.find((v) => v.id === item.voice_id) : undefined;
+  const channel = channelOf(item, voice);
   const links = item.links ?? [];
 
   function save(patch: Partial<KnowledgeItem>) {
@@ -110,7 +113,7 @@ function KnowledgeRecordPage() {
     let patch: Partial<KnowledgeItem> = { links: next };
     if (i === 0 && !item!.voice_id) {
       const m = matchVoice(url, voices);
-      if (m) patch = { ...patch, voice_id: m.voice.id };
+      if (m) patch = { ...patch, voice_id: m.voice.id, channel_id: m.channel.id };
     }
     save(patch);
   }
@@ -118,14 +121,15 @@ function KnowledgeRecordPage() {
   function createVoiceFromUrl(url: string) {
     const seed = voiceFromLink(url);
     const id = newId("voice");
+    const chanId = newId("chan");
     upsertVoice({
       id,
       name: seed.name,
       kind: seed.kind,
-      channels: [{ id: newId("chan"), platform: seed.platform, url: url.trim() }],
+      channels: [{ id: chanId, platform: seed.platform, url: url.trim() }],
       created_at: new Date().toISOString(),
     });
-    save({ voice_id: id });
+    save({ voice_id: id, channel_id: chanId });
   }
   function createVoiceByName() {
     if (!newVoiceName.trim()) return;
@@ -136,7 +140,7 @@ function KnowledgeRecordPage() {
       kind: "individual",
       created_at: new Date().toISOString(),
     });
-    save({ voice_id: id });
+    save({ voice_id: id, channel_id: undefined });
     setNewVoiceName("");
   }
 
@@ -264,7 +268,9 @@ function KnowledgeRecordPage() {
               </label>
               <select
                 value={item.voice_id ?? ""}
-                onChange={(e) => save({ voice_id: e.target.value || undefined })}
+                onChange={(e) =>
+                  save({ voice_id: e.target.value || undefined, channel_id: undefined })
+                }
                 aria-label="Voice"
                 className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
               >
@@ -275,10 +281,32 @@ function KnowledgeRecordPage() {
                   </option>
                 ))}
               </select>
+              {voice && (voice.channels?.length ?? 0) > 0 ? (
+                <div className="space-y-1">
+                  <label className="text-xs uppercase tracking-wide text-muted-foreground">
+                    From which channel
+                  </label>
+                  <select
+                    value={item.channel_id ?? ""}
+                    onChange={(e) => save({ channel_id: e.target.value || undefined })}
+                    aria-label="Channel"
+                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  >
+                    <option value="">— Not specified —</option>
+                    {voice.channels!.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {channelLabel(c)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : null}
               {voiceMatch ? (
                 <button
                   type="button"
-                  onClick={() => save({ voice_id: voiceMatch.voice.id })}
+                  onClick={() =>
+                    save({ voice_id: voiceMatch.voice.id, channel_id: voiceMatch.channel.id })
+                  }
                   className="text-xs text-primary hover:underline"
                 >
                   Link to “{voiceMatch.voice.name}” — matched from the URL
@@ -370,6 +398,7 @@ function KnowledgeRecordPage() {
                   {voice.name}
                 </Link>
                 <span className="text-xs"> · {VOICE_KIND_LABELS[voice.kind]}</span>
+                {channel ? <span className="text-xs"> · from {channelLabel(channel)}</span> : null}
               </p>
             ) : item.creator ? (
               <p className="text-sm text-muted-foreground">by {item.creator}</p>

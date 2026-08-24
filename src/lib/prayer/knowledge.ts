@@ -99,6 +99,17 @@ export const LINK_PLATFORM_LABELS: Record<LinkPlatform, string> = {
   other: "Link",
 };
 
+/** Display label for a channel — its human note if set, else the platform name. */
+export function channelLabel(channel: Channel): string {
+  return channel.label?.trim() || LINK_PLATFORM_LABELS[channel.platform];
+}
+
+/** The channel a content item came from, resolved against its Voice (if any). */
+export function channelOf(item: KnowledgeItem, voice: Voice | undefined): Channel | undefined {
+  if (!voice || !item.channel_id) return undefined;
+  return voice.channels?.find((c) => c.id === item.channel_id);
+}
+
 /** Platforms offered in the channel/link editor, in menu order. */
 export const LINK_PLATFORM_OPTIONS: LinkPlatform[] = [
   "instagram",
