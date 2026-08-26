@@ -1,9 +1,30 @@
 # Handoff — PRD gap-merge
 
-_Last updated: 2026-08-24 · branch `prd-gap-merge` (pushed earlier; the latest Knowledge commits `ae7024a`+`db17f3a`+`ee12285` may be **unpushed** — run `git push`)_
+_Last updated: 2026-08-25 · branch `prd-gap-merge` · this session's commits `9f94632`, `1527cdd`, `5a8b753` are **committed, NOT pushed** — run `git push` from your git client._
+
+> **Next session — user wants to discuss:** how we're using **Lovable** (the app is a Lovable project — `@lovable.dev/vite-tanstack-config`), and whether to **merge `prd-gap-merge` → `main` and publish from there.** Decide the branch/deploy story before continuing feature work.
 
 ## What this is
 Merging the **ACTS PRD** capabilities into **faith-journey-companion** (the app whose UX we're keeping). The ACTS Next.js build in `../acts` is now just the reference/spec + test oracle. Decision: **gap-merge into fjc, keep the localStorage store** (no Supabase persistence yet).
+
+## Done this session — Account Settings + Bible app + new-tab links (2026-08-25, committed `9f94632`+`1527cdd`+`5a8b753`, NOT pushed)
+First of the user's **new 4-item roadmap** (order agreed this session: **1 → 4 → 2 → 3**). Item 1 done + a links fix. Memory: `bible-app-model` (new).
+
+- **Settings page** (`src/routes/settings.tsx`, reached via **More → Settings**): pick your **Bible app** + **preferred translation**, and pin the **daily devotion** (surfaces the existing `daily_template_id`). Bible catalog + deep-link engine in **`src/lib/bible/apps.ts`**.
+  - **Default = YouVersion + NIV**, done two ways: **seeded** in `seed.ts` (`settings: { bible_app_id: "youversion", bible_translation: "NIV" }`) AND applied at read-time via `effectiveBibleAppId(id)` = `id ?? "youversion"`, so existing users get it **without a STORAGE_KEY bump** (still `v22`). `translationById` defaults NIV.
+  - **`buildPassageUrl(settings, ref)`** is THE helper for opening a passage in the reader's Bible (Bible Gateway = universal fallback; YouVersion true deep-links where the version id is known). **`resolveBibleHomeUrl(settings)`** = "open my Bible" home. **Design reality:** NIV/most translations are licensed → we **deep-link out, never embed**.
+  - When no app is set (`"none"`) or "Another app" with no URL → **recommend free NIV apps**. **"Another app"** shows a **custom URL field** (`bible_app_custom_url`, `normalizeUrl` adds https://); passages for "other" still route to Bible Gateway.
+  - Store plumbing: `AppSettings.bible_app_id`/`bible_translation`/`bible_app_custom_url` (`types.ts`); generic **`updateSettings(patch)`** mutation (`store.ts` + provider).
+- **"Online Bible" link on the Word page** (`WordSection.tsx`) via `resolveBibleHomeUrl` — opens the reader's Bible. **IMPORTANT:** today's daily **Mass readings still come from USCCB** (`todaysWord.readingsUrl`), NOT the Bible app — do not conflate. (Corrected the Settings copy that wrongly implied readings open in their Bible.)
+- **All external links open in a new tab** — new **`ExternalLink`** component (`src/components/ui/external-link.tsx`, imported as `ExtLink`): `target="_blank" rel="noopener noreferrer"` + a guarded `window.open`. **~20 anchors migrated** across 12 files. New external links MUST use `ExtLink`, not raw `<a>`.
+  - **Known limit:** inside a **sandboxed preview iframe** (Claude's preview pane, Lovable's in-editor preview) neither `target` nor `window.open` can open a new tab — confirmed by direct test (`window.open` returns null). It works in a **real browser tab / the deployed site**. This is a host sandbox limit, not a code bug — no further code fix possible. (Ties into the next-session Lovable/publish question.)
+
+**Verified:** `tsc --noEmit` clean; ESLint clean on all new/changed files (pre-existing prettier drift remains in `MediaEditor.tsx` + `prayer.$prayerId.tsx`, untouched). In-browser: Settings renders + persists, YouVersion deep-link `bible.com/bible/111/JHN.3.16.NIV`, custom-URL flow, Word "Online Bible" → bible.com, Daily Readings → usccb.org.
+
+**Next — resume the roadmap at item 4** (order 1 → **4** → 2 → 3):
+- **Item 4 — Reflection tabs** (`src/routes/reflections.tsx`): two tabs. **Tab 1** = compose box with a **preview of the linked inspiration** (reading/quote/photo) beneath it. **Tab 2** = the journal — collapsible list, expand-all/collapse-all, latest-first — **which already exists** in `reflections.tsx`; mostly reorganize into tabs + add the inspiration preview. (Overlaps the old backlog item "Reflection provenance" — reuse `buildPassageUrl` for reading links.)
+- **Item 2 — Session list page** (`src/routes/pray.tsx` has Upcoming/Completed; `calendar.tsx` is a simpler date picker): add a **month calendar with color-coded dots** (sessions, readings…) above the upcoming/completed lists. A `src/components/ui/calendar.tsx` already exists to build on.
+- **Item 3 — Word page tabs** (`src/routes/word.tsx`): Tab 1 = current `WordSection`; Tab 2 = a view of "their Bible" (uses the Bible-app setting; user was unsure — decide scope). Do last; leans hardest on the Bible plumbing.
 
 ## Done this session — Knowledge → Voice / Channel / Content model (2026-08-23, committed `01b1ad8`…`<tip>`, NOT pushed)
 Big rewrite of the Knowledge library into a **three-level graph** (commits `01b1ad8`…`ce488e4`). Full details in memory `knowledge-model` (rewritten this session). Commits, oldest→newest:
