@@ -189,24 +189,29 @@ _Statuses: **To Do** · **In Progress** · **Blocked** · **Done**. Commits are 
 
 ---
 
-## 🔜 Open — not yet started
+## 🔜 Open — backlog (numbered)
 
-Future work, un-numbered until picked up. When you start one, it takes the next
-`ACTS-NN` from [`.counter`](../stories/.counter) (so the next started story is ACTS-76).
+Every open story now carries an `ACTS-NN` id so you can reference it when starting a chat
+(`/start ACTS-NN`). Not yet started — IDs are reserved; `.counter` is **90**, so brand-new
+work beyond this list starts at ACTS-91.
 
-| Priority | EPIC | Type | Summary | Detail |
-|---|---|---|---|---|
-| P1 |  | Story | **Pray-mode tracker (ACTS-style)** | Prominent current item, **completed prayers grayed out**, **auto-scroll** as you advance. Preview already emits the fully-expanded list. |
-| P2 |  | Story | **Touch drag-and-drop in builder** | Current reorder uses HTML5 DnD (desktop only). Add a touch lib (e.g. dnd-kit). |
-| P2 |  | Task | **Push `prd-gap-merge` + open PR** | Sandbox can't push. `git push -u origin prd-gap-merge`, then PR into main. |
-| P2 |  | Story | **Mystery-detail versions (Scripture vs meditation)** | Partly delivered by ACTS-55/56 (selectable bodies + authoring editor). Remaining: let the Session/Template **choose which variant to present**. Examples: `~/Downloads/Mysteries 1.md` (Scripture), `Mysteries 2.md` (meditation). |
-| P3 |  | Story | **Per-prayer media in devotion import** | Audio/video attaches to single prayers; bundle import currently doesn't — add media per detected prayer. |
-| P3 |  | Story | **Real OCR for photo intake** | Photo intake is a manual-transcribe seam; wire client-side OCR (tesseract.js) or cloud. |
-| P3 |  | Story | **Enable Supabase persistence** | fjc's snake_case model maps 1:1 to Postgres; move the localStorage store to Supabase. |
-| P3 |  | Bug | **Hydration race on remaining edit routes** | Fixed for prayer editor + template builder; audit other `useState`-from-store routes and gate on `ready`. |
-| P3 |  | Task | **Repetition-count input design** | Current ×N control is a −/+ stepper — tedious for ×10/×53. Recommend tap-the-"×N"-to-type. |
-| P4 |  | Story | **Restore "start from existing template" (Duplicate)** | Removed in the builder redesign; re-add as a Duplicate action if wanted. |
-| P4 |  | Story | **ACTS framing** | Thread Adoration · Contrition · Thanksgiving · Supplication where it fits (branding / prayer categorization). |
+| # | EPIC | Priority | Type | Status | Summary | Detail |
+|---|---|---|---|---|---|---|
+| ACTS-76 |  | P1 | Story | To Do | **Pray-mode tracker (ACTS-style)** | Prominent current item, **completed prayers grayed out**, **auto-scroll** as you advance. Preview already emits the fully-expanded list. |
+| ACTS-77 |  | P2 | Story | To Do | **Touch drag-and-drop in builder** | Current reorder uses HTML5 DnD (desktop only). Add a touch lib (e.g. dnd-kit). |
+| ACTS-78 |  | P2 | Task | To Do | **Push `main` + Publish in Lovable** | Merge → `main` already done locally (fast-forward to `f9f51a0`); PR not needed. Remaining: `git push origin main`, then confirm Lovable sync + click **Publish** for the public `*.lovable.app` URL. |
+| ACTS-79 |  | P2 | Story | To Do | **Mystery-detail variant picker (Scripture vs meditation)** | Partly delivered by ACTS-55/56 (selectable bodies + authoring editor). Remaining: let the Session/Template **choose which variant to present**. Examples: `~/Downloads/Mysteries 1.md` (Scripture), `Mysteries 2.md` (meditation). |
+| ACTS-80 |  | P3 | Story | To Do | **Per-prayer media in devotion import** | Audio/video attaches to single prayers; bundle import currently doesn't — add media per detected prayer. |
+| ACTS-81 |  | P3 | Story | To Do | **Real OCR for photo intake** | Photo intake is a manual-transcribe seam; wire client-side OCR (tesseract.js) or cloud. |
+| ACTS-82 |  | P3 | Story | To Do | **Enable Supabase persistence** | fjc's snake_case model maps 1:1 to Postgres; move the localStorage store to Supabase. Unlocks real shared/persistent data for a public audience — and is the **backend for auth** (ACTS-87/88). |
+| ACTS-83 |  | P3 | Bug | To Do | **Hydration race on remaining edit routes** | Fixed for prayer editor + template builder; audit other `useState`-from-store routes and gate on `ready`. |
+| ACTS-84 |  | P3 | Task | To Do | **Repetition-count input design** | Current ×N control is a −/+ stepper — tedious for ×10/×53. Recommend tap-the-"×N"-to-type. |
+| ACTS-85 |  | P4 | Story | To Do | **Restore "start from existing template" (Duplicate)** | Removed in the builder redesign; re-add as a Duplicate action if wanted. |
+| ACTS-86 |  | P4 | Story | To Do | **ACTS framing** | Thread Adoration · Contrition · Thanksgiving · Supplication where it fits (branding / prayer categorization). |
+| ACTS-87 |  | P2 | Story | To Do | **Auth — email login + session** | _New._ Email/password sign-in, session persistence, sign-out, protected/authed state in the app shell. Likely **Supabase Auth** → depends on / relates to ACTS-82. |
+| ACTS-88 |  | P2 | Story | To Do | **Account creation — sign up with email** | _New._ Email sign-up + verification, create a profile/account record, then the localStorage data becomes per-account. Pairs with ACTS-87; relates to ACTS-82. |
+| ACTS-89 |  | P2 | Story | To Do | **Guided-prayer expand/collapse + expand-all/collapse-all** | _New (spinoff → `stories/ACTS-89.md`)._ Per-prayer expand/collapse **and** an expand-all/collapse-all control in the **guided prayer (Pray mode)** view (`src/routes/pray.tsx`); test the usage/interaction in that view. |
+| ACTS-90 |  | P3 | Spike | To Do | **Platform decision — mobile-first, mobile web (no app store)** | _New (spinoff → `stories/ACTS-90.md`)._ Capture & commit the direction: **mobile-first but delivered as mobile web, web-view first — NOT the native app store.** Decide PWA (installable/offline) vs plain responsive web, and note the implications for the roadmap. |
 
 ---
 
@@ -217,12 +222,15 @@ How the ACTS backlog is numbered and kept current — so this doesn't drift:
 1. **Numbering.** Every completed unit of work gets one `ACTS-NN` row, numbered
    oldest-first by the commit that delivered it. Numbers are permanent — they never
    get renumbered when new rows are inserted; new work always takes the next number.
+   Open/not-yet-started stories are also numbered so they're easy to reference when
+   starting a chat (`/start ACTS-NN`); their id is reserved until the work is done.
 2. **Commits.** Each row logs the commit hash(es) that delivered it. A row can carry
    several commits (implementation + fixups + its `docs:` handoff).
 3. **EPIC column.** Left blank on purpose — JC fills it in to group rows into epics.
    The section headers above are a suggested grouping, not the epic assignment.
 4. **The counter.** [`stories/.counter`](../stories/.counter) holds the last-used
-   number (currently **75**). The next started story is ACTS-76.
+   number (currently **90** — ACTS-01…75 done + ACTS-76…90 filed as open stories). The
+   next brand-new story beyond the current backlog is ACTS-91.
 5. **One chat = one story.** Each working session is tied to a single ACTS story;
    its handoff lives at `stories/ACTS-NN/session-NN.md` (see
    [`stories/_TEMPLATE.md`](../stories/_TEMPLATE.md)). The compact active board is

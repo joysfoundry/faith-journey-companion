@@ -30,12 +30,19 @@ _Statuses: **To Do** · **In Progress** · **Blocked** · **Done**._
 - Every completed unit of work is one `ACTS-NN` row, numbered **oldest-first by commit**.
 - Numbers are **permanent** — never renumbered; new work takes the next number.
 - Each row **logs its commit(s)**; the **EPIC** column is left blank for JC to fill in.
-- [`.counter`](.counter) holds the last-used number (**75**); next started story = ACTS-76.
+- [`.counter`](.counter) holds the last-used number (**90**); brand-new work = ACTS-91.
 - Full detail + the maintenance process: [`docs/JIRA-BACKLOG.md` → Process](../docs/JIRA-BACKLOG.md#process).
 
-## Open (not yet started)
+## Open (numbered — ready to `/start`)
 
-The remaining backlog (pray-mode tracker, touch DnD, Supabase persistence, mystery-variant
-picker, etc.) is un-numbered until picked up — see the
-[Open section of the ledger](../docs/JIRA-BACKLOG.md#-open--not-yet-started). Starting one
-draws the next `ACTS-NN` from [`.counter`](.counter).
+Every open story now has an id so you can reference it when starting a chat — see the
+[Open section of the ledger](../docs/JIRA-BACKLOG.md#-open--backlog-numbered), **ACTS-76…90**.
+Highlights / recently added:
+
+- **ACTS-78** — Push `main` + Publish in Lovable (merge already done locally; just push + Publish).
+- **ACTS-82** — Enable Supabase persistence (backend for auth; parked as a future story).
+- **ACTS-87 / ACTS-88** — Auth (email login + session) / Account creation (sign up with email).
+- **ACTS-89** — Guided-prayer expand/collapse + expand-all/collapse-all → [`ACTS-89.md`](ACTS-89.md).
+- **ACTS-90** — Platform decision: mobile-first, mobile web, no app store → [`ACTS-90.md`](ACTS-90.md).
+
+To begin one in a clean chat: `/start ACTS-NN`.
