@@ -18,6 +18,7 @@ import {
 import { AppShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ExternalLink as ExtLink } from "@/components/ui/external-link";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -369,15 +370,13 @@ function HowToCard({ howTo }: { howTo: HowTo }) {
       <ul className="mt-3 space-y-2">
         {links.map((url) => (
           <li key={url} className="flex items-center gap-2">
-            <a
+            <ExtLink
               href={url}
-              target="_blank"
-              rel="noopener noreferrer"
               className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm transition hover:border-primary"
             >
               <ExternalLink className="size-4 shrink-0 text-muted-foreground" />
               <span className="truncate">{linkLabel(url)}</span>
-            </a>
+            </ExtLink>
             <button
               type="button"
               onClick={() => saveHowTo({ ...howTo, links: links.filter((l) => l !== url) })}

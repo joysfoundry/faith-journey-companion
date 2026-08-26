@@ -3,6 +3,7 @@ import { useState } from "react";
 import { ExternalLink, Plus, Star, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { ExternalLink as ExtLink } from "@/components/ui/external-link";
 import { Input } from "@/components/ui/input";
 import {
   CATEGORY_LABELS,
@@ -238,15 +239,13 @@ export function VoiceEditor({ voiceId }: { voiceId: string }) {
                         <div className="mt-1 flex flex-wrap gap-1">
                           {item.links.map((l, i) => (
                             <span key={i} className="inline-flex items-center">
-                              <a
+                              <ExtLink
                                 href={l.url}
-                                target="_blank"
-                                rel="noreferrer"
                                 className="inline-flex items-center gap-1 rounded-l-full bg-secondary py-0.5 pl-2 pr-1 text-[11px] font-medium text-muted-foreground hover:text-primary"
                               >
                                 {l.label || LINK_PLATFORM_LABELS[l.platform]}
                                 <ExternalLink className="size-3" aria-hidden />
-                              </a>
+                              </ExtLink>
                               <button
                                 onClick={() => toggleContentLinkFavorite(item.id, i)}
                                 aria-label={l.favorite ? "Unpin from Home" : "Pin to Home"}

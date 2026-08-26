@@ -16,6 +16,7 @@ import { toast } from "sonner";
 
 import { AppShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
+import { ExternalLink as ExtLink } from "@/components/ui/external-link";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -437,10 +438,8 @@ function KnowledgeRecordPage() {
                 <ul className="mt-2 space-y-2">
                   {links.map((link, i) => (
                     <li key={i} className="flex items-center gap-2">
-                      <a
+                      <ExtLink
                         href={link.url}
-                        target="_blank"
-                        rel="noreferrer"
                         className="flex min-w-0 flex-1 items-center justify-between gap-2 rounded-lg border border-border/70 p-3 transition-colors hover:border-primary/50"
                       >
                         <span className="min-w-0">
@@ -455,7 +454,7 @@ function KnowledgeRecordPage() {
                           className="size-4 shrink-0 text-muted-foreground"
                           aria-hidden
                         />
-                      </a>
+                      </ExtLink>
                       <Button
                         size="icon"
                         variant="ghost"

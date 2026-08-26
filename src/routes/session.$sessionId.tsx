@@ -3,6 +3,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Check, X } from "lucide-react";
 import { AppShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
+import { ExternalLink as ExtLink } from "@/components/ui/external-link";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
@@ -455,11 +456,9 @@ function ItemView({ item, showMeditation }: { item: SessionItem; showMeditation:
         {item.body ? <p className="prayer-text mt-4 text-muted-foreground">{item.body}</p> : null}
         <div className="mt-8 space-y-3 text-left">
           {options.map((o) => (
-            <a
+            <ExtLink
               key={o.url}
               href={o.url}
-              target="_blank"
-              rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
               className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-4 text-sm font-medium transition hover:border-primary"
             >
@@ -469,7 +468,7 @@ function ItemView({ item, showMeditation }: { item: SessionItem; showMeditation:
                   Default
                 </span>
               ) : null}
-            </a>
+            </ExtLink>
           ))}
         </div>
       </div>

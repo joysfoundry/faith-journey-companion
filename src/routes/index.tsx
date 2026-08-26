@@ -22,6 +22,7 @@ import { SectionCard, SectionRow } from "@/components/home/SectionCard";
 import { AppShell } from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ExternalLink as ExtLink } from "@/components/ui/external-link";
 import {
   Dialog,
   DialogContent,
@@ -74,10 +75,8 @@ function PinnedLinkRow({ pin }: { pin: PinnedLink }) {
   return (
     <SectionRow className="border-t border-border/60 pl-6">
       <div className="flex items-center justify-between gap-3">
-        <a
+        <ExtLink
           href={pin.url}
-          target="_blank"
-          rel="noreferrer"
           className="flex min-w-0 flex-1 items-center gap-2 transition-colors hover:text-primary"
         >
           <span className="min-w-0">
@@ -89,7 +88,7 @@ function PinnedLinkRow({ pin }: { pin: PinnedLink }) {
             </span>
           </span>
           <ExternalLink className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
-        </a>
+        </ExtLink>
         {pin.ownerType === "voice" ? (
           <Link
             to="/voice/$voiceId"

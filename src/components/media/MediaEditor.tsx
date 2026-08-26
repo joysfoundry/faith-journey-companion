@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link2, Mic, Square, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ExternalLink as ExtLink } from "@/components/ui/external-link";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { newId } from "@/lib/prayer/compiler";
@@ -23,9 +24,9 @@ function MediaPlayer({ item }: { item: PrayerMedia }) {
     // External video links (YouTube etc.) open out; embedded data-URL video plays inline.
     if (item.source === "link") {
       return (
-        <a href={item.url} target="_blank" rel="noreferrer" className="text-sm text-primary underline">
+        <ExtLink href={item.url} className="text-sm text-primary underline">
           Open video
-        </a>
+        </ExtLink>
       );
     }
     return <video controls src={item.url} className="mt-1 w-full rounded-md" />;

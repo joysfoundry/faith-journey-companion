@@ -12,6 +12,7 @@ import {
 import { toast } from "sonner";
 import { AppShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
+import { ExternalLink as ExtLink } from "@/components/ui/external-link";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -231,14 +232,9 @@ function DevotionPage() {
                   {m.label ? (
                     <span className="text-sm text-muted-foreground">{m.label}: </span>
                   ) : null}
-                  <a
-                    href={m.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="break-all text-sm text-primary underline"
-                  >
+                  <ExtLink href={m.url} className="break-all text-sm text-primary underline">
                     {m.url}
-                  </a>
+                  </ExtLink>
                 </li>
               ))}
             </ul>
@@ -250,14 +246,12 @@ function DevotionPage() {
             <p className="eyebrow">Source</p>
             <p className="mt-1 text-sm">{source.name}</p>
             {source.url ? (
-              <a
+              <ExtLink
                 className="mt-1 block break-all text-sm text-primary underline"
                 href={source.url}
-                target="_blank"
-                rel="noreferrer"
               >
                 {source.url}
-              </a>
+              </ExtLink>
             ) : null}
             {source.file_reference ? (
               <p className="mt-1 break-all text-sm text-muted-foreground">
@@ -367,14 +361,9 @@ function DevotionStep({
             <ul className="space-y-1">
               {urls.map((u) => (
                 <li key={u}>
-                  <a
-                    href={u}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="block break-all text-sm text-primary underline"
-                  >
+                  <ExtLink href={u} className="block break-all text-sm text-primary underline">
                     {u}
-                  </a>
+                  </ExtLink>
                 </li>
               ))}
             </ul>

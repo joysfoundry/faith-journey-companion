@@ -4,6 +4,7 @@ import { Heart, NotebookPen, Pencil, Play } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
+import { ExternalLink as ExtLink } from "@/components/ui/external-link";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -50,26 +51,16 @@ function MediaItem({ m }: { m: PrayerMedia }) {
       </p>
       {m.kind === "video" ? (
         m.source === "link" ? (
-          <a
-            href={m.url}
-            target="_blank"
-            rel="noreferrer"
-            className="mt-1 block break-all text-sm text-primary underline"
-          >
+          <ExtLink href={m.url} className="mt-1 block break-all text-sm text-primary underline">
             {m.url}
-          </a>
+          </ExtLink>
         ) : (
           <video controls src={m.url} className="mt-1 w-full rounded-md" />
         )
       ) : m.source === "link" ? (
-        <a
-          href={m.url}
-          target="_blank"
-          rel="noreferrer"
-          className="mt-1 block break-all text-sm text-primary underline"
-        >
+        <ExtLink href={m.url} className="mt-1 block break-all text-sm text-primary underline">
           {m.url}
-        </a>
+        </ExtLink>
       ) : (
         <audio controls src={m.url} className="mt-1 w-full" />
       )}
@@ -205,14 +196,12 @@ function ViewPrayer() {
             <p className="eyebrow">Source</p>
             <p className="mt-1 text-sm">{source.name}</p>
             {source.url ? (
-              <a
+              <ExtLink
                 className="mt-1 block break-all text-sm text-primary underline"
                 href={source.url}
-                target="_blank"
-                rel="noreferrer"
               >
                 {source.url}
-              </a>
+              </ExtLink>
             ) : null}
           </section>
         ) : null}
@@ -386,9 +375,9 @@ function EditPrayerForm() {
                   {source.file_reference ? ` · ${source.file_reference}` : ""}
                 </p>
                 {source.url ? (
-                  <a className="text-sm underline" href={source.url}>
+                  <ExtLink className="text-sm underline" href={source.url}>
                     View source
-                  </a>
+                  </ExtLink>
                 ) : null}
               </section>
             ) : null}
