@@ -2,37 +2,31 @@
 id: ACTS-90
 title: Platform decision — mobile-first, mobile web (no app store)
 spine:
-status: To Do
+status: Done            # decision recorded (not a build story)
+type: decision
 origin: human-directed
 approved_by: JC
 depends_on: []
 relates_to: [ACTS-82, ACTS-87, ACTS-88]
-started_at:
 updated: 2026-08-25T21:47:01-0700
 latest_handoff: null
 sessions: 0
 ---
 
-## Goal
-As the owner, I want the delivery platform decided and written down so every later story
-builds for the right target: **mobile-first, but delivered as mobile web (web-view first),
-NOT the native app store.**
+## Recorded decision (JC, 2026-08-25)
+This is a **recorded decision**, not a story to build.
 
-## Stated direction (JC, 2026-08-25)
-- Mobile-first — yes.
-- Delivered as **web / mobile web**, viewed in a browser.
-- **Will not be released in the app store** (no native iOS/Android build) — at least first.
+- **Mobile-first** — yes.
+- Delivered as **mobile web (web-view first)**, viewed in a browser.
+- **Not released in the app store** — no native iOS/Android build.
+- **Leaning PWA** (installable / offline) rather than plain responsive web — but **not
+  committed yet: parked, revisit later.** Do not build PWA plumbing until JC confirms.
 
-## To decide / capture
-- [ ] **PWA vs plain responsive web** — installable (Add to Home Screen) + offline via
-      service worker, or just a responsive site? (App already stores data in localStorage,
-      which suits a PWA + offline-first.)
-- [ ] Implications to document: offline behavior, "install" UX, no native APIs
-      (camera/OCR — see ACTS-81), push notifications (limited on iOS web).
-- [ ] How this interacts with auth/persistence (ACTS-82/87/88) — a public web app likely
-      wants real accounts.
-- [ ] Record the decision in the roadmap so it stops being an open question.
+## Parked sub-question
+- **PWA vs plain responsive web** — deferred. When revisited, weigh installable +
+  offline (service worker; suits the current localStorage/offline-first model) vs. a
+  plain responsive site, and note implications: "install" UX, no native APIs
+  (camera/OCR — ACTS-81), limited iOS web push. Ties into auth/persistence
+  (ACTS-82/87/88).
 
-## Notes
-Spun off from the ACTS-75 workflow chat. This is a **spike/decision** story — output is a
-written decision + any small config (e.g. PWA manifest) if we commit to PWA.
+_Collapsed from a spike story to a recorded decision on 2026-08-25 (ACTS-75 session)._

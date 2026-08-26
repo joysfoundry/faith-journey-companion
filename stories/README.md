@@ -43,6 +43,6 @@ Highlights / recently added:
 - **ACTS-82** — Enable Supabase persistence (backend for auth; parked as a future story).
 - **ACTS-87 / ACTS-88** — Auth (email login + session) / Account creation (sign up with email).
 - **ACTS-89** — Guided-prayer expand/collapse + expand-all/collapse-all → [`ACTS-89.md`](ACTS-89.md).
-- **ACTS-90** — Platform decision: mobile-first, mobile web, no app store → [`ACTS-90.md`](ACTS-90.md).
+- **ACTS-90** — Platform: mobile-first, mobile web, no app store — **recorded decision** (PWA leaning but parked) → [`ACTS-90.md`](ACTS-90.md).
 
 To begin one in a clean chat: `/start ACTS-NN`.

@@ -211,7 +211,7 @@ work beyond this list starts at ACTS-91.
 | ACTS-87 |  | P2 | Story | To Do | **Auth — email login + session** | _New._ Email/password sign-in, session persistence, sign-out, protected/authed state in the app shell. Likely **Supabase Auth** → depends on / relates to ACTS-82. |
 | ACTS-88 |  | P2 | Story | To Do | **Account creation — sign up with email** | _New._ Email sign-up + verification, create a profile/account record, then the localStorage data becomes per-account. Pairs with ACTS-87; relates to ACTS-82. |
 | ACTS-89 |  | P2 | Story | To Do | **Guided-prayer expand/collapse + expand-all/collapse-all** | _New (spinoff → `stories/ACTS-89.md`)._ Per-prayer expand/collapse **and** an expand-all/collapse-all control in the **guided prayer (Pray mode)** view (`src/routes/pray.tsx`); test the usage/interaction in that view. |
-| ACTS-90 |  | P3 | Spike | To Do | **Platform decision — mobile-first, mobile web (no app store)** | _New (spinoff → `stories/ACTS-90.md`)._ Capture & commit the direction: **mobile-first but delivered as mobile web, web-view first — NOT the native app store.** Decide PWA (installable/offline) vs plain responsive web, and note the implications for the roadmap. |
+| ACTS-90 |  | — | Decision | Decided | **Platform — mobile-first, mobile web, no app store** | _Recorded decision (not a build story) → `stories/ACTS-90.md`._ Mobile-first, delivered as **mobile web (web-view first), NOT the app store**. **Leaning PWA but parked** — don't build PWA plumbing until JC confirms. |
 
 ---
 
