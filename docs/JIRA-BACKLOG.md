@@ -194,19 +194,19 @@ _Statuses: **To Do** · **In Progress** · **Blocked** · **Done**. Commits are 
 Future work, un-numbered until picked up. When you start one, it takes the next
 `ACTS-NN` from [`.counter`](../stories/.counter) (so the next started story is ACTS-76).
 
-| Priority | Type | Summary | Detail |
-|---|---|---|---|
-| P1 | Story | **Pray-mode tracker (ACTS-style)** | Prominent current item, **completed prayers grayed out**, **auto-scroll** as you advance. Preview already emits the fully-expanded list. |
-| P2 | Story | **Touch drag-and-drop in builder** | Current reorder uses HTML5 DnD (desktop only). Add a touch lib (e.g. dnd-kit). |
-| P2 | Task | **Push `prd-gap-merge` + open PR** | Sandbox can't push. `git push -u origin prd-gap-merge`, then PR into main. |
-| P2 | Story | **Mystery-detail versions (Scripture vs meditation)** | Partly delivered by ACTS-55/56 (selectable bodies + authoring editor). Remaining: let the Session/Template **choose which variant to present**. Examples: `~/Downloads/Mysteries 1.md` (Scripture), `Mysteries 2.md` (meditation). |
-| P3 | Story | **Per-prayer media in devotion import** | Audio/video attaches to single prayers; bundle import currently doesn't — add media per detected prayer. |
-| P3 | Story | **Real OCR for photo intake** | Photo intake is a manual-transcribe seam; wire client-side OCR (tesseract.js) or cloud. |
-| P3 | Story | **Enable Supabase persistence** | fjc's snake_case model maps 1:1 to Postgres; move the localStorage store to Supabase. |
-| P3 | Bug | **Hydration race on remaining edit routes** | Fixed for prayer editor + template builder; audit other `useState`-from-store routes and gate on `ready`. |
-| P3 | Task | **Repetition-count input design** | Current ×N control is a −/+ stepper — tedious for ×10/×53. Recommend tap-the-"×N"-to-type. |
-| P4 | Story | **Restore "start from existing template" (Duplicate)** | Removed in the builder redesign; re-add as a Duplicate action if wanted. |
-| P4 | Story | **ACTS framing** | Thread Adoration · Contrition · Thanksgiving · Supplication where it fits (branding / prayer categorization). |
+| Priority | EPIC | Type | Summary | Detail |
+|---|---|---|---|---|
+| P1 |  | Story | **Pray-mode tracker (ACTS-style)** | Prominent current item, **completed prayers grayed out**, **auto-scroll** as you advance. Preview already emits the fully-expanded list. |
+| P2 |  | Story | **Touch drag-and-drop in builder** | Current reorder uses HTML5 DnD (desktop only). Add a touch lib (e.g. dnd-kit). |
+| P2 |  | Task | **Push `prd-gap-merge` + open PR** | Sandbox can't push. `git push -u origin prd-gap-merge`, then PR into main. |
+| P2 |  | Story | **Mystery-detail versions (Scripture vs meditation)** | Partly delivered by ACTS-55/56 (selectable bodies + authoring editor). Remaining: let the Session/Template **choose which variant to present**. Examples: `~/Downloads/Mysteries 1.md` (Scripture), `Mysteries 2.md` (meditation). |
+| P3 |  | Story | **Per-prayer media in devotion import** | Audio/video attaches to single prayers; bundle import currently doesn't — add media per detected prayer. |
+| P3 |  | Story | **Real OCR for photo intake** | Photo intake is a manual-transcribe seam; wire client-side OCR (tesseract.js) or cloud. |
+| P3 |  | Story | **Enable Supabase persistence** | fjc's snake_case model maps 1:1 to Postgres; move the localStorage store to Supabase. |
+| P3 |  | Bug | **Hydration race on remaining edit routes** | Fixed for prayer editor + template builder; audit other `useState`-from-store routes and gate on `ready`. |
+| P3 |  | Task | **Repetition-count input design** | Current ×N control is a −/+ stepper — tedious for ×10/×53. Recommend tap-the-"×N"-to-type. |
+| P4 |  | Story | **Restore "start from existing template" (Duplicate)** | Removed in the builder redesign; re-add as a Duplicate action if wanted. |
+| P4 |  | Story | **ACTS framing** | Thread Adoration · Contrition · Thanksgiving · Supplication where it fits (branding / prayer categorization). |
 
 ---
 
