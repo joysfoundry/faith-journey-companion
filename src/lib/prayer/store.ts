@@ -4,6 +4,7 @@
  */
 import { createContext, useContext } from "react";
 import type {
+  AppSettings,
   Database,
   HowTo,
   ID,
@@ -427,6 +428,8 @@ export interface AppStore {
   addMassExperience: (mass: MassExperience) => void;
   /** Pin the devotion the Home "daily" prayer card starts; undefined = the default Rosary. */
   setDailyTemplate: (templateId: ID | undefined) => void;
+  /** Merge a partial patch into app-level settings (Bible app, translation, …). */
+  updateSettings: (patch: Partial<AppSettings>) => void;
 }
 
 export const AppStoreContext = createContext<AppStore | null>(null);
@@ -1249,6 +1252,9 @@ export const mutations = {
   },
   addMassExperience(db: Database, mass: MassExperience): Database {
     return { ...db, mass_experiences: [mass, ...db.mass_experiences] };
+  },
+  updateSettings(db: Database, patch: Partial<AppSettings>): Database {
+    return { ...db, settings: { ...db.settings, ...patch } };
   },
   setDailyTemplate(db: Database, templateId: ID | undefined): Database {
     return { ...db, settings: { ...db.settings, daily_template_id: templateId } };

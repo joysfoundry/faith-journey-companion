@@ -1,12 +1,22 @@
-import { ChevronDown, ChevronRight, ExternalLink, Mic, NotebookPen, Plus } from "lucide-react";
+import {
+  BookOpen,
+  ChevronDown,
+  ChevronRight,
+  ExternalLink,
+  Mic,
+  NotebookPen,
+  Plus,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ExternalLink as ExtLink } from "@/components/ui/external-link";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { resolveBibleHomeUrl } from "@/lib/bible/apps";
 import { todaysWord } from "@/domain/placeholderData";
 import { newId, todayISO } from "@/lib/prayer/compiler";
 import {
@@ -51,6 +61,8 @@ function RowIcon({
  */
 export function WordSection({ onReflect }: { onReflect: (linkId: string) => void }) {
   const { db, addMassExperience } = useApp();
+  // The reader's Bible (YouVersion by default) — linked as "Online Bible".
+  const bibleHomeUrl = resolveBibleHomeUrl(db.settings);
   const readingPrograms = db.knowledge_items
     .filter((i) => isScriptureProgram(i) && i.status !== "finished")
     .sort(byStatusThenRecent);
@@ -92,15 +104,13 @@ export function WordSection({ onReflect }: { onReflect: (linkId: string) => void
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <span className="eyebrow block text-primary">Daily Readings</span>
-            <a
+            <ExtLink
               href={todaysWord.readingsUrl}
-              target="_blank"
-              rel="noreferrer"
               className="inline-flex items-start gap-1 font-display text-base leading-snug text-foreground underline-offset-4 hover:text-primary hover:underline"
             >
               {litDay ? litDay.title : "Today's readings"}
               <ExternalLink className="mt-1 size-4 shrink-0 text-muted-foreground" aria-hidden />
-            </a>
+            </ExtLink>
             {litDay && isNamedCelebration ? (
               <p className="mt-0.5 text-xs text-muted-foreground">
                 {`${litDay.rankLabel} · ${litDay.ferialTitle}`}
@@ -119,6 +129,18 @@ export function WordSection({ onReflect }: { onReflect: (linkId: string) => void
             <NotebookPen className="size-4" aria-hidden />
           </RowIcon>
         </div>
+
+        {/* Open the reader's own Bible (from Settings; YouVersion by default). */}
+        {bibleHomeUrl ? (
+          <ExtLink
+            href={bibleHomeUrl}
+            className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-primary"
+          >
+            <BookOpen className="size-3.5" aria-hidden />
+            Online Bible
+            <ExternalLink className="size-3 text-muted-foreground/70" aria-hidden />
+          </ExtLink>
+        ) : null}
 
         <Collapsible open={massOpen} onOpenChange={setMassOpen} className="mt-3">
           <CollapsibleTrigger className="flex w-full items-center gap-1.5 border-t border-border/60 pt-2 text-left text-xs text-muted-foreground transition-colors hover:text-foreground">
@@ -226,15 +248,13 @@ export function WordSection({ onReflect }: { onReflect: (linkId: string) => void
               <li key={program.id} className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   {primaryUrl(program) ? (
-                    <a
+                    <ExtLink
                       href={primaryUrl(program)}
-                      target="_blank"
-                      rel="noreferrer"
                       className="inline-flex items-center gap-1 text-sm font-medium text-foreground underline-offset-4 hover:text-primary hover:underline"
                     >
                       {program.title}
                       <ExternalLink className="size-3.5 text-muted-foreground" aria-hidden />
-                    </a>
+                    </ExtLink>
                   ) : (
                     <p className="text-sm font-medium text-foreground">{program.title}</p>
                   )}

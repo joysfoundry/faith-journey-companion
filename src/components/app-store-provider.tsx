@@ -146,6 +146,8 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
         setDb((d) => mutations.addMassExperience(d, m)),
       setDailyTemplate: (templateId: string | undefined) =>
         setDb((d) => mutations.setDailyTemplate(d, templateId)),
+      updateSettings: (patch: Parameters<typeof mutations.updateSettings>[1]) =>
+        setDb((d) => mutations.updateSettings(d, patch)),
     }),
     [
       db,

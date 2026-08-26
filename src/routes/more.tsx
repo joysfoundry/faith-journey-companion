@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { CalendarDays, Download, Lightbulb } from "lucide-react";
+import { CalendarDays, Download, Lightbulb, Settings } from "lucide-react";
 
 import { AppShell } from "@/components/layout/PageShell";
 import { SECTION_LABEL, VOICE_LABEL } from "@/lib/prayer/knowledge";
@@ -44,6 +44,12 @@ function MorePage() {
       icon: Download,
       title: "Add prayers",
       desc: "Paste a booklet or type a single prayer",
+    },
+    {
+      to: "/settings",
+      icon: Settings,
+      title: "Settings",
+      desc: "Your Bible app and daily devotion",
     },
   ] as const;
 

@@ -1427,7 +1427,7 @@ const allPrayers = [...base, ...songs];
 
 export function createSeedDatabase(): Database {
   return {
-    settings: {},
+    settings: { bible_app_id: "youversion", bible_translation: "NIV" },
     sources: [
       {
         id: "src-tradition",

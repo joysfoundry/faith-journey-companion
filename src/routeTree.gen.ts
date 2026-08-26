@@ -17,6 +17,7 @@ import { Route as MoreRouteImport } from './routes/more'
 import { Route as PrayRouteImport } from './routes/pray'
 import { Route as PrayersRouteImport } from './routes/prayers'
 import { Route as ReflectionsRouteImport } from './routes/reflections'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as WordRouteImport } from './routes/word'
 import { Route as DevotionDevotionIdRouteImport } from './routes/devotion.$devotionId'
 import { Route as KnowledgeKnowledgeIdRouteImport } from './routes/knowledge.$knowledgeId'
@@ -64,6 +65,11 @@ const PrayersRoute = PrayersRouteImport.update({
 const ReflectionsRoute = ReflectionsRouteImport.update({
   id: '/reflections',
   path: '/reflections',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WordRoute = WordRouteImport.update({
@@ -116,6 +122,7 @@ export interface FileRoutesByFullPath {
   '/pray': typeof PrayRoute
   '/prayers': typeof PrayersRoute
   '/reflections': typeof ReflectionsRoute
+  '/settings': typeof SettingsRoute
   '/word': typeof WordRoute
   '/devotion/$devotionId': typeof DevotionDevotionIdRoute
   '/knowledge/$knowledgeId': typeof KnowledgeKnowledgeIdRoute
@@ -134,6 +141,7 @@ export interface FileRoutesByTo {
   '/pray': typeof PrayRoute
   '/prayers': typeof PrayersRoute
   '/reflections': typeof ReflectionsRoute
+  '/settings': typeof SettingsRoute
   '/word': typeof WordRoute
   '/devotion/$devotionId': typeof DevotionDevotionIdRoute
   '/knowledge/$knowledgeId': typeof KnowledgeKnowledgeIdRoute
@@ -153,6 +161,7 @@ export interface FileRoutesById {
   '/pray': typeof PrayRoute
   '/prayers': typeof PrayersRoute
   '/reflections': typeof ReflectionsRoute
+  '/settings': typeof SettingsRoute
   '/word': typeof WordRoute
   '/devotion/$devotionId': typeof DevotionDevotionIdRoute
   '/knowledge/$knowledgeId': typeof KnowledgeKnowledgeIdRoute
@@ -173,6 +182,7 @@ export interface FileRouteTypes {
     | '/pray'
     | '/prayers'
     | '/reflections'
+    | '/settings'
     | '/word'
     | '/devotion/$devotionId'
     | '/knowledge/$knowledgeId'
@@ -191,6 +201,7 @@ export interface FileRouteTypes {
     | '/pray'
     | '/prayers'
     | '/reflections'
+    | '/settings'
     | '/word'
     | '/devotion/$devotionId'
     | '/knowledge/$knowledgeId'
@@ -209,6 +220,7 @@ export interface FileRouteTypes {
     | '/pray'
     | '/prayers'
     | '/reflections'
+    | '/settings'
     | '/word'
     | '/devotion/$devotionId'
     | '/knowledge/$knowledgeId'
@@ -228,6 +240,7 @@ export interface RootRouteChildren {
   PrayRoute: typeof PrayRoute
   PrayersRoute: typeof PrayersRoute
   ReflectionsRoute: typeof ReflectionsRoute
+  SettingsRoute: typeof SettingsRoute
   WordRoute: typeof WordRoute
   DevotionDevotionIdRoute: typeof DevotionDevotionIdRoute
   KnowledgeKnowledgeIdRoute: typeof KnowledgeKnowledgeIdRoute
@@ -294,6 +307,13 @@ declare module '@tanstack/react-router' {
       path: '/reflections'
       fullPath: '/reflections'
       preLoaderRoute: typeof ReflectionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/word': {
@@ -364,6 +384,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrayRoute: PrayRoute,
   PrayersRoute: PrayersRoute,
   ReflectionsRoute: ReflectionsRoute,
+  SettingsRoute: SettingsRoute,
   WordRoute: WordRoute,
   DevotionDevotionIdRoute: DevotionDevotionIdRoute,
   KnowledgeKnowledgeIdRoute: KnowledgeKnowledgeIdRoute,

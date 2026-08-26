@@ -679,6 +679,19 @@ export interface AppSettings {
    * Family Rosary) as the daily prayer.
    */
   daily_template_id?: ID | undefined;
+  /**
+   * The Bible app the reader uses (an id from `BIBLE_APPS`, e.g. "youversion",
+   * or "none"/"other"). Powers "open in your Bible" deep-links across the app.
+   */
+  bible_app_id?: string | undefined;
+  /** Preferred translation id (from `BIBLE_TRANSLATIONS`, e.g. "NIV"). */
+  bible_translation?: string | undefined;
+  /**
+   * Web address of the reader's Bible when `bible_app_id === "other"` — the app
+   * isn't in our catalog, so this is where "open my Bible" links point. Specific
+   * passages still open via Bible Gateway (we can't template an unknown app).
+   */
+  bible_app_custom_url?: string | undefined;
 }
 
 export interface Database {
