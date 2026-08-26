@@ -13,31 +13,29 @@ and `ACTS` used wherever the kit says `{{PROJECT_KEY}}`.
 
 ## Board
 
-Newest / active on top. `active` view = hide `Done`. This table is the source of truth — keep it in sync when a pointer changes.
+Newest / active on top. `active` view = hide `Done`. This table is the source of truth for
+active work — keep it in sync when a pointer changes. The **full numbered ledger** of all
+75 stories (oldest-first, commits logged, EPIC column) lives in
+[`docs/JIRA-BACKLOG.md`](../docs/JIRA-BACKLOG.md).
 
 | ID | Title | Status | Depends on | Next step | Updated |
 |----|-------|--------|-----------|-----------|---------|
-| — | _No stories filed yet — see "Recreate next session" below._ | — | — | — | — |
+| [ACTS-75](ACTS-75.md) | Number the backlog into ACTS stories + EPIC column + process docs | In Progress | — | JC fills in the EPIC column; then commit + push the docs | 2026-08-25 |
+| ACTS-01…ACTS-74 | _Historical Done work_ | Done | — | See the [full ledger](../docs/JIRA-BACKLOG.md) | 2026-08-25 |
 
 _Statuses: **To Do** · **In Progress** · **Blocked** · **Done**._
 
-## Recreate next session
+## How the backlog is numbered
 
-The completed and open work to file as `ACTS-<n>` stories already exists in prose —
-convert it into numbered stories next chat, bumping `.counter` as you go:
+- Every completed unit of work is one `ACTS-NN` row, numbered **oldest-first by commit**.
+- Numbers are **permanent** — never renumbered; new work takes the next number.
+- Each row **logs its commit(s)**; the **EPIC** column is left blank for JC to fill in.
+- [`.counter`](.counter) holds the last-used number (**75**); next started story = ACTS-76.
+- Full detail + the maintenance process: [`docs/JIRA-BACKLOG.md` → Process](../docs/JIRA-BACKLOG.md#process).
 
-- [`docs/JIRA-BACKLOG.md`](../docs/JIRA-BACKLOG.md) — the ACTS PRD gap-merge ticket list (Done + Open), the best starting point.
-- [`HANDOFF.md`](../HANDOFF.md) — running session log, newest first.
+## Open (not yet started)
 
-Work streams seen so far (not exhaustive; group as you prefer):
-
-- Prayer Sessions / Session Builder epic
-- USCCB basic prayers seed
-- Song / hymn prayer type + Caro family prayers
-- Litany devotions
-- Knowledge → Vessels (Voice / Channel / Content model)
-- Mystery-detail versions (selectable bodies)
-- Unified calendar recurrence (RRULE) + novena removal
-- Liturgical day titles on the Word card
-- **Account Settings + Bible app + open-links-in-new-tab** (2026-08-25 — this session; commits `9f94632`, `1527cdd`, `5a8b753`)
-- Open backlog items (pray-mode tracker, touch DnD, Supabase persistence, etc. — see JIRA-BACKLOG.md)
+The remaining backlog (pray-mode tracker, touch DnD, Supabase persistence, mystery-variant
+picker, etc.) is un-numbered until picked up — see the
+[Open section of the ledger](../docs/JIRA-BACKLOG.md#-open--not-yet-started). Starting one
+draws the next `ACTS-NN` from [`.counter`](.counter).
