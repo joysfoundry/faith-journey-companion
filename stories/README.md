@@ -20,7 +20,7 @@ active work — keep it in sync when a pointer changes. The **full numbered ledg
 
 | ID | Title | Status | Depends on | Next step | Updated |
 |----|-------|--------|-----------|-----------|---------|
-| [ACTS-75](ACTS-75.md) | Number the backlog into ACTS stories + EPIC column + process docs | In Progress | — | JC fills in the EPIC column; then commit + push the docs | 2026-08-25 |
+| [ACTS-75](ACTS-75.md) | Number the backlog into ACTS stories + EPIC column + process docs | Done | — | Follow-ups (not blockers): push `main`; JC fills EPIC values | 2026-08-25 |
 | ACTS-01…ACTS-74 | _Historical Done work_ | Done | — | See the [full ledger](../docs/JIRA-BACKLOG.md) | 2026-08-25 |
 
 _Statuses: **To Do** · **In Progress** · **Blocked** · **Done**._
