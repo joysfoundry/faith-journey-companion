@@ -1,0 +1,11 @@
+{
+  "tracker": "none",
+  "projectKey": "ACTS",
+  "idPrefix": "ACTS",
+  "paths": {
+    "stories": "stories",
+    "sessionSummaries": "docs/session-summaries",
+    "spec": "docs/JIRA-BACKLOG.md"
+  },
+  "notes": "Local-only story tracking — NOT wired to Jira. Follow ~/.claude/commands/WORKFLOW.md but SKIP every Jira/tracker step (step 5 of /handoff, all of /sync, etc.) and substitute ACTS wherever the kit says {{PROJECT_KEY}}. Story ids are ACTS-<n> drawn from stories/.counter (holds the last-used number; next id = counter+1; increment on use) — we use the real ACTS prefix from the start, never LOCAL-n. The board (a document table, source of truth) is stories/README.md, committed to Git. Pointers: stories/ACTS-<n>.md. Session handoffs: stories/ACTS-<n>/session-NN.md. Template: stories/_TEMPLATE.md. Each chat is tied to one story."
+}
