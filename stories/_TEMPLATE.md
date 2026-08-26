@@ -54,5 +54,7 @@ final: false                   # true on the closing handoff (/done)
 ## When you file or advance a story
 1. Increment `.counter` (its value is the last-used number).
 2. Create/update the pointer and (on a working session) the `session-NN.md` handoff.
-3. **Update the board row in `README.md`** — it's the source of truth.
+3. **Update the board row in `README.md`** — it's the source of truth. **Link the id**
+   to its pointer, e.g. `[ACTS-<n>](ACTS-<n>.md)` on the board and
+   `[ACTS-<n>](../stories/ACTS-<n>.md)` in `docs/JIRA-BACKLOG.md`, now that the pointer exists.
 4. Commit story docs to `main` with a plain `docs:` type (code uses the `ACTS-<n>:` prefix), ending with the `Co-Authored-By` trailer. Push separately.

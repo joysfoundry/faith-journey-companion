@@ -185,7 +185,7 @@ _Statuses: **To Do** · **In Progress** · **Blocked** · **Done**. Commits are 
 | # | EPIC | Type | Summary | Status | Commit(s) |
 |---|------|------|---------|--------|-----------|
 | ACTS-74 |  | Chore | Set up local ACTS story board (Git-tracked, no Jira) | Done | `b1d7e74` |
-| ACTS-75 |  | Chore | Number the backlog into ACTS stories (oldest-first) + EPIC column + process docs | In Progress | _this chat — pending commit_ |
+| [ACTS-75](../stories/ACTS-75.md) |  | Chore | Number the backlog into ACTS stories (oldest-first) + EPIC column + process docs | Done | `f33c564` … `2ab5d5f` (this chat) |
 
 ---
 
@@ -193,7 +193,8 @@ _Statuses: **To Do** · **In Progress** · **Blocked** · **Done**. Commits are 
 
 Every open story now carries an `ACTS-NN` id so you can reference it when starting a chat
 (`/start ACTS-NN`). Not yet started — IDs are reserved; `.counter` is **90**, so brand-new
-work beyond this list starts at ACTS-91.
+work beyond this list starts at ACTS-91. **An id links to its pointer file when one exists**
+(created when the story is started); otherwise it's plain text.
 
 | # | EPIC | Priority | Type | Status | Summary | Detail |
 |---|---|---|---|---|---|---|
@@ -210,8 +211,8 @@ work beyond this list starts at ACTS-91.
 | ACTS-86 |  | P4 | Story | To Do | **ACTS framing** | Thread Adoration · Contrition · Thanksgiving · Supplication where it fits (branding / prayer categorization). |
 | ACTS-87 |  | P2 | Story | To Do | **Auth — email login + session** | _New._ Email/password sign-in, session persistence, sign-out, protected/authed state in the app shell. Likely **Supabase Auth** → depends on / relates to ACTS-82. |
 | ACTS-88 |  | P2 | Story | To Do | **Account creation — sign up with email** | _New._ Email sign-up + verification, create a profile/account record, then the localStorage data becomes per-account. Pairs with ACTS-87; relates to ACTS-82. |
-| ACTS-89 |  | P2 | Story | To Do | **Guided-prayer expand/collapse + expand-all/collapse-all** | _New (spinoff → `stories/ACTS-89.md`)._ Per-prayer expand/collapse **and** an expand-all/collapse-all control in the **guided prayer (Pray mode)** view (`src/routes/pray.tsx`); test the usage/interaction in that view. |
-| ACTS-90 |  | — | Decision | Decided | **Platform — mobile-first, mobile web, no app store** | _Recorded decision (not a build story) → `stories/ACTS-90.md`._ Mobile-first, delivered as **mobile web (web-view first), NOT the app store**. **Leaning PWA but parked** — don't build PWA plumbing until JC confirms. |
+| [ACTS-89](../stories/ACTS-89.md) |  | P2 | Story | To Do | **Guided-prayer expand/collapse + expand-all/collapse-all** | _New (spinoff)._ Per-prayer expand/collapse **and** an expand-all/collapse-all control in the **guided prayer (Pray mode)** view (`src/routes/pray.tsx`); test the usage/interaction in that view. |
+| [ACTS-90](../stories/ACTS-90.md) |  | — | Decision | Decided | **Platform — mobile-first, mobile web, no app store** | _Recorded decision (not a build story)._ Mobile-first, delivered as **mobile web (web-view first), NOT the app store**. **Leaning PWA but parked** — don't build PWA plumbing until JC confirms. |
 
 ---
 
