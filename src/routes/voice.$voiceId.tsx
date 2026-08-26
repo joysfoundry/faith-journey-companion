@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { AppShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
+import { ExternalLink as ExtLink } from "@/components/ui/external-link";
 import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
@@ -163,10 +164,8 @@ function VoiceHubPage() {
               <ul className="divide-y divide-border/60">
                 {voice!.channels.map((c) => (
                   <li key={c.id} className="flex items-center gap-2 px-4 py-3">
-                    <a
+                    <ExtLink
                       href={c.url}
-                      target="_blank"
-                      rel="noreferrer"
                       className="flex min-w-0 flex-1 items-center justify-between gap-2 transition-colors hover:text-primary"
                     >
                       <span className="min-w-0">
@@ -178,7 +177,7 @@ function VoiceHubPage() {
                         </span>
                       </span>
                       <ExternalLink className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-                    </a>
+                    </ExtLink>
                     <button
                       onClick={() => toggleChannelFavorite(voice!.id, c.id)}
                       aria-label={c.favorite ? "Unpin from Home" : "Pin to Home"}
@@ -222,15 +221,13 @@ function VoiceHubPage() {
                           <div className="mt-1 flex flex-wrap gap-1">
                             {item.links.map((l, i) => (
                               <span key={i} className="inline-flex items-center">
-                                <a
+                                <ExtLink
                                   href={l.url}
-                                  target="_blank"
-                                  rel="noreferrer"
                                   className="inline-flex items-center gap-1 rounded-l-full bg-secondary py-0.5 pl-2 pr-1 text-[11px] font-medium text-muted-foreground hover:text-primary"
                                 >
                                   {l.label || LINK_PLATFORM_LABELS[l.platform]}
                                   <ExternalLink className="size-3" aria-hidden />
-                                </a>
+                                </ExtLink>
                                 <button
                                   onClick={() => toggleContentLinkFavorite(item.id, i)}
                                   aria-label={l.favorite ? "Unpin from Home" : "Pin to Home"}
