@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Check, X } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, X } from "lucide-react";
 import { AppShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
 import { ExternalLink as ExtLink } from "@/components/ui/external-link";
@@ -15,6 +15,12 @@ import {
   sessionProgress,
 } from "@/lib/prayer/compiler";
 import type { ListenSource, SessionItem } from "@/lib/prayer/types";
+import {
+  GUIDE_EXPAND_DEFAULT,
+  GUIDE_EXPAND_OPTIONS,
+  isStepExpanded,
+  type GuideExpandMode,
+} from "@/lib/prayer/guideExpansion";
 
 export const Route = createFileRoute("/session/$sessionId")({
   head: () => ({
@@ -306,17 +312,6 @@ function PrayersTab({
                   Now
                 </span>
               ) : null}
-              <span
-                className={cn(
-                  "absolute right-3 top-3 flex size-6 items-center justify-center rounded-full border transition",
-                  done
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border bg-background text-transparent",
-                )}
-                aria-hidden
-              >
-                <Check className="size-4" />
-              </span>
               <ItemView item={item} showMeditation />
             </div>
           );
@@ -334,7 +329,14 @@ function mapLabel(item: SessionItem): string {
     : base;
 }
 
-/** Tab 2 — a summarized guide to the whole session with a check circle per step. */
+/**
+ * Tab 2 — a summarized guide to the whole session, one line per step with a
+ * check circle. Each line can expand to reveal the step's full text: tapping the
+ * check circle marks the step done, tapping the rest of the row toggles that
+ * line open/closed. An expansion mode drives which lines auto-open as you pray
+ * (follow the current step, trail the ones you've finished, all, or none); a
+ * manual tap overrides the mode for that line until the mode changes.
+ */
 function GuideTab({
   items,
   estMin,
@@ -353,15 +355,48 @@ function GuideTab({
   onToggle: (itemId: string) => void;
 }) {
   const currentRef = useAutoScrollToCurrent<HTMLLIElement>(currentId, active, reducedMotion);
+  const [mode, setMode] = useState<GuideExpandMode>(GUIDE_EXPAND_DEFAULT);
+  // Per-step manual open/close that wins over the mode. Cleared when the mode
+  // changes so the freshly-picked mode drives every step again.
+  const [overrides, setOverrides] = useState<Record<string, boolean>>({});
+
+  const changeMode = (next: GuideExpandMode) => {
+    setMode(next);
+    setOverrides({});
+  };
+  const toggleStep = (item: SessionItem) =>
+    setOverrides((o) => ({
+      ...o,
+      [item.id]: !isStepExpanded(mode, item, currentId, o),
+    }));
+
   return (
     <div className="px-5 py-6">
       {dayLabel ? <p className="mb-1 text-sm font-medium text-primary">{dayLabel}</p> : null}
       <p className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">
         {items.length} steps{estMin ? ` · ~${estMin} min` : ""}
       </p>
-      <p className="mb-4 text-xs text-muted-foreground">
-        Tap a circle to mark a step done. Progress is shared with the Prayers tab.
-      </p>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <p className="text-xs text-muted-foreground">
+          Tap the circle to mark done; tap a line to open it. Progress is shared with the Prayers
+          tab.
+        </p>
+        <label className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
+          <span className="sr-only">Expand</span>
+          <select
+            value={mode}
+            onChange={(e) => changeMode(e.target.value as GuideExpandMode)}
+            aria-label="Which steps to expand"
+            className="h-8 rounded-md border border-input bg-card px-2 text-xs"
+          >
+            {GUIDE_EXPAND_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
       <ol className="space-y-1">
         {items.map((item, i) => {
           const heading =
@@ -371,6 +406,7 @@ function GuideTab({
               : undefined;
           const done = item.completion_status === "complete";
           const current = item.id === currentId;
+          const expanded = isStepExpanded(mode, item, currentId, overrides);
           return (
             <li key={item.id} ref={current ? currentRef : undefined}>
               {heading ? (
@@ -378,44 +414,66 @@ function GuideTab({
                   {heading}
                 </p>
               ) : null}
-              <button
-                type="button"
-                onClick={() => onToggle(item.id)}
-                aria-pressed={done}
-                aria-current={current ? "step" : undefined}
+              <div
                 className={cn(
-                  "flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left transition hover:bg-muted/60",
+                  "rounded-xl transition",
                   current ? "bg-primary/10 ring-1 ring-primary/30" : "",
                 )}
               >
-                <span
-                  className={cn(
-                    "flex size-6 shrink-0 items-center justify-center rounded-full border transition",
-                    done
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : current
-                        ? "border-primary bg-background"
-                        : "border-border bg-background",
-                  )}
-                >
-                  {done ? <Check className="size-4" /> : null}
-                </span>
-                <span className="w-6 shrink-0 text-right text-xs text-muted-foreground tabular-nums">
-                  {i + 1}
-                </span>
-                <span
-                  className={cn(
-                    "text-sm",
-                    done
-                      ? "text-muted-foreground line-through"
-                      : current
-                        ? "font-semibold text-primary"
-                        : "font-medium",
-                  )}
-                >
-                  {mapLabel(item)}
-                </span>
-              </button>
+                <div className="flex w-full items-center gap-3 px-2 py-2 text-left">
+                  <button
+                    type="button"
+                    onClick={() => onToggle(item.id)}
+                    aria-pressed={done}
+                    aria-label={
+                      done ? `Mark "${mapLabel(item)}" not done` : `Mark "${mapLabel(item)}" done`
+                    }
+                    className={cn(
+                      "flex size-6 shrink-0 items-center justify-center rounded-full border transition",
+                      done
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : current
+                          ? "border-primary bg-background"
+                          : "border-border bg-background hover:border-primary",
+                    )}
+                  >
+                    {done ? <Check className="size-4" /> : null}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => toggleStep(item)}
+                    aria-expanded={expanded}
+                    aria-current={current ? "step" : undefined}
+                    className="flex min-w-0 flex-1 items-center gap-3 rounded-md text-left"
+                  >
+                    <span className="w-6 shrink-0 text-right text-xs text-muted-foreground tabular-nums">
+                      {i + 1}
+                    </span>
+                    <span
+                      className={cn(
+                        "min-w-0 flex-1 text-sm",
+                        done
+                          ? "text-muted-foreground line-through"
+                          : current
+                            ? "font-semibold text-primary"
+                            : "font-medium",
+                      )}
+                    >
+                      {mapLabel(item)}
+                    </span>
+                    {expanded ? (
+                      <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
+                    ) : (
+                      <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+                    )}
+                  </button>
+                </div>
+                {expanded ? (
+                  <div className="border-t border-border/60 px-4 pb-4 pt-3">
+                    <ItemView item={item} showMeditation />
+                  </div>
+                ) : null}
+              </div>
             </li>
           );
         })}
