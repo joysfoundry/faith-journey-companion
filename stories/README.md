@@ -20,17 +20,23 @@ active work — keep it in sync when a pointer changes. The **full numbered ledg
 
 | ID | EPIC | Title | Status | Depends on | Next step | Updated |
 |----|------|-------|--------|-----------|-----------|---------|
+| [ACTS-91](ACTS-91.md) |  | Stand up the test harness (Vitest + Testing Library + Playwright) | To Do | — | Install Vitest/Playwright; smoke test per layer | 2026-08-27 |
+| [ACTS-76](ACTS-76.md) |  | Pray-mode tracker — current item, grayed-out completed, auto-scroll | In Progress | — | Add prominent-current + auto-scroll in `session.$sessionId.tsx` | 2026-08-27 |
 | [ACTS-75](ACTS-75.md) |  | Number the backlog into ACTS stories + EPIC column + process docs | Done | — | Follow-ups (not blockers): push `main`; JC fills EPIC values | 2026-08-25 |
 | ACTS-01…ACTS-74 |  | _Historical Done work_ | Done | — | See the [full ledger](../docs/JIRA-BACKLOG.md) | 2026-08-25 |
 
 _Statuses: **To Do** · **In Progress** · **Blocked** · **Done**._
+
+**Testing convention:** every story pointer carries a **Tests** section (unit · integration ·
+E2E) — see [`_TEMPLATE.md`](_TEMPLATE.md). The shared E2E flow catalog is
+[`docs/E2E-TEST-PLAN.md`](../docs/E2E-TEST-PLAN.md). No runner is wired yet — that's **ACTS-91**.
 
 ## How the backlog is numbered
 
 - Every completed unit of work is one `ACTS-NN` row, numbered **oldest-first by commit**.
 - Numbers are **permanent** — never renumbered; new work takes the next number.
 - Each row **logs its commit(s)**; the **EPIC** column is left blank for JC to fill in.
-- [`.counter`](.counter) holds the last-used number (**90**); brand-new work = ACTS-91.
+- [`.counter`](.counter) holds the last-used number (**91**); brand-new work = ACTS-92.
 - Full detail + the maintenance process: [`docs/JIRA-BACKLOG.md` → Process](../docs/JIRA-BACKLOG.md#process).
 
 ## Open (numbered — ready to `/start`)
@@ -39,6 +45,8 @@ Every open story now has an id so you can reference it when starting a chat — 
 [Open section of the ledger](../docs/JIRA-BACKLOG.md#-open--backlog-numbered), **ACTS-76…90**.
 Highlights / recently added:
 
+- **ACTS-91** — Stand up the test harness (Vitest + Testing Library + Playwright) → [`ACTS-91.md`](ACTS-91.md). **Blocks executable tests for every story.**
+- **ACTS-76** — Pray-mode tracker: prominent current item, grayed-out completed, auto-scroll → [`ACTS-76.md`](ACTS-76.md) _(In Progress)_.
 - **ACTS-78** — Push `main` + Publish in Lovable (merge already done locally; just push + Publish).
 - **ACTS-82** — Enable Supabase persistence (backend for auth; parked as a future story).
 - **ACTS-87 / ACTS-88** — Auth (email login + session) / Account creation (sign up with email).

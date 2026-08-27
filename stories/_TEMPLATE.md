@@ -28,6 +28,14 @@ As <role>, I want <capability> so that <value>.
 
 ## Acceptance criteria
 - [ ] …
+
+## Tests
+_Document coverage for EVERY story. No runner is wired yet — see
+[`docs/E2E-TEST-PLAN.md`](../docs/E2E-TEST-PLAN.md) (harness = ACTS-91); until then these
+are **planned**. Mark N/A with a one-line reason (e.g. docs-only, recorded decision)._
+- **Unit** (Vitest — pure `src/lib/**`): <symbols/cases, or N/A + reason>
+- **Integration** (Testing Library — component + store): <render/interact/assert, or N/A>
+- **E2E** (Playwright — see the plan): feeds flow(s) <En, …>, or N/A
 ```
 
 ---

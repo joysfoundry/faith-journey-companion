@@ -23,6 +23,16 @@ in the **guided prayer (Pray mode)** view, so I can skim the flow or focus on on
 - [ ] Default collapsed/expanded state is sensible for praying (decide during build).
 - [ ] Interaction/usage is tested **in that view** (Pray mode), not just the builder.
 
+## Tests
+_No runner wired yet — **planned** (harness = ACTS-91). See
+[`docs/E2E-TEST-PLAN.md`](../docs/E2E-TEST-PLAN.md)._
+- **Unit** (Vitest): expand/collapse state reducer (per-item + all) if extracted to a helper;
+  otherwise N/A (presentational).
+- **Integration** (Testing Library — running session view): toggling one item expands/collapses
+  only it; expand-all / collapse-all act on every item; default state is sensible; `aria-expanded`
+  reflects state. Coordinate with the ACTS-76 tracker (current-item highlight must survive collapse).
+- **E2E** (Playwright): feeds flow **E3** (guided-prayer expand/collapse).
+
 ## Notes
 - Pray mode lives in `src/routes/pray.tsx`. The builder already has a caret collapse
   pattern (ACTS-35, `DevotionItemsEditor`) — reuse the interaction where it fits.

@@ -192,13 +192,13 @@ _Statuses: **To Do** · **In Progress** · **Blocked** · **Done**. Commits are 
 ## 🔜 Open — backlog (numbered)
 
 Every open story now carries an `ACTS-NN` id so you can reference it when starting a chat
-(`/start ACTS-NN`). Not yet started — IDs are reserved; `.counter` is **90**, so brand-new
-work beyond this list starts at ACTS-91. **An id links to its pointer file when one exists**
+(`/start ACTS-NN`). Not yet started — IDs are reserved; `.counter` is **91**, so brand-new
+work beyond this list starts at ACTS-92. **An id links to its pointer file when one exists**
 (created when the story is started); otherwise it's plain text.
 
 | # | EPIC | Priority | Type | Status | Summary | Detail |
 |---|---|---|---|---|---|---|
-| ACTS-76 |  | P1 | Story | To Do | **Pray-mode tracker (ACTS-style)** | Prominent current item, **completed prayers grayed out**, **auto-scroll** as you advance. Preview already emits the fully-expanded list. |
+| [ACTS-76](../stories/ACTS-76.md) |  | P1 | Story | In Progress | **Pray-mode tracker (ACTS-style)** | Prominent current item, **completed prayers grayed out**, **auto-scroll** as you advance. Preview already emits the fully-expanded list. |
 | ACTS-77 |  | P2 | Story | To Do | **Touch drag-and-drop in builder** | Current reorder uses HTML5 DnD (desktop only). Add a touch lib (e.g. dnd-kit). |
 | ACTS-78 |  | P2 | Task | To Do | **Push `main` + Publish in Lovable** | Merge → `main` already done locally (fast-forward to `f9f51a0`); PR not needed. Remaining: `git push origin main`, then confirm Lovable sync + click **Publish** for the public `*.lovable.app` URL. |
 | ACTS-79 |  | P2 | Story | To Do | **Mystery-detail variant picker (Scripture vs meditation)** | Partly delivered by ACTS-55/56 (selectable bodies + authoring editor). Remaining: let the Session/Template **choose which variant to present**. Examples: `~/Downloads/Mysteries 1.md` (Scripture), `Mysteries 2.md` (meditation). |
@@ -213,6 +213,7 @@ work beyond this list starts at ACTS-91. **An id links to its pointer file when 
 | ACTS-88 |  | P2 | Story | To Do | **Account creation — sign up with email** | _New._ Email sign-up + verification, create a profile/account record, then the localStorage data becomes per-account. Pairs with ACTS-87; relates to ACTS-82. |
 | [ACTS-89](../stories/ACTS-89.md) |  | P2 | Story | To Do | **Guided-prayer expand/collapse + expand-all/collapse-all** | _New (spinoff)._ Per-prayer expand/collapse **and** an expand-all/collapse-all control in the **guided prayer (Pray mode)** view (`src/routes/pray.tsx`); test the usage/interaction in that view. |
 | [ACTS-90](../stories/ACTS-90.md) |  | — | Decision | Decided | **Platform — mobile-first, mobile web, no app store** | _Recorded decision (not a build story)._ Mobile-first, delivered as **mobile web (web-view first), NOT the app store**. **Leaning PWA but parked** — don't build PWA plumbing until JC confirms. |
+| [ACTS-91](../stories/ACTS-91.md) |  | P2 | Story | To Do | **Stand up the test harness** | _New._ Vitest + Testing Library (unit/integration) + Playwright (E2E); mock `scrollIntoView`/`matchMedia`/`localStorage`; `test` + `test:e2e` scripts; smoke test per layer; CI on push. **Blocks executable tests for every story.** Flow catalog: [`docs/E2E-TEST-PLAN.md`](E2E-TEST-PLAN.md). |
 
 ---
 
@@ -230,8 +231,8 @@ How the ACTS backlog is numbered and kept current — so this doesn't drift:
 3. **EPIC column.** Left blank on purpose — JC fills it in to group rows into epics.
    The section headers above are a suggested grouping, not the epic assignment.
 4. **The counter.** [`stories/.counter`](../stories/.counter) holds the last-used
-   number (currently **90** — ACTS-01…75 done + ACTS-76…90 filed as open stories). The
-   next brand-new story beyond the current backlog is ACTS-91.
+   number (currently **91** — ACTS-01…75 done + ACTS-76…91 filed as open stories). The
+   next brand-new story beyond the current backlog is ACTS-92.
 5. **One chat = one story.** Each working session is tied to a single ACTS story;
    its handoff lives at `stories/ACTS-NN/session-NN.md` (see
    [`stories/_TEMPLATE.md`](../stories/_TEMPLATE.md)). The compact active board is
@@ -239,6 +240,13 @@ How the ACTS backlog is numbered and kept current — so this doesn't drift:
 6. **No Jira.** Per [`.claude/workflow.json`](../.claude/workflow.json) the tracker is
    `none` — this repo is the tracker. Follow `~/.claude/commands/WORKFLOW.md` but skip
    every Jira/sync step.
+7. **Testing — applies to every story.** Each pointer carries a **Tests** section
+   (unit · integration · E2E), enforced by [`stories/_TEMPLATE.md`](../stories/_TEMPLATE.md).
+   The shared E2E flow catalog is [`docs/E2E-TEST-PLAN.md`](E2E-TEST-PLAN.md). No runner is
+   wired yet — that's **ACTS-91**, which blocks executable coverage for all stories.
+   **Historical Done rows (ACTS-01…75)** aren't retrofitted one-by-one; their shipped
+   features are covered collectively by the E2E flow catalog (E1–E15). New/active stories
+   fill in their own Tests section going forward.
 
 _This ledger was generated 2026-08-25 from `git log` + the prior gap-merge backlog and
 `HANDOFF.md`. See `HANDOFF.md` for run/architecture context._
