@@ -59,6 +59,55 @@ function useKeepAwake(enabled: boolean) {
   }, [enabled]);
 }
 
+/** Track the user's reduced-motion preference so auto-scroll can be gentle. */
+function usePrefersReducedMotion(): boolean {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReduced(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+  return reduced;
+}
+
+/**
+ * Scroll the current step into view — the tracker's follow-along behavior. Fires
+ * when the current step *changes* while this tab is active, and also when this tab
+ * *becomes active* (so switching tabs after marking items done lands you on the
+ * current "NOW" step). Skips the first mount (the session opens at the top, not
+ * mid-list), no-ops while the tab is hidden, and honors reduced-motion.
+ */
+function useAutoScrollToCurrent<T extends HTMLElement>(
+  currentId: string | null,
+  active: boolean,
+  reducedMotion: boolean,
+) {
+  const ref = useRef<T | null>(null);
+  const mounted = useRef(false);
+  const prevId = useRef<string | null>(currentId);
+  const prevActive = useRef<boolean>(active);
+  useEffect(() => {
+    const idChanged = prevId.current !== currentId;
+    const becameActive = active && !prevActive.current;
+    prevId.current = currentId;
+    prevActive.current = active;
+    // Skip the very first run so the session opens at its title, not mid-list.
+    if (!mounted.current) {
+      mounted.current = true;
+      return;
+    }
+    if (!active || !currentId || (!idChanged && !becameActive)) return;
+    const el = ref.current;
+    // offsetParent is null while the tab is display:none — skip it.
+    if (!el || el.offsetParent === null) return;
+    el.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "center" });
+  }, [currentId, active, reducedMotion]);
+  return ref;
+}
+
 function PrayerMode() {
   const { sessionId } = Route.useParams();
   const { db, ready, toggleItemDone, finishSession } = useApp();
@@ -71,6 +120,13 @@ function PrayerMode() {
 
   const [keepAwake, setKeepAwake] = useState(true);
   useKeepAwake(keepAwake);
+  const reducedMotion = usePrefersReducedMotion();
+  const [tab, setTab] = useState<"prayers" | "guide">("prayers");
+
+  // The "current" step is the first one still incomplete — the place to resume.
+  // Null once everything is done.
+  const firstOpen = items.find((i) => i.completion_status !== "complete");
+  const currentId = firstOpen?.id ?? null;
 
   if (!ready || !session) {
     return (
@@ -102,7 +158,11 @@ function PrayerMode() {
   };
 
   return (
-    <Tabs defaultValue="prayers" className="flex min-h-screen flex-col bg-background">
+    <Tabs
+      value={tab}
+      onValueChange={(v) => setTab(v as "prayers" | "guide")}
+      className="flex min-h-screen flex-col bg-background"
+    >
       {/* Progress header + the Prayers/Guide tabs freeze together at the top so
           the tabs stay reachable while a long session scrolls underneath. */}
       <div className="sticky top-0 z-10 border-b border-border/70 bg-background/95 backdrop-blur">
@@ -137,12 +197,23 @@ function PrayerMode() {
             items={items}
             estMin={estMin}
             dayLabel={dayLabel}
+            currentId={currentId}
+            active={tab === "prayers"}
+            reducedMotion={reducedMotion}
             onToggle={toggleItemDone}
           />
         </TabsContent>
 
         <TabsContent value="guide" forceMount className="data-[state=inactive]:hidden">
-          <GuideTab items={items} estMin={estMin} dayLabel={dayLabel} onToggle={toggleItemDone} />
+          <GuideTab
+            items={items}
+            estMin={estMin}
+            dayLabel={dayLabel}
+            currentId={currentId}
+            active={tab === "guide"}
+            reducedMotion={reducedMotion}
+            onToggle={toggleItemDone}
+          />
         </TabsContent>
       </div>
 
@@ -175,14 +246,21 @@ function PrayersTab({
   items,
   estMin,
   dayLabel,
+  currentId,
+  active,
+  reducedMotion,
   onToggle,
 }: {
   title: string;
   items: SessionItem[];
   estMin?: number | undefined;
   dayLabel?: string | null | undefined;
+  currentId: string | null;
+  active: boolean;
+  reducedMotion: boolean;
   onToggle: (itemId: string) => void;
 }) {
+  const currentRef = useAutoScrollToCurrent<HTMLDivElement>(currentId, active, reducedMotion);
   return (
     <div className="px-5 py-8">
       <h1 className="mb-2 text-center font-display text-3xl leading-tight">{title}</h1>
@@ -198,12 +276,15 @@ function PrayersTab({
       <div className="space-y-5">
         {items.map((item) => {
           const done = item.completion_status === "complete";
+          const current = item.id === currentId;
           return (
             <div
               key={item.id}
+              ref={current ? currentRef : undefined}
               role="button"
               tabIndex={0}
               aria-pressed={done}
+              aria-current={current ? "step" : undefined}
               onClick={() => onToggle(item.id)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
@@ -215,9 +296,16 @@ function PrayersTab({
                 "relative cursor-pointer rounded-2xl border px-5 py-6 transition",
                 done
                   ? "border-border/60 bg-muted/40 opacity-60"
-                  : "border-border bg-card hover:border-primary/40",
+                  : current
+                    ? "border-primary bg-card shadow-sm ring-2 ring-primary/30"
+                    : "border-border bg-card hover:border-primary/40",
               )}
             >
+              {current ? (
+                <span className="absolute left-4 top-3 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                  Now
+                </span>
+              ) : null}
               <span
                 className={cn(
                   "absolute right-3 top-3 flex size-6 items-center justify-center rounded-full border transition",
@@ -251,13 +339,20 @@ function GuideTab({
   items,
   estMin,
   dayLabel,
+  currentId,
+  active,
+  reducedMotion,
   onToggle,
 }: {
   items: SessionItem[];
   estMin?: number | undefined;
   dayLabel?: string | null | undefined;
+  currentId: string | null;
+  active: boolean;
+  reducedMotion: boolean;
   onToggle: (itemId: string) => void;
 }) {
+  const currentRef = useAutoScrollToCurrent<HTMLLIElement>(currentId, active, reducedMotion);
   return (
     <div className="px-5 py-6">
       {dayLabel ? <p className="mb-1 text-sm font-medium text-primary">{dayLabel}</p> : null}
@@ -275,8 +370,9 @@ function GuideTab({
                 `${ordinalWord(item.mystery_ordinal ?? 1)} Mystery`)
               : undefined;
           const done = item.completion_status === "complete";
+          const current = item.id === currentId;
           return (
-            <li key={item.id}>
+            <li key={item.id} ref={current ? currentRef : undefined}>
               {heading ? (
                 <p className="mt-4 px-1 text-[11px] font-semibold uppercase tracking-wide text-primary">
                   {heading}
@@ -286,14 +382,20 @@ function GuideTab({
                 type="button"
                 onClick={() => onToggle(item.id)}
                 aria-pressed={done}
-                className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left transition hover:bg-muted/60"
+                aria-current={current ? "step" : undefined}
+                className={cn(
+                  "flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left transition hover:bg-muted/60",
+                  current ? "bg-primary/10 ring-1 ring-primary/30" : "",
+                )}
               >
                 <span
                   className={cn(
                     "flex size-6 shrink-0 items-center justify-center rounded-full border transition",
                     done
                       ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border bg-background",
+                      : current
+                        ? "border-primary bg-background"
+                        : "border-border bg-background",
                   )}
                 >
                   {done ? <Check className="size-4" /> : null}
@@ -304,7 +406,11 @@ function GuideTab({
                 <span
                   className={cn(
                     "text-sm",
-                    done ? "text-muted-foreground line-through" : "font-medium",
+                    done
+                      ? "text-muted-foreground line-through"
+                      : current
+                        ? "font-semibold text-primary"
+                        : "font-medium",
                   )}
                 >
                   {mapLabel(item)}
