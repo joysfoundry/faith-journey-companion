@@ -1,10 +1,17 @@
 ---
 story: ACTS-89
 session: 01
-wrapped_at: 2026-08-27T11:04:39-0700
-status: In Progress
-final: false
+wrapped_at: 2026-08-27T11:06:30-0700
+status: Done
+final: true
 ---
+
+## Closed
+Story **Done** (2026-08-27). All acceptance criteria met — per-item expand/collapse,
+the expand-all/collapse-all control (delivered as the 4-way mode incl. "Expand all" +
+"Keep collapsed"), a sensible praying default ("Expand current only"), and interaction
+verified **in the running Guide view** (manual/live — automated tests documented as
+planned, deferred to ACTS-92 since no runner is wired). Local-only tracker (no Jira).
 
 ## What happened
 
@@ -57,10 +64,11 @@ ports were hard-denied, cleared once the other chat's server was stopped):
 
 ## Git state at handoff
 
-Committed & pushed to `main`:
+Committed & pushed to `main` (JC pushed):
 - `12d527e` ACTS-89: expandable Guide tab + cleaner Prayers cards (code)
 - `f34b719` ACTS-89: mark story In Progress (pointer)
-- this handoff doc commit follows.
+- `a58ed42` ACTS-89: session-01 handoff + pointer (docs)
+- the /done doc commit (this file → final + pointer/board → Done) follows.
 
 `.claude/launch.json` left untracked on purpose (local dev-server config, not story work).
 No unsaved code.

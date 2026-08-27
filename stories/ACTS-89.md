@@ -2,13 +2,13 @@
 id: ACTS-89
 title: Guided-prayer expand/collapse + expand-all/collapse-all
 spine:
-status: In Progress
+status: Done
 origin: human-directed
 approved_by: JC
 depends_on: []
 relates_to: [ACTS-76]
 started_at: 2026-08-27T11:04:39-0700
-updated: 2026-08-27T11:04:39-0700
+updated: 2026-08-27T11:06:30-0700
 latest_handoff: stories/ACTS-89/session-01.md
 sessions: 1
 ---
@@ -18,10 +18,10 @@ As someone praying, I want to expand/collapse each prayer — and expand-all / c
 in the **guided prayer (Pray mode)** view, so I can skim the flow or focus on one item.
 
 ## Acceptance criteria
-- [ ] Each prayer/item in Pray mode can expand and collapse individually.
-- [ ] An **expand-all / collapse-all** control acts on the whole guided view.
-- [ ] Default collapsed/expanded state is sensible for praying (decide during build).
-- [ ] Interaction/usage is tested **in that view** (Pray mode), not just the builder.
+- [x] Each prayer/item in Pray mode can expand and collapse individually. _(Guide tab, per-line tap.)_
+- [x] An **expand-all / collapse-all** control acts on the whole guided view. _(Delivered as a 4-way mode incl. "Expand all" + "Keep collapsed".)_
+- [x] Default collapsed/expanded state is sensible for praying (decide during build). _(Default: "Expand current only".)_
+- [x] Interaction/usage is tested **in that view** (Pray mode), not just the builder. _(Manually verified live in the running Guide view; automated tests planned → ACTS-92.)_
 
 ## Tests
 _No runner wired yet — **planned** (harness = ACTS-92). See
