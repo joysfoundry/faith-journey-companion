@@ -31,8 +31,9 @@ As <role>, I want <capability> so that <value>.
 
 ## Tests
 _Document coverage for EVERY story. No runner is wired yet — see
-[`docs/E2E-TEST-PLAN.md`](../docs/E2E-TEST-PLAN.md) (harness = ACTS-91); until then these
-are **planned**. Mark N/A with a one-line reason (e.g. docs-only, recorded decision)._
+[`docs/E2E-TEST-PLAN.md`](../docs/E2E-TEST-PLAN.md) (harness = ACTS-92); until then these
+are **planned**. Mark N/A with a one-line reason (e.g. docs-only, recorded decision).
+Documenting tests here is required for every code-change story (convention: ACTS-91)._
 - **Unit** (Vitest — pure `src/lib/**`): <symbols/cases, or N/A + reason>
 - **Integration** (Testing Library — component + store): <render/interact/assert, or N/A>
 - **E2E** (Playwright — see the plan): feeds flow(s) <En, …>, or N/A

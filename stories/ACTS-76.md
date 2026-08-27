@@ -32,7 +32,7 @@ session tracks where I am and I can pray without hunting for my place.
       switching to Prayers (or vice-versa) auto-scrolls to the current "NOW" item.
 
 ## Tests
-_No runner wired yet — these are **planned** (harness = ACTS-91). Manually verified
+_No runner wired yet — these are **planned** (harness = ACTS-92). Manually verified
 in-browser this session (Litany of Humility, 24 steps, `manual_done`). See
 [`docs/E2E-TEST-PLAN.md`](../docs/E2E-TEST-PLAN.md)._
 

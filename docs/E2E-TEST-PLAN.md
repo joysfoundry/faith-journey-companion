@@ -23,8 +23,9 @@ Before any of this executes, one enabling story sets up tooling:
 - **Scripts:** `test` (unit/integration, watch + run), `test:e2e` (Playwright).
 - **CI hook** so the suite runs on push (ties into ACTS-78 publish flow).
 
-_Filed as **ACTS-91** (see the ledger). Until it lands, treat this doc as the backlog of
-what to write._
+_Filed as **ACTS-92** (deferred harness build; see the ledger). The **convention** that
+makes testing documented + tracked for every code change is **ACTS-91** (Done). Until
+ACTS-92 lands, treat this doc as the backlog of what to write._
 
 ## The test pyramid we're aiming for
 

@@ -24,7 +24,7 @@ in the **guided prayer (Pray mode)** view, so I can skim the flow or focus on on
 - [ ] Interaction/usage is tested **in that view** (Pray mode), not just the builder.
 
 ## Tests
-_No runner wired yet — **planned** (harness = ACTS-91). See
+_No runner wired yet — **planned** (harness = ACTS-92). See
 [`docs/E2E-TEST-PLAN.md`](../docs/E2E-TEST-PLAN.md)._
 - **Unit** (Vitest): expand/collapse state reducer (per-item + all) if extracted to a helper;
   otherwise N/A (presentational).
