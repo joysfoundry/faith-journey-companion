@@ -2,13 +2,13 @@
 id: ACTS-89
 title: Guided-prayer expand/collapse + expand-all/collapse-all
 spine:
-status: To Do
+status: In Progress
 origin: human-directed
 approved_by: JC
 depends_on: []
 relates_to: [ACTS-76]
-started_at:
-updated: 2026-08-25T21:47:01-0700
+started_at: 2026-08-27
+updated: 2026-08-27
 latest_handoff: null
 sessions: 0
 ---
