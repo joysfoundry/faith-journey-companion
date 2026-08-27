@@ -20,7 +20,7 @@ active work — keep it in sync when a pointer changes. The **full numbered ledg
 
 | ID | EPIC | Title | Status | Depends on | Next step | Updated |
 |----|------|-------|--------|-----------|-----------|---------|
-| [ACTS-94](ACTS-94.md) |  | Guest "follow-along" share — read-only session via URL fragment (+ QR best-effort) | To Do | — | Build `/follow` route + share codec (compress→fragment); reuse `ItemView`; add `info` field; QR when it fits | 2026-08-27 |
+| [ACTS-94](ACTS-94.md) |  | Guest "follow-along" share — read-only session via URL fragment (+ QR best-effort) | In Progress | — | Build `/follow` route + share codec (compress→fragment); reuse `ItemView`; add `info` field; QR when it fits | 2026-08-27 |
 | [ACTS-93](ACTS-93.md) |  | Explore — share read-only "follow-along" prayer view for guests (no app) | Done | — | Spike done: fragment-link approach validated (rosary ~3 KB); impl → ACTS-94 | 2026-08-27 |
 | [ACTS-92](ACTS-92.md) |  | Set up the test harness (Vitest + Testing Library + Playwright) — deferred | To Do | — | Install Vitest/Playwright; smoke test per layer; backfill ACTS-76 tests | 2026-08-27 |
 | [ACTS-91](ACTS-91.md) |  | Testing convention — tests documented + tracked as a task | Done | — | Convention landed; harness build → ACTS-92 | 2026-08-27 |
