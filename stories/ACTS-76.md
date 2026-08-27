@@ -2,15 +2,15 @@
 id: ACTS-76
 title: Pray-mode tracker (ACTS-style) — current item, grayed-out completed, auto-scroll
 spine:
-status: In Progress
+status: Done
 origin: human-directed
 approved_by: JC
 depends_on: []
-relates_to: [ACTS-89]
+relates_to: [ACTS-89, ACTS-91, ACTS-92]
 started_at: 2026-08-27T09:11:26-0700
-updated:    2026-08-27T09:11:26-0700
-latest_handoff: null
-sessions: 0
+updated:    2026-08-27T10:06:53-0700
+latest_handoff: ACTS-76/session-01.md
+sessions: 1
 ---
 
 ## Goal

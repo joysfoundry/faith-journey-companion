@@ -198,7 +198,7 @@ work beyond this list starts at ACTS-93. **An id links to its pointer file when 
 
 | # | EPIC | Priority | Type | Status | Summary | Detail |
 |---|---|---|---|---|---|---|
-| [ACTS-76](../stories/ACTS-76.md) |  | P1 | Story | In Progress | **Pray-mode tracker (ACTS-style)** | Prominent current item, **completed prayers grayed out**, **auto-scroll** as you advance. Preview already emits the fully-expanded list. |
+| [ACTS-76](../stories/ACTS-76.md) |  | P1 | Story | **Done** | **Pray-mode tracker (ACTS-style)** | Prominent current item (NOW badge + ring), **completed prayers grayed out**, **auto-scroll** as you advance + on tab-switch. Shipped `ee726b3`/`61cf1ca`; tests planned under ACTS-92. |
 | ACTS-77 |  | P2 | Story | To Do | **Touch drag-and-drop in builder** | Current reorder uses HTML5 DnD (desktop only). Add a touch lib (e.g. dnd-kit). |
 | ACTS-78 |  | P2 | Task | To Do | **Push `main` + Publish in Lovable** | Merge → `main` already done locally (fast-forward to `f9f51a0`); PR not needed. Remaining: `git push origin main`, then confirm Lovable sync + click **Publish** for the public `*.lovable.app` URL. |
 | ACTS-79 |  | P2 | Story | To Do | **Mystery-detail variant picker (Scripture vs meditation)** | Partly delivered by ACTS-55/56 (selectable bodies + authoring editor). Remaining: let the Session/Template **choose which variant to present**. Examples: `~/Downloads/Mysteries 1.md` (Scripture), `Mysteries 2.md` (meditation). |

@@ -21,8 +21,8 @@ active work — keep it in sync when a pointer changes. The **full numbered ledg
 | ID | EPIC | Title | Status | Depends on | Next step | Updated |
 |----|------|-------|--------|-----------|-----------|---------|
 | [ACTS-92](ACTS-92.md) |  | Set up the test harness (Vitest + Testing Library + Playwright) — deferred | To Do | — | Install Vitest/Playwright; smoke test per layer; backfill ACTS-76 tests | 2026-08-27 |
-| [ACTS-76](ACTS-76.md) |  | Pray-mode tracker — current item, grayed-out completed, auto-scroll | In Progress | — | Add prominent-current + auto-scroll in `session.$sessionId.tsx` | 2026-08-27 |
 | [ACTS-91](ACTS-91.md) |  | Testing convention — tests documented + tracked as a task | Done | — | Convention landed; harness build → ACTS-92 | 2026-08-27 |
+| [ACTS-76](ACTS-76.md) |  | Pray-mode tracker — current item, grayed-out completed, auto-scroll | Done | — | Shipped + pushed; tests backfilled under ACTS-92 | 2026-08-27 |
 | [ACTS-75](ACTS-75.md) |  | Number the backlog into ACTS stories + EPIC column + process docs | Done | — | Follow-ups (not blockers): push `main`; JC fills EPIC values | 2026-08-25 |
 | ACTS-01…ACTS-74 |  | _Historical Done work_ | Done | — | See the [full ledger](../docs/JIRA-BACKLOG.md) | 2026-08-25 |
 
@@ -50,7 +50,7 @@ Highlights / recently added:
 
 - **ACTS-92** — Set up the test harness (Vitest + Testing Library + Playwright), **deferred** → [`ACTS-92.md`](ACTS-92.md). **Blocks executable tests for every story.**
 - **ACTS-91** — Testing convention (tests documented + tracked as a task) → [`ACTS-91.md`](ACTS-91.md) _(Done)_.
-- **ACTS-76** — Pray-mode tracker: prominent current item, grayed-out completed, auto-scroll → [`ACTS-76.md`](ACTS-76.md) _(In Progress)_.
+- **ACTS-76** — Pray-mode tracker: prominent current item, grayed-out completed, auto-scroll → [`ACTS-76.md`](ACTS-76.md) _(Done)_.
 - **ACTS-78** — Push `main` + Publish in Lovable (merge already done locally; just push + Publish).
 - **ACTS-82** — Enable Supabase persistence (backend for auth; parked as a future story).
 - **ACTS-87 / ACTS-88** — Auth (email login + session) / Account creation (sign up with email).
