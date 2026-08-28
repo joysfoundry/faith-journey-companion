@@ -2,15 +2,15 @@
 id: ACTS-94
 title: Guest "follow-along" share — read-only session view via URL fragment (+ QR best-effort)
 spine:
-status: In Progress
+status: Done
 origin: human-directed
 approved_by: JC
 depends_on: []
-relates_to: [ACTS-93, ACTS-90, ACTS-82, ACTS-76]
+relates_to: [ACTS-93, ACTS-95, ACTS-90, ACTS-82, ACTS-76]
 started_at: 2026-08-27T11:43:58-0700
-updated:    2026-08-27T11:48:00-0700
-latest_handoff: null
-sessions: 0
+updated:    2026-08-28T12:31:37-0700
+latest_handoff: ACTS-94/session-01.md
+sessions: 1
 ---
 
 ## Goal
