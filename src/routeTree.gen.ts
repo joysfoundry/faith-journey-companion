@@ -21,6 +21,8 @@ import { Route as ReflectionsRouteImport } from './routes/reflections'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as WordRouteImport } from './routes/word'
 import { Route as DevotionDevotionIdRouteImport } from './routes/devotion.$devotionId'
+import { Route as FollowIndexRouteImport } from './routes/follow.index'
+import { Route as FollowShareIdRouteImport } from './routes/follow.$shareId'
 import { Route as KnowledgeKnowledgeIdRouteImport } from './routes/knowledge.$knowledgeId'
 import { Route as MysteryVersionBodyKeyRouteImport } from './routes/mystery-version.$bodyKey'
 import { Route as PrayerPrayerIdRouteImport } from './routes/prayer.$prayerId'
@@ -88,6 +90,16 @@ const DevotionDevotionIdRoute = DevotionDevotionIdRouteImport.update({
   path: '/devotion/$devotionId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FollowIndexRoute = FollowIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => FollowRoute,
+} as any)
+const FollowShareIdRoute = FollowShareIdRouteImport.update({
+  id: '/$shareId',
+  path: '/$shareId',
+  getParentRoute: () => FollowRoute,
+} as any)
 const KnowledgeKnowledgeIdRoute = KnowledgeKnowledgeIdRouteImport.update({
   id: '/knowledge/$knowledgeId',
   path: '/knowledge/$knowledgeId',
@@ -122,7 +134,7 @@ const VoiceVoiceIdRoute = VoiceVoiceIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/calendar': typeof CalendarRoute
-  '/follow': typeof FollowRoute
+  '/follow': typeof FollowRouteWithChildren
   '/formation': typeof FormationRoute
   '/import': typeof ImportRoute
   '/more': typeof MoreRoute
@@ -132,17 +144,18 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/word': typeof WordRoute
   '/devotion/$devotionId': typeof DevotionDevotionIdRoute
+  '/follow/$shareId': typeof FollowShareIdRoute
   '/knowledge/$knowledgeId': typeof KnowledgeKnowledgeIdRoute
   '/mystery-version/$bodyKey': typeof MysteryVersionBodyKeyRoute
   '/prayer/$prayerId': typeof PrayerPrayerIdRoute
   '/session/$sessionId': typeof SessionSessionIdRoute
   '/template/$templateId': typeof TemplateTemplateIdRoute
   '/voice/$voiceId': typeof VoiceVoiceIdRoute
+  '/follow/': typeof FollowIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/calendar': typeof CalendarRoute
-  '/follow': typeof FollowRoute
   '/formation': typeof FormationRoute
   '/import': typeof ImportRoute
   '/more': typeof MoreRoute
@@ -152,18 +165,20 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/word': typeof WordRoute
   '/devotion/$devotionId': typeof DevotionDevotionIdRoute
+  '/follow/$shareId': typeof FollowShareIdRoute
   '/knowledge/$knowledgeId': typeof KnowledgeKnowledgeIdRoute
   '/mystery-version/$bodyKey': typeof MysteryVersionBodyKeyRoute
   '/prayer/$prayerId': typeof PrayerPrayerIdRoute
   '/session/$sessionId': typeof SessionSessionIdRoute
   '/template/$templateId': typeof TemplateTemplateIdRoute
   '/voice/$voiceId': typeof VoiceVoiceIdRoute
+  '/follow': typeof FollowIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/calendar': typeof CalendarRoute
-  '/follow': typeof FollowRoute
+  '/follow': typeof FollowRouteWithChildren
   '/formation': typeof FormationRoute
   '/import': typeof ImportRoute
   '/more': typeof MoreRoute
@@ -173,12 +188,14 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/word': typeof WordRoute
   '/devotion/$devotionId': typeof DevotionDevotionIdRoute
+  '/follow/$shareId': typeof FollowShareIdRoute
   '/knowledge/$knowledgeId': typeof KnowledgeKnowledgeIdRoute
   '/mystery-version/$bodyKey': typeof MysteryVersionBodyKeyRoute
   '/prayer/$prayerId': typeof PrayerPrayerIdRoute
   '/session/$sessionId': typeof SessionSessionIdRoute
   '/template/$templateId': typeof TemplateTemplateIdRoute
   '/voice/$voiceId': typeof VoiceVoiceIdRoute
+  '/follow/': typeof FollowIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -195,17 +212,18 @@ export interface FileRouteTypes {
     | '/settings'
     | '/word'
     | '/devotion/$devotionId'
+    | '/follow/$shareId'
     | '/knowledge/$knowledgeId'
     | '/mystery-version/$bodyKey'
     | '/prayer/$prayerId'
     | '/session/$sessionId'
     | '/template/$templateId'
     | '/voice/$voiceId'
+    | '/follow/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/calendar'
-    | '/follow'
     | '/formation'
     | '/import'
     | '/more'
@@ -215,12 +233,14 @@ export interface FileRouteTypes {
     | '/settings'
     | '/word'
     | '/devotion/$devotionId'
+    | '/follow/$shareId'
     | '/knowledge/$knowledgeId'
     | '/mystery-version/$bodyKey'
     | '/prayer/$prayerId'
     | '/session/$sessionId'
     | '/template/$templateId'
     | '/voice/$voiceId'
+    | '/follow'
   id:
     | '__root__'
     | '/'
@@ -235,18 +255,20 @@ export interface FileRouteTypes {
     | '/settings'
     | '/word'
     | '/devotion/$devotionId'
+    | '/follow/$shareId'
     | '/knowledge/$knowledgeId'
     | '/mystery-version/$bodyKey'
     | '/prayer/$prayerId'
     | '/session/$sessionId'
     | '/template/$templateId'
     | '/voice/$voiceId'
+    | '/follow/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CalendarRoute: typeof CalendarRoute
-  FollowRoute: typeof FollowRoute
+  FollowRoute: typeof FollowRouteWithChildren
   FormationRoute: typeof FormationRoute
   ImportRoute: typeof ImportRoute
   MoreRoute: typeof MoreRoute
@@ -350,6 +372,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DevotionDevotionIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/follow/': {
+      id: '/follow/'
+      path: '/'
+      fullPath: '/follow/'
+      preLoaderRoute: typeof FollowIndexRouteImport
+      parentRoute: typeof FollowRoute
+    }
+    '/follow/$shareId': {
+      id: '/follow/$shareId'
+      path: '/$shareId'
+      fullPath: '/follow/$shareId'
+      preLoaderRoute: typeof FollowShareIdRouteImport
+      parentRoute: typeof FollowRoute
+    }
     '/knowledge/$knowledgeId': {
       id: '/knowledge/$knowledgeId'
       path: '/knowledge/$knowledgeId'
@@ -395,10 +431,23 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface FollowRouteChildren {
+  FollowShareIdRoute: typeof FollowShareIdRoute
+  FollowIndexRoute: typeof FollowIndexRoute
+}
+
+const FollowRouteChildren: FollowRouteChildren = {
+  FollowShareIdRoute: FollowShareIdRoute,
+  FollowIndexRoute: FollowIndexRoute,
+}
+
+const FollowRouteWithChildren =
+  FollowRoute._addFileChildren(FollowRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CalendarRoute: CalendarRoute,
-  FollowRoute: FollowRoute,
+  FollowRoute: FollowRouteWithChildren,
   FormationRoute: FormationRoute,
   ImportRoute: ImportRoute,
   MoreRoute: MoreRoute,

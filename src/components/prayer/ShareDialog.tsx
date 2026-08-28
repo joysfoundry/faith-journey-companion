@@ -1,20 +1,23 @@
 /**
  * Share a compiled session as a guest "follow-along" link (ACTS-94).
  *
- * Works purely from a `SharePayload`, so the same dialog serves two callers:
- *  - the **leader** in a running session (`allowEditCover` → type a purpose/info
- *    blurb, which is folded into the cover before encoding), and
- *  - a **guest** on `/follow` re-sharing the link they received (no editing —
- *    handoff passes the identical, sender-agnostic link onward).
+ * Produces a **short, titled** link (`<origin>/follow/aug-28-litany-…`) by saving
+ * the compressed session to the backend (`createShare`) and using the returned
+ * slug. If the backend is unreachable (e.g. the table isn't set up yet), it falls
+ * back to the self-contained **fragment** link so sharing still works offline.
  *
- * The link is `<origin>/follow#<compressed payload>` — everything rides in the
- * fragment, so no backend is involved. A QR code is offered **best-effort**: only
- * when the link is short enough to scan reliably off a phone (short sessions);
- * longer ones (a full rosary) fall back to link-only. See ACTS-93 for the sizing.
+ * Serves two callers:
+ *  - the **leader** (`allowEditCover`) types an optional intention/welcome note,
+ *    then creates the link; and
+ *  - a **guest** re-sharing (`existingSlug`) hands off the *same* short link —
+ *    identity-free, so leadership passes on with the link.
+ *
+ * A QR is shown whenever the link fits (short links always do; a fallback fragment
+ * only for short sessions).
  */
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { Check, Copy, Share2 } from "lucide-react";
+import { Check, Copy, Loader2, Share2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -29,6 +32,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { encodeShare, QR_FRAGMENT_LIMIT, type SharePayload } from "@/lib/prayer/share";
+import { createShare } from "@/lib/prayer/shareStore";
 
 /** Fold blank cover text away so it doesn't bloat the payload. */
 function withCover(payload: SharePayload, purpose: string, info: string): SharePayload {
@@ -43,19 +47,27 @@ function withCover(payload: SharePayload, purpose: string, info: string): ShareP
   return { ...payload, cover };
 }
 
+type Phase = "compose" | "creating" | "ready";
+
 export function ShareDialog({
   payload,
   trigger,
   allowEditCover = false,
+  existingSlug,
 }: {
   payload: SharePayload;
   trigger: ReactNode;
   allowEditCover?: boolean;
+  /** Re-share of an already-stored session: reuse this slug instead of minting one. */
+  existingSlug?: string | undefined;
 }) {
   const [open, setOpen] = useState(false);
+  const [phase, setPhase] = useState<Phase>("compose");
   const [purpose, setPurpose] = useState(payload.cover.purpose ?? "");
   const [info, setInfo] = useState(payload.cover.info ?? "");
   const [origin, setOrigin] = useState("");
+  const [shareUrl, setShareUrl] = useState("");
+  const [usedFallback, setUsedFallback] = useState(false);
   const [copied, setCopied] = useState(false);
 
   // origin is client-only; read it after mount so SSR renders a stable shell.
@@ -65,19 +77,55 @@ export function ShareDialog({
     () => (allowEditCover ? withCover(payload, purpose, info) : payload),
     [payload, allowEditCover, purpose, info],
   );
-  // Encoding can be non-trivial (a rosary is ~10 KB), so only do it while the
-  // dialog is open — a list of rows each holding a closed ShareDialog stays cheap.
-  const fragment = useMemo(() => (open ? encodeShare(effective) : ""), [open, effective]);
-  const url = origin && fragment ? `${origin}/follow#${fragment}` : "";
 
-  // The QR encodes the whole URL, so gate on the full length (a hair stricter than
-  // the fragment budget — the origin eats a few chars). Long sessions → link only.
-  const canQr = url.length > 0 && url.length <= QR_FRAGMENT_LIMIT;
+  // A re-share already has a stored slug — jump straight to the ready link.
+  useEffect(() => {
+    if (!open) {
+      setPhase("compose");
+      setShareUrl("");
+      setUsedFallback(false);
+      return;
+    }
+    if (existingSlug && origin) {
+      setShareUrl(`${origin}/follow/${existingSlug}`);
+      setUsedFallback(false);
+      setPhase("ready");
+    }
+  }, [open, existingSlug, origin]);
+
+  // Editing the cover invalidates a link created for the old text.
+  useEffect(() => {
+    if (existingSlug) return;
+    setPhase("compose");
+    setShareUrl("");
+    setUsedFallback(false);
+  }, [purpose, info, existingSlug]);
+
+  const create = async () => {
+    if (!origin) return;
+    setPhase("creating");
+    try {
+      const slug = await createShare(effective);
+      setShareUrl(`${origin}/follow/${slug}`);
+      setUsedFallback(false);
+    } catch {
+      // The self-contained fragment link still works with no backend.
+      setShareUrl(`${origin}/follow#${encodeShare(effective)}`);
+      setUsedFallback(true);
+      toast.message("Sharing a full link", {
+        description: "Couldn't create a short link right now — this one still works.",
+      });
+    }
+    setPhase("ready");
+  };
+
+  // Short links always fit a QR; a fallback fragment only when it's short enough.
+  const canQr = !!shareUrl && (!usedFallback || shareUrl.length <= QR_FRAGMENT_LIMIT);
 
   const copy = async () => {
-    if (!url) return;
+    if (!shareUrl) return;
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
       toast.success("Link copied");
       setTimeout(() => setCopied(false), 2000);
@@ -87,14 +135,18 @@ export function ShareDialog({
   };
 
   const nativeShare = async () => {
-    if (!url) return;
+    if (!shareUrl) return;
     const nav = navigator as Navigator & { share?: (data: ShareData) => Promise<void> };
     if (!nav.share) {
       void copy();
       return;
     }
     try {
-      await nav.share({ title: payload.cover.title, text: "Follow along with our prayer", url });
+      await nav.share({
+        title: payload.cover.title,
+        text: "Follow along with our prayer",
+        url: shareUrl,
+      });
     } catch {
       /* user dismissed the share sheet — nothing to do */
     }
@@ -115,56 +167,84 @@ export function ShareDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {allowEditCover ? (
+        {phase === "compose" ? (
           <div className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="share-purpose">Intention (optional)</Label>
-              <Textarea
-                id="share-purpose"
-                value={purpose}
-                onChange={(e) => setPurpose(e.target.value)}
-                placeholder="e.g. For Grandma's health"
-                rows={2}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="share-info">Welcome note (optional)</Label>
-              <Textarea
-                id="share-info"
-                value={info}
-                onChange={(e) => setInfo(e.target.value)}
-                placeholder="A short note shown at the top for your guests."
-                rows={3}
-              />
-            </div>
+            {allowEditCover ? (
+              <>
+                <div className="space-y-1.5">
+                  <Label htmlFor="share-purpose">Intention (optional)</Label>
+                  <Textarea
+                    id="share-purpose"
+                    value={purpose}
+                    onChange={(e) => setPurpose(e.target.value)}
+                    placeholder="e.g. For Grandma's health"
+                    rows={2}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="share-info">Welcome note (optional)</Label>
+                  <Textarea
+                    id="share-info"
+                    value={info}
+                    onChange={(e) => setInfo(e.target.value)}
+                    placeholder="A short note shown at the top for your guests."
+                    rows={3}
+                  />
+                </div>
+              </>
+            ) : null}
+            <Button onClick={create} className="w-full" disabled={!origin}>
+              Create share link
+            </Button>
           </div>
         ) : null}
 
-        {/* QR — best-effort for short sessions. Fixed light background so it scans in any theme. */}
-        {canQr ? (
-          <div className="flex flex-col items-center gap-2 py-2">
-            <div className="rounded-xl bg-white p-3">
-              <QRCodeSVG value={url} size={192} level="M" marginSize={0} />
-            </div>
-            <p className="text-xs text-muted-foreground">Point a phone camera here to open it</p>
+        {phase === "creating" ? (
+          <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
+            <Loader2 className="size-4 animate-spin" /> Creating link…
           </div>
-        ) : (
-          <p className="rounded-lg bg-muted/50 px-3 py-2 text-center text-xs text-muted-foreground">
-            This session is a bit long for a scannable code — share the link instead.
-          </p>
-        )}
+        ) : null}
 
-        <div className="flex gap-2">
-          <Button onClick={copy} variant="outline" className="flex-1" disabled={!url}>
-            {copied ? <Check className="mr-1.5 size-4" /> : <Copy className="mr-1.5 size-4" />}
-            {copied ? "Copied" : "Copy link"}
-          </Button>
-          {canNativeShare ? (
-            <Button onClick={nativeShare} className="flex-1" disabled={!url}>
-              <Share2 className="mr-1.5 size-4" /> Share
-            </Button>
-          ) : null}
-        </div>
+        {phase === "ready" ? (
+          <div className="space-y-4">
+            {canQr ? (
+              <div className="flex flex-col items-center gap-2">
+                <div className="rounded-xl bg-white p-3">
+                  <QRCodeSVG value={shareUrl} size={192} level="M" marginSize={0} />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Point a phone camera here to open it
+                </p>
+              </div>
+            ) : (
+              <p className="rounded-lg bg-muted/50 px-3 py-2 text-center text-xs text-muted-foreground">
+                This link is a bit long for a scannable code — share the link instead.
+              </p>
+            )}
+
+            {!usedFallback ? (
+              <p className="truncate rounded-md border border-border bg-muted/40 px-3 py-2 text-center text-xs text-muted-foreground">
+                {shareUrl.replace(/^https?:\/\//, "")}
+              </p>
+            ) : (
+              <p className="text-center text-xs text-muted-foreground">
+                Using a full link — it still opens for anyone.
+              </p>
+            )}
+
+            <div className="flex gap-2">
+              <Button onClick={copy} variant="outline" className="flex-1">
+                {copied ? <Check className="mr-1.5 size-4" /> : <Copy className="mr-1.5 size-4" />}
+                {copied ? "Copied" : "Copy link"}
+              </Button>
+              {canNativeShare ? (
+                <Button onClick={nativeShare} className="flex-1">
+                  <Share2 className="mr-1.5 size-4" /> Share
+                </Button>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
       </DialogContent>
     </Dialog>
   );
