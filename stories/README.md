@@ -20,6 +20,7 @@ active work — keep it in sync when a pointer changes. The **full numbered ledg
 
 | ID | EPIC | Title | Status | Depends on | Next step | Updated |
 |----|------|-------|--------|-----------|-----------|---------|
+| [ACTS-95](ACTS-95.md) |  | Pray a shared session in the app — adopt a `/follow` link into your sessions (+ sign in to save) | To Do | ACTS-94 | Add "Pray in the app" on `/follow`; adopt payload → stored session → Prayer Mode; sign-in saves to sessions list | 2026-08-28 |
 | [ACTS-94](ACTS-94.md) |  | Guest "follow-along" share — read-only session via URL fragment (+ QR best-effort) | In Progress | — | Build `/follow` route + share codec (compress→fragment); reuse `ItemView`; add `info` field; QR when it fits | 2026-08-27 |
 | [ACTS-93](ACTS-93.md) |  | Explore — share read-only "follow-along" prayer view for guests (no app) | Done | — | Spike done: fragment-link approach validated (rosary ~3 KB); impl → ACTS-94 | 2026-08-27 |
 | [ACTS-92](ACTS-92.md) |  | Set up the test harness (Vitest + Testing Library + Playwright) — deferred | To Do | — | Install Vitest/Playwright; smoke test per layer; backfill ACTS-76 tests | 2026-08-27 |
@@ -41,7 +42,7 @@ is deferred to **ACTS-92**, so coverage stays **planned** until then.
 - Every completed unit of work is one `ACTS-NN` row, numbered **oldest-first by commit**.
 - Numbers are **permanent** — never renumbered; new work takes the next number.
 - Each row **logs its commit(s)**; the **EPIC** column is left blank for JC to fill in.
-- [`.counter`](.counter) holds the last-used number (**94**); brand-new work = ACTS-95.
+- [`.counter`](.counter) holds the last-used number (**95**); brand-new work = ACTS-96.
 - Full detail + the maintenance process: [`docs/JIRA-BACKLOG.md` → Process](../docs/JIRA-BACKLOG.md#process).
 
 ## Open (numbered — ready to `/start`)
