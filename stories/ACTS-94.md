@@ -55,14 +55,22 @@ Implements the direction settled in **ACTS-93** (see its Decisions + measured pa
       `ShareDialog`. Compiles the plan **without persisting** (`compilePlanSession` +
       `PlanShareButton`, mirrors the store's `startBuiltSession` path). Lets a session be shared
       *ahead of time* without starting it. ✅ browser-verified (icon renders on the row).
-- [ ] **⚠️ BLOCKER / DECISION — long link:** the self-contained fragment link is huge (full
-      rosary ~10 KB) and **not human-readable**. JC wants a **titled/short link** (date + prayer
-      title, e.g. `/follow/aug-27-litany`). That is **impossible client-side** — it requires
-      storing the session server-side and returning a short id/slug → **needs ACTS-82 (Supabase,
-      scaffolded but not connected)**. Reusable either way: `ShareDialog` / QR / `/follow` /
-      upcoming-row button all stay; only **URL production** changes (store→id vs. encode
-      fragment), and short URLs then also unlock **QR for long sessions** + clean texting. Await
-      JC's call: (a) build the backend short-link now, or (b) ship long-link MVP + follow-up story.
+- [x] **Short, titled backend links (step 1): DONE + browser-verified.** Supabase was already
+      connected (empty DB); added table `public.shared_sessions` (slug/payload/created_at, public
+      RLS — anon insert+select, required for guest handoff) via
+      `supabase/migrations/0001_shared_sessions.sql` (JC applied it). New pieces:
+      `src/lib/prayer/shareStore.ts` (`createShare`→titled slug `aug-28-litany-of-humility-7k2p`,
+      `fetchShare`); `src/components/prayer/FollowAlongView.tsx` (shared read-only view);
+      `/follow` split into a layout (`follow.tsx` = `<Outlet/>`) + `follow.index.tsx` (fragment)
+      + `follow.$shareId.tsx` (fetch by slug) — the layout split was needed because
+      `follow.$shareId` nests under `follow`. `ShareDialog` now: compose → **Create share link**
+      → short link + QR; **falls back to the fragment link if the backend is unreachable**; a
+      re-share reuses its `existingSlug` (no duplicate row). `types.ts` got the table by hand (no
+      codegen here; matched the file's no-semicolon style → minimal diff). Verified: create →
+      `/follow/aug-28-pray-with-the-pope-e2af`, open it → fetch+render, reshare → same slug.
+      **Long-link problem solved.**
+  - Next (own stories, same Supabase connection): auth login (ACTS-87) + account creation
+    (ACTS-88) — Supabase Auth, middleware already scaffolded; full persistence (ACTS-82).
 - [ ] **Handoff / re-share:** the guest `/follow` view carries the **same Share action**, so
       whoever holds the link can hand the identical session to the next person — **not tied to
       the original sender**, no app required. Reuses the same `ShareSheet` + the payload the
