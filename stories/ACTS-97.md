@@ -2,15 +2,15 @@
 id: ACTS-97
 title: Land on the browse/list tab by default (Vessels + Plan), not the create tab
 spine:
-status: To Do
+status: In Progress
 origin: human-directed
 approved_by: JC
 depends_on: []
 relates_to: [ACTS-96]
 sync: local
 synced_at: null
-started_at: null
-updated: 2026-08-28T13:37:10-0700
+started_at: 2026-08-28T14:00:00-0700
+updated: 2026-08-28T14:00:00-0700
 latest_handoff: null
 sessions: 0
 ---

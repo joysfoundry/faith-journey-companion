@@ -20,7 +20,8 @@ active work — keep it in sync when a pointer changes. The **full numbered ledg
 
 | ID | EPIC | Title | Status | Depends on | Next step | Updated |
 |----|------|-------|--------|-----------|-----------|---------|
-| [ACTS-97](ACTS-97.md) |  | Land on the browse/list tab by default (Vessels + Plan), not the create tab | To Do | — | Swap tab order → browse first; Plan defaults to Sessions (+ `?build` for New session); Vessels defaults to Library (design in pointer) | 2026-08-28 |
+| [ACTS-98](ACTS-98.md) |  | Month calendar in Plan > Sessions — color-coded day dots + upcoming list | To Do | — | **Low priority.** Month grid on the Sessions view (no new tab): per-day dots for sessions/planned/readings/programs/reflections + upcoming-next-month list; supersede orphaned `/calendar`. Confirm dot-color encoding w/ JC | 2026-08-28 |
+| [ACTS-97](ACTS-97.md) |  | Land on the browse/list tab by default (Vessels + Plan), not the create tab | In Progress | — | Code done (tab order swapped, Plan defaults to Sessions + `?build`, Vessels defaults to Library); tsc clean; JC spot-checked. Browser preview unavailable this session → `/save` when ready | 2026-08-28 |
 | [ACTS-96](ACTS-96.md) |  | Make the app mobile-web-first and responsive (wide-screen nav + PWA) | In Progress | — | Responsive shell: bottom-nav→side rail at md/lg, un-cap `max-w-2xl`, safe-area insets; then PWA manifest/install (un-parks ACTS-90) | 2026-08-28 |
 | [ACTS-95](ACTS-95.md) |  | Pray a shared session in the app — adopt a `/follow` link into your sessions (+ sign in to save) | To Do | ACTS-94 | Add "Pray in the app" on `/follow`; adopt payload → stored session → Prayer Mode; sign-in saves to sessions list | 2026-08-28 |
 | [ACTS-94](ACTS-94.md) |  | Guest "follow-along" share — read-only view + short titled backend links | Done | — | Shipped: `/follow` + `/follow/<slug>`, share dialog+QR, upcoming-row share, Supabase `shared_sessions`. App-user adopt → ACTS-95 | 2026-08-28 |
