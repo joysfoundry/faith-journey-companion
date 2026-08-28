@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CalendarRouteImport } from './routes/calendar'
+import { Route as FollowRouteImport } from './routes/follow'
 import { Route as FormationRouteImport } from './routes/formation'
 import { Route as ImportRouteImport } from './routes/import'
 import { Route as MoreRouteImport } from './routes/more'
@@ -35,6 +36,11 @@ const IndexRoute = IndexRouteImport.update({
 const CalendarRoute = CalendarRouteImport.update({
   id: '/calendar',
   path: '/calendar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FollowRoute = FollowRouteImport.update({
+  id: '/follow',
+  path: '/follow',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FormationRoute = FormationRouteImport.update({
@@ -116,6 +122,7 @@ const VoiceVoiceIdRoute = VoiceVoiceIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/calendar': typeof CalendarRoute
+  '/follow': typeof FollowRoute
   '/formation': typeof FormationRoute
   '/import': typeof ImportRoute
   '/more': typeof MoreRoute
@@ -135,6 +142,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/calendar': typeof CalendarRoute
+  '/follow': typeof FollowRoute
   '/formation': typeof FormationRoute
   '/import': typeof ImportRoute
   '/more': typeof MoreRoute
@@ -155,6 +163,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/calendar': typeof CalendarRoute
+  '/follow': typeof FollowRoute
   '/formation': typeof FormationRoute
   '/import': typeof ImportRoute
   '/more': typeof MoreRoute
@@ -176,6 +185,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/calendar'
+    | '/follow'
     | '/formation'
     | '/import'
     | '/more'
@@ -195,6 +205,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/calendar'
+    | '/follow'
     | '/formation'
     | '/import'
     | '/more'
@@ -214,6 +225,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/calendar'
+    | '/follow'
     | '/formation'
     | '/import'
     | '/more'
@@ -234,6 +246,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CalendarRoute: typeof CalendarRoute
+  FollowRoute: typeof FollowRoute
   FormationRoute: typeof FormationRoute
   ImportRoute: typeof ImportRoute
   MoreRoute: typeof MoreRoute
@@ -265,6 +278,13 @@ declare module '@tanstack/react-router' {
       path: '/calendar'
       fullPath: '/calendar'
       preLoaderRoute: typeof CalendarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/follow': {
+      id: '/follow'
+      path: '/follow'
+      fullPath: '/follow'
+      preLoaderRoute: typeof FollowRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/formation': {
@@ -378,6 +398,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CalendarRoute: CalendarRoute,
+  FollowRoute: FollowRoute,
   FormationRoute: FormationRoute,
   ImportRoute: ImportRoute,
   MoreRoute: MoreRoute,

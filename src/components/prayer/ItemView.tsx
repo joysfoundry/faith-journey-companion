@@ -9,6 +9,23 @@ import { ExternalLink as ExtLink } from "@/components/ui/external-link";
 import { ordinalWord } from "@/lib/prayer/compiler";
 import type { SessionItem } from "@/lib/prayer/types";
 
+/**
+ * The subset of a `SessionItem` this component actually renders. A full
+ * `SessionItem` satisfies it (Prayer Mode), and so does a `ShareItem` decoded from
+ * a guest link (`/follow`) — neither needs the session-local completion/id fields.
+ */
+export type ItemViewData = Pick<
+  SessionItem,
+  | "kind"
+  | "title"
+  | "body"
+  | "reference"
+  | "repetition_index"
+  | "repetition_total"
+  | "mystery_ordinal"
+  | "configuration"
+>;
+
 function decadeOrdinal(n: number): string {
   const s = ["th", "st", "nd", "rd"];
   const v = n % 100;
@@ -21,7 +38,13 @@ function DecadeTag({ decade }: { decade: number | undefined }) {
   return <p className="text-right text-sm font-medium text-primary">{decadeOrdinal(decade)}</p>;
 }
 
-export function ItemView({ item, showMeditation }: { item: SessionItem; showMeditation: boolean }) {
+export function ItemView({
+  item,
+  showMeditation,
+}: {
+  item: ItemViewData;
+  showMeditation: boolean;
+}) {
   const decade = (item.configuration as { decade?: number } | undefined)?.decade;
   if (item.kind === "mystery") {
     const config = (item.configuration ?? {}) as {

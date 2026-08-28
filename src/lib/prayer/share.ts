@@ -67,6 +67,7 @@ export interface ShareItem {
   reference?: string | undefined;
   repetition_index?: number | undefined;
   repetition_total?: number | undefined;
+  mystery_ordinal?: number | undefined;
   configuration?: Record<string, unknown> | undefined;
 }
 
@@ -94,6 +95,7 @@ export function toShareItem(item: SessionItem): ShareItem {
     reference: item.reference,
     repetition_index: item.repetition_index,
     repetition_total: item.repetition_total,
+    mystery_ordinal: item.mystery_ordinal,
     configuration: item.configuration,
   });
 }
