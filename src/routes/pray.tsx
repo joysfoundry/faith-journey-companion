@@ -1,6 +1,17 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Copy, FilePlus2, MoreVertical, Pencil, Play, Plus, Save, Trash2, X } from "lucide-react";
+import {
+  Copy,
+  FilePlus2,
+  MoreVertical,
+  Pencil,
+  Play,
+  Plus,
+  Save,
+  Share2,
+  Trash2,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
@@ -15,6 +26,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DevotionItemsEditor } from "@/components/prayer/DevotionItemsEditor";
+import { ShareDialog } from "@/components/prayer/ShareDialog";
+import { buildSharePayload } from "@/lib/prayer/share";
 import { useApp } from "@/lib/prayer/store";
 import {
   allMysteryBodies,
@@ -27,6 +40,7 @@ import {
   todayISO,
 } from "@/lib/prayer/compiler";
 import type {
+  Database,
   Frequency,
   MysteryPresentation,
   PrayerHour,
@@ -72,6 +86,69 @@ const HOUR_LABEL: Record<PrayerHour, string> = {
   vespers: "Evening Prayer (Vespers)",
   compline: "Night Prayer (Compline)",
 };
+
+/**
+ * Compile an upcoming plan into a session + items **without persisting it** — so it
+ * can be shared ahead of time. Mirrors the store's `startBuiltSession` compile path
+ * (custom plan items win over the base template's; the purpose becomes the title).
+ */
+function compilePlanSession(db: Database, plan: SessionPlan, today: string) {
+  const planItems: TemplateItem[] =
+    plan.items ??
+    db.template_items
+      .filter((i) => i.template_id === plan.template_id)
+      .sort((a, b) => a.position - b.position);
+  const base = plan.template_id ? db.templates.find((t) => t.id === plan.template_id) : undefined;
+  const workId = base?.id ?? "plan-share-preview";
+  const mysteryCount = planItems.filter((i) => i.kind === "mystery_placeholder").length;
+  const template: PrayerTemplate = base
+    ? { ...base, mystery_count: mysteryCount }
+    : {
+        id: workId,
+        name: plan.purpose?.trim() || "Prayer session",
+        kind: mysteryCount > 0 ? "rosary" : "standard",
+        mystery_presentation: "title_and_description",
+        mystery_count: mysteryCount,
+        built_in: false,
+        created_at: "",
+      };
+  const previewDb: Database = {
+    ...db,
+    template_items: [
+      ...db.template_items.filter((i) => i.template_id !== workId),
+      ...planItems.map((it, i) => ({ ...it, template_id: workId, position: i })),
+    ],
+  };
+  const { session, items } = generatePrayerSession(previewDb, template, {
+    date: today,
+    ...plan.context,
+  });
+  const titled = plan.purpose?.trim() ? { ...session, title: plan.purpose.trim() } : session;
+  return { session: titled, items };
+}
+
+/** Share icon for an upcoming plan — compiles it lazily and opens the shared dialog. */
+function PlanShareButton({ db, plan, today }: { db: Database; plan: SessionPlan; today: string }) {
+  const payload = useMemo(() => {
+    const { session, items } = compilePlanSession(db, plan, today);
+    return buildSharePayload(session, items);
+  }, [db, plan, today]);
+  return (
+    <ShareDialog
+      payload={payload}
+      allowEditCover
+      trigger={
+        <button
+          type="button"
+          aria-label="Share session"
+          className="p-1.5 text-muted-foreground hover:text-foreground"
+        >
+          <Share2 className="size-4" />
+        </button>
+      }
+    />
+  );
+}
 
 function PrayPage() {
   const {
@@ -733,6 +810,7 @@ function PrayPage() {
                           ) : null}
                         </div>
                         <div className="flex shrink-0 items-center gap-0.5">
+                          <PlanShareButton db={db} plan={plan} today={today} />
                           <button
                             type="button"
                             aria-label="Edit session"

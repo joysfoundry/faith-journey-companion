@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Check, ChevronDown, ChevronRight, X } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, Share2, X } from "lucide-react";
 import { AppShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
 import { ItemView } from "@/components/prayer/ItemView";
+import { ShareDialog } from "@/components/prayer/ShareDialog";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
@@ -14,6 +15,7 @@ import {
   ordinalWord,
   sessionProgress,
 } from "@/lib/prayer/compiler";
+import { buildSharePayload } from "@/lib/prayer/share";
 import type { ListenSource, SessionItem } from "@/lib/prayer/types";
 import {
   GUIDE_EXPAND_DEFAULT,
@@ -178,9 +180,25 @@ function PrayerMode() {
               <X className="size-4" /> Close
             </Link>
             <p className="truncate text-sm font-medium">{session.title}</p>
-            <p className="shrink-0 text-sm text-muted-foreground tabular-nums">
-              {progress.done} / {progress.total}
-            </p>
+            <div className="flex shrink-0 items-center gap-1.5">
+              <ShareDialog
+                payload={buildSharePayload(session, items)}
+                allowEditCover
+                trigger={
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-8 text-muted-foreground"
+                    aria-label="Share to follow along"
+                  >
+                    <Share2 className="size-4" />
+                  </Button>
+                }
+              />
+              <p className="text-sm text-muted-foreground tabular-nums">
+                {progress.done} / {progress.total}
+              </p>
+            </div>
           </div>
           <Progress value={pct} className="mt-3 h-1" />
         </div>
