@@ -14,7 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      // ACTS-94 — shared "follow-along" sessions (short titled links).
+      // Added by hand (no codegen pipeline in this repo); see
+      // supabase/migrations/0001_shared_sessions.sql.
+      shared_sessions: {
+        Row: {
+          slug: string
+          payload: string
+          created_at: string
+        }
+        Insert: {
+          slug: string
+          payload: string
+          created_at?: string
+        }
+        Update: {
+          slug?: string
+          payload?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
