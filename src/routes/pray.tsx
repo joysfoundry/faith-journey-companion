@@ -60,6 +60,8 @@ import {
 } from "@/lib/prayer/recurrence";
 
 export const Route = createFileRoute("/pray")({
+  validateSearch: (search: Record<string, unknown>): { build?: boolean } =>
+    search["build"] === "1" || search["build"] === true ? { build: true } : {},
   head: () => ({
     meta: [
       { title: "Pray Plan — Faith Journey" },
@@ -161,6 +163,7 @@ function PrayPage() {
     saveTemplate,
   } = useApp();
   const navigate = useNavigate();
+  const { build } = Route.useSearch();
   const today = todayISO();
 
   const seedItems = (tid: string): TemplateItem[] =>
@@ -169,7 +172,7 @@ function PrayPage() {
       .sort((a, b) => a.position - b.position)
       .map((i) => ({ ...i }));
 
-  const [tab, setTab] = useState<"builder" | "sessions">("builder");
+  const [tab, setTab] = useState<"builder" | "sessions">(build ? "builder" : "sessions");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [purpose, setPurpose] = useState("");
   const [dateVal, setDateVal] = useState(today);
@@ -425,7 +428,6 @@ function PrayPage() {
     <AppShell title="Pray Plan" action={tab === "builder" ? pageMenu : undefined}>
       <Tabs value={tab} onValueChange={(v) => setTab(v as "builder" | "sessions")}>
         <TabsList className="mb-4 grid w-full grid-cols-2">
-          <TabsTrigger value="builder">Session Builder</TabsTrigger>
           <TabsTrigger value="sessions">
             Sessions
             {plans.length + openSessions.length > 0 ? (
@@ -434,6 +436,7 @@ function PrayPage() {
               </span>
             ) : null}
           </TabsTrigger>
+          <TabsTrigger value="builder">Session Builder</TabsTrigger>
         </TabsList>
 
         <TabsContent value="builder">

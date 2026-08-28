@@ -236,8 +236,8 @@ function KnowledgePage() {
     >
       <Tabs value={tab} onValueChange={(v) => goTab(v as "add" | "library")}>
         <TabsList className="mb-4 grid w-full grid-cols-2">
-          <TabsTrigger value="add">Add</TabsTrigger>
           <TabsTrigger value="library">Library</TabsTrigger>
+          <TabsTrigger value="add">Add</TabsTrigger>
         </TabsList>
 
         {/* ADD — a Voice and its content, all in one form ------------------ */}

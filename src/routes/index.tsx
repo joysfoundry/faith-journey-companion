@@ -369,7 +369,9 @@ function Index() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => navigate({ to: "/pray" })}>
+                  <DropdownMenuItem
+                    onClick={() => navigate({ to: "/pray", search: { build: true } })}
+                  >
                     <Plus className="size-4" aria-hidden /> New session
                   </DropdownMenuItem>
                 </DropdownMenuContent>
