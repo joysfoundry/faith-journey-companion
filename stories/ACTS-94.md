@@ -21,27 +21,48 @@ guests **without the app** can follow along in their phone browser — no instal
 Implements the direction settled in **ACTS-93** (see its Decisions + measured payload probe).
 
 ## Acceptance criteria
-- [ ] **Public route** (e.g. `/follow`) — no auth, no store dependency; renders entirely
-      from the URL **fragment** (`/follow#<payload>`), which never reaches a server.
+- [x] **Public route** `/follow` (`src/routes/follow.tsx`) — no auth, no store, no network;
+      decodes the URL **fragment** client-side (SSR-safe: neutral loading paint, then decode
+      on mount; re-reads on `hashchange`). ✅ Phase 3 landed + browser-verified.
 - [x] **Encode/decode:** `src/lib/prayer/share.ts` — compiles guest-rendered fields
       (`kind/title/body/reference/repetition_*/configuration`) + cover → lz-string
       `compressToEncodedURIComponent` → fragment; `decodeShare` is the inverse and returns
       `null` (never throws) on empty/garbled/wrong-`v`/wrong-shape. `v` tag is a
       **validation gate only**; **no back-compat**. Cover is identity-free (`title`+`date`
       from session; `purpose`+`info` sharer-authored at share time). ✅ Phase 1 landed.
-- [ ] **Guest view:** cover header (**date · title · purpose · info**) + the **fully-expanded**
-      prayer list, **read-only** (reuse `ItemView`; drop tap-to-complete, Finish, keep-awake).
-      Self-paced scroll. Mobile-first, works offline once loaded.
+- [x] **Guest view:** cover header (**date · title · purpose · info**, date formatted long,
+      `info` keeps line breaks) + the **fully-expanded** prayer list rendered through the
+      shared `ItemView`, **read-only** (no tap-to-complete, no "Now", no Finish, no keep-awake).
+      Self-paced scroll, mobile-first, works offline once loaded. Loading / empty / invalid
+      states all present. ✅ Phase 3 — browser-verified (real litany fragment renders; garbled
+      fragment shows the friendly "reshare" message).
   - [x] **Phase 2 — `ItemView` extracted** to `src/components/prayer/ItemView.tsx` (with its
-        `DecadeTag`/`decadeOrdinal` helpers); `session.$sessionId.tsx` imports it. Pure,
-        behavior-preserving move — `tsc --noEmit` + eslint clean. ⚠️ Live browser re-check of
-        Prayer Mode still pending (blocked: the Vite config is pinned to :8080, held by a
-        concurrent dev server → do it once that's free, or after `/save`).
+        `DecadeTag`/`decadeOrdinal` helpers + a narrowed `ItemViewData` prop that both a full
+        `SessionItem` and a decoded `ShareItem` satisfy); `session.$sessionId.tsx` imports it.
+        Pure, behavior-preserving move — `tsc` + eslint clean. ⚠️ Live re-check of Prayer Mode
+        itself still pending (needs the :8080 dev server free).
 - [ ] **New `info` field:** free-text blurb captured on the session/session-context and
       surfaced in the cover. (Small addition to the builder — confirm placement with JC.)
-- [ ] **Leader Share sheet:** copyable link + native share; **QR code best-effort** — show
-      the QR only when the fragment fits (~<2 KB, i.e. short sessions per the ACTS-93 table),
-      otherwise show link-only with a one-line "too long for a QR — share the link" note.
+- [x] **Share dialog:** `src/components/prayer/ShareDialog.tsx` — copyable link + native share
+      (`navigator.share`), inputs for optional **intention** + **welcome note** (leader), and a
+      **best-effort QR** shown only when the full link fits `QR_FRAGMENT_LIMIT` (short sessions),
+      else a "too long for a scannable code — share the link" note. Leader entry = Share icon in
+      the running-session header. ✅ Phase 4 — browser-verified (leader dialog with inputs +
+      link-only note; guest re-share dialog + live QR for a short session; copy writes to
+      clipboard). Reused by the guest `/follow` re-share button (handoff).
+- [x] **Share on upcoming/saved sessions:** Share icon added to the **Upcoming** row in
+      `pray.tsx` (leftmost: Share · Edit · Duplicate · Delete · Begin), opening the same
+      `ShareDialog`. Compiles the plan **without persisting** (`compilePlanSession` +
+      `PlanShareButton`, mirrors the store's `startBuiltSession` path). Lets a session be shared
+      *ahead of time* without starting it. ✅ browser-verified (icon renders on the row).
+- [ ] **⚠️ BLOCKER / DECISION — long link:** the self-contained fragment link is huge (full
+      rosary ~10 KB) and **not human-readable**. JC wants a **titled/short link** (date + prayer
+      title, e.g. `/follow/aug-27-litany`). That is **impossible client-side** — it requires
+      storing the session server-side and returning a short id/slug → **needs ACTS-82 (Supabase,
+      scaffolded but not connected)**. Reusable either way: `ShareDialog` / QR / `/follow` /
+      upcoming-row button all stay; only **URL production** changes (store→id vs. encode
+      fragment), and short URLs then also unlock **QR for long sessions** + clean texting. Await
+      JC's call: (a) build the backend short-link now, or (b) ship long-link MVP + follow-up story.
 - [ ] **Handoff / re-share:** the guest `/follow` view carries the **same Share action**, so
       whoever holds the link can hand the identical session to the next person — **not tied to
       the original sender**, no app required. Reuses the same `ShareSheet` + the payload the
@@ -74,6 +95,16 @@ Implements the direction settled in **ACTS-93** (see its Decisions + measured pa
   (gzip, ~3 KB but async) or a hosted `/s/<id>` (ACTS-82).
 - **Import note:** lz-string is CJS with no ESM/exports map → `import LZString from
   "lz-string"` + destructure (named ESM imports fail under plain Node; Vite would interop).
+- **Phase 2 — `ItemView` extraction: DONE** (see AC). Added exported `ItemViewData` (narrowed
+  prop) so `ShareItem` renders without a full `SessionItem`; added `mystery_ordinal` to the
+  payload (ItemView's mystery fallback reads it).
+- **Phase 3 — `/follow` route: DONE + browser-verified** on a real litany fragment (cover +
+  read-only cards render; garbled fragment → friendly reshare message; mobile layout clean).
+  Verified against this session's own dev server on :8081 (the preview proxy mis-mapped the
+  autoPort; navigated the in-app browser to the real bound port instead).
+  - **Dark-mode note:** `/follow` uses the app's design tokens, so it follows the app theme.
+    The app does not switch on `prefers-color-scheme` (no `data-theme`/`.dark` set in my test),
+    so OS-dark emulation alone stayed light — a whole-app theme behavior, not a `/follow` bug.
 
 ## Tests
 _Per ACTS-91 convention. No runner yet (harness = ACTS-92) → planned. Phase-1 codec was
