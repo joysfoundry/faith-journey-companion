@@ -232,7 +232,7 @@ function KnowledgePage() {
     <AppShell
       title={SECTION_LABEL}
       subtitle={`The ${VOICE_LABEL.toLowerCase()} you follow and the content that forms you`}
-      back={{ to: "/more", label: "More" }}
+      back={{ to: "/", label: "Today" }}
     >
       <Tabs value={tab} onValueChange={(v) => goTab(v as "add" | "library")}>
         <TabsList className="mb-4 grid w-full grid-cols-2">

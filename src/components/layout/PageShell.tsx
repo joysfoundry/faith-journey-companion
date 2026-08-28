@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { ChevronLeft } from "lucide-react";
 
-import { BottomNav } from "./BottomNav";
+import { AppNav } from "./AppNav";
 
 /**
  * Inner-page shell: title, optional subtitle, action slot, and back link.
@@ -22,8 +22,8 @@ export function AppShell({
   children: ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-background pb-24">
-      <div className="mx-auto w-full max-w-2xl px-5 pt-8">
+    <div className="min-h-screen bg-background pb-24 md:pb-8 md:pl-60">
+      <div className="mx-auto w-full max-w-2xl px-5 pt-8 lg:max-w-3xl">
         {back ? (
           <Link
             to={back.to as "/"}
@@ -41,7 +41,7 @@ export function AppShell({
         </header>
         {children}
       </div>
-      <BottomNav />
+      <AppNav />
     </div>
   );
 }

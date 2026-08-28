@@ -14,7 +14,6 @@ import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as FollowRouteImport } from './routes/follow'
 import { Route as FormationRouteImport } from './routes/formation'
 import { Route as ImportRouteImport } from './routes/import'
-import { Route as MoreRouteImport } from './routes/more'
 import { Route as PrayRouteImport } from './routes/pray'
 import { Route as PrayersRouteImport } from './routes/prayers'
 import { Route as ReflectionsRouteImport } from './routes/reflections'
@@ -53,11 +52,6 @@ const FormationRoute = FormationRouteImport.update({
 const ImportRoute = ImportRouteImport.update({
   id: '/import',
   path: '/import',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MoreRoute = MoreRouteImport.update({
-  id: '/more',
-  path: '/more',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrayRoute = PrayRouteImport.update({
@@ -137,7 +131,6 @@ export interface FileRoutesByFullPath {
   '/follow': typeof FollowRouteWithChildren
   '/formation': typeof FormationRoute
   '/import': typeof ImportRoute
-  '/more': typeof MoreRoute
   '/pray': typeof PrayRoute
   '/prayers': typeof PrayersRoute
   '/reflections': typeof ReflectionsRoute
@@ -158,7 +151,6 @@ export interface FileRoutesByTo {
   '/calendar': typeof CalendarRoute
   '/formation': typeof FormationRoute
   '/import': typeof ImportRoute
-  '/more': typeof MoreRoute
   '/pray': typeof PrayRoute
   '/prayers': typeof PrayersRoute
   '/reflections': typeof ReflectionsRoute
@@ -181,7 +173,6 @@ export interface FileRoutesById {
   '/follow': typeof FollowRouteWithChildren
   '/formation': typeof FormationRoute
   '/import': typeof ImportRoute
-  '/more': typeof MoreRoute
   '/pray': typeof PrayRoute
   '/prayers': typeof PrayersRoute
   '/reflections': typeof ReflectionsRoute
@@ -205,7 +196,6 @@ export interface FileRouteTypes {
     | '/follow'
     | '/formation'
     | '/import'
-    | '/more'
     | '/pray'
     | '/prayers'
     | '/reflections'
@@ -226,7 +216,6 @@ export interface FileRouteTypes {
     | '/calendar'
     | '/formation'
     | '/import'
-    | '/more'
     | '/pray'
     | '/prayers'
     | '/reflections'
@@ -248,7 +237,6 @@ export interface FileRouteTypes {
     | '/follow'
     | '/formation'
     | '/import'
-    | '/more'
     | '/pray'
     | '/prayers'
     | '/reflections'
@@ -271,7 +259,6 @@ export interface RootRouteChildren {
   FollowRoute: typeof FollowRouteWithChildren
   FormationRoute: typeof FormationRoute
   ImportRoute: typeof ImportRoute
-  MoreRoute: typeof MoreRoute
   PrayRoute: typeof PrayRoute
   PrayersRoute: typeof PrayersRoute
   ReflectionsRoute: typeof ReflectionsRoute
@@ -321,13 +308,6 @@ declare module '@tanstack/react-router' {
       path: '/import'
       fullPath: '/import'
       preLoaderRoute: typeof ImportRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/more': {
-      id: '/more'
-      path: '/more'
-      fullPath: '/more'
-      preLoaderRoute: typeof MoreRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pray': {
@@ -450,7 +430,6 @@ const rootRouteChildren: RootRouteChildren = {
   FollowRoute: FollowRouteWithChildren,
   FormationRoute: FormationRoute,
   ImportRoute: ImportRoute,
-  MoreRoute: MoreRoute,
   PrayRoute: PrayRoute,
   PrayersRoute: PrayersRoute,
   ReflectionsRoute: ReflectionsRoute,
