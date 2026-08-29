@@ -31,13 +31,13 @@ import type { Reflection } from "@/lib/prayer/types";
 export const Route = createFileRoute("/reflections")({
   head: () => ({
     meta: [
-      { title: "Reflection — Faith Journey" },
+      { title: "Reflection — ACTS" },
       {
         name: "description",
         content:
           "Write reflections and link them to the prayer, reading, Mass, or book that prompted them.",
       },
-      { property: "og:title", content: "Reflection — Faith Journey" },
+      { property: "og:title", content: "Reflection — ACTS" },
       {
         property: "og:description",
         content: "Your journal — the connecting tissue across prayer, Word, and learning.",

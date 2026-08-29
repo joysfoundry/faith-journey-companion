@@ -28,12 +28,12 @@ import { useApp } from "@/lib/prayer/store";
 export const Route = createFileRoute("/settings")({
   head: () => ({
     meta: [
-      { title: "Settings — Faith Journey" },
+      { title: "Settings — ACTS" },
       {
         name: "description",
         content: "Your daily devotion and the Bible app you read in.",
       },
-      { property: "og:title", content: "Settings — Faith Journey" },
+      { property: "og:title", content: "Settings — ACTS" },
       {
         property: "og:description",
         content: "Set your Bible app and daily devotion.",

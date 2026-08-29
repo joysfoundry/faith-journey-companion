@@ -67,13 +67,13 @@ export const Route = createFileRoute("/import")({
   },
   head: () => ({
     meta: [
-      { title: "Devotion Builder — Faith Journey" },
+      { title: "Devotion Builder — ACTS" },
       {
         name: "description",
         content:
           "Build a devotion or add a single prayer — by hand, from a link, or from a photo — and review it before it enters your library.",
       },
-      { property: "og:title", content: "Devotion Builder — Faith Journey" },
+      { property: "og:title", content: "Devotion Builder — ACTS" },
       { property: "og:description", content: "Nothing is saved until you review it." },
     ],
   }),

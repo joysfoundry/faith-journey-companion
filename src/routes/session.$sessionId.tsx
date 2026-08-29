@@ -27,13 +27,13 @@ import {
 export const Route = createFileRoute("/session/$sessionId")({
   head: () => ({
     meta: [
-      { title: "Prayer Mode — Faith Journey" },
+      { title: "Prayer Mode — ACTS" },
       {
         name: "description",
         content:
           "A distraction-free follow-along prayer session: every prayer, in order, with your place kept.",
       },
-      { property: "og:title", content: "Prayer Mode — Faith Journey" },
+      { property: "og:title", content: "Prayer Mode — ACTS" },
       {
         property: "og:description",
         content: "Follow the full text of every prayer without searching or counting.",

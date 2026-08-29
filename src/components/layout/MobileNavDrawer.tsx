@@ -1,7 +1,7 @@
-import { Link } from "@tanstack/react-router";
 import { X } from "lucide-react";
 import { useEffect } from "react";
 
+import { Brand } from "./Brand";
 import { NavSections } from "./NavSections";
 
 /**
@@ -38,13 +38,7 @@ export function MobileNavDrawer({ open, onClose }: { open: boolean; onClose: () 
         }`}
       >
         <div className="flex items-center justify-between px-5 py-5">
-          <Link
-            to="/"
-            onClick={onClose}
-            className="font-display text-xl tracking-wide text-foreground"
-          >
-            Faith Journey
-          </Link>
+          <Brand onClick={onClose} tagline />
           <button
             type="button"
             onClick={onClose}

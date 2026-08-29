@@ -58,13 +58,13 @@ import type { PrayerTemplate } from "@/lib/prayer/types";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Faith Journey — Your daily prayer companion" },
+      { title: "ACTS — Your daily prayer companion" },
       {
         name: "description",
         content:
           "Devotion, need, word, and learning in one calm daily companion — with reflections that connect them.",
       },
-      { property: "og:title", content: "Faith Journey — Your daily prayer companion" },
+      { property: "og:title", content: "ACTS — Your daily prayer companion" },
       {
         property: "og:description",
         content: "Devotion, need, word, and learning in one calm daily companion.",

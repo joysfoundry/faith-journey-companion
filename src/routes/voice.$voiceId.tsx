@@ -36,7 +36,7 @@ export const Route = createFileRoute("/voice/$voiceId")({
     s["edit"] === true || s["edit"] === "1" ? { edit: true } : {},
   head: () => ({
     meta: [
-      { title: `${VOICE_LABEL_SINGULAR} — Faith Journey` },
+      { title: `${VOICE_LABEL_SINGULAR} — ACTS` },
       { name: "description", content: "A person, organization, or ministry you follow." },
     ],
   }),

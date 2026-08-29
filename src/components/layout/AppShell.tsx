@@ -1,7 +1,7 @@
-import { Link } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 
 import { AppNav } from "./AppNav";
+import { Brand } from "./Brand";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [today, setToday] = useState<string>("");
@@ -21,12 +21,9 @@ export function AppShell({ children }: { children: ReactNode }) {
       <header className="border-b border-border/70 bg-parchment/80 backdrop-blur">
         <div className="mx-auto flex max-w-2xl items-center justify-between px-5 py-4 lg:max-w-3xl">
           {/* Brand lives in the SideNav on md+, so hide it here to avoid duplication. */}
-          <Link
-            to="/"
-            className="font-display text-xl tracking-wide text-foreground md:hidden"
-          >
-            Faith Journey
-          </Link>
+          <div className="md:hidden">
+            <Brand tagline />
+          </div>
           <span className="text-xs uppercase tracking-[0.18em] text-muted-foreground md:ml-auto">
             {today}
           </span>

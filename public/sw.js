@@ -1,4 +1,4 @@
-/* Faith Journey — minimal offline-shell service worker.
+/* ACTS — minimal offline-shell service worker.
  * App data lives in localStorage, so this only caches the shell + static assets
  * so the app loads offline. Runtime caching only (no build manifest): assets are
  * cached as they're fetched. Bump VERSION to invalidate old caches on deploy. */

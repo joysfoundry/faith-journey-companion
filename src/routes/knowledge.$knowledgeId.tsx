@@ -55,7 +55,7 @@ export const Route = createFileRoute("/knowledge/$knowledgeId")({
     s["edit"] === true || s["edit"] === "1" ? { edit: true } : {},
   head: () => ({
     meta: [
-      { title: `${SECTION_LABEL} — Faith Journey` },
+      { title: `${SECTION_LABEL} — ACTS` },
       { name: "description", content: "A book, program, post, or other content in your library." },
     ],
   }),

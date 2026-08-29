@@ -85,7 +85,7 @@ export function FollowAlongView({
         </div>
 
         <footer className="mt-12 text-center text-xs text-muted-foreground">
-          Shared from Faith Journey · read-only
+          Shared from ACTS · read-only
         </footer>
       </div>
     </main>

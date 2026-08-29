@@ -22,9 +22,9 @@ export const Route = createFileRoute("/prayer/$prayerId")({
     s["edit"] === true || s["edit"] === "true" ? { edit: true } : {},
   head: () => ({
     meta: [
-      { title: "Prayer — Faith Journey" },
+      { title: "Prayer — ACTS" },
       { name: "description", content: "Read, pray, and manage a prayer in your library." },
-      { property: "og:title", content: "Prayer — Faith Journey" },
+      { property: "og:title", content: "Prayer — ACTS" },
       { property: "og:description", content: "Prayer text, audio, alternate versions, and source." },
     ],
   }),

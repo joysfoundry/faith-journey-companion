@@ -6,13 +6,13 @@ import { AppShell } from "@/components/layout/PageShell";
 export const Route = createFileRoute("/word")({
   head: () => ({
     meta: [
-      { title: "Word — Faith Journey" },
+      { title: "Word — ACTS" },
       {
         name: "description",
         content:
           "Today's Mass readings, the Mass you attended, and the reading programs you follow.",
       },
-      { property: "og:title", content: "Word — Faith Journey" },
+      { property: "og:title", content: "Word — ACTS" },
       {
         property: "og:description",
         content: "Daily Mass readings, homily capture, and your reading programs.",

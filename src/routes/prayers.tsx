@@ -480,13 +480,13 @@ function BulkBar({
 export const Route = createFileRoute("/prayers")({
   head: () => ({
     meta: [
-      { title: "Prayer Library — Faith Journey" },
+      { title: "Prayer Library — ACTS" },
       {
         name: "description",
         content:
           "Browse, search, and edit single prayers, devotions, and How To guides in one library.",
       },
-      { property: "og:title", content: "Prayer Library — Faith Journey" },
+      { property: "og:title", content: "Prayer Library — ACTS" },
       {
         property: "og:description",
         content: "Your prayers, devotions, and instructions, kept together and ready to pray.",

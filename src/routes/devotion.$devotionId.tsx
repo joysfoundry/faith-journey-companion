@@ -28,13 +28,13 @@ import type { PrayerHour, TemplateItem } from "@/lib/prayer/types";
 export const Route = createFileRoute("/devotion/$devotionId")({
   head: () => ({
     meta: [
-      { title: "Devotion — Faith Journey" },
+      { title: "Devotion — ACTS" },
       {
         name: "description",
         content:
           "A full summary of a devotion — every prayer laid out, with its schedule and source.",
       },
-      { property: "og:title", content: "Devotion — Faith Journey" },
+      { property: "og:title", content: "Devotion — ACTS" },
       { property: "og:description", content: "Every prayer in the devotion, in order, printable." },
     ],
   }),
