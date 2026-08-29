@@ -32,6 +32,7 @@ export const KIND_LABELS: Record<TemplateItem["kind"], string> = {
   meditation: "Meditation",
   external_link: "External link",
   scripture: "Scripture",
+  reflection: "Reflection",
   custom: "Other",
   heading: "Section",
 };
@@ -45,6 +46,7 @@ const ADD_TYPES: { kind: TemplateItem["kind"]; label: string }[] = [
   { kind: "intention", label: "Intention" },
   { kind: "petition", label: "Petition" },
   { kind: "meditation", label: "Meditation" },
+  { kind: "reflection", label: "Reflection" },
   { kind: "mystery_placeholder", label: "Mystery" },
   { kind: "external_link", label: "External link" },
   { kind: "heading", label: "Section" },
@@ -153,6 +155,7 @@ export function DevotionItemsEditor({
       intention: { label: "Intention", body: "" },
       petition: { label: "Petition", body: "" },
       meditation: { label: "Meditation", body: "" },
+      reflection: { label: "Reflection", body: "" },
       mystery_placeholder: {
         mystery_ordinal: mysteryCount + 1,
         label: `Decade ${mysteryCount + 1}`,
@@ -406,7 +409,8 @@ export function DevotionItemsEditor({
 
                         {item.kind === "intention" ||
                         item.kind === "petition" ||
-                        item.kind === "meditation" ? (
+                        item.kind === "meditation" ||
+                        item.kind === "reflection" ? (
                           <div className="mt-2 space-y-2">
                             <Input
                               value={item.label ?? ""}
@@ -420,7 +424,9 @@ export function DevotionItemsEditor({
                               placeholder={
                                 item.kind === "meditation"
                                   ? "Meditation prompt (optional)"
-                                  : "Text (optional)"
+                                  : item.kind === "reflection"
+                                    ? "Journaling prompt"
+                                    : "Text (optional)"
                               }
                               onChange={(e) => update(index, { body: e.target.value })}
                               className="text-sm"

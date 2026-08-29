@@ -581,6 +581,19 @@ export function generatePrayerSession(
       continue;
     }
 
+    // A journaling step: `body` is the prompt, `label` names the movement. The
+    // user's written response is captured in Prayer Mode and saved as a linked
+    // Reflection (see `saveSessionReflection`), stored on the item's
+    // `configuration` so re-opening the session shows what was written.
+    if (item.kind === "reflection") {
+      push({
+        kind: "reflection",
+        title: item.label ?? "Reflection",
+        body: item.body ?? "",
+      });
+      continue;
+    }
+
     if (item.kind === "custom") {
       push({
         kind: "prayer",
@@ -721,7 +734,10 @@ export function sessionProgress(items: SessionItem[]): { done: number; total: nu
       i.kind === "prayer" ||
       i.kind === "song" ||
       i.kind === "mystery" ||
-      i.kind === "external_link",
+      i.kind === "external_link" ||
+      // A reflection is an action the user takes (writing a response), so it
+      // counts toward progress — it's completed by saving, or by skipping.
+      i.kind === "reflection",
   );
   return {
     done: prayable.filter((i) => i.completion_status === "complete").length,

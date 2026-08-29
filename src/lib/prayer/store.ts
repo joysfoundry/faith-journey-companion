@@ -44,7 +44,7 @@ import {
   uncompleteSessionItem,
 } from "./compiler";
 
-export const STORAGE_KEY = "prayer-companion-db-v22";
+export const STORAGE_KEY = "prayer-companion-db-v29";
 
 /**
  * Migrate a legacy string recurrence ("daily"/"custom"/…) to the structured
@@ -403,6 +403,19 @@ export interface AppStore {
   startSinglePrayer: (prayerId: ID, ctx?: Partial<SessionContext>) => PrayerSession | undefined;
   setCursor: (sessionId: ID, cursor: number) => void;
   toggleItemDone: (itemId: ID) => void;
+  /**
+   * Save the user's written response to a `reflection` session step. Creates (or
+   * updates) a `Reflection` dual-linked to the step (`session_item`) and the
+   * session (`prayer_session`), stores the text on the item's `configuration`,
+   * and marks the step complete. Empty text clears the entry and re-opens the step.
+   */
+  saveSessionReflection: (sessionId: ID, itemId: ID, text: string) => void;
+  /**
+   * Set the passage every scripture step in a session reads (Lectio: one passage,
+   * re-read). `reference` is the citation; `text` is the optional pasted passage
+   * text, propagated to each scripture step's body (empty leaves them reference-only).
+   */
+  setSessionPassage: (sessionId: ID, reference: string, text: string) => void;
   finishSession: (sessionId: ID) => void;
   deleteSession: (sessionId: ID) => void;
   saveSessionPlan: (plan: SessionPlan) => void;
@@ -837,6 +850,86 @@ export const mutations = {
           ? i.completion_status === "complete"
             ? uncompleteSessionItem(i)
             : completeSessionItem(i, "manual")
+          : i,
+      ),
+    };
+  },
+  saveSessionReflection(db: Database, sessionId: ID, itemId: ID, text: string): Database {
+    const item = db.session_items.find((i) => i.id === itemId);
+    if (!item || item.kind !== "reflection") return db;
+    const body = text.trim();
+    const config = (item.configuration ?? {}) as { reflection_id?: ID; response?: string };
+    const existingId = config.reflection_id;
+
+    // Emptying the field clears the saved entry and re-opens the step.
+    if (!body) {
+      return {
+        ...db,
+        reflections: existingId
+          ? db.reflections.filter((r) => r.id !== existingId)
+          : db.reflections,
+        session_items: db.session_items.map((i) =>
+          i.id === itemId ? { ...uncompleteSessionItem(i), configuration: {} } : i,
+        ),
+      };
+    }
+
+    // Dual-link: the movement (session_item) for granularity, the session
+    // (prayer_session) for grouping. The movement name is the human tag.
+    const sessionTitle = db.sessions.find((s) => s.id === sessionId)?.title;
+    const links: Reflection["links"] = [
+      { target_type: "session_item", target_id: itemId, label: item.title },
+      {
+        target_type: "prayer_session",
+        target_id: sessionId,
+        ...(sessionTitle ? { label: sessionTitle } : {}),
+      },
+    ];
+    const reflectionId = existingId ?? newId("reflection");
+    const existing = existingId ? db.reflections.find((r) => r.id === existingId) : undefined;
+    const reflection: Reflection = {
+      id: reflectionId,
+      title: item.title,
+      body,
+      mode: "written",
+      links,
+      photo_count: existing?.photo_count ?? 0,
+      created_at: existing?.created_at ?? new Date().toISOString(),
+    };
+    const reflections = existing
+      ? db.reflections.map((r) => (r.id === reflectionId ? reflection : r))
+      : [reflection, ...db.reflections];
+
+    return {
+      ...db,
+      reflections,
+      session_items: db.session_items.map((i) =>
+        i.id === itemId
+          ? {
+              ...completeSessionItem(i, "manual"),
+              configuration: {
+                ...(i.configuration ?? {}),
+                reflection_id: reflectionId,
+                response: body,
+              },
+            }
+          : i,
+      ),
+    };
+  },
+  setSessionPassage(db: Database, sessionId: ID, reference: string, text: string): Database {
+    const ref = reference.trim();
+    const body = text.trim();
+    return {
+      ...db,
+      session_items: db.session_items.map((i) =>
+        i.session_id === sessionId && i.kind === "scripture"
+          ? {
+              ...i,
+              reference: ref || undefined,
+              body: body || undefined,
+              title: ref || "Scripture",
+            }
           : i,
       ),
     };

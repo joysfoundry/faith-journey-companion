@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Check, ChevronDown, ChevronRight, Share2, X } from "lucide-react";
+import { BookOpen, Check, ChevronDown, ChevronRight, Pencil, Share2, X } from "lucide-react";
 import { AppShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { ItemView } from "@/components/prayer/ItemView";
 import { ShareDialog } from "@/components/prayer/ShareDialog";
+import { ExternalLink as ExtLink } from "@/components/ui/external-link";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
@@ -16,6 +19,8 @@ import {
   sessionProgress,
 } from "@/lib/prayer/compiler";
 import { buildSharePayload } from "@/lib/prayer/share";
+import { buildPassageUrl, resolveBibleHomeUrl } from "@/lib/bible/apps";
+import { LECTIO_TEMPLATE_ID } from "@/lib/prayer/seed";
 import type { ListenSource, SessionItem } from "@/lib/prayer/types";
 import {
   GUIDE_EXPAND_DEFAULT,
@@ -118,7 +123,8 @@ function useAutoScrollToCurrent<T extends HTMLElement>(
 
 function PrayerMode() {
   const { sessionId } = Route.useParams();
-  const { db, ready, toggleItemDone, finishSession } = useApp();
+  const { db, ready, toggleItemDone, finishSession, saveSessionReflection, setSessionPassage } =
+    useApp();
   const navigate = useNavigate();
 
   const session = db.sessions.find((s) => s.id === sessionId);
@@ -148,6 +154,23 @@ function PrayerMode() {
   const progress = sessionProgress(items);
   const pct = progress.total ? (progress.done / progress.total) * 100 : 0;
   const estMin = estimateMinutes(items);
+
+  // Lectio Divina: one passage, chosen per session and re-read across movements.
+  const isLectio = session.template_id === LECTIO_TEMPLATE_ID;
+  const scriptureItem = items.find((i) => i.kind === "scripture");
+  const passageRef = scriptureItem?.reference ?? "";
+  const passageText = scriptureItem?.body ?? "";
+  const bibleUrl = (ref: string) => buildPassageUrl(db.settings, ref);
+  const bibleHome = resolveBibleHomeUrl(db.settings);
+
+  // The devotion's own source (editable in the Devotion Builder → Source). Shown
+  // under the title so a seeded devotion credits where its steps came from.
+  const template = db.templates.find((t) => t.id === session.template_id);
+  const source = template?.source_id
+    ? db.sources.find((s) => s.id === template.source_id)
+    : undefined;
+  const sourceLabel = source ? (source.attribution ?? source.name) : "";
+  const sourceUrl = source?.url ?? "";
 
   // "Day 3 of 9" for a bounded recurrence, derived from the plan's series.
   const plan = session.plan_id ? db.session_plans.find((p) => p.id === session.plan_id) : undefined;
@@ -225,6 +248,16 @@ function PrayerMode() {
             active={tab === "prayers"}
             reducedMotion={reducedMotion}
             onToggle={toggleItemDone}
+            sessionId={session.id}
+            isLectio={isLectio}
+            sourceLabel={sourceLabel}
+            sourceUrl={sourceUrl}
+            passageRef={passageRef}
+            passageText={passageText}
+            onSetPassage={(ref, text) => setSessionPassage(session.id, ref, text)}
+            onSaveReflection={(itemId, text) => saveSessionReflection(session.id, itemId, text)}
+            bibleUrl={bibleUrl}
+            bibleHome={bibleHome}
           />
         </TabsContent>
 
@@ -274,6 +307,16 @@ function PrayersTab({
   active,
   reducedMotion,
   onToggle,
+  sessionId,
+  isLectio,
+  sourceLabel,
+  sourceUrl,
+  passageRef,
+  passageText,
+  onSetPassage,
+  onSaveReflection,
+  bibleUrl,
+  bibleHome,
 }: {
   title: string;
   items: SessionItem[];
@@ -283,6 +326,16 @@ function PrayersTab({
   active: boolean;
   reducedMotion: boolean;
   onToggle: (itemId: string) => void;
+  sessionId: string;
+  isLectio: boolean;
+  sourceLabel: string;
+  sourceUrl: string;
+  passageRef: string;
+  passageText: string;
+  onSetPassage: (reference: string, text: string) => void;
+  onSaveReflection: (itemId: string, text: string) => void;
+  bibleUrl: (ref: string) => string;
+  bibleHome: string;
 }) {
   const currentRef = useAutoScrollToCurrent<HTMLDivElement>(currentId, active, reducedMotion);
   return (
@@ -294,13 +347,51 @@ function PrayersTab({
       <p className="mb-4 text-center text-xs uppercase tracking-wide text-muted-foreground">
         {items.length} steps · in order{estMin ? ` · ~${estMin} min` : ""}
       </p>
-      <p className="mb-8 text-center text-xs text-muted-foreground">
-        Tap a prayer when you finish it.
+      <p className="mb-2 text-center text-xs text-muted-foreground">
+        {isLectio
+          ? "Read slowly. Write your response at each movement."
+          : "Tap a prayer when you finish it."}
       </p>
+      {isLectio && sourceLabel ? (
+        <p className="mb-8 text-center text-xs text-muted-foreground">
+          Source:{" "}
+          {sourceUrl ? (
+            <ExtLink href={sourceUrl} className="underline hover:text-foreground">
+              {sourceLabel}
+            </ExtLink>
+          ) : (
+            sourceLabel
+          )}
+        </p>
+      ) : null}
+      {isLectio ? (
+        <PassageEditor
+          passageRef={passageRef}
+          passageText={passageText}
+          onSetPassage={onSetPassage}
+          bibleUrl={bibleUrl}
+          bibleHome={bibleHome}
+        />
+      ) : null}
       <div className="space-y-5">
         {items.map((item) => {
           const done = item.completion_status === "complete";
           const current = item.id === currentId;
+
+          // A journaling step is written into, not tapped done — it gets its own
+          // card with an inline field, so tapping the body never toggles it.
+          if (item.kind === "reflection") {
+            return (
+              <ReflectionCard
+                key={item.id}
+                item={item}
+                current={current}
+                cardRef={current ? currentRef : undefined}
+                onSave={(text) => onSaveReflection(item.id, text)}
+              />
+            );
+          }
+
           return (
             <div
               key={item.id}
@@ -331,9 +422,209 @@ function PrayersTab({
                 </span>
               ) : null}
               <ItemView item={item} showMeditation />
+              {item.kind === "scripture" && item.reference ? (
+                <div className="mt-5 flex justify-center">
+                  <ExtLink
+                    href={bibleUrl(item.reference)}
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition hover:border-primary hover:text-foreground"
+                  >
+                    <BookOpen className="size-3.5" /> Open in your Bible
+                  </ExtLink>
+                </div>
+              ) : null}
             </div>
           );
         })}
+      </div>
+      {/* sessionId reserved for future per-session journaling analytics */}
+      <span className="hidden" data-session={sessionId} />
+    </div>
+  );
+}
+
+/**
+ * The passage the whole Lectio sitting reads — chosen up front, re-read in each
+ * of the first three movements. Open your Bible to read and be inspired (a psalm,
+ * a gospel story, or the day's reading), then enter the reference; optionally
+ * paste the passage text so it shows with each movement. Setting it rewrites every
+ * scripture step's reference (and body) for this session, keeping the readings in sync.
+ */
+function PassageEditor({
+  passageRef,
+  passageText,
+  onSetPassage,
+  bibleUrl,
+  bibleHome,
+}: {
+  passageRef: string;
+  passageText: string;
+  onSetPassage: (reference: string, text: string) => void;
+  bibleUrl: (ref: string) => string;
+  bibleHome: string;
+}) {
+  const isSet = Boolean(passageRef.trim() || passageText.trim());
+  const [open, setOpen] = useState(!isSet);
+  const [ref, setRef] = useState(passageRef);
+  const [text, setText] = useState(passageText);
+  const [showPaste, setShowPaste] = useState(Boolean(passageText.trim()));
+  useEffect(() => {
+    setRef(passageRef);
+    setText(passageText);
+    setShowPaste(Boolean(passageText.trim()));
+    setOpen(!(passageRef.trim() || passageText.trim()));
+  }, [passageRef, passageText]);
+
+  const openUrl = ref.trim() ? bibleUrl(ref.trim()) : bibleHome;
+  const save = () => {
+    onSetPassage(ref.trim(), text.trim());
+    if (ref.trim() || text.trim()) setOpen(false);
+  };
+
+  return (
+    <div className="mb-8 rounded-2xl border border-primary/30 bg-primary/5 px-5 py-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-primary">
+          Your passage
+        </p>
+        {!open ? (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-muted-foreground"
+            onClick={() => setOpen(true)}
+          >
+            <Pencil className="mr-1.5 size-3.5" /> Change
+          </Button>
+        ) : null}
+      </div>
+
+      {open ? (
+        <div className="mt-2 space-y-3">
+          <p className="text-xs text-muted-foreground">
+            Choose a brief passage — a psalm, a gospel story, or today&rsquo;s reading. Open your
+            Bible to read and be inspired, then enter it here. The first three movements re-read it.
+          </p>
+          <div className="flex items-center gap-2">
+            <Input
+              value={ref}
+              onChange={(e) => setRef(e.target.value)}
+              placeholder="Reference — e.g. Psalm 23 or John 15:1-8"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  save();
+                }
+              }}
+            />
+            {openUrl ? (
+              <ExtLink
+                href={openUrl}
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-3 py-2 text-xs font-medium text-muted-foreground transition hover:border-primary hover:text-foreground"
+              >
+                <BookOpen className="size-3.5" /> Open your Bible
+              </ExtLink>
+            ) : null}
+          </div>
+          {showPaste ? (
+            <Textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="Paste the passage text here (optional) — it will show with each movement."
+              rows={4}
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowPaste(true)}
+              className="text-xs font-medium text-primary hover:underline"
+            >
+              + Paste the passage text
+            </button>
+          )}
+          <div className="flex justify-end">
+            <Button size="sm" onClick={save} disabled={!ref.trim() && !text.trim()}>
+              Set passage
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="mt-1">
+          <p className="font-display text-xl">{passageRef || "Passage set"}</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {passageText.trim()
+              ? "Passage text added — shown with each movement."
+              : "The first three movements re-read it."}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * A Lectio journaling step: the prompt, an inline written response, and a Save
+ * that records it as a linked Reflection (and marks the step done). Editing an
+ * already-saved response and clearing it re-opens the step.
+ */
+function ReflectionCard({
+  item,
+  current,
+  cardRef,
+  onSave,
+}: {
+  item: SessionItem;
+  current: boolean;
+  cardRef?: React.Ref<HTMLDivElement> | undefined;
+  onSave: (text: string) => void;
+}) {
+  const saved = (item.configuration as { response?: string } | undefined)?.response ?? "";
+  const [text, setText] = useState(saved);
+  useEffect(() => setText(saved), [saved]);
+  const done = item.completion_status === "complete";
+  const dirty = text.trim() !== saved.trim();
+
+  return (
+    <div
+      ref={cardRef}
+      aria-current={current ? "step" : undefined}
+      className={cn(
+        "relative rounded-2xl border px-5 py-6 transition",
+        done
+          ? "border-border/60 bg-muted/30"
+          : current
+            ? "border-primary bg-card shadow-sm ring-2 ring-primary/30"
+            : "border-border bg-card",
+      )}
+    >
+      {current && !done ? (
+        <span className="absolute left-4 top-3 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+          Now
+        </span>
+      ) : null}
+      {done ? (
+        <span className="absolute right-4 top-3 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+          <Check className="size-3" /> Saved
+        </span>
+      ) : null}
+      <p className="eyebrow text-center">{item.title}</p>
+      {item.body?.trim() ? (
+        <p className="prayer-text mt-4 text-center text-muted-foreground">{item.body}</p>
+      ) : null}
+      <Textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="Write in your own words…"
+        rows={4}
+        className="mt-5"
+      />
+      <div className="mt-3 flex items-center justify-end gap-2">
+        {saved && !text.trim() ? (
+          <span className="mr-auto text-xs text-muted-foreground">Clearing re-opens this step</span>
+        ) : null}
+        <Button size="sm" onClick={() => onSave(text)} disabled={!dirty}>
+          {text.trim() ? "Save" : done ? "Clear" : "Save"}
+        </Button>
       </div>
     </div>
   );

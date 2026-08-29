@@ -1423,6 +1423,90 @@ function scripturalRosaryItems(): TemplateItem[] {
 }
 const scripturalRosaryItemsList = scripturalRosaryItems();
 
+/**
+ * Lectio Divina — the id shared between the seeded devotion, its items, and the
+ * Prayer Mode logic that shows the passage editor + per-movement journaling.
+ */
+export const LECTIO_TEMPLATE_ID = "tpl-lectio-divina";
+
+/**
+ * Lectio Divina (Alan & Gem Fadling, unhurriedliving.com). Four movements —
+ * Read · Reflect · Respond · Rest — each a scripture reading paired with a
+ * journaling prompt. Scripture steps carry no passage from the seed: the reader
+ * chooses one per session up front (reference, and optionally the pasted text),
+ * re-read in movements 1–3. The `reflection` steps are captured in Prayer Mode
+ * and saved as linked Reflections.
+ */
+function lectioItems(): TemplateItem[] {
+  const items: TemplateItem[] = [];
+  let p = 0;
+  const add = (partial: Partial<TemplateItem> & { kind: TemplateItem["kind"] }) =>
+    items.push(ti(LECTIO_TEMPLATE_ID, p++, partial));
+
+  add({
+    kind: "meditation",
+    label: "Before you begin",
+    body: "Become still. Let go of the day and its hurry. You are reading not for information but for transformation — to be with God, who is already with you. Give yourself space to breathe between each movement.",
+  });
+
+  // Each movement leads with a titled instruction card (like Rest), then the
+  // passage, then a reflection box holding only the journaling prompt.
+
+  // 1. Read (Lectio)
+  add({
+    kind: "meditation",
+    label: "Read (Lectio)",
+    body: "Read the passage aloud, slowly, once through — don't merely think; take time to listen. Notice a phrase or two.",
+  });
+  add({ kind: "scripture" });
+  add({
+    kind: "reflection",
+    label: "Read (Lectio)",
+    body: "Write a phrase or two from the passage.",
+  });
+
+  // 2. Reflect (Meditatio)
+  add({
+    kind: "meditation",
+    label: "Reflect (Meditatio)",
+    body: "Read the passage aloud a second time. Notice anything that captures your attention — begin to ask, what is this saying? What does it mean?",
+  });
+  add({ kind: "scripture" });
+  add({
+    kind: "reflection",
+    label: "Reflect (Meditatio)",
+    body: "Write your feelings, thoughts, insights.",
+  });
+
+  // 3. Respond (Oratio)
+  add({
+    kind: "meditation",
+    label: "Respond (Oratio)",
+    body: "Read the passage aloud a third time. Notice what happens in your heart — what do you feel? What are your hopes, desires, requests?",
+  });
+  add({ kind: "scripture" });
+  add({
+    kind: "reflection",
+    label: "Respond (Oratio)",
+    body: "Write your prayer response to this passage. God is with you.",
+  });
+
+  // 4. Rest (Contemplatio) — no heading card; the meditation below leads the movement.
+  add({
+    kind: "meditation",
+    label: "Rest (Contemplatio)",
+    body: "Take a few moments simply to be with God. Rest in his loving presence — no agenda, just relationship. Let God enjoy your presence as you enjoy his.",
+  });
+  add({
+    kind: "reflection",
+    label: "Rest (Contemplatio)",
+    body: "After resting in God's presence, write what you noticed. Were there any additional invitations? What new doors into peace were opened to you? How did you experience God's love?",
+  });
+
+  return items;
+}
+const lectioItemsList = lectioItems();
+
 const allPrayers = [...base, ...songs];
 
 export function createSeedDatabase(): Database {
@@ -1493,6 +1577,14 @@ export function createSeedDatabase(): Database {
         name: "Litany of Humility",
         file_reference: "How-to-Pray_-The-Litany-of-Humility-FOCUS.pdf",
         attribution: "Cardinal Rafael Merry del Val (public domain)",
+        created_at: now,
+      },
+      {
+        id: "src-lectio-divina",
+        source_type: "web",
+        name: "Lectio Divina",
+        url: "https://www.unhurriedliving.com/lectio",
+        attribution: "Alan & Gem Fadling, Unhurried Living",
         created_at: now,
       },
       {
@@ -1648,6 +1740,20 @@ export function createSeedDatabase(): Database {
         built_in: true,
         created_at: now,
       },
+      {
+        id: LECTIO_TEMPLATE_ID,
+        name: "Lectio Divina",
+        description:
+          "A reflective, meditative way of reading Scripture in four movements — Read, Reflect, Respond, Rest — with a place to journal at each step.",
+        kind: "standard",
+        mystery_presentation: "title_only",
+        mystery_count: 0,
+        notes:
+          "Choose a brief passage (a psalm or a story from one of the gospels) — set it at the top of the session; movements 1–3 re-read the same passage. Take your time; give yourself space to breathe between each movement. You are seeking transformation, not mere information. Method by Alan & Gem Fadling (unhurriedliving.com).",
+        source_id: "src-lectio-divina",
+        built_in: true,
+        created_at: now,
+      },
     ],
     template_items: [
       ...rosaryItemsList,
@@ -1659,6 +1765,7 @@ export function createSeedDatabase(): Database {
       ...litanyHumilityItems,
       ...litanySacredHeartItems,
       ...litanyImmaculateHeartItems,
+      ...lectioItemsList,
     ],
     sessions: [],
     session_items: [],
@@ -1782,6 +1889,47 @@ export function createSeedDatabase(): Database {
         template_id: "tpl-rosary",
         steps: [],
         links: ["https://www.usccb.org/how-to-pray-the-rosary"],
+      },
+      {
+        id: "howto-lectio",
+        title: "How to Pray Lectio Divina",
+        summary:
+          "Guides to the ancient practice of praying with Scripture in four movements — Read, Reflect, Respond, Rest.",
+        template_id: LECTIO_TEMPLATE_ID,
+        source_id: "src-lectio-divina",
+        steps: [
+          {
+            id: "howto-lectio-s1",
+            how_to_id: "howto-lectio",
+            position: 0,
+            text: "Read (Lectio) — read a brief passage slowly, aloud, and notice a word or phrase.",
+          },
+          {
+            id: "howto-lectio-s2",
+            how_to_id: "howto-lectio",
+            position: 1,
+            text: "Reflect (Meditatio) — read it again; ponder what it says and what it means to you.",
+          },
+          {
+            id: "howto-lectio-s3",
+            how_to_id: "howto-lectio",
+            position: 2,
+            text: "Respond (Oratio) — read it a third time; pray your response from the heart.",
+          },
+          {
+            id: "howto-lectio-s4",
+            how_to_id: "howto-lectio",
+            position: 3,
+            text: "Rest (Contemplatio) — rest silently in God's loving presence.",
+          },
+        ],
+        links: [
+          "https://www.unhurriedliving.com/lectio-divina-new-resource-delivery-page",
+          "https://www.ignatianspirituality.com/ignatian-prayer/the-what-how-why-of-prayer/praying-with-scripture/",
+          "https://www.dynamiccatholic.com/about-lectio-divina.html",
+          "https://bustedhalo.com/ministry-resources/lectio-divina-beginners-guide/",
+          "https://www.soulshepherding.org/lectio-divina-guides/",
+        ],
       },
     ],
   };

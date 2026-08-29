@@ -203,6 +203,7 @@ export type TemplateItemKind =
   | "meditation"
   | "external_link"
   | "scripture"
+  | "reflection"
   | "custom"
   | "heading";
 
@@ -229,7 +230,11 @@ export interface TemplateItem {
   versicle?: string | undefined;
   /** Salutation: the response line. */
   response?: string | undefined;
-  /** Free text for custom components, and the passage text for scripture. */
+  /**
+   * Free text for custom components, the passage text for scripture, and the
+   * journaling **prompt** for a `reflection` step (the movement name rides in
+   * `label`). The user's written response is captured per session, not here.
+   */
   body?: string | undefined;
   /** scripture: the citation (e.g. "Lk 1:26-38"). */
   reference?: string | undefined;
@@ -419,6 +424,7 @@ export type SessionItemKind =
   | "meditation"
   | "external_link"
   | "scripture"
+  | "reflection"
   | "heading";
 export type CompletionStatus = "pending" | "complete" | "skipped";
 export type CompletionMethod = "manual" | "auto" | "audio" | "voice" | null;

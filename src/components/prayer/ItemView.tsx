@@ -115,7 +115,30 @@ export function ItemView({
         ) : (
           <p className="eyebrow text-center">Scripture</p>
         )}
-        <p className="prayer-text mt-6 text-[1.35rem] leading-relaxed">{item.body}</p>
+        {item.body?.trim() ? (
+          <p className="prayer-text mt-6 text-[1.35rem] leading-relaxed">{item.body}</p>
+        ) : (
+          <p className="mt-4 text-center text-sm italic text-muted-foreground">
+            Read this passage slowly from your Bible.
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  if (item.kind === "reflection") {
+    const response = (item.configuration as { response?: string } | undefined)?.response?.trim();
+    return (
+      <div>
+        <p className="eyebrow text-center">{item.title}</p>
+        {item.body?.trim() ? (
+          <p className="prayer-text mt-4 text-center text-muted-foreground">{item.body}</p>
+        ) : null}
+        {response ? (
+          <p className="prayer-text mt-6 whitespace-pre-wrap border-l-2 border-primary/40 pl-4 text-left">
+            {response}
+          </p>
+        ) : null}
       </div>
     );
   }
