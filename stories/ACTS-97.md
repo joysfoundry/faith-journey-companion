@@ -2,7 +2,7 @@
 id: ACTS-97
 title: Land on the browse/list tab by default (Vessels + Plan), not the create tab
 spine:
-status: In Progress
+status: Done
 origin: human-directed
 approved_by: JC
 depends_on: []
@@ -10,7 +10,7 @@ relates_to: [ACTS-96]
 sync: local
 synced_at: null
 started_at: 2026-08-28T14:00:00-0700
-updated: 2026-08-28T17:20:52-0700
+updated: 2026-08-28T17:25:59-0700
 latest_handoff: ACTS-97/session-01.md
 sessions: 1
 ---
@@ -53,12 +53,13 @@ create when the user came to create.
   menu on the Sessions tab); in-page "Edit session" still `setTab("builder")`.
 
 ## Acceptance criteria
-- [ ] Vessels: tab order is Library then Add; plain `/formation` opens Library;
+- [x] Vessels: tab order is Library then Add; plain `/formation` opens Library;
       `/formation?add=true` and the home add entry points still open Add.
-- [ ] Plan: tab order is Sessions then Session Builder; plain `/pray` opens
+- [x] Plan: tab order is Sessions then Session Builder; plain `/pray` opens
       Sessions; the home "New session" action opens the Session Builder.
-- [ ] No regression to session build/save/edit or vessel add/edit flows.
-- [ ] Verified in the browser preview (both pages, both entry paths).
+- [x] No regression to session build/save/edit or vessel add/edit flows.
+- [x] Verified in the browser preview (both pages, both entry paths) — JC spot-check
+      (in-app preview unavailable this session; infra glitch, not the code).
 
 ## Tests
 _Convention (ACTS-91): document coverage; no runner yet (harness = ACTS-92) →

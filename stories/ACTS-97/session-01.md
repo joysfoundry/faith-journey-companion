@@ -1,10 +1,15 @@
 ---
 story: ACTS-97
 session: 01
-wrapped_at: 2026-08-28T17:20:52-0700
-status: In Progress
-final: false
+wrapped_at: 2026-08-28T17:25:59-0700
+status: Done
+final: true
 ---
+
+## Completion (2026-08-28)
+**Story DONE — all acceptance criteria met.** JC re-confirmed the browser spot-check
+on both pages / both entry paths (the one AC I couldn't self-verify via the in-app
+preview this session — that was an infra glitch, not the code). Nothing left open.
 
 ## What happened
 Implemented the "land on the browse/list tab by default" change on both pages,
