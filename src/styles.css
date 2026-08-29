@@ -15,7 +15,6 @@
 @theme inline {
   --font-display: "Cormorant Garamond", ui-serif, Georgia, serif;
   --font-sans: "Karla", ui-sans-serif, system-ui, sans-serif;
-  --font-script: "Pinyon Script", "Cormorant Garamond", ui-serif, cursive;
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
