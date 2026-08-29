@@ -10,9 +10,9 @@ relates_to: [ACTS-96]
 sync: local
 synced_at: null
 started_at: 2026-08-28T14:00:00-0700
-updated: 2026-08-28T14:00:00-0700
-latest_handoff: null
-sessions: 0
+updated: 2026-08-28T17:20:52-0700
+latest_handoff: ACTS-97/session-01.md
+sessions: 1
 ---
 
 ## Goal
