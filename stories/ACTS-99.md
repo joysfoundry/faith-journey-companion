@@ -2,15 +2,15 @@
 id: ACTS-99
 title: Daily rosary defers to a scheduled novena rosary
 spine:
-status: In Progress
+status: Done
 origin: human-directed
 approved_by: JC
 depends_on: []
 relates_to: [ACTS-98, ACTS-97, ACTS-96]
 started_at: 2026-08-29T00:38:49-0700
-updated:    2026-08-29T01:04:05-0700
-latest_handoff: null
-sessions: 0
+updated:    2026-08-29T01:29:20-0700
+latest_handoff: ACTS-99/session-01.md
+sessions: 1
 ---
 
 ## Goal
