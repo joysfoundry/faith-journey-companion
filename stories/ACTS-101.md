@@ -2,15 +2,15 @@
 id: ACTS-101
 title: Rebrand app "Faith Journey" → "ACTS" (with acronym in the header)
 spine:
-status: In Progress
+status: Done
 origin: human-directed
 approved_by: JC
 depends_on: []
 relates_to: []
 started_at: 2026-08-29T01:41:28-0700
-updated:    2026-08-29T01:41:28-0700
-latest_handoff: null
-sessions: 0
+updated:    2026-08-29T01:50:13-0700
+latest_handoff: ACTS-101/session-01.md
+sessions: 1
 ---
 
 ## Goal
@@ -26,8 +26,9 @@ in the header, so the name carries its own catechesis.
 - [x] App name updated everywhere user-visible: page/OG titles (`— ACTS`), home title,
       root + PWA title, `apple-mobile-web-app-title`, shared-view label, and the PWA
       manifest (`name`, `short_name`).
-- [ ] **Script font chosen** — Pinyon Script shipped as the default; JC comparing
-      alternatives (Tangerine / Great Vibes / Dancing Script / Parisienne) before finalizing.
+- [x] **Typographic direction chosen** — after comparing six scripts, JC chose
+      **non-script**: small letter-spaced uppercase caps with each initial set larger
+      (same muted tone, no tint). Script font removed.
 
 ## Design notes
 - Reusable `src/components/layout/Brand.tsx` renders the wordmark + illuminated tagline;
