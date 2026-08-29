@@ -384,6 +384,15 @@ export interface SessionPlan {
   recurrence: Recurrence;
   /** Rare free-text detail the structured recurrence can't express. */
   recurrence_note?: string | undefined;
+  /**
+   * When true, this (bounded, rosary-bearing) plan stands in for the user's Daily
+   * Rosary for the length of its series — e.g. "I'm praying my Daily Rosary through
+   * this novena." While `today` falls in the window `[starts_on … last occurrence]`
+   * the sessions list shows THIS plan under the DAILY ROSARY label with "Day X of N"
+   * and suppresses the standalone daily row; past the last occurrence it reverts
+   * automatically. Only meaningful for a bounded series (a novena has an end).
+   */
+  fulfills_daily_rosary?: boolean | undefined;
   /** Liturgy-of-the-Hours slot — a filterable tag, not a clock time; absent = none. */
   hour?: PrayerHour | undefined;
   /** Concrete clock time to pray ("HH:MM", 24h); absent = only the hour tag. Calendar-ready. */

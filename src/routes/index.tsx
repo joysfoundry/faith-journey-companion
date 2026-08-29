@@ -44,7 +44,14 @@ import {
   type PinnedLink,
 } from "@/lib/prayer/knowledge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { defaultContext, planTitle, resolveMysterySet, todayISO } from "@/lib/prayer/compiler";
+import {
+  activeDailyRosaryFulfiller,
+  defaultContext,
+  occurrenceInfo,
+  planTitle,
+  resolveMysterySet,
+  todayISO,
+} from "@/lib/prayer/compiler";
 import { useApp } from "@/lib/prayer/store";
 import type { PrayerTemplate } from "@/lib/prayer/types";
 
@@ -227,10 +234,6 @@ function Index() {
     db.templates.find((t) => t.id === "tpl-rosary") ??
     db.templates[0];
   const isRosary = (daily?.mystery_count ?? 0) > 0;
-  // The daily row shows the chosen devotion (with the day's mysteries when it's a rosary).
-  const dailySubtitle = isRosary
-    ? `${daily?.name ?? "Rosary"} · ${setName}`
-    : (daily?.name ?? "Prayer");
 
   const openSessions = db.sessions.filter((s) => !s.completed_at);
   const completedSessions = db.sessions.filter((s) => s.completed_at);
@@ -240,15 +243,41 @@ function Index() {
       .filter((s) => isToday(s.completed_at) && match(s))
       .sort((a, b) => (b.completed_at ?? "").localeCompare(a.completed_at ?? ""))[0];
 
-  // The daily's own ad-hoc session (started from the Daily row, no plan). The
-  // Daily row itself reflects its state, so it never shows as a separate row.
-  const dailyOpen = daily
-    ? openSessions.find((s) => s.template_id === daily.id && !s.plan_id)
-    : undefined;
-  const dailyDone =
-    daily && !dailyOpen
-      ? latestDoneToday((s) => s.template_id === daily.id && !s.plan_id)
+  // A scheduled novena can stand in for today's Daily Rosary. While it does, the
+  // Daily Rosary row is fulfilled by that plan — keeps the label, shows "Day X of
+  // N", routes to the novena — and reverts to the standalone daily when it ends.
+  const dailyFulfiller = activeDailyRosaryFulfiller(db.session_plans, today);
+  const dailyOcc = dailyFulfiller
+    ? occurrenceInfo(
+        dailyFulfiller.starts_on ?? dailyFulfiller.date ?? today,
+        dailyFulfiller.recurrence,
+        today,
+      )
+    : null;
+  const dailyDayLabel = dailyOcc?.total ? `Day ${dailyOcc.index} of ${dailyOcc.total}` : null;
+
+  // The daily row shows the chosen devotion (with the day's mysteries when it's a
+  // rosary) — or, when deferred, the novena standing in for it and its Day X of N.
+  const dailySubtitle = dailyFulfiller
+    ? [planTitle(db, dailyFulfiller), dailyDayLabel].filter(Boolean).join(" · ")
+    : isRosary
+      ? `${daily?.name ?? "Rosary"} · ${setName}`
+      : (daily?.name ?? "Prayer");
+
+  // The daily's session: while deferred it's the novena's (by plan_id), otherwise
+  // the daily's own ad-hoc session (no plan). Either way the row reflects its state.
+  const dailyOpen = dailyFulfiller
+    ? openSessions.find((s) => s.plan_id === dailyFulfiller.id)
+    : daily
+      ? openSessions.find((s) => s.template_id === daily.id && !s.plan_id)
       : undefined;
+  const dailyDone = dailyOpen
+    ? undefined
+    : dailyFulfiller
+      ? latestDoneToday((s) => s.plan_id === dailyFulfiller.id)
+      : daily
+        ? latestDoneToday((s) => s.template_id === daily.id && !s.plan_id)
+        : undefined;
 
   // Each today session resolves to ONE state — start (Today), continue, or done —
   // never doubled. Completed sessions stay visible as "Done" for the day, deduped
@@ -264,6 +293,8 @@ function Index() {
     doneList.push(row);
   };
   for (const plan of db.session_plans.filter((p) => p.date === today)) {
+    // The novena standing in for the Daily Rosary is shown on the Daily row only.
+    if (plan.id === dailyFulfiller?.id) continue;
     const title = planTitle(db, plan);
     const openS = openSessions.find((s) => s.plan_id === plan.id);
     if (openS) {
@@ -287,6 +318,8 @@ function Index() {
   // its own row, so it's excluded via doneSeen.
   for (const s of completedSessions) {
     if (!isToday(s.completed_at)) continue;
+    // A completed novena that's fulfilling the Daily Rosary shows on the Daily row.
+    if (s.plan_id && s.plan_id === dailyFulfiller?.id) continue;
     const plan = s.plan_id ? db.session_plans.find((p) => p.id === s.plan_id) : undefined;
     const title = plan ? planTitle(db, plan) : s.title?.trim() || "Prayer session";
     addDone(plan?.template_id || s.template_id || s.id, { id: s.id, title, sessionId: s.id });
@@ -298,12 +331,17 @@ function Index() {
   }
 
   function beginDaily() {
-    if (!daily) return;
     // Resume the in-progress daily session rather than starting a duplicate.
     if (dailyOpen) {
       navigate({ to: "/session/$sessionId", params: { sessionId: dailyOpen.id } });
       return;
     }
+    // While a novena stands in for the Daily Rosary, "begin" prays that novena.
+    if (dailyFulfiller) {
+      beginPlan(dailyFulfiller.id);
+      return;
+    }
+    if (!daily) return;
     const session = startSession(daily.id, { date: today, progress_mode: "scroll" });
     if (session) navigate({ to: "/session/$sessionId", params: { sessionId: session.id } });
   }

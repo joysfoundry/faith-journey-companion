@@ -24,19 +24,24 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DevotionItemsEditor } from "@/components/prayer/DevotionItemsEditor";
 import { ShareDialog } from "@/components/prayer/ShareDialog";
 import { buildSharePayload } from "@/lib/prayer/share";
 import { useApp } from "@/lib/prayer/store";
 import {
+  activeDailyRosaryFulfiller,
   allMysteryBodies,
+  deferralWindowsOverlap,
   estimateMinutes,
   generatePrayerSession,
   listenSourcesFromItems,
   newId,
+  occurrenceInfo,
   planTitle,
   recurrenceLabel,
+  seriesEndDate,
   todayISO,
 } from "@/lib/prayer/compiler";
 import type {
@@ -156,6 +161,7 @@ function PrayPage() {
   const {
     db,
     ready,
+    startSession,
     startBuiltSession,
     deleteSession,
     saveSessionPlan,
@@ -181,6 +187,7 @@ function PrayPage() {
   const [endMode, setEndMode] = useState<EndMode>("never");
   const [count, setCount] = useState("");
   const [untilVal, setUntilVal] = useState("");
+  const [fulfillsDaily, setFulfillsDaily] = useState(false);
   const [hour, setHour] = useState<PrayerHour | "">("");
   const [startTime, setStartTime] = useState("");
   const [templateId, setTemplateId] = useState("");
@@ -194,6 +201,24 @@ function PrayPage() {
 
   const baseTemplate = templateId ? db.templates.find((t) => t.id === templateId) : undefined;
   const mysteryCount = items.filter((i) => i.kind === "mystery_placeholder").length;
+  // "Defer the Daily Rosary to this novena" only applies to a rosary on a bounded
+  // series (a novena has an end — an open-ended daily rosary can't stand in for itself).
+  const isBounded = freq !== "none" && (endMode === "count" || endMode === "until");
+  const canDeferDaily = mysteryCount > 0 && isBounded;
+  // Preview of the deferral window from the current builder fields. The series is
+  // anchored at starts_on (stable across edits), so a back-dated start still shows
+  // the right "Day X of N" for today.
+  const deferStart =
+    (editingId ? db.session_plans.find((p) => p.id === editingId)?.starts_on : undefined) ??
+    dateVal;
+  const deferRec = buildRecurrence({ freq, interval, endMode, count, until: untilVal });
+  const deferEnd = canDeferDaily ? seriesEndDate(deferStart, deferRec) : undefined;
+  const deferTodayOcc = canDeferDaily ? occurrenceInfo(deferStart, deferRec, today) : null;
+  const deferLengthLabel = deferRec.count
+    ? `${deferRec.count} ${FREQ_UNIT_LABEL[freq]}s`
+    : deferEnd
+      ? `through ${deferEnd}`
+      : "its duration";
   const sources = listenSourcesFromItems(db, items, baseTemplate?.media ?? []);
   const chosenSource = sources[Number(listenIndex)];
 
@@ -257,6 +282,7 @@ function PrayPage() {
     setPurpose("");
     setDateVal(today);
     applyRecurrence(undefined);
+    setFulfillsDaily(false);
     setHour("");
     setStartTime("");
     setProgressMode("scroll");
@@ -268,6 +294,7 @@ function PrayPage() {
     setPurpose(plan.purpose ?? "");
     setDateVal(plan.date ?? today);
     applyRecurrence(plan.recurrence);
+    setFulfillsDaily(plan.fulfills_daily_rosary ?? false);
     setHour(plan.hour ?? "");
     setStartTime(plan.start_time ?? "");
     setTemplateId(plan.template_id);
@@ -302,6 +329,7 @@ function PrayPage() {
       return;
     }
     const existingPlan = editingId ? db.session_plans.find((p) => p.id === editingId) : undefined;
+    const deferDaily = canDeferDaily && fulfillsDaily;
     const plan: SessionPlan = {
       id: editingId ?? newId("plan"),
       template_id: templateId,
@@ -310,6 +338,7 @@ function PrayPage() {
       // Anchor the series once; keep it stable across edits so "Day N" holds.
       ...(dateVal ? { starts_on: existingPlan?.starts_on ?? dateVal } : {}),
       recurrence: buildRecurrence({ freq, interval, endMode, count, until: untilVal }),
+      ...(deferDaily ? { fulfills_daily_rosary: true } : {}),
       ...(hour ? { hour } : {}),
       ...(startTime ? { start_time: startTime } : {}),
       ...(estMin > 0 ? { duration_min: estMin } : {}),
@@ -317,6 +346,19 @@ function PrayPage() {
       items: items.map((it, i) => ({ ...it, position: i })),
       created_at: existingPlan?.created_at || new Date().toISOString(),
     };
+    // Only one novena may stand in for the Daily Rosary on a given day — block a
+    // second deferral whose window overlaps one that's already opted in.
+    if (deferDaily) {
+      const clash = db.session_plans.find(
+        (p) => p.id !== plan.id && p.fulfills_daily_rosary && deferralWindowsOverlap(plan, p),
+      );
+      if (clash) {
+        toast.error(
+          `"${planTitle(db, clash)}" is already standing in for your Daily Rosary during these dates. Turn that off first.`,
+        );
+        return;
+      }
+    }
     saveSessionPlan(plan);
     toast.success(editingId ? "Session updated" : "Session saved");
     resetForm();
@@ -388,6 +430,31 @@ function PrayPage() {
       (a.date ?? "9999-99-99").localeCompare(b.date ?? "9999-99-99") ||
       a.created_at.localeCompare(b.created_at),
   );
+
+  // The Daily Rosary is a setting (which devotion is "daily"), not stored data —
+  // so it's a pinned virtual row. While a novena has opted to stand in for it
+  // (fulfills_daily_rosary, today inside its window), that plan wears the DAILY
+  // ROSARY label instead and the pinned row hides so there's no duplicate.
+  const dailyFulfiller = activeDailyRosaryFulfiller(db.session_plans, today);
+  const dailyTemplate =
+    (db.settings?.daily_template_id
+      ? db.templates.find((t) => t.id === db.settings?.daily_template_id)
+      : undefined) ??
+    db.templates.find((t) => t.id === "tpl-rosary") ??
+    db.templates[0];
+  const beginDailyRosary = () => {
+    if (!dailyTemplate) return;
+    const existing = db.sessions.find(
+      (s) => !s.completed_at && s.template_id === dailyTemplate.id && !s.plan_id,
+    );
+    if (existing) {
+      navigate({ to: "/session/$sessionId", params: { sessionId: existing.id } });
+      return;
+    }
+    const session = startSession(dailyTemplate.id, { date: today, progress_mode: "scroll" });
+    if (session) navigate({ to: "/session/$sessionId", params: { sessionId: session.id } });
+  };
+
   const openSessions = db.sessions.filter((s) => !s.completed_at);
   const completedSessions = db.sessions
     .filter((s) => s.completed_at)
@@ -623,6 +690,37 @@ function PrayPage() {
               </div>
             </div>
 
+            {canDeferDaily ? (
+              <div className="soft-card space-y-3 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <Label htmlFor="fulfills-daily" className="font-medium">
+                      Pray my Daily Rosary through this
+                    </Label>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Stands in for your Daily Rosary for {deferLengthLabel}. Your sessions list
+                      keeps the <span className="font-medium">DAILY ROSARY</span> label and shows
+                      “Day X of N”; the separate daily rosary returns when this finishes.
+                    </p>
+                  </div>
+                  <Switch
+                    id="fulfills-daily"
+                    checked={fulfillsDaily}
+                    onCheckedChange={setFulfillsDaily}
+                    className="mt-1 shrink-0"
+                  />
+                </div>
+                {fulfillsDaily && deferEnd ? (
+                  <p className="text-xs text-muted-foreground">
+                    {deferStart} → {deferEnd}
+                    {deferTodayOcc?.total
+                      ? ` · today is Day ${deferTodayOcc.index} of ${deferTodayOcc.total}`
+                      : ""}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+
             {mysteryCount > 0 ? (
               <div className="soft-card space-y-3 p-4">
                 <div>
@@ -749,6 +847,37 @@ function PrayPage() {
 
         <TabsContent value="sessions">
           <div className="space-y-4">
+            {dailyTemplate && !dailyFulfiller ? (
+              <section>
+                <p className="eyebrow mb-2">Daily</p>
+                <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border">
+                  <li className="flex items-center gap-3 px-3 py-2.5">
+                    <span className="w-12 shrink-0 text-xs font-semibold text-primary tabular-nums">
+                      Daily
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium leading-tight">
+                        <span className="mr-1.5 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                          Daily Rosary
+                        </span>
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">{dailyTemplate.name}</p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-0.5">
+                      <button
+                        type="button"
+                        aria-label="Begin Daily Rosary"
+                        className="p-1.5 text-primary hover:opacity-80"
+                        onClick={beginDailyRosary}
+                      >
+                        <Play className="size-4" />
+                      </button>
+                    </div>
+                  </li>
+                </ul>
+              </section>
+            ) : null}
+
             {openSessions.length > 0 ? (
               <section>
                 <p className="eyebrow mb-2">In progress</p>
@@ -786,6 +915,13 @@ function PrayPage() {
                   {plans.map((plan) => {
                     const tpl = db.templates.find((t) => t.id === plan.template_id);
                     const title = planTitle(db, plan);
+                    // While this novena stands in for the Daily Rosary, its row wears
+                    // the DAILY ROSARY label and shows "Day X of N" for today.
+                    const isDailyFulfiller = plan.id === dailyFulfiller?.id;
+                    const occ = isDailyFulfiller
+                      ? occurrenceInfo(plan.starts_on ?? plan.date ?? today, plan.recurrence, today)
+                      : null;
+                    const dayLabel = occ?.total ? `Day ${occ.index} of ${occ.total}` : null;
                     const dateLabel = plan.date
                       ? new Date(`${plan.date}T00:00`).toLocaleDateString(undefined, {
                           month: "short",
@@ -793,6 +929,7 @@ function PrayPage() {
                         })
                       : "Any time";
                     const sub = [
+                      dayLabel,
                       plan.purpose ? tpl?.name : null,
                       plan.recurrence.freq !== "none" ? recurrenceLabel(plan.recurrence) : null,
                       plan.start_time ? plan.start_time : null,
@@ -804,10 +941,17 @@ function PrayPage() {
                     return (
                       <li key={plan.id} className="flex items-center gap-3 px-3 py-2.5">
                         <span className="w-12 shrink-0 text-xs font-semibold text-primary tabular-nums">
-                          {dateLabel}
+                          {isDailyFulfiller ? "Daily" : dateLabel}
                         </span>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium leading-tight">{title}</p>
+                          <p className="truncate text-sm font-medium leading-tight">
+                            {isDailyFulfiller ? (
+                              <span className="mr-1.5 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                                Daily Rosary
+                              </span>
+                            ) : null}
+                            {title}
+                          </p>
                           {sub ? (
                             <p className="truncate text-xs text-muted-foreground">{sub}</p>
                           ) : null}

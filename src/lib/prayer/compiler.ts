@@ -149,6 +149,74 @@ export function nextOccurrence(
   return next;
 }
 
+/**
+ * The last date a bounded series lands on, or undefined for an open-ended one.
+ * A `count`-bounded series ends `count - 1` steps after `startsOn`; an `until`
+ * bound ends on the last occurrence on or before `until`. Anchored at `startsOn`
+ * so it holds even when the series started before it was created (a back-dated
+ * novena) — the same anchor `occurrenceInfo` counts "Day X" from.
+ */
+export function seriesEndDate(
+  startsOn: string | undefined,
+  r: Recurrence | undefined,
+): string | undefined {
+  if (!startsOn || !r || r.freq === "none") return undefined;
+  if (r.count && r.count > 0) return addUnits(startsOn, r.freq, r.interval * (r.count - 1));
+  if (r.until) {
+    let last = startsOn;
+    for (let i = 1; ; i += 1) {
+      const next = addUnits(startsOn, r.freq, r.interval * i);
+      if (next > r.until) break;
+      last = next;
+    }
+    return last;
+  }
+  return undefined; // open-ended — never fulfills the daily rosary
+}
+
+/**
+ * Whether `plan` stands in for the Daily Rosary on `date`: it opted in via
+ * `fulfills_daily_rosary` and `date` falls in its bounded window
+ * `[starts_on … last occurrence]`. Open-ended or unbounded plans never qualify.
+ */
+export function fulfillsDailyRosaryOn(plan: SessionPlan, date: string): boolean {
+  if (!plan.fulfills_daily_rosary) return false;
+  const start = plan.starts_on ?? plan.date;
+  if (!start || date < start) return false;
+  const end = seriesEndDate(start, plan.recurrence);
+  return end !== undefined && date <= end;
+}
+
+/**
+ * The single plan fulfilling the Daily Rosary on `date`, if any. Creation
+ * warns/blocks overlaps, so at most one should ever match; if two do, the
+ * latest-starting one wins.
+ */
+export function activeDailyRosaryFulfiller(
+  plans: SessionPlan[],
+  date: string,
+): SessionPlan | undefined {
+  return plans
+    .filter((p) => fulfillsDailyRosaryOn(p, date))
+    .sort((a, b) => (b.starts_on ?? b.date ?? "").localeCompare(a.starts_on ?? a.date ?? ""))[0];
+}
+
+/**
+ * Do two plans' bounded daily-rosary windows share any day? Used to warn/block
+ * turning on a second deferral that overlaps an already-active one. Ignores the
+ * `fulfills_daily_rosary` flag itself so the caller controls which side is the
+ * candidate; unbounded plans never overlap.
+ */
+export function deferralWindowsOverlap(a: SessionPlan, b: SessionPlan): boolean {
+  const aStart = a.starts_on ?? a.date;
+  const bStart = b.starts_on ?? b.date;
+  if (!aStart || !bStart) return false;
+  const aEnd = seriesEndDate(aStart, a.recurrence);
+  const bEnd = seriesEndDate(bStart, b.recurrence);
+  if (!aEnd || !bEnd) return false;
+  return aStart <= bEnd && bStart <= aEnd;
+}
+
 /* ------------------------------------------------------------------ */
 /* Mystery resolution                                                  */
 /* ------------------------------------------------------------------ */
