@@ -2,13 +2,13 @@
 id: ACTS-107
 title: Litany of the Departed devotion (Rosary + Litany structure)
 spine:
-status: To Do
+status: In Progress
 origin: human-directed
 approved_by: JC
 depends_on: [ACTS-106]
-relates_to: [ACTS-57, ACTS-106]
-started_at: null
-updated:    2026-08-29T18:44:53-0700
+relates_to: [ACTS-57, ACTS-106, ACTS-110]
+started_at: 2026-08-29T22:05:00-0700
+updated:    2026-08-29T22:05:00-0700
 latest_handoff: null
 sessions: 0
 ---
@@ -19,19 +19,81 @@ seeded **Litany of the Departed** devotion that combines a **Rosary + Litany** i
 family prays it, so I can pray it — or share a follow-along link — without making a paper
 pamphlet.
 
-## Structure (to be worked in the next chat — JC will provide exact wording)
-A composite devotion = **Rosary + Litany**, in sequence:
-1. **Offering / Invitation** — opening offering + invitation to prayer.
-2. **Litany sequence** — call/response salutation items (reuse the litany model from
-   ACTS-57: call = label, refrain = body).
-3. **Closing / Requiem prayers** — concluding prayers for the dead.
-4. **Eternal Rest Prayer** — the seeded prayer from **ACTS-106**.
-5. **Sign of the Cross** — close.
+## Structure (worked with JC over session-01 — sources gathered, model settled)
+A composite **"Litany for the Faithful Departed"** devotion, assembled from reusable
+**Template Blocks** (ACTS-110). One shared grammar across all the examples JC gave
+(Aurora novena, catholicdoors litany, OLG novena):
 
-The Rosary portion should reuse the existing Rosary/mystery + compiler machinery; the litany
-portion reuses the seeded-litany model ([[litany-model]], ACTS-57). This is a **new devotion
-of `devotion_type` mixing `rosary` + `litany`** — confirm how the builder/compiler represents
-a composite devotion (may need a small extension).
+```
+OPENING      Sign of the Cross · (Act of Contrition / intro) · Eternal Rest versicle
+ROSARY       ── choose the version ──
+             • Standard Rosary (mystery set by day / fixed)            [exists]
+             • Decade of the Passion / Rosary for the Dead             [new seed + How-To]
+(opt) OFFERING / INVITATION   "O Jesus, crowned with thorns… lead the soul of {name}…"
+LITANY       ── choose the body ──
+             • Litany of the Faithful Departed (generic "them")        [new seed]
+             • Litany of Loreto / BVM (adapted her/them)               [new seed]
+             • any other seeded litany
+CLOSINGS     collect(s) [Fidelium, etc.] · (opt) Sacred Heart / Mt Carmel / Perpetual Help
+             · (opt) Salve · Eternal Rest versicle
+CLOSE        Sign of the Cross · (opt) reading/poem
+```
+
+**Key facts settled in session-01:**
+- The **Decade of the Passion** is **not** a pre-offering prayer and does **not** run
+  alongside a standard rosary — it **replaces** it. It's a bead-counted "Rosary for the
+  Dead" and is **one selectable rosary version**. Seed it like a rosary (reuse the
+  mystery/compiler machinery); add a How-To (ACTS-28 auto-howto + our technical notes).
+- The **name + pronoun layer** is intrinsic: the OLG content carries `N.` and `her/him`
+  literally. Choosing Loreto for a named soul flips every "pray for us" → "pray for her".
+- Litanies already seeded: Humility, Sacred Heart, Immaculate Heart of Mary (+ St Michael
+  chaplet). **Loreto/BVM and Faithful Departed are NOT seeded** — both new.
+- Closing collects (Fidelium "O God, Creator and Redeemer…"; the parents/kindred collect)
+  are **standalone reusable prayers**, pulled in as components — not baked into the litany.
+
+## Proposed story map (feeds this composite)
+| Piece | Story |
+|---|---|
+| Template Block / nesting infra | **ACTS-110** (build first) |
+| Decade of the Passion / Rosary for the Dead + How-To | new seed story (proposed) |
+| Litany of the Faithful Departed (generic) + Litany of Loreto/BVM | new seed story (proposed) |
+| Closing collects as standalone prayers | new seed story (proposed, or fold here) |
+| Name + pronoun layer (session "for whom" + compiler substitution) | new story (proposed) |
+| **The composite devotion** (assemble all) | **ACTS-107** (this story) |
+
+## Captured source content — Decade of the Passion (OLG), exact wording
+Sorrowful Mysteries, fixed for all 9 days: Agony in the Garden · Scourging at the Pillar ·
+Crowning with Thorns · Carrying of the Cross · Crucifixion & Death.
+
+**Preparation (once, at start):** "Lord, open our lips and inflame our hearts and cleanse
+them of useless and evil thoughts. Enlighten our minds that we may seriously meditate on
+Your suffering and death, and the pains endured by Your mother. Hear and receive us before
+Your great majesty, for you who live and reign forever and ever. Amen."
+
+**Our Father bead (each decade):** "O Most Merciful Jesus, look down with eyes of pity on the
+faithful souls for whom You suffered and died on the Cross."
+
+**Hail Mary beads (each decade — 10 sufferings, R. "Have mercy on the soul of {name|N.}"):**
+1. through your bloody sweat in the garden
+2. through the blow You received on Your Sacred Face
+3. through the cruel scourging You endured
+4. through the crown of thorns that pierced Your head
+5. through Your carrying of the Cross on the path of bitterness
+6. through Your face covered with blood which You allowed to be imprinted on Veronica's veil
+7. through Your bloody garments that were cruelly removed from Your wounded Body
+8. through Your Holy Body nailed on the Cross
+9. through Your Hands and Feet pierced with cruel nails
+10. through Your Sacred side pierced with the lance, from which flowed blood and water
+
+**Decade close (versicles):** V. Eternal rest grant unto {her/him/them}, O Lord. / R. And let
+perpetual light shine upon {her/him/them}. / V. May {s/he/they} rest in peace. / R. Amen.
+_Decision (JC): repeat the 10 sufferings identically in all 5 decades (50 bead-lines)._
+
+## Sources given by JC (session-01)
+- Aurora novena (`~/Downloads/Aurora_Novena.md`) — Loreto adapted to a named soul (Pasiyam).
+- Litany of the Faithful Departed — <https://www.catholicdoors.com/prayers/litanies/p03468.htm>
+- OLG "Novena for One Who Has Died" — <https://olg.cc/liturgy/devotions-liturgical-seasons/novena-for-one-who-has-died/>
+- Litany of the BVM (Loreto) — <https://nashvilledominican.org/prayer/litanies/litany-of-the-blessed-virgin-mary/>
 
 ## Acceptance criteria (draft — refine once wording is in)
 - [ ] "Litany of the Departed" exists as a seeded devotion with the 5-part structure above, in order.
