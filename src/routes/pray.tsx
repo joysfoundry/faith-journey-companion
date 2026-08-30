@@ -324,17 +324,13 @@ function PrayPage() {
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // Dedicate only when there's something to substitute: a name, or a specific
-  // (non-plural) pronoun. Otherwise leave it off so prayers read generically.
-  const dedication =
-    forWhomName.trim() || forWhomPronoun !== "they"
-      ? {
-          for_whom: {
-            ...(forWhomName.trim() ? { name: forWhomName.trim() } : {}),
-            pronoun: forWhomPronoun,
-          },
-        }
-      : {};
+  // Dedicate only when a name is given — the pronoun personalizes that name.
+  // With no name the prayers read in the generic plural form ("the faithful
+  // departed / them / us"), so a leftover pronoun never yields a mismatched
+  // "her" over a nameless soul.
+  const dedication = forWhomName.trim()
+    ? { for_whom: { name: forWhomName.trim(), pronoun: forWhomPronoun } }
+    : {};
 
   const buildContext = (): Partial<SessionContext> => ({
     progress_mode: progressMode,
@@ -560,7 +556,7 @@ function PrayPage() {
                   <Input
                     id="for-whom"
                     value={forWhomName}
-                    placeholder="e.g. Grandma Aurora"
+                    placeholder="e.g. a departed loved one"
                     onChange={(e) => setForWhomName(e.target.value)}
                     className="flex-1"
                   />
@@ -766,6 +762,40 @@ function PrayPage() {
                       : ""}
                   </p>
                 ) : null}
+              </div>
+            ) : null}
+
+            {items.some(
+              (i) => i.kind === "template_block" && (i.block_options?.length ?? 0) > 0,
+            ) ? (
+              <div className="soft-card space-y-3 p-4">
+                <p className="eyebrow">Choose the parts</p>
+                {items.map((item) =>
+                  item.kind === "template_block" && (item.block_options?.length ?? 0) > 0 ? (
+                    <div key={item.id}>
+                      <Label htmlFor={`block-${item.id}`}>{item.label || "Section"}</Label>
+                      <select
+                        id={`block-${item.id}`}
+                        value={item.block_template_id ?? ""}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setItems((prev) =>
+                            prev.map((it) =>
+                              it.id === item.id ? { ...it, block_template_id: val } : it,
+                            ),
+                          );
+                        }}
+                        className="mt-2 h-12 w-full rounded-md border border-input bg-card px-3"
+                      >
+                        {(item.block_options ?? []).map((optId) => (
+                          <option key={optId} value={optId}>
+                            {db.templates.find((t) => t.id === optId)?.name ?? optId}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ) : null,
+                )}
               </div>
             ) : null}
 

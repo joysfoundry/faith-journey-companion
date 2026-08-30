@@ -177,7 +177,7 @@ export function ShareDialog({
                     id="share-purpose"
                     value={purpose}
                     onChange={(e) => setPurpose(e.target.value)}
-                    placeholder="e.g. For Grandma's health"
+                    placeholder="e.g. What you're praying for"
                     rows={2}
                   />
                 </div>

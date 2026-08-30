@@ -552,6 +552,17 @@ May {subj} rest in peace. Amen.`,
     ["dead", "departed", "kindred", "collect"],
     "src-catholicdoors-departed",
   ),
+  // Offering that leads a named soul into the Kingdom — the pivot between the
+  // Rosary and the Litany in the OLG/Pasiyam novena. Its {name} token is the
+  // clearest place a dedicated session names the soul (ACTS-121, ACTS-107).
+  prayer(
+    "offering-for-the-soul",
+    "Offering for the Soul",
+    "devotional",
+    `O Jesus, who wast crowned with thorns, and didst suffer and die on the Cross, lead the soul of {name} to the eternal happiness of Your Kingdom in Heaven. Amen.`,
+    ["dead", "departed", "offering", "requiem"],
+    "src-olg-passion",
+  ),
 ];
 
 // Chaplet of St. Michael — nine salutations to the nine choirs of angels.
@@ -1555,6 +1566,65 @@ function rosaryForDeadItems(): TemplateItem[] {
 }
 const rosaryForDeadItemsList = rosaryForDeadItems();
 
+// The novena composite (ACTS-107). Two swappable Template Blocks (ACTS-110) —
+// Rosary and Litany — carry `block_options`, so the Session Builder lets the
+// leader pick which devotion fills each slot (default: the Decade of the Passion
+// + the Litany of the Faithful Departed). The Opening and Closing are seeded as
+// loose, individual prayers (not blocks) under section headings, so the leader
+// can rearrange, drop, or add to them and build the opening/closing they want.
+// Dedication tokens throughout name the soul when a session is dedicated
+// (ACTS-121); blank reads the generic "the faithful departed".
+function litanyForTheDeadItems(): TemplateItem[] {
+  const templateId = "tpl-litany-for-the-dead";
+  const items: TemplateItem[] = [];
+  let p = 0;
+  const add = (partial: Partial<TemplateItem> & { kind: TemplateItem["kind"] }) =>
+    items.push(ti(templateId, p++, partial));
+
+  // Opening — loose prayers under a section heading.
+  add({ kind: "heading", label: "Opening" });
+  add({ kind: "prayer", prayer_id: "sign-of-the-cross" });
+  add({ kind: "prayer", prayer_id: "eternal-rest" });
+  add({ kind: "prayer", prayer_id: "offering-for-the-soul" });
+
+  // Rosary — a swappable block slot.
+  add({
+    kind: "template_block",
+    block_template_id: "tpl-rosary-for-the-dead",
+    label: "Rosary",
+    block_options: [
+      "tpl-rosary-for-the-dead",
+      "tpl-rosary",
+      "tpl-caro-rosary",
+      "tpl-scriptural-rosary",
+    ],
+  });
+
+  // Litany — a swappable block slot.
+  add({
+    kind: "template_block",
+    block_template_id: "tpl-litany-faithful-departed",
+    label: "Litany",
+    block_options: [
+      "tpl-litany-faithful-departed",
+      "tpl-litany-loreto",
+      "tpl-litany-sacred-heart",
+      "tpl-litany-immaculate-heart",
+    ],
+  });
+
+  // Closing & Requiem — loose prayers under a section heading, so the leader can
+  // build the closing they want. The Salve is optional.
+  add({ kind: "heading", label: "Closing & Requiem Prayers" });
+  add({ kind: "prayer", prayer_id: "collect-fidelium" });
+  add({ kind: "prayer", prayer_id: "collect-departed-kindred" });
+  add({ kind: "prayer", prayer_id: "hail-holy-queen", optional: true });
+  add({ kind: "prayer", prayer_id: "eternal-rest" });
+  add({ kind: "prayer", prayer_id: "sign-of-the-cross" });
+  return items;
+}
+const litanyForTheDeadItemsList = litanyForTheDeadItems();
+
 // The 54-day rosary is a plain daily Rosary devotion; its "54 days" lives in the
 // devotion's default recurrence (daily × 54), not a separate novena subsystem.
 const novenaItems: TemplateItem[] = rosaryItems("tpl-54-novena", {
@@ -1980,7 +2050,7 @@ export function createSeedDatabase(): Database {
       },
       {
         id: "tpl-54-novena",
-        name: "54-Day Rosary Novena",
+        name: "Novena: 54-Day Rosary",
         description: "A full Rosary prayed daily for 54 days.",
         kind: "rosary",
         mystery_presentation: "title_and_description",
@@ -2112,6 +2182,21 @@ export function createSeedDatabase(): Database {
         created_at: now,
       },
       {
+        id: "tpl-litany-for-the-dead",
+        name: "Novena: 9-Day Rosary for the Faithful Departed",
+        description:
+          "The Pasiyam novena — a rosary prayed each day for the nine days after a death, and on anniversaries. Four sections in one sitting: an opening, a rosary (the Decade of the Passion by default), a litany (the Faithful Departed by default), and the closing requiem prayers. The rosary and litany can each be swapped; the opening and closing are individual prayers you can adjust. Dedicate a session to a soul to pray it in their name.",
+        kind: "standard",
+        mystery_presentation: "title_only",
+        mystery_count: 0,
+        default_recurrence: { freq: "daily", interval: 1, count: 9 },
+        notes:
+          "A Filipino Catholic tradition known as the Pasiyam (from Tagalog siyam, 'nine') — the nine consecutive nights of prayer for someone who has died, and prayed again on death anniversaries. Families gather each evening to pray it together. The order: open with the Sign of the Cross and the Eternal Rest, pray the Rosary for the Dead, offer the soul, pray the Litany of the Faithful Departed, and close with the collects and the Eternal Rest. In the Session Builder the rosary and the litany can each be swapped for another (e.g. the Holy Rosary, or the Litany of Loreto).",
+        source_id: "src-olg-passion",
+        built_in: true,
+        created_at: now,
+      },
+      {
         id: LECTIO_TEMPLATE_ID,
         name: "Lectio Divina",
         description:
@@ -2139,6 +2224,7 @@ export function createSeedDatabase(): Database {
       ...litanyImmaculateHeartItems,
       ...litanyFaithfulDepartedItems,
       ...litanyLoretoItems,
+      ...litanyForTheDeadItemsList,
       ...lectioItemsList,
     ],
     sessions: [],

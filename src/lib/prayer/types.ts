@@ -249,6 +249,16 @@ export interface TemplateItem {
    * recurses into that template's items (guarding circular nesting + depth).
    */
   block_template_id?: ID | undefined;
+  /**
+   * template_block: the templates this block may be filled with (each a
+   * `PrayerTemplate.id`), including the default `block_template_id`. When present,
+   * the Session Builder shows a picker so the leader can swap which devotion fills
+   * this slot for a given session — e.g. a vigil whose "Rosary" slot accepts the
+   * Decade of the Passion or the Holy Rosary. Choosing rewrites this item's
+   * `block_template_id` in the session's own copy; the compiler expands whatever
+   * it points at, so no separate resolution is needed.
+   */
+  block_options?: ID[] | undefined;
   repetition_count: number;
   optional: boolean;
   /** Only included when the session context enables this group. */

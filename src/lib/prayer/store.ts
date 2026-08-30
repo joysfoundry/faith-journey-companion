@@ -44,7 +44,7 @@ import {
   uncompleteSessionItem,
 } from "./compiler";
 
-export const STORAGE_KEY = "prayer-companion-db-v33";
+export const STORAGE_KEY = "prayer-companion-db-v37";
 
 /**
  * Migrate a legacy string recurrence ("daily"/"custom"/…) to the structured
