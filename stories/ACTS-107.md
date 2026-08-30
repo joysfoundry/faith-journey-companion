@@ -34,8 +34,9 @@ LITANY       ── choose the body ──
              • Litany of the Faithful Departed (generic "them")        [new seed]
              • Litany of Loreto / BVM (adapted her/them)               [new seed]
              • any other seeded litany
-CLOSINGS     collect(s) [Fidelium, etc.] · (opt) Sacred Heart / Mt Carmel / Perpetual Help
-             · (opt) Salve · Eternal Rest versicle
+CLOSING BLOCK  (closing & requiem prayers) — the concluding section, a Template Block:
+             collect(s) [the Fidelium + kindred collects] · (opt) Sacred Heart / Mt Carmel /
+             Perpetual Help · (opt) Salve · Eternal Rest versicle
 CLOSE        Sign of the Cross · (opt) reading/poem
 ```
 
