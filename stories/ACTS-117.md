@@ -2,15 +2,16 @@
 id: ACTS-117
 title: Rebase ACTS-PRD onto v8 + apply the gap-review reconcile checklist
 spine: ACTS-117
-status: In Progress
+status: Done
 origin: human-directed
 approved_by: JC
 depends_on: []
 relates_to: [ACTS-104, ACTS-108, ACTS-109, ACTS-110, ACTS-115]
 started_at: 2026-08-29T21:32:33-0700
-updated:    2026-08-29T21:32:33-0700
-latest_handoff: stories/ACTS-117/session-01.md
-sessions: 1
+updated:    2026-08-29T21:58:47-0700
+completed_at: 2026-08-29T21:58:47-0700
+latest_handoff: stories/ACTS-117/session-02.md
+sessions: 2
 ---
 
 ## Goal
