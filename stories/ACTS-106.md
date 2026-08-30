@@ -2,15 +2,15 @@
 id: ACTS-106
 title: Seed — Eternal Rest Prayer + surface "Why We're Catholic" (Trent Horn) on Home
 spine:
-status: In Progress
+status: Done
 origin: human-directed
 approved_by: JC
 depends_on: []
 relates_to: [ACTS-107]
 started_at: 2026-08-29T18:50:31-0700
-updated:    2026-08-29T18:50:31-0700
-latest_handoff: null
-sessions: 0
+updated:    2026-08-29T19:01:29-0700
+latest_handoff: ACTS-106/session-01.md
+sessions: 1
 ---
 
 ## Goal
