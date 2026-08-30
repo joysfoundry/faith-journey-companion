@@ -31,7 +31,7 @@ Generated 2026-08-29 against `main` @ `11d40ec`. Legend: ✅ built · 🟡 parti
 | My Intention vs **Devotion Intention** (§25A) | 🟡 | `intention` + `petition` kinds; no UserIntention/DevotionIntention split | ACTS-26 | |
 | Import **MATCH** step + pasted text (§25C) | 🟡 | importer *proposes* (ANALYZE→PROPOSE); no library-dedupe MATCH | ACTS-17/19 | |
 | USCCB *How to Pray the Rosary* seed + multi-source (§12) | 🟡 | auto How-To exists; no `HowToVersion`/`HowToSource` | ACTS-28 | |
-| **Pray with the Pope** seed (§25E) | 🟡 | was done (ACTS-10) but **0 "Pope" in current seed** — dropped in a reseed | ACTS-10 | |
+| **Pray with the Pope** seed (§25E) | ✅ | **seeded** (`tpl-pray-with-pope`, vaticannews link) — correction to earlier note; action = surface on Home | ACTS-10/109 | |
 | **Open Prayer** (free-form) (§23A/23B) | ⬜ | no `open_prayer` kind — **not built** | **none** | |
 | **Nested Templates / Template Block** (§10A/31C) | ⬜ | no `template_block` kind | **none** | |
 | **Prayer Forms** (five forms) (§25B) | ⬜ | no `prayer_form` field | **none** | |
@@ -57,6 +57,32 @@ Generated 2026-08-29 against `main` @ `11d40ec`. Legend: ✅ built · 🟡 parti
 - v8 "**Faith Learning**" + "**Resource Directory**" → both shipped as **Vessels**
 - **Pray with the Pope** preset was built (ACTS-10) but **fell out of the current seed** — reseed or note
 - **Meditation** (v8) vs **Lectio Divina** (shipped) overlap — decide: own component, or folded into Lectio
+
+## JC review — decisions & filed stories (2026-08-29)
+
+Comments captured in the interactive worksheet (artifact `52984cdd`). Actions taken:
+
+**Stories filed (ACTS-108 → ACTS-116):**
+- **ACTS-108** — Open Prayer, free-form (JC: "create story"; wants it). *[pointer]*
+- **ACTS-109** — Pray with the Pope → surface on Home as a daily session. Template **is** seeded; this is not a reseed. *[pointer]*
+- **ACTS-110** — Nested Templates / Template Block. JC deferred the link decision to me → filed as infra, **linked to ACTS-107** (Rosary+Litany is first consumer). *[pointer]*
+- **ACTS-111** — Explore My Intention vs Devotion Intention split (low pri).
+- **ACTS-112** — Prayer Forms (five forms) + Traditional/My origin metadata (low pri, validate need).
+- **ACTS-113** — Insights + Wisdom (future longitudinal intelligence; grouped, they're a designed pair).
+- **ACTS-114** — Full Audio domain (future/large).
+- **ACTS-115** — HowTo versioning + multi-source (JC: "keep open").
+- **ACTS-116** — Project status dashboard / daily-weekly brief (JC idea from this review).
+
+**Resolved without a new story:**
+- **Meditation (§23B):** covered by the `meditation` item kind + Lectio Divina; the fuller v8 Meditation (prompt / duration / response-links) is not built. Treating the need as **met for now**; fold the richer spec into a future Lectio/meditation enhancement if wanted. (JC: "is this complete? if yes, close.")
+- **Import MATCH (§25C):** JC "keep" → left partial/open, no new story.
+
+**PRD-reconcile notes (apply when rebasing onto v8):**
+- **Global rule (JC):** every *built* feature must have real content/a section in the PRD — **especially where it replaces or augments an existing v8 section.**
+- **Faith Learning / Life Library (§27):** **Vessels** is the chosen product label; "Faith Learning / Life Library" describes what it is.
+- **Resource Directory (§25D):** **complete via Vessels** — update the PRD to match code.
+- **Session Name & Purpose (§9A):** code today has one free-text name (`SessionPlan.purpose`), not v8's structured Purpose picker (In Memoriam, Discernment…). Update the PRD to describe what exists; the structured Purpose taxonomy is optional/future.
+- **Pray with the Pope (§25E):** correct the "dropped" note — it **is** seeded.
 
 ## Open decisions (for JC)
 - **Branding:** keep *Faith Journey* as umbrella placeholder + *ACTS* as the app name; top-level umbrella name TBD (candidates: Faith Journey, *Via Devota*, …). Revisit later.
