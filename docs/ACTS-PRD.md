@@ -14,79 +14,17 @@ Experience: **Mobile-first** — mobile web, no app store (see ACTS-90)
 
 ---
 
-## **What ACTS is**
+## **Mission** *(draft — to refine)*
 
-ACTS is a guided Catholic prayer companion — it turns devotions (the Rosary and its mysteries, Lectio Divina, litanies, novenas, chaplets, hymns) into structured, step-by-step **sessions you actually pray through**, anchored to the liturgical day and shareable so a group can follow along in real time.
+Across my whole faith journey, **prayer has been the constant.** This mission grows out of that: **to help people deepen their relationship with God by building something that feels deeply personal, yet doesn't ignore the wealth of resources — Scripture, the saints, teaching, and tradition — already out there.** Something that meets a person where they actually pray, honors how they were formed, and makes the practice of faith less scattered and more whole.
 
-## **The problem I'm solving**
-
-Catholic prayer practice is **scattered and effortful.** The "content" lives in a dozen places — a physical Rosary pamphlet, a hymnal, a Bible, a saint-of-the-day site, a novena PDF someone texted you — and holding a devotion together (which mystery today? which Scripture? whose turn to lead?) takes mental overhead that pulls you *out* of prayer. ACTS collapses that into one companion that **compiles a devotion into a guided flow** — the right day, the right mysteries and readings, reflection as a first-class step, a way to sing, a way to pray *together* via a follow link — so the tool disappears and the prayer stays.
-
-The design instinct behind every decision is the same: deep-link out to the user's *own* Bible rather than embed one, seed only public-domain texts, mark unknown provenance honestly, exclude copyrighted prayers. This is a **respectful orchestration layer over faith practice, not a walled content silo.**
-
-## **The solution I'm starting with — prayer as the wedge**
-
-I am not building the whole of Faith Journey at once. Prayer is the wedge because it is the daily, repeated act — and because it is where the scattering hurts most. The starting solution is:
-
-* **Compose the way people actually pray** — mix *structured* prayer (a fixed devotion) with *open / spontaneous* prayer, and make sure **Scripture is woven in**, not bolted on.
-* **Pray how my family prays and how my church prays** — reusable, customizable templates (e.g. the Caro Family Rosary) so a household's own wording, hymns, and additions are first-class, not exceptions.
-* **Reflection as prayer, not admin** — my daughters love journaling; Lectio Divina and a first-class Reflect step let prayer and journaling be the same motion.
-* **Learn from what inspires me** — the books, voices, homilies, and articles that form my faith live alongside prayer (the Vessels library), instead of in scattered tabs.
-* **Pray together, even with guests** — a follow-along link lets anyone, *especially someone who isn't Catholic,* pray along without flipping pages or knowing what comes next.
-
-## **Where this came from**
-
-A few concrete moments started this:
-
-* I wanted **my daughters to have structured prayer** — and they already love **journaling**, so prayer and reflection belong together.
-* I wanted to **pray the way my family and my church actually pray**, and to **customize sessions** — open prayer *and* structure, always with Scripture.
-* After someone passed away, our family prayed a **9-day novena** — and we spent real time **making a paper pamphlet and copies** by hand. ACTS puts that novena **in the platform, ready** — no pamphlet. It is more than "go pray the 54-day novena"; the day-by-day flow is built and waiting.
-* As a parent praying a novena, I can **share it with my kids** so they can pray along.
-
-## **What position it has**
-
-If ACTS were an app on the market, it would sit between two things that already exist:
-
-* **Static reference apps** (Bible apps, prayer-text repositories) — comprehensive but passive; you assemble the experience yourself.
-* **Devotional-of-the-day apps** (Hallow, Laudate, iBreviary) — polished but largely a linear feed *you consume*; they deliver *a* prayer, they don't let you compose, adapt, and *lead* one.
-
-The distinct wedge is **composability + shared, real-time practice**: a Prayer → Devotion → Session model where you build and customize the flow, it adapts to the liturgical calendar automatically, and a follow link makes it communal. Composability matters because it mirrors **how people actually learn to pray** and honors **cultural and doctrinal nuance** (e.g. anchoring to USCCB). ACTS is closer to a **conductor's score for Catholic prayer than a jukebox** — the thing the big incumbents don't do.
+*(Working draft — the exact wording still needs refining.)*
 
 ---
 
-## **What's shipped today (and what's still ahead)**
+# **Part 1 · Business**
 
-This document describes the full Faith Journey vision. Much of the **prayer wedge is now built**; the deeper longitudinal layers are still **future**. The sections below (§1–§34) remain the vision of record; this inventory says where reality currently stands.
-
-*Status legend:* **[Shipped]** live in the app · **[Partial]** partly built · **[Future]** designed here, not yet built. Live build ledger: `docs/JIRA-BACKLOG.md`.
-
-**Shipped**
-
-* Prayer taxonomy — Prayer / Devotion / Expression axes kept strictly separate (§6) — **[Shipped]**
-* Core domain — Prayer → Devotion → Template → Plan → Session → SessionItem + deterministic session compiler (§7, §13) — **[Shipped]**
-* Guided "Pray mode" — current-item tracking, completed prayers grayed, auto-scroll (§14) — **[Shipped]**
-* Rosary + mysteries, with **selectable mystery bodies** (Scripture vs. meditation variants) (§22) — **[Shipped]**
-* **Litanies** — three public-domain litanies seeded as devotions (§6) — **[Shipped]**
-* **Songs / hymns** — a sung prayer type with selectable verse/chorus segments (§6) — **[Shipped]**
-* **Lectio Divina** — four movements, with **reflection as a first-class session step** (§28) — **[Shipped]**
-* **Vessels** (was "Learn / Life Library") — Vessel → Channel → Content knowledge model (§27) — **[Shipped]**
-* **Daily Word** naming the **liturgical day** (season + saint/feast) and reading-program voices (§26) — **[Shipped]**
-* **Bible deep-linking** — open the user's own Bible app + translation from Settings (§26) — **[Shipped]**
-* **Share / follow-along** — read-only guest view via a short titled link (the "pray together" piece) — **[Shipped]**
-* **Accounts & persistence** — Supabase auth + backend (was future in §29–31) — **[Shipped]**
-* Templates from scratch / from existing; session-only overrides that don't mutate the source (§10) — **[Shipped]**
-
-**Partial**
-
-* Import → Analyze → Propose → Review → Save seam (§30) — **[Partial]** (manual transcribe today; real OCR is ACTS-81)
-* PrayerPlan scheduling / calendar (§9, §29) — **[Partial]** (RRULE recurrence live; month calendar is ACTS-98)
-
-**Future (kept in full in the sections below)**
-
-* Full **audio domain** — multi-speaker recordings, voice-follow, full-session audio (§15–§21) — **[Future]**
-* **Insights** — grounded pattern recognition across the Journey (§3, §32) — **[Future]**
-* **Purpose / discernment** longitudinal layer (§4, §32) — **[Future]**
-* **Future Learning Companion** (§32) — **[Future]**
+*Start high — the vision, the purpose, and the boundaries — then narrow to the specific product (ACTS) and why it's the first thing being built.*
 
 # **1\. Product Vision**
 
@@ -168,6 +106,94 @@ The system can help the user see this evidence more clearly. It does not decide 
 * REFLECT — What is staying with me?
 
 Home should feel like a personal daily faith space, not a feature dashboard.
+
+---
+
+# **Solution Idea — narrowing to ACTS**
+
+*The vision above is the whole horizon. This is the specific product I am building **first**, the problem it attacks, and why it's the right wedge.*
+
+## **What ACTS is**
+
+ACTS is a guided Catholic prayer companion — it turns devotions (the Rosary and its mysteries, Lectio Divina, litanies, novenas, chaplets, hymns) into structured, step-by-step **sessions you actually pray through**, anchored to the liturgical day and shareable so a group can follow along in real time.
+
+## **The problem I'm solving**
+
+Catholic prayer practice is **scattered and effortful.** The "content" lives in a dozen places — a physical Rosary pamphlet, a hymnal, a Bible, a saint-of-the-day site, a novena PDF someone texted you — and holding a devotion together (which mystery today? which Scripture? whose turn to lead?) takes mental overhead that pulls you *out* of prayer. ACTS collapses that into one companion that **compiles a devotion into a guided flow** — the right day, the right mysteries and readings, reflection as a first-class step, a way to sing, a way to pray *together* via a follow link — so the tool disappears and the prayer stays.
+
+The design instinct behind every decision is the same: deep-link out to the user's *own* Bible rather than embed one, seed only public-domain texts, mark unknown provenance honestly, exclude copyrighted prayers. This is a **respectful orchestration layer over faith practice, not a walled content silo.**
+
+## **The solution I'm starting with — prayer as the wedge**
+
+I am not building the whole of Faith Journey at once. Prayer is the wedge because it is the daily, repeated act — and because it is where the scattering hurts most. The starting solution is:
+
+* **Compose the way people actually pray** — mix *structured* prayer (a fixed devotion) with *open / spontaneous* prayer, and make sure **Scripture is woven in**, not bolted on.
+* **Pray how my family prays and how my church prays** — reusable, customizable templates (e.g. the Caro Family Rosary) so a household's own wording, hymns, and additions are first-class, not exceptions.
+* **Reflection as prayer, not admin** — my daughters love journaling; Lectio Divina and a first-class Reflect step let prayer and journaling be the same motion.
+* **Learn from what inspires me** — the books, voices, homilies, and articles that form my faith live alongside prayer (the Vessels library), instead of in scattered tabs.
+* **Pray together, even with guests** — a follow-along link lets anyone, *especially someone who isn't Catholic,* pray along without flipping pages or knowing what comes next.
+
+## **Where this came from**
+
+Across my whole faith journey, **prayer has been the constant.** I was born Catholic; in college I explored secular works, philosophy, and other faiths — and I remained Catholic. I've spent years raising my children and raising them in the faith, and our family has gathered for a **monthly Rosary since 2000.** That long path is what led me here: this app is my way to help share God's love and the sacrifice of Jesus.
+
+The moment feels significant, too. The Catholic Church is seeing **its highest conversion numbers in decades, with young people a large share of that growth.** I attribute that to God — and I also know that behind it, everyone has a *journey*: prayer, upbringing, research, honest questions, even setting out to disprove the Church and finding the opposite. ACTS is meant to meet people somewhere on that journey.
+
+A few concrete moments made it real:
+
+* I wanted **my daughters to have structured prayer** — and they already love **journaling**, so prayer and reflection belong together.
+* I wanted to **pray the way my family and my church actually pray**, and to **customize sessions** — open prayer *and* structure, always with Scripture.
+* After someone passed away, our family prayed a **9-day novena** — and we spent real time **making a paper pamphlet and copies** by hand. ACTS puts that novena **in the platform, ready** — no pamphlet. It is more than "go pray the 54-day novena"; the day-by-day flow is built and waiting.
+* As a parent praying a novena, I can **share it with my kids** so they can pray along.
+
+## **What position it has**
+
+If ACTS were an app on the market, it would sit between two things that already exist:
+
+* **Static reference apps** (Bible apps, prayer-text repositories) — comprehensive but passive; you assemble the experience yourself.
+* **Devotional-of-the-day apps** (Hallow, Laudate, iBreviary) — polished but largely a linear feed *you consume*; they deliver *a* prayer, they don't let you compose, adapt, and *lead* one.
+
+The distinct wedge is **composability + shared, real-time practice**: a Prayer → Devotion → Session model where you build and customize the flow, it adapts to the liturgical calendar automatically, and a follow link makes it communal. Composability matters because it mirrors **how people actually learn to pray** and honors **cultural and doctrinal nuance** (e.g. anchoring to USCCB). ACTS is closer to a **conductor's score for Catholic prayer than a jukebox** — the thing the big incumbents don't do.
+
+---
+
+# **Part 2 · Technical**
+
+*First, what's actually built today; then the full technical PRD — the domain model, the deterministic compiler, the data model, and the definition of done. Part 1 is the "why"; this is the "how" and "how far."*
+
+# **What's shipped today (and what's still ahead)**
+
+Much of the **prayer wedge is now built**; the deeper longitudinal layers are still **future**. This inventory says where reality currently stands; the numbered sections that follow (§6 onward) are the technical PRD of record.
+
+*Status legend:* **[Shipped]** live in the app · **[Partial]** partly built · **[Future]** designed here, not yet built. Live build ledger: `docs/JIRA-BACKLOG.md`.
+
+**Shipped**
+
+* Prayer taxonomy — Prayer / Devotion / Expression axes kept strictly separate (§6) — **[Shipped]**
+* Core domain — Prayer → Devotion → Template → Plan → Session → SessionItem + deterministic session compiler (§7, §13) — **[Shipped]**
+* Guided "Pray mode" — current-item tracking, completed prayers grayed, auto-scroll (§14) — **[Shipped]**
+* Rosary + mysteries, with **selectable mystery bodies** (Scripture vs. meditation variants) (§22) — **[Shipped]**
+* **Litanies** — three public-domain litanies seeded as devotions (§6) — **[Shipped]**
+* **Songs / hymns** — a sung prayer type with selectable verse/chorus segments (§6) — **[Shipped]**
+* **Lectio Divina** — four movements, with **reflection as a first-class session step** (§28) — **[Shipped]**
+* **Vessels** (was "Learn / Life Library") — Vessel → Channel → Content knowledge model (§27) — **[Shipped]**
+* **Daily Word** naming the **liturgical day** (season + saint/feast) and reading-program voices (§26) — **[Shipped]**
+* **Bible deep-linking** — open the user's own Bible app + translation from Settings (§26) — **[Shipped]**
+* **Share / follow-along** — read-only guest view via a short titled link (the "pray together" piece) — **[Shipped]**
+* **Accounts & persistence** — Supabase auth + backend (was future in §29–31) — **[Shipped]**
+* Templates from scratch / from existing; session-only overrides that don't mutate the source (§10) — **[Shipped]**
+
+**Partial**
+
+* Import → Analyze → Propose → Review → Save seam (§30) — **[Partial]** (manual transcribe today; real OCR is ACTS-81)
+* PrayerPlan scheduling / calendar (§9, §29) — **[Partial]** (RRULE recurrence live; month calendar is ACTS-98)
+
+**Future (kept in full in the sections below)**
+
+* Full **audio domain** — multi-speaker recordings, voice-follow, full-session audio (§15–§21) — **[Future]**
+* **Insights** — grounded pattern recognition across the Journey (§3, §32) — **[Future]**
+* **Purpose / discernment** longitudinal layer (§4, §32) — **[Future]**
+* **Future Learning Companion** (§32) — **[Future]**
 
 # **6\. Prayer Taxonomy Is First-Class**
 
