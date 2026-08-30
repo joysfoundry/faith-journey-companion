@@ -21,7 +21,7 @@ active work — keep it in sync when a pointer changes. The **full numbered ledg
 | ID | EPIC | Title | Status | Depends on | Next step | Updated |
 |----|------|-------|--------|-----------|-----------|---------|
 | [ACTS-117](ACTS-117.md) |  | Rebase ACTS-PRD onto v8 + apply reconcile checklist | In Progress | — | **Next chat starts here.** v8 = content base (canonical `.md`→v3); re-apply structure + inventory; apply `V8-CODE-GAP.md` decisions; add shipped-but-absent sections; re-export .docx. Handoff [session-01](ACTS-117/session-01.md) | 2026-08-29 |
-| ACTS-116 |  | Project status dashboard / daily-weekly brief | To Do | — | _Idea (JC, from v8 gap review)._ Living status view → daily/weekly brief. Relates prd-sync inventory (ACTS-104/105) | 2026-08-29 |
+| [ACTS-116](ACTS-116.md) |  | ACTS status dashboard + signal-ingestion workflow | To Do | — | _Idea, grown from gap review._ Tiles + buckets + editable save-back doc, fronting a signal-ingestion loop (ingest → compare to built → classify built/partial/none/**suggested** → act). Path to **CRAVE** signal intake. Relates ACTS-104/105 | 2026-08-29 |
 | ACTS-115 |  | HowTo versioning + multi-source | To Do | — | _v8 gap._ Add HowToVersion + HowToSource + USCCB Rosary How-To seed. Auto How-To exists (ACTS-28) | 2026-08-29 |
 | ACTS-114 |  | Full Audio domain | To Do | — | _v8 gap, future/large._ Multi-speaker, voice-follow, record-during-session, usage tracking. Fields stubbed only | 2026-08-29 |
 | ACTS-113 |  | Insights + Wisdom (future longitudinal intelligence) | To Do | — | _v8 gap, future._ Grounded Insights → user-named Wisdom w/ evidence links. Never AI-as-God's-will | 2026-08-29 |
