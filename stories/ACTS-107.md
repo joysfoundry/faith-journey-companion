@@ -2,13 +2,13 @@
 id: ACTS-107
 title: Litany of the Departed devotion (Rosary + Litany structure)
 spine:
-status: In Progress
+status: To Do
 origin: human-directed
 approved_by: JC
 depends_on: [ACTS-106]
-relates_to: [ACTS-57, ACTS-106, ACTS-110]
-started_at: 2026-08-29T22:05:00-0700
-updated:    2026-08-29T22:05:00-0700
+relates_to: [ACTS-57, ACTS-106, ACTS-110, ACTS-119, ACTS-120, ACTS-121]
+started_at: null
+updated:    2026-08-30T09:00:00-0700
 latest_handoff: null
 sessions: 0
 ---
@@ -47,20 +47,55 @@ CLOSE        Sign of the Cross · (opt) reading/poem
   mystery/compiler machinery); add a How-To (ACTS-28 auto-howto + our technical notes).
 - The **name + pronoun layer** is intrinsic: the OLG content carries `N.` and `her/him`
   literally. Choosing Loreto for a named soul flips every "pray for us" → "pray for her".
-- Litanies already seeded: Humility, Sacred Heart, Immaculate Heart of Mary (+ St Michael
-  chaplet). **Loreto/BVM and Faithful Departed are NOT seeded** — both new.
+- Litanies: Humility, Sacred Heart, Immaculate Heart of Mary (+ St Michael chaplet) were
+  already seeded; **Loreto/BVM and Faithful Departed are now seeded too** (ACTS-120).
 - Closing collects (Fidelium "O God, Creator and Redeemer…"; the parents/kindred collect)
-  are **standalone reusable prayers**, pulled in as components — not baked into the litany.
+  are **standalone reusable prayers** (`collect-fidelium`, `collect-departed-kindred`), pulled
+  in as components — not baked into the litany.
 
-## Proposed story map (feeds this composite)
-| Piece | Story |
-|---|---|
-| Template Block / nesting infra | **ACTS-110** (build first) |
-| Decade of the Passion / Rosary for the Dead + How-To | new seed story (proposed) |
-| Litany of the Faithful Departed (generic) + Litany of Loreto/BVM | new seed story (proposed) |
-| Closing collects as standalone prayers | new seed story (proposed, or fold here) |
-| Name + pronoun layer (session "for whom" + compiler substitution) | new story (proposed) |
-| **The composite devotion** (assemble all) | **ACTS-107** (this story) |
+## Building blocks — ALL DONE (ready to assemble)
+Every dependency this composite needs is built, verified, and committed. This story is now
+purely **assembly**.
+
+| Piece | Story | Status | What to reuse (ids) |
+|---|---|---|---|
+| Template Block / nesting infra | **ACTS-110** | ✅ code-complete | `template_block` item kind + `block_template_id`; compiler recurses (cycle guard, `MAX_BLOCK_DEPTH`, `source_template_id` lineage); builder "Devotion block" add-type |
+| Decade of the Passion (Rosary for the Dead) + How-To | **ACTS-119** | ✅ seeded | template `tpl-rosary-for-the-dead`; prayers `passion-preparation`, `merciful-jesus-look-down`; `howto-rosary-for-the-dead` |
+| Litany of the Faithful Departed + Loreto/BVM + collects | **ACTS-120** | ✅ seeded | `tpl-litany-faithful-departed`, `tpl-litany-loreto`; collects `collect-fidelium`, `collect-departed-kindred` |
+| Name + pronoun dedication | **ACTS-121** | ✅ built | `SessionContext.for_whom` + `substituteDedication` tokens `{name}{subj}{obj}{poss}{us}`; builder "Prayed for" field |
+| **The composite devotion** (assemble) | **ACTS-107** | ← this story | Eternal Rest = `eternal-rest` (ACTS-106); Sign of the Cross = `sign-of-the-cross` |
+
+## Assembly brief (for the fresh chat that starts ACTS-107)
+Build a new **composite template** — the "Litany for the Faithful Departed" — using **ACTS-110
+Template Blocks** (a `template_block` item references another template by `block_template_id`;
+the compiler expands it inline). Proposed structure, top to bottom:
+
+1. **Opening** — `sign-of-the-cross`, optional intro, `eternal-rest`. (The Decade block already
+   opens/closes with Sign of the Cross — **de-dupe**: either drop the block's frames or the
+   opening's, so the Cross isn't prayed twice back-to-back.)
+2. **Rosary** — a `template_block` → **`tpl-rosary-for-the-dead`** (the Decade of the Passion).
+3. **(opt) Offering** — a prayer/salutation item (Aurora/OLG have it; catholicdoors doesn't).
+4. **Litany** — a `template_block` → **`tpl-litany-faithful-departed`** (default) or
+   **`tpl-litany-loreto`** (swap for a Marian family favorite; its `{us}` becomes "her/them"
+   once the session is dedicated).
+5. **Closing block** (closing & requiem prayers) — `collect-fidelium` + `collect-departed-kindred`
+   (both `collect-*` are the *type*; the **block** is the "Closing block"), optional Salve, then
+   `eternal-rest`.
+6. **Close** — `sign-of-the-cross` (+ optional reading; the "I Am Free" poem needs a copyright
+   check before seeding — likely omit).
+
+Then: seed it as a devotion (own id, e.g. `tpl-litany-for-the-dead`), record its source, **bump
+`STORAGE_KEY` (v33 → v34)**, and browser-verify:
+- Dedicate a session to a named soul (builder "Prayed for" → e.g. "Grandma Aurora / she") and
+  confirm Pray mode reads "the soul of Grandma Aurora", "grant unto her…", Loreto "pray for her".
+- Leave it blank and confirm the generic "the faithful departed / them / us" reading.
+- Generate a **follow-along share** and confirm the dedication rides along (share encodes the
+  compiled, already-substituted items — ACTS-121).
+
+**Verify approach with no test runner:** the Node harness pattern used all session
+(`node --experimental-strip-types` importing `createSeedDatabase()` + `generatePrayerSession`)
+is the fastest way to assert the composite compiles in order with the right dedication — see
+`stories/ACTS-119/session-01.md` and `ACTS-121/session-01.md`.
 
 ## Captured source content — Decade of the Passion (OLG), exact wording
 Sorrowful Mysteries, fixed for all 9 days: Agony in the Garden · Scourging at the Pillar ·
