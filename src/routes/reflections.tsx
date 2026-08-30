@@ -29,6 +29,10 @@ import { useApp } from "@/lib/prayer/store";
 import type { Reflection } from "@/lib/prayer/types";
 
 export const Route = createFileRoute("/reflections")({
+  // `?link=<id>` pre-links the composer to the item you reflected from (a session,
+  // a reading, or a library item), so provenance carries over from the reflect icon.
+  validateSearch: (search: Record<string, unknown>): { link?: string } =>
+    typeof search["link"] === "string" ? { link: search["link"] } : {},
   head: () => ({
     meta: [
       { title: "Reflection — ACTS" },
@@ -229,6 +233,7 @@ function JournalEntryDialog({
 
 function ReflectionsPage() {
   const { db } = useApp();
+  const { link: prefillLinkId } = Route.useSearch();
   const today = todayISO();
   const setId = resolveMysterySet(db, defaultContext({ date: today }));
   const setName = db.mystery_sets.find((s) => s.id === setId)?.name ?? "Mysteries";
@@ -267,7 +272,7 @@ function ReflectionsPage() {
   return (
     <AppShell title="Reflection" subtitle="Write freely and link what inspired it">
       <div className="space-y-6">
-        <ReflectionComposer linkables={linkables} />
+        <ReflectionComposer linkables={linkables} prefillLinkId={prefillLinkId ?? null} />
 
         <section>
           <div className="mb-2 flex items-center justify-between gap-3">

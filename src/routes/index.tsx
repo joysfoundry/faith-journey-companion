@@ -367,6 +367,14 @@ function Index() {
 
   const linkables: LinkableItem[] = [
     { id: daily?.id ?? "rosary", label: dailySubtitle, group: "Prayer & devotion" },
+    // The Continue / Today / Done session rows, so a reflection prefilled from
+    // one of their reflect icons resolves to a readable label.
+    ...[...continueList, ...doneList].map((r) => ({
+      id: r.sessionId,
+      label: r.title,
+      group: "Prayer & devotion",
+    })),
+    ...todayList.map((r) => ({ id: r.planId, label: r.title, group: "Prayer & devotion" })),
     { id: todaysWord.id, label: "Daily Readings", group: "Word" },
     ...db.knowledge_items.map((k) => ({ id: k.id, label: k.title, group: "Knowledge" })),
   ];
@@ -481,18 +489,36 @@ function Index() {
 
             {/* In-progress sessions to continue (never doubled with a Today row) */}
             {continueList.map((row) => (
-              <Link
+              <div
                 key={row.id}
-                to="/session/$sessionId"
-                params={{ sessionId: row.sessionId }}
-                className="flex items-center justify-between border-t border-border/60 px-5 py-3 transition-colors hover:bg-accent/40"
+                className="flex items-center justify-between gap-3 border-t border-border/60 px-5 py-3 transition-colors hover:bg-accent/40"
               >
-                <span className="min-w-0">
+                <Link
+                  to="/session/$sessionId"
+                  params={{ sessionId: row.sessionId }}
+                  className="min-w-0 flex-1"
+                >
                   <span className="eyebrow block">Continue</span>
-                  <span className="truncate font-display text-base">{row.title}</span>
-                </span>
-                <ChevronRight className="size-5 shrink-0 text-muted-foreground" aria-hidden />
-              </Link>
+                  <span className="block truncate font-display text-base">{row.title}</span>
+                </Link>
+                <div className="flex shrink-0 items-center gap-0.5">
+                  <IconAction
+                    label={`Write a reflection about ${row.title}`}
+                    onClick={() => openJournal(row.sessionId)}
+                  >
+                    <span>
+                      <NotebookPen className="size-4" aria-hidden />
+                    </span>
+                  </IconAction>
+                  <Link
+                    to="/session/$sessionId"
+                    params={{ sessionId: row.sessionId }}
+                    aria-label={`Continue ${row.title}`}
+                  >
+                    <ChevronRight className="size-5 shrink-0 text-muted-foreground" aria-hidden />
+                  </Link>
+                </div>
+              </div>
             ))}
 
             {/* Sessions scheduled for today, not yet started */}
@@ -505,35 +531,63 @@ function Index() {
                   <span className="eyebrow block">Today</span>
                   <span className="truncate font-display text-base">{row.title}</span>
                 </span>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="size-9 shrink-0 text-primary"
-                  onClick={() => beginPlan(row.planId)}
-                  aria-label={`Begin ${row.title}`}
-                  title={`Begin ${row.title}`}
-                >
-                  <Play className="size-4" aria-hidden />
-                </Button>
+                <div className="flex shrink-0 items-center gap-0.5">
+                  <IconAction
+                    label={`Write a reflection about ${row.title}`}
+                    onClick={() => openJournal(row.planId)}
+                  >
+                    <span>
+                      <NotebookPen className="size-4" aria-hidden />
+                    </span>
+                  </IconAction>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="size-9 shrink-0 text-primary"
+                    onClick={() => beginPlan(row.planId)}
+                    aria-label={`Begin ${row.title}`}
+                    title={`Begin ${row.title}`}
+                  >
+                    <Play className="size-4" aria-hidden />
+                  </Button>
+                </div>
               </div>
             ))}
 
             {/* Completed today — kept visible as Done; tap to review. */}
             {doneList.map((row) => (
-              <Link
+              <div
                 key={row.id}
-                to="/session/$sessionId"
-                params={{ sessionId: row.sessionId }}
                 className="flex items-center justify-between gap-3 border-t border-border/60 px-5 py-3 transition-colors hover:bg-accent/40"
               >
-                <span className="min-w-0">
+                <Link
+                  to="/session/$sessionId"
+                  params={{ sessionId: row.sessionId }}
+                  className="min-w-0 flex-1"
+                >
                   <span className="eyebrow block text-muted-foreground">Done</span>
-                  <span className="truncate font-display text-base text-muted-foreground">
+                  <span className="block truncate font-display text-base text-muted-foreground">
                     {row.title}
                   </span>
-                </span>
-                <Check className="size-5 shrink-0 text-muted-foreground" aria-hidden />
-              </Link>
+                </Link>
+                <div className="flex shrink-0 items-center gap-0.5">
+                  <IconAction
+                    label={`Write a reflection about ${row.title}`}
+                    onClick={() => openJournal(row.sessionId)}
+                  >
+                    <span>
+                      <NotebookPen className="size-4" aria-hidden />
+                    </span>
+                  </IconAction>
+                  <Link
+                    to="/session/$sessionId"
+                    params={{ sessionId: row.sessionId }}
+                    aria-label={`Review ${row.title}`}
+                  >
+                    <Check className="size-5 shrink-0 text-muted-foreground" aria-hidden />
+                  </Link>
+                </div>
+              </div>
             ))}
           </div>
         </Card>

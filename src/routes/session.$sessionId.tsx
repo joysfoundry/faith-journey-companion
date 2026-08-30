@@ -1,6 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { BookOpen, Check, ChevronDown, ChevronRight, Pencil, Share2, X } from "lucide-react";
+import {
+  BookOpen,
+  Check,
+  ChevronDown,
+  ChevronRight,
+  NotebookPen,
+  Pencil,
+  Share2,
+  X,
+} from "lucide-react";
 import { AppShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -204,6 +213,18 @@ function PrayerMode() {
             </Link>
             <p className="truncate text-sm font-medium">{session.title}</p>
             <div className="flex shrink-0 items-center gap-1.5">
+              <Button
+                asChild
+                variant="ghost"
+                size="icon"
+                className="size-8 text-muted-foreground"
+                aria-label="Write a reflection about this session"
+                title="Write a reflection about this session"
+              >
+                <Link to="/reflections" search={{ link: session.id }}>
+                  <NotebookPen className="size-4" />
+                </Link>
+              </Button>
               <ShareDialog
                 payload={buildSharePayload(session, items)}
                 allowEditCover

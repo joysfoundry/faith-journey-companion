@@ -302,10 +302,32 @@ const STATUS_RANK: Record<KnowledgeStatus, number> = {
   finished: 2,
 };
 
-/** Order content: in-progress first, then not-started, then finished; newest within. */
+/**
+ * Whether a category tracks progress (Not started → In progress → Finished).
+ * Completable works do — a book you read, a program you follow, a video/podcast
+ * you get through. "General" references (an article/post link, a quote) don't:
+ * you don't "finish" a website, so they carry no status and sink below the
+ * things you're working through.
+ */
+export function hasStatus(category: KnowledgeCategory): boolean {
+  return (
+    category === "book" || category === "program" || category === "video" || category === "podcast"
+  );
+}
+
+/**
+ * Order content: status-bearing items (books, programs, video, podcast) first —
+ * in-progress, then not-started, then finished — then the status-less references
+ * (articles/posts/quotes). Newest within each tier.
+ */
 export function byStatusThenRecent(a: KnowledgeItem, b: KnowledgeItem): number {
-  const s = STATUS_RANK[a.status] - STATUS_RANK[b.status];
-  if (s !== 0) return s;
+  const aHas = hasStatus(a.category);
+  const bHas = hasStatus(b.category);
+  if (aHas !== bHas) return aHas ? -1 : 1;
+  if (aHas) {
+    const s = STATUS_RANK[a.status] - STATUS_RANK[b.status];
+    if (s !== 0) return s;
+  }
   return (b.created_at ?? "").localeCompare(a.created_at ?? "");
 }
 

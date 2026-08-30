@@ -40,6 +40,7 @@ import {
   contentTitle,
   detectCategory,
   detectPlatform,
+  hasStatus,
   isQuote,
   isScriptureProgram,
   matchVoice,
@@ -495,8 +496,9 @@ function KnowledgeRecordPage() {
           </>
         )}
 
-        {/* Status — available in both modes (a quote has no progress) */}
-        {!isQuote(item) ? (
+        {/* Status — only for completable works (a book/program/video/podcast).
+            Articles, posts, and quotes are references with no progress. */}
+        {hasStatus(item.category) ? (
           <div className="flex flex-wrap gap-1.5">
             {STATUS_STEPS.map((s) => (
               <button
@@ -515,7 +517,7 @@ function KnowledgeRecordPage() {
         ) : null}
 
         <Button asChild variant="secondary" className="h-11 w-full">
-          <Link to="/reflections">
+          <Link to="/reflections" search={{ link: item.id }}>
             <NotebookPen className="size-4" /> Reflect on this
           </Link>
         </Button>

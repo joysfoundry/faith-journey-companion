@@ -7,6 +7,7 @@ import {
   ChevronsUpDown,
   ExternalLink,
   MoreVertical,
+  NotebookPen,
   Pencil,
   Search,
   Star,
@@ -36,7 +37,9 @@ import {
   VOICE_LABEL,
   VOICE_LABEL_SINGULAR,
   byStatusThenRecent,
+  contentTitle,
   groupOf,
+  hasStatus,
   isEmptyDraftVoice,
   isQuote,
   isScriptureProgram,
@@ -531,6 +534,7 @@ function ContentRow({
             </div>
           ) : null}
         </div>
+        <ReflectIcon itemId={item.id} title={contentTitle(item)} />
         <RowMenu onEdit={() => onEdit(item.id)} onDelete={() => onDelete(item.id)} />
       </li>
     );
@@ -593,24 +597,48 @@ function ContentRow({
             ))}
           </div>
         ) : null}
-        <div className="mt-2 flex flex-wrap gap-1">
-          {STATUS_STEPS.map((s) => (
-            <button
-              key={s.key}
-              onClick={() => setKnowledgeStatus(item.id, s.key)}
-              className={`rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors ${
-                item.status === s.key
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {s.label}
-            </button>
-          ))}
-        </div>
+        {hasStatus(item.category) ? (
+          <div className="mt-2 flex flex-wrap gap-1">
+            {STATUS_STEPS.map((s) => (
+              <button
+                key={s.key}
+                onClick={() => setKnowledgeStatus(item.id, s.key)}
+                className={`rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors ${
+                  item.status === s.key
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        ) : null}
       </div>
+      <ReflectIcon itemId={item.id} title={item.title} />
       <RowMenu onEdit={() => onEdit(item.id)} onDelete={() => onDelete(item.id)} />
     </li>
+  );
+}
+
+/** Reflect icon — opens the journal with this library item pre-linked. */
+function ReflectIcon({ itemId, title }: { itemId: string; title: string }) {
+  return (
+    <Button
+      asChild
+      size="icon"
+      variant="ghost"
+      className="size-8 shrink-0 text-muted-foreground hover:text-foreground"
+    >
+      <Link
+        to="/reflections"
+        search={{ link: itemId }}
+        aria-label={`Write a reflection about ${title}`}
+        title={`Write a reflection about ${title}`}
+      >
+        <NotebookPen className="size-4" aria-hidden />
+      </Link>
+    </Button>
   );
 }
 
