@@ -35,6 +35,7 @@ export const KIND_LABELS: Record<TemplateItem["kind"], string> = {
   reflection: "Reflection",
   custom: "Other",
   heading: "Section",
+  template_block: "Devotion block",
 };
 
 /** JIRA-style "add and type" menu. Order matches how a devotion usually reads. */
@@ -49,6 +50,7 @@ const ADD_TYPES: { kind: TemplateItem["kind"]; label: string }[] = [
   { kind: "reflection", label: "Reflection" },
   { kind: "mystery_placeholder", label: "Mystery" },
   { kind: "external_link", label: "External link" },
+  { kind: "template_block", label: "Devotion block" },
   { kind: "heading", label: "Section" },
   { kind: "custom", label: "Other" },
 ];
@@ -166,6 +168,7 @@ export function DevotionItemsEditor({
       },
       heading: { label: "Section" },
       custom: { label: "Component", body: "" },
+      template_block: { label: "" },
     };
     insertItem({ kind, ...(defaults[kind] ?? {}) }, index);
   };
@@ -340,7 +343,11 @@ export function DevotionItemsEditor({
                             ? `${ordinalCap(item.mystery_ordinal ?? index + 1)} mystery`
                             : item.kind === "prayer" || item.kind === "song"
                               ? (prayer?.title ?? (item.kind === "song" ? "Song" : "Prayer"))
-                              : (item.label ?? KIND_LABELS[item.kind])}
+                              : item.kind === "template_block"
+                                ? (item.label ||
+                                  db.templates.find((t) => t.id === item.block_template_id)?.name ||
+                                  "Devotion block")
+                                : (item.label ?? KIND_LABELS[item.kind])}
                         </span>
                         {item.kind === "song" ? (
                           <span className="block truncate text-xs text-muted-foreground">
@@ -465,6 +472,37 @@ export function DevotionItemsEditor({
                               onChange={(e) => update(index, { body: e.target.value })}
                               className="text-sm"
                             />
+                          </div>
+                        ) : null}
+
+                        {item.kind === "template_block" ? (
+                          <div className="mt-2 space-y-2">
+                            <select
+                              aria-label="Devotion to reuse as a block"
+                              value={item.block_template_id ?? ""}
+                              onChange={(e) =>
+                                update(index, { block_template_id: e.target.value || undefined })
+                              }
+                              className="h-9 w-full rounded-md border border-input bg-card px-2 text-sm"
+                            >
+                              <option value="">Choose a devotion…</option>
+                              {db.templates
+                                .filter((t) => t.id !== templateId)
+                                .map((t) => (
+                                  <option key={t.id} value={t.id}>
+                                    {t.name}
+                                  </option>
+                                ))}
+                            </select>
+                            <Input
+                              value={item.label ?? ""}
+                              placeholder="Section label (optional)"
+                              onChange={(e) => update(index, { label: e.target.value })}
+                              className="h-9 text-sm"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              Its prayers are expanded inline when the session is built.
+                            </p>
                           </div>
                         ) : null}
                       </div>

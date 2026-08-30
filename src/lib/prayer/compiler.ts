@@ -467,6 +467,50 @@ export function listenSourcesFromItems(
   return out;
 }
 
+/** How deep `template_block` nesting may go before expansion stops (safety bound). */
+export const MAX_BLOCK_DEPTH = 4;
+
+interface MysteryConfig {
+  mysteries: Mystery[];
+  setId?: ID | undefined;
+  setName?: string | undefined;
+  presentation: MysteryPresentation;
+  bodyKey: string;
+}
+
+/** Resolve which mystery set / body / presentation a single template prays. */
+function resolveMysteryConfig(
+  db: Database,
+  template: PrayerTemplate,
+  ctx: SessionContext,
+): MysteryConfig {
+  const presentation = ctx.mystery_presentation ?? template.mystery_presentation;
+  const bodyKey = ctx.mystery_body ?? template.default_mystery_body ?? DEFAULT_MYSTERY_BODY;
+  if (template.mystery_count <= 0) return { mysteries: [], presentation, bodyKey };
+  // A template can pin its set (e.g. Luminous) unless the context chose one.
+  const setCtx =
+    !ctx.mystery_set_id && template.fixed_mystery_set_id
+      ? { ...ctx, mystery_set_id: template.fixed_mystery_set_id }
+      : ctx;
+  const setId = resolveMysterySet(db, setCtx);
+  const mysteries = setId ? mysteriesForSet(db, setId) : [];
+  const setName = db.mystery_sets.find((s) => s.id === setId)?.name;
+  return { mysteries, setId, setName, presentation, bodyKey };
+}
+
+/** Mutable accumulator threaded through recursive template-block expansion. */
+interface CompileState {
+  db: Database;
+  ctx: SessionContext;
+  sessionId: ID;
+  items: SessionItem[];
+  position: number;
+  /** Template ids on the current recursion path — a block re-referencing one is skipped. */
+  stack: ID[];
+  /** First mystery set any expanded template resolved (for session.context). */
+  effectiveMysterySet?: ID | undefined;
+}
+
 export function generatePrayerSession(
   db: Database,
   template: PrayerTemplate,
@@ -474,30 +518,55 @@ export function generatePrayerSession(
 ): GeneratedSession {
   const ctx = defaultContext(contextInput);
 
-  // Mystery resolution. A template can pin the set (e.g. Luminous) unless the
-  // caller's context explicitly chose one.
-  if (template.fixed_mystery_set_id && !contextInput.mystery_set_id && !ctx.mystery_set_id) {
-    ctx.mystery_set_id = template.fixed_mystery_set_id;
+  // Reflect the root template's mystery choices back onto the returned context
+  // (existing behavior). Nested blocks resolve their own config as they expand.
+  const rootCfg = resolveMysteryConfig(db, template, ctx);
+  ctx.mystery_presentation = rootCfg.presentation;
+  ctx.mystery_body = rootCfg.bodyKey;
+  if (rootCfg.setId) ctx.mystery_set_id = rootCfg.setId;
+
+  const state: CompileState = {
+    db,
+    ctx,
+    sessionId: newId("session"),
+    items: [],
+    position: 0,
+    stack: [template.id],
+  };
+  expandTemplate(state, template, 0);
+
+  // A composite whose root has no mysteries but nests a rosary block: surface the
+  // block's set on the context so UI reading it still names the mysteries.
+  if (!ctx.mystery_set_id && state.effectiveMysterySet) {
+    ctx.mystery_set_id = state.effectiveMysterySet;
   }
-  const presentation = ctx.mystery_presentation ?? template.mystery_presentation;
-  ctx.mystery_presentation = presentation;
-  // Which *body* (version) of each mystery to pray: session choice, else the
-  // devotion default, else the built-in reflection.
-  const bodyKey = ctx.mystery_body ?? template.default_mystery_body ?? DEFAULT_MYSTERY_BODY;
-  ctx.mystery_body = bodyKey;
-  const setId = template.mystery_count > 0 ? resolveMysterySet(db, ctx) : undefined;
-  if (setId) ctx.mystery_set_id = setId;
-  const mysteries = setId ? mysteriesForSet(db, setId) : [];
-  const setName = db.mystery_sets.find((s) => s.id === setId)?.name;
 
-  const sessionId = newId("session");
-  const items: SessionItem[] = [];
-  let position = 0;
+  const session: PrayerSession = {
+    id: state.sessionId,
+    template_id: template.id,
+    title: template.name,
+    context: ctx,
+    created_at: new Date().toISOString(),
+    cursor: 0,
+  };
+
+  return { session, items: state.items };
+}
+
+/**
+ * Expand one template's items into session items, recursing into any
+ * `template_block`. `depth` bounds nesting; `state.stack` blocks circular refs.
+ * A nested rosary block resolves its own mysteries and counts its own decades.
+ */
+function expandTemplate(state: CompileState, template: PrayerTemplate, depth: number): void {
+  const { db, ctx } = state;
+  const { mysteries, setId, setName, presentation, bodyKey } = resolveMysteryConfig(
+    db,
+    template,
+    ctx,
+  );
+  if (setId && !state.effectiveMysterySet) state.effectiveMysterySet = setId;
   let decade = 0; // increments at each mystery so Hail Marys can show "1st decade" etc.
-
-  const templateItems = db.template_items
-    .filter((i) => i.template_id === template.id)
-    .sort((a, b) => a.position - b.position);
 
   const push = (
     item: Omit<
@@ -505,21 +574,41 @@ export function generatePrayerSession(
       "id" | "session_id" | "position" | "progress_mode" | "completion_status" | "completion_method"
     >,
   ) => {
-    items.push({
+    state.items.push({
       id: newId("item"),
-      session_id: sessionId,
-      position: position++,
+      session_id: state.sessionId,
+      position: state.position++,
       progress_mode: ctx.progress_mode,
       completion_status: "pending",
       completion_method: null,
+      source_template_id: template.id,
       ...item,
     });
   };
+
+  const templateItems = db.template_items
+    .filter((i) => i.template_id === template.id)
+    .sort((a, b) => a.position - b.position);
 
   for (const item of templateItems) {
     // 3. Conditional content.
     if (item.condition_tag && !ctx.condition_tags.includes(item.condition_tag)) continue;
     if (item.optional && !ctx.include_optional) continue;
+
+    // Nested template: expand its items inline. Guards circular nesting (a block
+    // re-referencing an ancestor is skipped) and bounds depth. An optional label
+    // becomes a section heading introducing the block.
+    if (item.kind === "template_block") {
+      const blockId = item.block_template_id;
+      if (!blockId || state.stack.includes(blockId) || depth >= MAX_BLOCK_DEPTH) continue;
+      const block = db.templates.find((t) => t.id === blockId);
+      if (!block) continue;
+      if (item.label) push({ kind: "heading", title: item.label });
+      state.stack.push(blockId);
+      expandTemplate(state, block, depth + 1);
+      state.stack.pop();
+      continue;
+    }
 
     if (item.kind === "heading") {
       push({ kind: "heading", title: item.label ?? "" });
@@ -686,16 +775,6 @@ export function generatePrayerSession(
     }
   }
 
-  const session: PrayerSession = {
-    id: sessionId,
-    template_id: template.id,
-    title: template.name,
-    context: ctx,
-    created_at: new Date().toISOString(),
-    cursor: 0,
-  };
-
-  return { session, items };
 }
 
 export function ordinalWord(n: number): string {
@@ -773,6 +852,10 @@ export function templateOutline(
     .map((i) => {
       if (i.kind === "mystery_placeholder")
         return { label: `Mystery ${i.mystery_ordinal}`, detail: i.label };
+      if (i.kind === "template_block") {
+        const block = db.templates.find((t) => t.id === i.block_template_id);
+        return { label: i.label || block?.name || "Devotion block", detail: "Devotion block" };
+      }
       if (i.kind === "external_link") {
         const opts = i.external_options ?? [];
         const def = opts.find((o) => o.is_default) ?? opts[0];

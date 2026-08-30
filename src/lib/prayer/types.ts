@@ -192,6 +192,9 @@ export interface ExternalLinkOption {
  * - scripture: a Scripture passage (with a citation) placeable anywhere
  * - custom: any other component the user adds
  * - heading: a plain section label
+ * - template_block: reuse a whole other Template inline (the compiler recursively
+ *   expands it into concrete items). Lets composites — e.g. a Rosary **plus** a
+ *   Litany — reuse a devotion instead of re-adding every item.
  */
 export type TemplateItemKind =
   | "prayer"
@@ -205,7 +208,8 @@ export type TemplateItemKind =
   | "scripture"
   | "reflection"
   | "custom"
-  | "heading";
+  | "heading"
+  | "template_block";
 
 /** Compact template row. `repetition_count` is shorthand; sessions expand it. */
 export interface TemplateItem {
@@ -240,6 +244,11 @@ export interface TemplateItem {
   reference?: string | undefined;
   /** external_link: selectable sources; exactly one marked is_default. */
   external_options?: ExternalLinkOption[] | undefined;
+  /**
+   * template_block: the `PrayerTemplate.id` to expand inline here. The compiler
+   * recurses into that template's items (guarding circular nesting + depth).
+   */
+  block_template_id?: ID | undefined;
   repetition_count: number;
   optional: boolean;
   /** Only included when the session context enables this group. */
@@ -451,6 +460,12 @@ export interface SessionItem {
   mystery_content_id?: ID | undefined;
   mystery_ordinal?: number | undefined;
   audio_id?: ID | undefined;
+  /**
+   * Lineage: the `PrayerTemplate.id` this item was compiled from. Differs from the
+   * session's own `template_id` when the item came from a nested `template_block`,
+   * so edits can be routed back to the source template. Absent = the root template.
+   */
+  source_template_id?: ID | undefined;
   configuration?: Record<string, unknown> | undefined;
 }
 
