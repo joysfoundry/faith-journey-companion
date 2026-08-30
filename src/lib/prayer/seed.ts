@@ -508,6 +508,16 @@ Amen.`,
     ["family", "consecration", "immaculate heart", "marian"],
     "src-caro-rosary",
   ),
+  prayer(
+    "eternal-rest",
+    "Eternal Rest Prayer",
+    "devotional",
+    `Eternal rest grant unto them, O Lord,
+and let perpetual light shine upon them.
+May they rest in peace. Amen.`,
+    ["dead", "departed", "requiem", "funeral", "eternal rest"],
+    "src-eternal-rest",
+  ),
 ];
 
 // Chaplet of St. Michael — nine salutations to the nine choirs of angels.
@@ -1603,6 +1613,14 @@ export function createSeedDatabase(): Database {
         attribution: "Traditional (public domain)",
         created_at: now,
       },
+      {
+        id: "src-eternal-rest",
+        source_type: "web",
+        name: "Eternal Rest Prayer",
+        url: "https://mycatholicprayers.com/prayers/eternal-rest-prayer/",
+        attribution: "Traditional (public domain)",
+        created_at: now,
+      },
     ],
     prayers: allPrayers.map((p) => p.prayer),
     prayer_versions: allPrayers.map((p) => p.version),
@@ -1847,11 +1865,13 @@ export function createSeedDatabase(): Database {
       },
       {
         id: "know-why-we-are-catholic",
-        title: "Why We Are Catholic",
+        title: "Why We're Catholic",
         category: "book",
         voice_id: "voice-trent-horn",
         source: "Catholic Answers Press",
-        links: [{ platform: "store", url: "https://a.co/d/0iRtwemk", label: "Amazon" }],
+        links: [
+          { platform: "store", url: "https://a.co/d/0iRtwemk", label: "Amazon", favorite: true },
+        ],
         status: "not_started",
         created_at: now,
       },
