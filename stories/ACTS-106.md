@@ -2,13 +2,13 @@
 id: ACTS-106
 title: Seed — Eternal Rest Prayer + surface "Why We're Catholic" (Trent Horn) on Home
 spine:
-status: To Do
+status: In Progress
 origin: human-directed
 approved_by: JC
 depends_on: []
 relates_to: [ACTS-107]
-started_at: null
-updated:    2026-08-29T18:44:53-0700
+started_at: 2026-08-29T18:50:31-0700
+updated:    2026-08-29T18:50:31-0700
 latest_handoff: null
 sessions: 0
 ---
@@ -42,11 +42,13 @@ across the web.
    DBs pick up the new seed. See [[prayer-sourcing-model]] STORAGE_KEY gotcha.
 
 ## Acceptance criteria
-- [ ] Eternal Rest Prayer exists as a reusable seeded `Prayer` with a `Source` (URL + `known` provenance) and correct taxonomy; visible/searchable in the Prayers library.
-- [ ] The Trent Horn book title reads **"Why We're Catholic"** everywhere it renders (seed + any UI).
-- [ ] "Why We're Catholic" is visible on the **Home** page (not only in the Vessels library).
-- [ ] `STORAGE_KEY` bumped; a fresh load seeds both without wiping unrelated user data unexpectedly (documented one-time reseed behavior).
-- [ ] Browser-verified (Prayers library shows the prayer; Home shows the book).
+- [x] Eternal Rest Prayer exists as a reusable seeded `Prayer` with a `Source` (URL + `known` provenance) and correct taxonomy; visible/searchable in the Prayers library. — `src-eternal-rest` + `eternal-rest` prayer; detail shows Devotional · Vocal · Traditional + source link.
+- [x] The Trent Horn book title reads **"Why We're Catholic"** everywhere it renders (seed + any UI). — `seed.ts` `know-why-we-are-catholic` title; renders in Vessels + `/knowledge` header.
+- [x] "Why We're Catholic" is visible on the **Home** page (not only in the Vessels library). — surfaced via `favorite: true` on its Amazon link → Home Vessels pin (`pinnedLinks`).
+- [x] `STORAGE_KEY` bumped; a fresh load seeds both without wiping unrelated user data unexpectedly (documented one-time reseed behavior). — v29 → **v30** (`store.ts`); one-time reseed on next load, as with prior seed stories.
+- [x] Browser-verified (Prayers library shows the prayer; Home shows the book). — 2026-08-29, localhost:8080: Home Vessels pin + `/prayer/eternal-rest` detail; `tsc --noEmit` clean; no console errors.
+
+_Note (JC decision): the book's reading status was left `not_started` — the Home pin comes from the favorited link, not from status. Flip to `in_progress` if you want it marked as currently reading._
 
 ## Tests
 _Planned — no runner wired (harness = ACTS-92); document per ACTS-91._
