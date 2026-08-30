@@ -563,6 +563,17 @@ May {subj} rest in peace. Amen.`,
     ["dead", "departed", "offering", "requiem"],
     "src-olg-passion",
   ),
+  prayer(
+    "mater-dei-parish-prayer",
+    "Mater Dei Parish Prayer",
+    "devotional",
+    `Almighty Father, the Body of Christ, the Church, is made up of people who believe in your Son, Jesus Christ, and saved through His suffering, death and resurrection. Enable us to grow in faith, hope, love and service that we may build a welcoming, friendly faith community. A community that witnesses your Son's life and mission after the life example of Mary, the Mother of God, Mater Dei, through the power of the Holy Spirit. Amen.
+
+Leader: Mater Dei
+All: Lead us to your son Jesus. Amen!`,
+    ["parish", "community", "mater dei"],
+    "src-mater-dei",
+  ),
 ];
 
 // Chaplet of St. Michael — nine salutations to the nine choirs of angels.
@@ -2001,6 +2012,13 @@ export function createSeedDatabase(): Database {
         name: "Litany of the Blessed Virgin Mary (Litany of Loreto)",
         url: "https://www.vatican.va/special/rosary/documents/litanie-lauretane_en.html",
         attribution: "Traditional (public domain)",
+        created_at: now,
+      },
+      {
+        id: "src-mater-dei",
+        source_type: "manual",
+        name: "Mater Dei Catholic Parish — Parish Prayer card",
+        attribution: "Mater Dei Catholic Parish, Diocese of San Diego (established 2004)",
         created_at: now,
       },
     ],
