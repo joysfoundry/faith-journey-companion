@@ -59,6 +59,8 @@ Every open story now has an id so you can reference it when starting a chat — 
 [Open section of the ledger](../docs/JIRA-BACKLOG.md#-open--backlog-numbered), **ACTS-76…90**.
 Highlights / recently added:
 
+- **ACTS-104** — Vision PRD v2: reconcile doc with reality + the global `/prd-sync` skill; PRD now in-repo at [`docs/ACTS-PRD.md`](../docs/ACTS-PRD.md) → [`ACTS-104.md`](ACTS-104.md) _(Done)_.
+- **ACTS-105** — Evolve `/prd-sync` → a "canon / doc sync" (vision change cascades to related docs) + apply to CRV → [`ACTS-105.md`](ACTS-105.md) _(To Do)_.
 - **ACTS-92** — Set up the test harness (Vitest + Testing Library + Playwright), **deferred** → [`ACTS-92.md`](ACTS-92.md). **Blocks executable tests for every story.**
 - **ACTS-91** — Testing convention (tests documented + tracked as a task) → [`ACTS-91.md`](ACTS-91.md) _(Done)_.
 - **ACTS-76** — Pray-mode tracker: prominent current item, grayed-out completed, auto-scroll → [`ACTS-76.md`](ACTS-76.md) _(Done)_.
