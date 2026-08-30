@@ -529,11 +529,28 @@ May they rest in peace. Amen.`,
   ),
   prayer(
     "merciful-jesus-look-down",
-    "O Most Merciful Jesus (Bead Prayer for the Dead)",
+    "O most Merciful Jesus",
     "devotional",
     `O Most Merciful Jesus, look down with eyes of pity on the faithful souls for whom You suffered and died on the Cross.`,
     ["dead", "departed", "passion", "mercy"],
     "src-olg-passion",
+  ),
+  // Closing collects for the departed — standalone, reusable components (ACTS-120).
+  prayer(
+    "collect-fidelium",
+    "Collect for the Faithful Departed (Fidelium)",
+    "devotional",
+    `O God, the Creator and Redeemer of all the faithful, grant unto the souls of Thy servants departed the remission of all their sins; that, by pious supplications, they may obtain the pardon which they have always desired. Grant this, O God, Who livest and reignest for ever and ever. Amen.`,
+    ["dead", "departed", "requiem", "collect"],
+    "src-catholicdoors-departed",
+  ),
+  prayer(
+    "collect-departed-kindred",
+    "Collect for Departed Parents, Kindred, and Benefactors",
+    "devotional",
+    `O eternal God, Who, besides the general precept of charity, hast commanded a particular respect for parents, kindred, and benefactors; grant, we beseech Thee, that, as they were the instruments by which Thy providence bestowed on us our birth, education, and innumerable other blessings, so our prayers may be the means to obtain for them a speedy release from their excessive sufferings, and admittance to Thine infinite joys. Through Jesus Christ, Our Lord. Amen.`,
+    ["dead", "departed", "kindred", "collect"],
+    "src-catholicdoors-departed",
   ),
 ];
 
@@ -800,6 +817,195 @@ const litanyImmaculateHeartItems = litanyItems("tpl-litany-immaculate-heart", [
     kind: "text",
     label: "Let us pray",
     body: "O most merciful God, who, for the salvation of sinners and the refuge of the miserable, wast pleased that the most pure Heart of Mary should be most like in charity and pity to the Divine Heart of Thy Son, Jesus Christ: grant that we who commemorate this sweet and loving Heart may, by the merits and intercession of the same Blessed Virgin, merit to be found like unto the Heart of Jesus, through the same Christ our Lord. Amen.",
+  },
+]);
+
+// Litany of the Faithful Departed — traditional, public domain (catholicdoors.com).
+// ACTS-120. Refrains are the generic plural "the faithful departed / them"; the two
+// closing "Let us pray" collects are seeded as standalone prayers (collect-fidelium,
+// collect-departed-kindred), pulled in as components rather than baked in here.
+const litanyFaithfulDepartedItems = litanyItems("tpl-litany-faithful-departed", [
+  {
+    kind: "text",
+    label: "Kyrie",
+    body: "Lord, have mercy on us.\nChrist, have mercy on us.\nLord, have mercy on us.\nChrist, hear us.\nChrist, graciously hear us.",
+  },
+  {
+    kind: "block",
+    lines: [
+      "God the Father of Heaven,",
+      "God the Son, Redeemer of the world,",
+      "God the Holy Ghost,",
+      "Holy Trinity, one God,",
+    ].map((call): LitanyLine => [call, "Have mercy on the souls of the faithful departed."]),
+  },
+  {
+    kind: "block",
+    lines: [
+      "Holy Mary, Mother of God,",
+      "St. Michael,",
+      "All ye angels and archangels,",
+      "All ye orders of blessed spirits,",
+      "St. Joseph,",
+      "All ye holy patriarchs and prophets,",
+      "All ye holy apostles and evangelists,",
+      "All ye holy martyrs,",
+      "All ye holy bishops and confessors,",
+      "All ye holy doctors,",
+      "All ye holy priests and Levites,",
+      "All ye holy monks and hermits,",
+      "All ye holy virgins and widows,",
+      "All ye saints of God,",
+    ].map((call): LitanyLine => [call, "Pray for the souls of the faithful departed."]),
+  },
+  {
+    kind: "block",
+    lines: [
+      ["Be merciful,", "Spare them, O Lord."],
+      ["Be merciful,", "Graciously hear us, O Lord."],
+    ],
+  },
+  {
+    kind: "block",
+    lines: [
+      "From all evil,",
+      "From the rigor of Thy justice,",
+      "From the power of the devil,",
+      "From long-enduring sorrow,",
+      "From cruel flames,",
+      "From horrible darkness,",
+      "From dreadful weeping and wailing,",
+      "Through Thy holy nativity,",
+      "Through Thy most sweet name,",
+      "Through Thy most profound humiliations,",
+      "Through Thy infinite love,",
+      "Through Thy bloody sweat,",
+      "Through Thy scourging,",
+      "Through Thy crowning with thorns,",
+      "Through Thy carrying of the cross,",
+      "Through Thy most cruel death,",
+      "Through Thy five most holy wounds,",
+    ].map((call): LitanyLine => [call, "O Lord, deliver them."]),
+  },
+  {
+    kind: "block",
+    lines: [
+      "In the day of judgment,",
+      "Thou Who forgavest Magdalen, and didst grant the prayer of the thief,",
+      "That Thou wouldst be pleased to deliver the souls of our parents, relations, friends, and benefactors, from the pains of hell,",
+      "That Thou wouldst be pleased to have mercy on those of whom no special remembrance is made on earth,",
+      "That Thou wouldst be pleased to grant them all the pardon and remission of their sins,",
+      "That Thou wouldst be pleased to receive them into the company of the blessed,",
+      "King of lawful majesty,",
+      "Son of God,",
+    ].map((call): LitanyLine => [call, "We beseech Thee, hear us."]),
+  },
+  {
+    kind: "block",
+    lines: [
+      ["Lamb of God, who takest away the sins of the world,", "grant unto them eternal rest."],
+      ["Lamb of God, who takest away the sins of the world,", "grant unto them eternal rest."],
+      ["Lamb of God, who takest away the sins of the world,", "grant unto them rest everlasting."],
+    ],
+  },
+  {
+    kind: "block",
+    lines: [
+      ["Christ, hear us.", "Christ, graciously hear us."],
+      ["Lord, have mercy.", "Christ, have mercy."],
+      ["From the gate of hell,", "Deliver their souls, O Lord."],
+      ["O Lord, hear my prayer.", "And let my cry come unto Thee."],
+    ],
+  },
+]);
+
+// Litany of the Blessed Virgin Mary (Litany of Loreto) — traditional, public domain.
+// ACTS-120. Seeded in the general "pray for us" form so it serves any Marian devotion;
+// a departed devotion adapts "us" → "her/them" via the name/pronoun layer (ACTS-121).
+const litanyLoretoItems = litanyItems("tpl-litany-loreto", [
+  {
+    kind: "text",
+    label: "Kyrie",
+    body: "Lord, have mercy on us.\nChrist, have mercy on us.\nLord, have mercy on us.\nChrist, hear us.\nChrist, graciously hear us.",
+  },
+  {
+    kind: "block",
+    lines: [
+      ["God the Father of Heaven,", "have mercy on us."],
+      ["God the Son, Redeemer of the world,", "have mercy on us."],
+      ["God the Holy Spirit,", "have mercy on us."],
+      ["Holy Trinity, one God,", "have mercy on us."],
+    ],
+  },
+  {
+    kind: "block",
+    lines: [
+      "Holy Mary,",
+      "Holy Mother of God,",
+      "Holy Virgin of virgins,",
+      "Mother of Christ,",
+      "Mother of Divine Grace,",
+      "Mother most pure,",
+      "Mother most chaste,",
+      "Mother inviolate,",
+      "Mother undefiled,",
+      "Mother immaculate,",
+      "Mother most amiable,",
+      "Mother most admirable,",
+      "Mother of good counsel,",
+      "Mother of our Creator,",
+      "Mother of our Savior,",
+      "Virgin most prudent,",
+      "Virgin most venerable,",
+      "Virgin most renowned,",
+      "Virgin most powerful,",
+      "Virgin most merciful,",
+      "Virgin most faithful,",
+      "Mirror of justice,",
+      "Seat of wisdom,",
+      "Cause of our joy,",
+      "Spiritual vessel,",
+      "Vessel of honor,",
+      "Singular vessel of devotion,",
+      "Mystical rose,",
+      "Tower of David,",
+      "Tower of ivory,",
+      "House of gold,",
+      "Ark of the covenant,",
+      "Gate of Heaven,",
+      "Morning star,",
+      "Health of the sick,",
+      "Refuge of sinners,",
+      "Comforter of the afflicted,",
+      "Help of Christians,",
+      "Queen of Angels,",
+      "Queen of Patriarchs,",
+      "Queen of Prophets,",
+      "Queen of Apostles,",
+      "Queen of Martyrs,",
+      "Queen of Confessors,",
+      "Queen of Virgins,",
+      "Queen of all Saints,",
+      "Queen conceived without original sin,",
+      "Queen assumed into Heaven,",
+      "Queen of the most holy Rosary,",
+      "Queen of Peace,",
+    ].map((call): LitanyLine => [call, "pray for us."]),
+  },
+  LAMB_OF_GOD("have mercy on us."),
+  {
+    kind: "block",
+    lines: [
+      [
+        "Pray for us, O holy Mother of God.",
+        "That we may be made worthy of the promises of Christ.",
+      ],
+    ],
+  },
+  {
+    kind: "text",
+    label: "Let us pray",
+    body: "Grant, we beseech Thee, O Lord God, unto us Thy servants, that we may enjoy perpetual health of mind and body; and by the glorious intercession of Blessed Mary ever Virgin, may be delivered from present sorrow, and enter into the joy of Thine eternal gladness. Through Christ our Lord. Amen.",
   },
 ]);
 
@@ -1704,6 +1910,22 @@ export function createSeedDatabase(): Database {
         attribution: "Our Lady of Grace (OLG); traditional prayers, public domain",
         created_at: now,
       },
+      {
+        id: "src-catholicdoors-departed",
+        source_type: "web",
+        name: "Litany of the Faithful Departed",
+        url: "https://www.catholicdoors.com/prayers/litanies/p03468.htm",
+        attribution: "Traditional (public domain)",
+        created_at: now,
+      },
+      {
+        id: "src-loreto",
+        source_type: "web",
+        name: "Litany of the Blessed Virgin Mary (Litany of Loreto)",
+        url: "https://www.vatican.va/special/rosary/documents/litanie-lauretane_en.html",
+        attribution: "Traditional (public domain)",
+        created_at: now,
+      },
     ],
     prayers: allPrayers.map((p) => p.prayer),
     prayer_versions: allPrayers.map((p) => p.version),
@@ -1724,7 +1946,7 @@ export function createSeedDatabase(): Database {
       },
       {
         id: "tpl-rosary-for-the-dead",
-        name: "Rosary for the Dead (Decade of the Passion)",
+        name: "Decade of the Passion",
         description:
           "A Passion-focused rosary prayed for the departed. It replaces the standard Our Father and Hail Marys: the Merciful Jesus prayer on each large bead, ten meditations on Christ's Passion on the small beads, and the Eternal Rest after each decade. The Sorrowful Mysteries are prayed throughout.",
         kind: "rosary",
@@ -1857,6 +2079,32 @@ export function createSeedDatabase(): Database {
         created_at: now,
       },
       {
+        id: "tpl-litany-faithful-departed",
+        name: "Litany of the Faithful Departed",
+        description:
+          "The traditional litany for the dead — invoking God's mercy and the intercession of the saints for the souls of the faithful departed.",
+        kind: "standard",
+        mystery_presentation: "title_only",
+        mystery_count: 0,
+        notes:
+          "Prayed for the souls of the departed, often after the Rosary. Its concluding collects (the Fidelium and the prayer for departed kindred) are separate prayers you can add after it.",
+        source_id: "src-catholicdoors-departed",
+        built_in: true,
+        created_at: now,
+      },
+      {
+        id: "tpl-litany-loreto",
+        name: "Litany of the Blessed Virgin Mary (Loreto)",
+        description:
+          "The Litany of Loreto — a string of titles of the Blessed Virgin Mary, each answered “pray for us,” ending with the Lamb of God and a closing collect.",
+        kind: "standard",
+        mystery_presentation: "title_only",
+        mystery_count: 0,
+        source_id: "src-loreto",
+        built_in: true,
+        created_at: now,
+      },
+      {
         id: LECTIO_TEMPLATE_ID,
         name: "Lectio Divina",
         description:
@@ -1882,6 +2130,8 @@ export function createSeedDatabase(): Database {
       ...litanyHumilityItems,
       ...litanySacredHeartItems,
       ...litanyImmaculateHeartItems,
+      ...litanyFaithfulDepartedItems,
+      ...litanyLoretoItems,
       ...lectioItemsList,
     ],
     sessions: [],
