@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useApp, variantsOf } from "@/lib/prayer/store";
-import { newId, songSegmentLabel } from "@/lib/prayer/compiler";
+import { newId, songSegmentLabel, substituteDedication } from "@/lib/prayer/compiler";
 import type {
   Database,
   ExternalLinkMediaKind,
@@ -361,7 +361,7 @@ export function DevotionItemsEditor({
                       <div className="mt-2">
                         {item.kind === "prayer" && prayerBody ? (
                           <p className="prayer-text whitespace-pre-line text-sm text-muted-foreground">
-                            {prayerBody}
+                            {substituteDedication(prayerBody)}
                           </p>
                         ) : null}
                         {(item.kind === "prayer" || item.kind === "song") &&

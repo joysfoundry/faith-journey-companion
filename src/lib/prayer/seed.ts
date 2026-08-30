@@ -512,9 +512,9 @@ Amen.`,
     "eternal-rest",
     "Eternal Rest Prayer",
     "devotional",
-    `Eternal rest grant unto them, O Lord,
-and let perpetual light shine upon them.
-May they rest in peace. Amen.`,
+    `Eternal rest grant unto {obj}, O Lord,
+and let perpetual light shine upon {obj}.
+May {subj} rest in peace. Amen.`,
     ["dead", "departed", "requiem", "funeral", "eternal rest"],
     "src-eternal-rest",
   ),
@@ -861,7 +861,7 @@ const litanyFaithfulDepartedItems = litanyItems("tpl-litany-faithful-departed", 
   {
     kind: "block",
     lines: [
-      ["Be merciful,", "Spare them, O Lord."],
+      ["Be merciful,", "Spare {obj}, O Lord."],
       ["Be merciful,", "Graciously hear us, O Lord."],
     ],
   },
@@ -885,7 +885,7 @@ const litanyFaithfulDepartedItems = litanyItems("tpl-litany-faithful-departed", 
       "Through Thy carrying of the cross,",
       "Through Thy most cruel death,",
       "Through Thy five most holy wounds,",
-    ].map((call): LitanyLine => [call, "O Lord, deliver them."]),
+    ].map((call): LitanyLine => [call, "O Lord, deliver {obj}."]),
   },
   {
     kind: "block",
@@ -903,9 +903,9 @@ const litanyFaithfulDepartedItems = litanyItems("tpl-litany-faithful-departed", 
   {
     kind: "block",
     lines: [
-      ["Lamb of God, who takest away the sins of the world,", "grant unto them eternal rest."],
-      ["Lamb of God, who takest away the sins of the world,", "grant unto them eternal rest."],
-      ["Lamb of God, who takest away the sins of the world,", "grant unto them rest everlasting."],
+      ["Lamb of God, who takest away the sins of the world,", "grant unto {obj} eternal rest."],
+      ["Lamb of God, who takest away the sins of the world,", "grant unto {obj} eternal rest."],
+      ["Lamb of God, who takest away the sins of the world,", "grant unto {obj} rest everlasting."],
     ],
   },
   {
@@ -913,7 +913,7 @@ const litanyFaithfulDepartedItems = litanyItems("tpl-litany-faithful-departed", 
     lines: [
       ["Christ, hear us.", "Christ, graciously hear us."],
       ["Lord, have mercy.", "Christ, have mercy."],
-      ["From the gate of hell,", "Deliver their souls, O Lord."],
+      ["From the gate of hell,", "Deliver {poss} souls, O Lord."],
       ["O Lord, hear my prayer.", "And let my cry come unto Thee."],
     ],
   },
@@ -931,10 +931,10 @@ const litanyLoretoItems = litanyItems("tpl-litany-loreto", [
   {
     kind: "block",
     lines: [
-      ["God the Father of Heaven,", "have mercy on us."],
-      ["God the Son, Redeemer of the world,", "have mercy on us."],
-      ["God the Holy Spirit,", "have mercy on us."],
-      ["Holy Trinity, one God,", "have mercy on us."],
+      ["God the Father of Heaven,", "have mercy on {us}."],
+      ["God the Son, Redeemer of the world,", "have mercy on {us}."],
+      ["God the Holy Spirit,", "have mercy on {us}."],
+      ["Holy Trinity, one God,", "have mercy on {us}."],
     ],
   },
   {
@@ -990,9 +990,16 @@ const litanyLoretoItems = litanyItems("tpl-litany-loreto", [
       "Queen assumed into Heaven,",
       "Queen of the most holy Rosary,",
       "Queen of Peace,",
-    ].map((call): LitanyLine => [call, "pray for us."]),
+    ].map((call): LitanyLine => [call, "pray for {us}."]),
   },
-  LAMB_OF_GOD("have mercy on us."),
+  {
+    kind: "block",
+    lines: [
+      ["Lamb of God, who takest away the sins of the world,", "spare {us}, O Lord."],
+      ["Lamb of God, who takest away the sins of the world,", "graciously hear {us}, O Lord."],
+      ["Lamb of God, who takest away the sins of the world,", "have mercy on {us}."],
+    ],
+  },
   {
     kind: "block",
     lines: [
@@ -1506,9 +1513,9 @@ const PASSION_SUFFERINGS: readonly string[] = [
   "through Your Sacred side pierced with the lance, from which flowed blood and water",
 ];
 
-// Generic plural response ("the faithful departed"). ACTS-121 will tokenize this
-// so a session dedicated to a named soul reads "the soul of {name}" instead.
-const PASSION_RESPONSE = "Have mercy on the souls of the faithful departed.";
+// Dedication-aware response: `{name}` resolves to the named soul, or falls back to
+// "the faithful departed" when the session isn't dedicated (ACTS-121).
+const PASSION_RESPONSE = "Have mercy on the soul of {name}.";
 
 /**
  * The Decade of the Passion — the "Rosary for the Dead" (Filipino Pasiyam custom).

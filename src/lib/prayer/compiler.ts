@@ -28,6 +28,54 @@ export function newId(prefix: string): string {
   return `${prefix}-${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36).slice(-4)}`;
 }
 
+/* ------------------------------------------------------------------ */
+/* Dedication tokens — pray a devotion "for" a named soul (ACTS-121)   */
+/* ------------------------------------------------------------------ */
+
+const PRONOUN_FORMS: Record<import("./types").Pronoun, { subj: string; obj: string; poss: string }> =
+  {
+    she: { subj: "she", obj: "her", poss: "her" },
+    he: { subj: "he", obj: "him", poss: "his" },
+    they: { subj: "they", obj: "them", poss: "their" },
+  };
+
+/**
+ * Substitute dedication tokens in prayer text for a session prayed for a soul.
+ *
+ * Tokens (case-insensitive; a capitalized token capitalizes the result):
+ * - `{name}`  → the person's name, else "the faithful departed"
+ * - `{subj}`  → she / he / they
+ * - `{obj}`   → her / him / them
+ * - `{poss}`  → her / his / their
+ * - `{us}`    → the object pronoun when a soul is named/chosen, else "us" — for
+ *              general prayers (e.g. the Litany of Loreto's "pray for us") that
+ *              become "pray for her/them" only when offered for the departed.
+ *
+ * With no dedication, tokens fall back to the plural ("the faithful departed",
+ * they/them/their) and `{us}` stays "us" — so an un-dedicated session reads
+ * exactly as the traditional text.
+ */
+export function substituteDedication(
+  text: string,
+  forWhom?: import("./types").Dedication,
+): string {
+  if (!text || text.indexOf("{") === -1) return text;
+  const forms = PRONOUN_FORMS[forWhom?.pronoun ?? "they"];
+  const name = forWhom?.name?.trim() || "the faithful departed";
+  const map: Record<string, string> = {
+    name,
+    subj: forms.subj,
+    obj: forms.obj,
+    poss: forms.poss,
+    us: forWhom ? forms.obj : "us",
+  };
+  return text.replace(/\{(name|subj|obj|poss|us)\}/gi, (whole, key: string) => {
+    const val = map[key.toLowerCase()];
+    if (val === undefined) return whole;
+    return /^[A-Z]/.test(key) ? val.charAt(0).toUpperCase() + val.slice(1) : val;
+  });
+}
+
 export function todayISO(): string {
   // Local calendar date, not UTC. `toISOString()` is UTC, which rolls to the
   // next day in the evening for negative-offset zones — that made Saturday
@@ -574,6 +622,10 @@ function expandTemplate(state: CompileState, template: PrayerTemplate, depth: nu
       "id" | "session_id" | "position" | "progress_mode" | "completion_status" | "completion_method"
     >,
   ) => {
+    // Dedication substitution: prayer text may carry {name}/{subj}/{obj}/{poss}/{us}
+    // tokens that resolve to the soul this session is prayed for (or the plural
+    // "the faithful departed" fallback). Applies to the visible strings.
+    const dedication = ctx.for_whom;
     state.items.push({
       id: newId("item"),
       session_id: state.sessionId,
@@ -583,6 +635,8 @@ function expandTemplate(state: CompileState, template: PrayerTemplate, depth: nu
       completion_method: null,
       source_template_id: template.id,
       ...item,
+      title: substituteDedication(item.title, dedication),
+      ...(item.body !== undefined ? { body: substituteDedication(item.body, dedication) } : {}),
     });
   };
 

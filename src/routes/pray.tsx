@@ -51,6 +51,7 @@ import type {
   PrayerHour,
   PrayerTemplate,
   ProgressMode,
+  Pronoun,
   Recurrence,
   SessionContext,
   SessionPlan,
@@ -181,6 +182,10 @@ function PrayPage() {
   const [tab, setTab] = useState<"builder" | "sessions">(build ? "builder" : "sessions");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [purpose, setPurpose] = useState("");
+  // Optional dedication: pray this session "for" a named soul. Blank name +
+  // "they" = no dedication (prayers read in the generic/plural form).
+  const [forWhomName, setForWhomName] = useState("");
+  const [forWhomPronoun, setForWhomPronoun] = useState<Pronoun>("they");
   const [dateVal, setDateVal] = useState(today);
   const [freq, setFreq] = useState<Frequency>("none");
   const [interval, setIntervalVal] = useState("1");
@@ -280,6 +285,8 @@ function PrayPage() {
   const resetForm = () => {
     setEditingId(null);
     setPurpose("");
+    setForWhomName("");
+    setForWhomPronoun("they");
     setDateVal(today);
     applyRecurrence(undefined);
     setFulfillsDaily(false);
@@ -292,6 +299,8 @@ function PrayPage() {
   const loadPlan = (plan: SessionPlan) => {
     setEditingId(plan.id);
     setPurpose(plan.purpose ?? "");
+    setForWhomName(plan.context.for_whom?.name ?? "");
+    setForWhomPronoun(plan.context.for_whom?.pronoun ?? "they");
     setDateVal(plan.date ?? today);
     applyRecurrence(plan.recurrence);
     setFulfillsDaily(plan.fulfills_daily_rosary ?? false);
@@ -315,12 +324,25 @@ function PrayPage() {
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  // Dedicate only when there's something to substitute: a name, or a specific
+  // (non-plural) pronoun. Otherwise leave it off so prayers read generically.
+  const dedication =
+    forWhomName.trim() || forWhomPronoun !== "they"
+      ? {
+          for_whom: {
+            ...(forWhomName.trim() ? { name: forWhomName.trim() } : {}),
+            pronoun: forWhomPronoun,
+          },
+        }
+      : {};
+
   const buildContext = (): Partial<SessionContext> => ({
     progress_mode: progressMode,
     ...(mysterySet !== "auto" ? { mystery_set_id: mysterySet } : {}),
     ...(presentation !== "template" ? { mystery_presentation: presentation } : {}),
     ...(mysteryBody !== "template" ? { mystery_body: mysteryBody } : {}),
     ...(chosenSource ? { listen_source: chosenSource, audio_enabled: true } : {}),
+    ...dedication,
   });
 
   const saveSession = () => {
@@ -531,6 +553,32 @@ function PrayPage() {
                   onChange={(e) => setPurpose(e.target.value)}
                   className="mt-2"
                 />
+              </div>
+              <div>
+                <Label htmlFor="for-whom">Prayed for (optional)</Label>
+                <div className="mt-2 flex gap-2">
+                  <Input
+                    id="for-whom"
+                    value={forWhomName}
+                    placeholder="e.g. Grandma Aurora"
+                    onChange={(e) => setForWhomName(e.target.value)}
+                    className="flex-1"
+                  />
+                  <select
+                    aria-label="Pronoun for the person prayed for"
+                    value={forWhomPronoun}
+                    onChange={(e) => setForWhomPronoun(e.target.value as Pronoun)}
+                    className="h-12 rounded-md border border-input bg-card px-3"
+                  >
+                    <option value="they">they/them</option>
+                    <option value="she">she/her</option>
+                    <option value="he">he/him</option>
+                  </select>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  For a devotion offered for someone (e.g. the departed). Leave blank to pray it in
+                  the general form.
+                </p>
               </div>
               <div>
                 <Label htmlFor="template">Start from a devotion?</Label>

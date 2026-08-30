@@ -14,6 +14,7 @@ import {
 } from "@/components/prayer/PrayerFields";
 import { MediaEditor } from "@/components/media/MediaEditor";
 import { useApp, variantsOf } from "@/lib/prayer/store";
+import { substituteDedication } from "@/lib/prayer/compiler";
 import { TAXONOMY_LABELS } from "@/domain/taxonomy";
 import type { PrayerMedia } from "@/lib/prayer/types";
 
@@ -125,7 +126,9 @@ function ViewPrayer() {
         </div>
 
         <article className="soft-card p-5">
-          <p className="prayer-text whitespace-pre-line text-lg">{version?.body}</p>
+          <p className="prayer-text whitespace-pre-line text-lg">
+            {substituteDedication(version?.body ?? "")}
+          </p>
         </article>
 
         {tags.length ? (
@@ -328,7 +331,9 @@ function EditPrayerForm() {
                           )}
                           {v.is_default_variant ? " · default" : ""}
                         </p>
-                        <p className="line-clamp-3 text-sm text-muted-foreground">{body}</p>
+                        <p className="line-clamp-3 text-sm text-muted-foreground">
+                          {substituteDedication(body)}
+                        </p>
                       </div>
                     </li>
                   );

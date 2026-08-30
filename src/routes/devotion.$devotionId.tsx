@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useApp } from "@/lib/prayer/store";
 import { ordinal } from "@/components/prayer/DevotionItemsEditor";
-import { recurrenceLabel, songSegmentLabel } from "@/lib/prayer/compiler";
+import { recurrenceLabel, songSegmentLabel, substituteDedication } from "@/lib/prayer/compiler";
 import type { PrayerHour, TemplateItem } from "@/lib/prayer/types";
 
 export const Route = createFileRoute("/devotion/$devotionId")({
@@ -332,6 +332,11 @@ function DevotionStep({
   } else {
     body = item.body;
   }
+
+  // Preview text carries no dedication — render tokens in their generic form
+  // (e.g. {obj} → "them", {name} → "the faithful departed") so no raw {tokens} show.
+  title = substituteDedication(title);
+  if (body !== undefined) body = substituteDedication(body);
 
   return (
     <li className="soft-card overflow-hidden">

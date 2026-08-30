@@ -332,6 +332,22 @@ export interface SessionContext {
   audio_enabled: boolean;
   /** Chosen "how do you want to listen?" media; absent = read silently. */
   listen_source?: ListenSource | undefined;
+  /**
+   * Who this session is prayed for — a named soul (e.g. a departed loved one).
+   * Drives dedication-token substitution in the compiler (`{name}`/`{subj}`/
+   * `{obj}`/`{poss}`/`{us}`). Absent = no dedication: tokens fall back to the
+   * plural "the faithful departed / they / them / their", and `{us}` stays "us".
+   */
+  for_whom?: Dedication | undefined;
+}
+
+/** Third-person pronoun set for a dedication. `they` is the plural fallback. */
+export type Pronoun = "she" | "he" | "they";
+
+/** A session dedication: an optional name plus the pronoun to use for that soul. */
+export interface Dedication {
+  name?: string | undefined;
+  pronoun: Pronoun;
 }
 
 export interface PrayerSession {
