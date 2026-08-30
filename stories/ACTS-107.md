@@ -2,13 +2,13 @@
 id: ACTS-107
 title: Litany of the Departed devotion (Rosary + Litany structure)
 spine:
-status: To Do
+status: In Progress
 origin: human-directed
 approved_by: JC
 depends_on: [ACTS-106]
 relates_to: [ACTS-57, ACTS-106, ACTS-110, ACTS-119, ACTS-120, ACTS-121]
-started_at: null
-updated:    2026-08-30T09:00:00-0700
+started_at: 2026-08-30T10:30:00-0700
+updated:    2026-08-30T10:30:00-0700
 latest_handoff: null
 sessions: 0
 ---
@@ -131,14 +131,17 @@ _Decision (JC): repeat the 10 sufferings identically in all 5 decades (50 bead-l
 - OLG "Novena for One Who Has Died" — <https://olg.cc/liturgy/devotions-liturgical-seasons/novena-for-one-who-has-died/>
 - Litany of the BVM (Loreto) — <https://nashvilledominican.org/prayer/litanies/litany-of-the-blessed-virgin-mary/>
 
-## Acceptance criteria (draft — refine once wording is in)
-- [ ] "Litany of the Departed" exists as a seeded devotion with the 5-part structure above, in order.
-- [ ] The litany sequence renders as salutation call/refrain items (per ACTS-57).
-- [ ] The Eternal Rest Prayer (ACTS-106) is reused, not re-authored.
-- [ ] Prayable end-to-end in guided Pray mode; expands repetitions correctly.
-- [ ] Shareable as a follow-along link (guests can pray along).
-- [ ] Source/provenance recorded; `STORAGE_KEY` bumped.
-- [ ] Browser-verified.
+## Acceptance criteria
+- [x] "Litany for the Faithful Departed" exists as a seeded devotion (`tpl-litany-for-the-dead`)
+  with the 5-part structure above, in order — assembled from 3 nested Template Blocks
+  (rosary-for-the-dead · litany-faithful-departed · closing-requiem) framed by Sign/Eternal Rest.
+- [x] The litany sequence renders as salutation call/refrain items (per ACTS-57) via the nested block.
+- [x] The Eternal Rest Prayer (ACTS-106) is reused (`eternal-rest`), not re-authored.
+- [x] Prayable end-to-end in guided Pray mode; expands to 132 steps in order.
+- [x] Shareable as a follow-along link — the share codec (`toShareItem`/`buildSharePayload`) copies
+  the compiled, already-substituted item title/body verbatim, so the dedication rides along.
+- [x] Source/provenance recorded (`src-olg-passion`); `STORAGE_KEY` bumped v33 → v34.
+- [x] Browser-verified (dedicated "Grandma Aurora / she" + blank generic; harness + live Pray mode).
 
 ## Tests
 _Planned — no runner wired (harness = ACTS-92); document per ACTS-91._
