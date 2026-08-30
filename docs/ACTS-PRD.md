@@ -240,6 +240,21 @@ Do not model every prayer experience as a Devotion. The application must disting
 * Consecration  
 * Custom
 
+### What a novena is *(domain reference — grounds the novena roadmap, ACTS-107 → ACTS-122–128)*
+
+A **novena** is a traditional Christian — most commonly Catholic — devotion of **prayer repeated over nine consecutive days**. The name comes from the Latin *novem* ("nine"), and the practice is inspired by the nine days the Apostles, Mary, and the disciples spent in constant prayer in the Upper Room between the Ascension and Pentecost. This is why a novena in ACTS is modeled as a **day-sequenced flow ("Day N of M")**, not a single session — the countdown *is* the devotion.
+
+People pray a novena for one of four purposes, which the app should be able to frame around a session:
+
+* **Petition** — to ask God for a specific favor, healing, or grace.
+* **Intercession** — to ask a saint or the Blessed Virgin Mary to pray on one's behalf.
+* **Preparation** — to spiritually prepare for a major feast (Christmas, Divine Mercy Sunday, a patronal feast).
+* **Perseverance** — to build patience, humility, and persistence through repeated prayer.
+
+A novena's daily content may be the **same prayer each day** (e.g. the St. Andrew Christmas novena, prayed repeatedly) or a **different prayer/meditation per day** (day-indexed) — both shapes are covered by the "Novena Prayers" pattern (ACTS-123), while swappable rosary/litany/chaplet blocks come from the scaffold (ACTS-107/ACTS-122).
+
+*Sources (Gemini-gathered):* Dynamic Catholic, FOCUS, Shrine of Divine Mercy, Benedictine, St. Mike's, Catholic Straight Answers.
+
 ## **Expression Types**
 
 * Vocal  
