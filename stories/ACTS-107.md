@@ -1,16 +1,16 @@
 ---
 id: ACTS-107
-title: Litany of the Departed devotion (Rosary + Litany structure)
+title: Novena — 9-Day Rosary for the Faithful Departed (swappable rosary/litany)
 spine:
-status: In Progress
+status: Done
 origin: human-directed
 approved_by: JC
 depends_on: [ACTS-106]
 relates_to: [ACTS-57, ACTS-106, ACTS-110, ACTS-119, ACTS-120, ACTS-121]
 started_at: 2026-08-30T10:30:00-0700
-updated:    2026-08-30T10:30:00-0700
-latest_handoff: null
-sessions: 0
+updated:    2026-08-30T15:27:00-0700
+latest_handoff: stories/ACTS-107/session-01.md
+sessions: 1
 ---
 
 ## Goal
