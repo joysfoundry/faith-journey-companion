@@ -518,6 +518,23 @@ May they rest in peace. Amen.`,
     ["dead", "departed", "requiem", "funeral", "eternal rest"],
     "src-eternal-rest",
   ),
+  // Decade of the Passion (Rosary for the Dead) — ACTS-119.
+  prayer(
+    "passion-preparation",
+    "Preparation for the Decade of the Passion",
+    "devotional",
+    `Lord, open our lips and inflame our hearts and cleanse them of useless and evil thoughts. Enlighten our minds that we may seriously meditate on Your suffering and death, and the pains endured by Your Mother. Hear and receive us before Your great majesty, for You who live and reign forever and ever. Amen.`,
+    ["dead", "departed", "passion", "preparation"],
+    "src-olg-passion",
+  ),
+  prayer(
+    "merciful-jesus-look-down",
+    "O Most Merciful Jesus (Bead Prayer for the Dead)",
+    "devotional",
+    `O Most Merciful Jesus, look down with eyes of pity on the faithful souls for whom You suffered and died on the Cross.`,
+    ["dead", "departed", "passion", "mercy"],
+    "src-olg-passion",
+  ),
 ];
 
 // Chaplet of St. Michael — nine salutations to the nine choirs of angels.
@@ -1267,6 +1284,64 @@ function caroRosaryItems(): TemplateItem[] {
 }
 const caroItemsList = caroRosaryItems();
 
+// The ten Passion meditations prayed on the Hail Mary beads of the Decade of the
+// Passion, in order (OLG "Novena for One Who Has Died"). Repeated identically in
+// each of the five decades (JC decision, ACTS-107 session-01).
+const PASSION_SUFFERINGS: readonly string[] = [
+  "through Your bloody sweat in the garden",
+  "through the blow You received on Your Sacred Face",
+  "through the cruel scourging You endured",
+  "through the crown of thorns that pierced Your head",
+  "through Your carrying of the Cross on the path of bitterness",
+  "through Your face covered with blood, which You allowed to be imprinted on Veronica's veil",
+  "through Your bloody garments that were cruelly removed from Your wounded Body",
+  "through Your Holy Body nailed on the Cross",
+  "through Your Hands and Feet pierced with cruel nails",
+  "through Your Sacred side pierced with the lance, from which flowed blood and water",
+];
+
+// Generic plural response ("the faithful departed"). ACTS-121 will tokenize this
+// so a session dedicated to a named soul reads "the soul of {name}" instead.
+const PASSION_RESPONSE = "Have mercy on the souls of the faithful departed.";
+
+/**
+ * The Decade of the Passion — the "Rosary for the Dead" (Filipino Pasiyam custom).
+ * It replaces the standard Rosary: on each Our Father bead the "Most Merciful
+ * Jesus" prayer; on the ten Hail Mary beads, ten meditations on Christ's Passion
+ * (each with its response); the Eternal Rest closes every decade. The Sorrowful
+ * Mysteries are prayed throughout. See ACTS-119.
+ */
+function rosaryForDeadItems(): TemplateItem[] {
+  const templateId = "tpl-rosary-for-the-dead";
+  const items: TemplateItem[] = [];
+  let p = 0;
+  const add = (partial: Partial<TemplateItem> & { kind: TemplateItem["kind"] }) =>
+    items.push(ti(templateId, p++, partial));
+
+  add({ kind: "prayer", prayer_id: "sign-of-the-cross" });
+  add({ kind: "prayer", prayer_id: "passion-preparation" });
+  for (let d = 1; d <= 5; d++) {
+    // Announce the Sorrowful Mystery for this decade (title only).
+    add({ kind: "mystery_placeholder", mystery_ordinal: d, label: `Decade ${d}` });
+    // Our Father bead.
+    add({ kind: "prayer", prayer_id: "merciful-jesus-look-down" });
+    // Ten Hail Mary beads = ten Passion sufferings, each with its response.
+    for (const suffering of PASSION_SUFFERINGS) {
+      add({
+        kind: "salutation",
+        label: `My Jesus, ${suffering}`,
+        salutation_vr: false,
+        body: PASSION_RESPONSE,
+      });
+    }
+    // Close each decade with the Eternal Rest.
+    add({ kind: "prayer", prayer_id: "eternal-rest" });
+  }
+  add({ kind: "prayer", prayer_id: "sign-of-the-cross" });
+  return items;
+}
+const rosaryForDeadItemsList = rosaryForDeadItems();
+
 // The 54-day rosary is a plain daily Rosary devotion; its "54 days" lives in the
 // devotion's default recurrence (daily × 54), not a separate novena subsystem.
 const novenaItems: TemplateItem[] = rosaryItems("tpl-54-novena", {
@@ -1621,6 +1696,14 @@ export function createSeedDatabase(): Database {
         attribution: "Traditional (public domain)",
         created_at: now,
       },
+      {
+        id: "src-olg-passion",
+        source_type: "web",
+        name: "Novena for One Who Has Died (Decade of the Passion)",
+        url: "https://olg.cc/liturgy/devotions-liturgical-seasons/novena-for-one-who-has-died/",
+        attribution: "Our Lady of Grace (OLG); traditional prayers, public domain",
+        created_at: now,
+      },
     ],
     prayers: allPrayers.map((p) => p.prayer),
     prayer_versions: allPrayers.map((p) => p.version),
@@ -1636,6 +1719,21 @@ export function createSeedDatabase(): Database {
         mystery_presentation: "title_and_description",
         default_mystery_body: "usccb-scripture",
         mystery_count: 5,
+        built_in: true,
+        created_at: now,
+      },
+      {
+        id: "tpl-rosary-for-the-dead",
+        name: "Rosary for the Dead (Decade of the Passion)",
+        description:
+          "A Passion-focused rosary prayed for the departed. It replaces the standard Our Father and Hail Marys: the Merciful Jesus prayer on each large bead, ten meditations on Christ's Passion on the small beads, and the Eternal Rest after each decade. The Sorrowful Mysteries are prayed throughout.",
+        kind: "rosary",
+        mystery_presentation: "title_only",
+        mystery_count: 5,
+        fixed_mystery_set_id: "set-sorrowful",
+        notes:
+          "The Filipino Pasiyam custom, prayed during the nine days after a death and on anniversaries. Prayed on rosary beads, with proper prayers for the dead in place of the usual Our Father and Hail Mary.",
+        source_id: "src-olg-passion",
         built_in: true,
         created_at: now,
       },
@@ -1775,6 +1873,7 @@ export function createSeedDatabase(): Database {
     ],
     template_items: [
       ...rosaryItemsList,
+      ...rosaryForDeadItemsList,
       ...caroItemsList,
       ...novenaItems,
       ...popeItems,
@@ -1909,6 +2008,47 @@ export function createSeedDatabase(): Database {
         template_id: "tpl-rosary",
         steps: [],
         links: ["https://www.usccb.org/how-to-pray-the-rosary"],
+      },
+      {
+        id: "howto-rosary-for-the-dead",
+        title: "How to Pray the Rosary for the Dead (Decade of the Passion)",
+        summary:
+          "The Decade of the Passion replaces the standard Rosary. On the beads: the large (Our Father) bead carries the 'Most Merciful Jesus' prayer; each of the ten small (Hail Mary) beads carries a meditation on Christ's Passion with a shared response; every decade closes with the Eternal Rest. The Sorrowful Mysteries are prayed throughout, for all nine days of the novena.",
+        template_id: "tpl-rosary-for-the-dead",
+        source_id: "src-olg-passion",
+        steps: [
+          {
+            id: "howto-rosary-for-the-dead-s1",
+            how_to_id: "howto-rosary-for-the-dead",
+            position: 0,
+            text: "Begin with the Sign of the Cross and the preparation prayer ('Lord, open our lips…').",
+          },
+          {
+            id: "howto-rosary-for-the-dead-s2",
+            how_to_id: "howto-rosary-for-the-dead",
+            position: 1,
+            text: "Announce the Sorrowful Mystery for the decade (Agony, Scourging, Crowning, Carrying, Crucifixion).",
+          },
+          {
+            id: "howto-rosary-for-the-dead-s3",
+            how_to_id: "howto-rosary-for-the-dead",
+            position: 2,
+            text: "On the Our Father bead, pray 'O Most Merciful Jesus, look down…'.",
+          },
+          {
+            id: "howto-rosary-for-the-dead-s4",
+            how_to_id: "howto-rosary-for-the-dead",
+            position: 3,
+            text: "On each of the ten Hail Mary beads, pray one meditation on Christ's Passion; all respond 'Have mercy on the soul(s)…'.",
+          },
+          {
+            id: "howto-rosary-for-the-dead-s5",
+            how_to_id: "howto-rosary-for-the-dead",
+            position: 4,
+            text: "Close each decade with the Eternal Rest, then repeat for all five decades and end with the Sign of the Cross.",
+          },
+        ],
+        links: ["https://olg.cc/liturgy/devotions-liturgical-seasons/novena-for-one-who-has-died/"],
       },
       {
         id: "howto-lectio",
