@@ -182,12 +182,16 @@ function PrayerMode() {
   const sourceUrl = source?.url ?? "";
 
   // "Day 3 of 9" for a bounded recurrence, derived from the plan's series.
+  // Count from THIS session's own date, not the plan's `date`: a recurring plan
+  // rolls its `date` forward to the next occurrence as sessions finish, so using
+  // it would show the plan's current day on every session (including past/future
+  // ones). The session captured the day it was prayed in context.date.
   const plan = session.plan_id ? db.session_plans.find((p) => p.id === session.plan_id) : undefined;
   const occ = plan
     ? occurrenceInfo(
         plan.starts_on,
         plan.recurrence,
-        plan.date ?? plan.starts_on ?? session.context.date,
+        session.context.date ?? plan.date ?? plan.starts_on,
       )
     : null;
   const dayLabel = occ?.total ? `Day ${occ.index} of ${occ.total}` : null;
