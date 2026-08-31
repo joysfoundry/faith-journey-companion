@@ -20,6 +20,7 @@ active work — keep it in sync when a pointer changes. The **full numbered ledg
 
 | ID | EPIC | Title | Status | Depends on | Next step | Updated |
 |----|------|-------|--------|-----------|-----------|---------|
+| [ACTS-132](ACTS-132.md) |  | Session "Day N of M" counts from the session's own date | Done | — | ✅ Built + `tsc` clean. `session.$sessionId.tsx` counts "Day N of M" from `session.context.date`, not the plan's rolled-forward `date` (which advances each finish). Shipped `d89727a` | 2026-08-30 |
 | [ACTS-131](ACTS-131.md) |  | Seed — Mater Dei Catholic Parish Prayer | Done | — | ✅ Built + browser-verified. `mater-dei-parish-prayer` (devotional) + body w/ Leader/All responsory + `src-mater-dei` source; STORAGE_KEY v37→v38. Pending commit | 2026-08-30 |
 | [ACTS-130](ACTS-130.md) |  | Vessel status — only completable works; sort above references | Done | — | ✅ Built + browser-verified. `hasStatus()` (book/program/video/podcast); status pills gated + `byStatusThenRecent` ranks status-bearing first. "General website" = article/post (JC). Pending commit | 2026-08-30 |
 | [ACTS-129](ACTS-129.md) |  | Reflection icon on session rows, session detail, and vessel items | Done | — | ✅ Built + browser-verified. Reflect NotebookPen on Home Continue/Today/Done rows, session-detail header, and Formation `ContentRow`; `/reflections?link=<id>` prefill (+ knowledge-detail button). Pending commit | 2026-08-30 |
