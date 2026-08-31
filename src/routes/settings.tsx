@@ -1,7 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { BookOpen, Check, ExternalLink } from "lucide-react";
+import { BookOpen, Check, ExternalLink, RotateCcw } from "lucide-react";
 
 import { AppShell } from "@/components/layout/PageShell";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import { ExternalLink as ExtLink } from "@/components/ui/external-link";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,7 +35,7 @@ import {
   resolveBibleHomeUrl,
   translationById,
 } from "@/lib/bible/apps";
-import { useApp } from "@/lib/prayer/store";
+import { STORAGE_KEY, useApp } from "@/lib/prayer/store";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -62,6 +74,19 @@ function SettingsPage() {
   const previewUrl = buildPassageUrl(settings, PREVIEW_REF);
 
   const dailyId = settings.daily_template_id;
+
+  // Wipe everything this device has saved and reload into a clean, seeded app.
+  // Clears the local data blob (prayers, sessions, reflections, name); leaves the
+  // beta access code in place so they stay in the beta. A full reset that also
+  // re-asks for the code is the "clear site data" path in the reset guide.
+  const startOver = () => {
+    try {
+      window.localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      /* storage blocked — nothing to clear */
+    }
+    window.location.href = "/";
+  };
 
   return (
     <AppShell title="Settings" subtitle="Your Bible app and daily devotion.">
@@ -209,6 +234,43 @@ function SettingsPage() {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+        </section>
+
+        {/* ------------------------------ Start over ------------------------------ */}
+        <section className="soft-card p-4">
+          <div className="flex items-center gap-2">
+            <RotateCcw className="size-5 text-muted-foreground" aria-hidden />
+            <p className="eyebrow">Start over</p>
+          </div>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Clear everything you've saved on this device — your prayers, sessions, reflections, and
+            name — and begin fresh. This only affects this device and can't be undone.
+          </p>
+          <div className="mt-4">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive">Start over</Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Clear everything and start fresh?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This permanently removes every prayer, session, and reflection you've saved on
+                    this device. There's no undo, and nothing is backed up.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Keep my data</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={startOver}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Clear and start over
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </section>
 
