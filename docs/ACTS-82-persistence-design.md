@@ -7,9 +7,16 @@ unblocks auth (ACTS-87/88). It answers the one question that has to be settled
 > When we move off localStorage, does every account get its **own copy** of the
 > seeded prayers/devotions, or is there **one shared library** everyone reads?
 
-Status: **proposal, awaiting sign-off.** Written against `main`; the source of
+Status: **DECIDED — Option C (2026-08-30).** Sign-off answers recorded under
+[Resolved decisions](#resolved-decisions). Written against `main`; the source of
 truth for entities is `src/lib/prayer/types.ts` (`Database` interface) and the
 seed in `src/lib/prayer/seed.ts`.
+
+**Decisions in one line:** curation must reach existing users (→ C, not A); users
+**cannot edit canon in place** — only **fork/duplicate** (to an owned copy) or
+**delete** (a per-user hide); shared/curated content (parish prayer of the week,
+shared family library) is a planned future, which C reaches without a second
+migration.
 
 ---
 
@@ -24,10 +31,11 @@ per-user overlay for flags.**
 - Everything a person **creates or does** (sessions, reflections, intentions,
   plans, custom prayers/templates, settings) is owned by them and private.
 - Per-user **flags on canon items** (favorites, "learning" status, mystery-body
-  choice) move off the shared rows into small **overlay tables** keyed by
-  `(user_id, item_id)`.
-- Editing a canon item is **copy-on-write**: it forks a private, user-owned copy
-  rather than mutating the shared row.
+  choice, **hidden/deleted**) move off the shared rows into small **overlay
+  tables** keyed by `(user_id, item_id)`.
+- Users **never mutate a canon row.** "Edit" = **fork** (copy-on-write to a
+  private, user-owned copy). "Delete" = a **per-user hide** — the shared row is
+  untouched; it just stops showing for that user.
 
 This is more schema than "just copy everything per user," but it's the only model
 where **your curation reaches existing users** and storage doesn't balloon. The
@@ -113,11 +121,14 @@ Option B **plus** per-user overlay tables for state-on-canon:
   booleans currently on rows.
 - `user_knowledge_state (user_id, knowledge_id, status)` — replaces
   `setKnowledgeStatus` mutating the row.
+- `user_hidden_items (user_id, item_type, item_id)` — the per-user "delete" of a
+  canon item (a hide/dismiss; the shared row is never removed).
 - `user_prefs` — the mystery-body choice and other per-item selections that today
   ride on canon/session rows.
 
-Reads become "canon row + my overlay." Writes to canon items fork
-(copy-on-write). Everything genuinely mine is a plain owned row.
+Reads become "canon row + my overlay, minus my hidden." Because users can't edit
+canon in place (decision Q2), the only write to a canon item is a **fork**
+(copy-on-write to an owned row). Everything genuinely mine is a plain owned row.
 
 ---
 
@@ -135,7 +146,7 @@ admin-write). `user_id = <uuid>` = private to that user.
 - **Per-user only:** `sessions`, `session_items`, `session_plans`, `intentions`,
   `reflections`, `mass_experiences`, `import_drafts`, `settings`.
 - **New overlay tables (per-user):** `user_favorites`, `user_knowledge_state`,
-  `user_prefs`.
+  `user_hidden_items`, `user_prefs`.
 
 **RLS sketch** (illustrative, not final SQL):
 
@@ -155,10 +166,17 @@ create policy owner on reflections for all
 Canon writes (seed loads, your curation) run through the service role / an admin
 path, never the anon or authed client — see the security note below.
 
-**Copy-on-write:** when a signed-in user "edits" a canon prayer/template, insert
-a new user-owned row (new generated ID, `user_id = auth.uid()`), optionally
-linking `forked_from = <canon_id>`, and point their session/favorite at the fork.
-The shared row is never mutated.
+**Fork, not edit (decision Q2):** users can't change a canon prayer/template in
+place. To customize one, they **fork** — insert a new user-owned row (new
+generated ID, `user_id = auth.uid()`, optionally `forked_from = <canon_id>`) and
+point their session/favorite at the fork. The shared row is never mutated. This
+is simpler than in-place copy-on-write: there's no "did they mean to edit the
+shared one?" ambiguity.
+
+**Delete = per-user hide (decision Q2):** a user can't remove a row everyone
+reads. "Delete this from my library" writes a `user_hidden_items` row; reads
+filter it out. (Deleting an *owned* row — their own fork or custom item — is a
+real delete.)
 
 ---
 
@@ -179,6 +197,10 @@ that blob, first-login migration is roughly:
 5. Switch the app to read/write Supabase; keep the local blob as a one-time
    fallback until confirmed.
 
+Note: a tester who cleared their data pre-migration (see the reset instructions
+for beta users) simply arrives with a fresh seed and nothing to migrate — the
+skip-seed filter in step 2 handles that case for free.
+
 Step 4 is the only fiddly bit, and it exists precisely because of the overlay
 refactor below.
 
@@ -188,11 +210,11 @@ refactor below.
   tables; rewrite `toggleFavorite`, `toggleTemplateFavorite`,
   `toggleChannelFavorite`, `toggleContentLinkFavorite`, `setKnowledgeStatus`.
 - Add nullable `user_id` to every mixed library table + the two-clause RLS.
-- Implement copy-on-write for edits to canon items.
+- Implement **fork** (canon → owned copy) and **hide** (`user_hidden_items`) for
+  canon items; users never mutate or truly delete a shared row.
 - Build the admin/seed-load path that writes canon via the service role.
 
-Under **Option A** none of that is needed — which is the honest argument for A if
-"push central updates to existing users" is not a real requirement.
+(Option A would have avoided all of this, but Q1/Q3 rule it out — see below.)
 
 ---
 
@@ -209,22 +231,23 @@ Under **Option A** none of that is needed — which is the honest argument for A
 
 ---
 
-## Open questions for sign-off
+## Resolved decisions
 
-1. **Is "my curation reaches existing users" a hard requirement?** Yes → Option
-   C. No → Option A is materially cheaper and can be revisited later.
-2. **Can users edit canon items, or only fork/duplicate them?** If only fork,
-   copy-on-write simplifies (edits always create a new row; canon is never
-   touched by users at all).
-3. **Any future shared/curated content** (parish prayer of the week, shared
-   family library)? If plausibly yes, Option C is the only model that reaches it
-   without a second migration.
+Signed off 2026-08-30:
 
-## Recommendation restated
+1. **"My curation reaches existing users" a hard requirement?** → **Yes.** Locks
+   Option C; Option A is off the table.
+2. **Can users edit canon items, or only fork/duplicate?** → **Delete or
+   fork/duplicate — no in-place edits.** Edit = fork (owned copy); delete =
+   per-user hide (`user_hidden_items`). Simpler than in-place copy-on-write.
+3. **Future shared/curated content** (parish prayer of the week, shared family
+   library)? → **Yes.** Reinforces C — it reaches that without a second
+   migration.
 
-Go **Option C**. Accept the favorites/status → overlay refactor as part of
-ACTS-82 scope. It's the model where the seeded canon stays yours to maintain,
-users' private data (especially reflections) is cleanly isolated, and the beta
-data migrates in one pass. If timeline pressure forces a cut, **Option A is the
-sanctioned fallback** — smaller now, but a central-update and storage debt you'll
-pay down later.
+## Decision restated
+
+Build **Option C**. Scope for ACTS-82 includes the favorites/status → overlay
+refactor **plus** the fork + `user_hidden_items` (hide) mechanics that Q2
+requires. It's the model where the seeded canon stays yours to maintain and push
+updates through, users' private data (especially `reflections`) is cleanly
+isolated, and beta data migrates in one pass.
