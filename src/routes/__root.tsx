@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AppStoreProvider } from "@/components/app-store-provider";
+import { BetaGate } from "@/components/beta-gate";
 import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
@@ -147,8 +148,10 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AppStoreProvider>
-        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-        <Outlet />
+        <BetaGate>
+          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+          <Outlet />
+        </BetaGate>
         <Toaster position="top-center" />
       </AppStoreProvider>
     </QueryClientProvider>

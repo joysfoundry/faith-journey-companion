@@ -748,6 +748,14 @@ export interface AppSettings {
    * passages still open via Bible Gateway (we can't template an unknown app).
    */
   bible_app_custom_url?: string | undefined;
+  /**
+   * The name the person gave at the beta name prompt (see BetaGate). Purely a
+   * personalization label — NOT an account or login. Lives here in `settings`
+   * (rather than a separate localStorage key) on purpose: it rides along inside
+   * the same Database blob, so if we later add real auth (ACTS-82/87/88) the
+   * whole local DB — including who this data belongs to — migrates in one piece.
+   */
+  display_name?: string | undefined;
 }
 
 export interface Database {
