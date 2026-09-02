@@ -21,7 +21,7 @@ import { todaysWord } from "@/domain/placeholderData";
 import { newId, todayISO } from "@/lib/prayer/compiler";
 import {
   SECTION_LABEL,
-  byStatusThenRecent,
+  byStatusThenTitle,
   isScriptureProgram,
   knowledgeSubtitle,
   primaryUrl,
@@ -65,7 +65,7 @@ export function WordSection({ onReflect }: { onReflect: (linkId: string) => void
   const bibleHomeUrl = resolveBibleHomeUrl(db.settings);
   const readingPrograms = db.knowledge_items
     .filter((i) => isScriptureProgram(i) && i.status !== "finished")
-    .sort(byStatusThenRecent);
+    .sort(byStatusThenTitle);
   // Computed client-side (todayISO uses the local clock) to avoid an SSR/timezone
   // hydration mismatch — falls back to "Daily Readings" until it resolves.
   const [litDay, setLitDay] = useState<LiturgicalDay | null>(null);

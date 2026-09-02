@@ -36,7 +36,7 @@ import {
   STATUS_STEPS,
   VOICE_LABEL,
   VOICE_LABEL_SINGULAR,
-  byStatusThenRecent,
+  byStatusThenTitle,
   contentTitle,
   groupOf,
   hasStatus,
@@ -181,7 +181,7 @@ function KnowledgePage() {
     const base = filter === "all" ? items : items.filter((i) => groupOf(i.category) === filter);
     return base
       .filter((i) => contentMatches(i, voiceNameById.get(i.voice_id ?? ""), q))
-      .sort(byStatusThenRecent);
+      .sort(byStatusThenTitle);
   }, [items, filter, q, voiceNameById]);
   const visibleVoices = useMemo(
     () =>
@@ -204,7 +204,7 @@ function KnowledgePage() {
     const groups: VoiceGroup[] = [];
     for (const v of voices) {
       if (v.id === draftVoiceId) continue;
-      const all = items.filter((i) => i.voice_id === v.id).sort(byStatusThenRecent);
+      const all = items.filter((i) => i.voice_id === v.id).sort(byStatusThenTitle);
       const voiceHit = !q || (v.name || "").toLowerCase().includes(q);
       const shown = voiceHit ? all : all.filter((i) => contentMatches(i, v.name, q));
       if (voiceHit || shown.length)
@@ -216,7 +216,7 @@ function KnowledgePage() {
     });
     const orphans = items
       .filter((i) => !i.voice_id && contentMatches(i, undefined, q))
-      .sort(byStatusThenRecent);
+      .sort(byStatusThenTitle);
     if (orphans.length) groups.push({ id: GENERAL_ID, name: "General", items: orphans });
     return groups;
   }, [voices, items, draftVoiceId, q]);

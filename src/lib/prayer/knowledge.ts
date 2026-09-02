@@ -296,12 +296,6 @@ export function isEmptyDraftVoice(
 
 /* -------------------------------- Sorting -------------------------------- */
 
-const STATUS_RANK: Record<KnowledgeStatus, number> = {
-  in_progress: 0,
-  not_started: 1,
-  finished: 2,
-};
-
 /**
  * Whether a category tracks progress (Not started → In progress → Finished).
  * Completable works do — a book you read, a program you follow, a video/podcast
@@ -317,18 +311,14 @@ export function hasStatus(category: KnowledgeCategory): boolean {
 
 /**
  * Order content: status-bearing items (books, programs, video, podcast) first —
- * in-progress, then not-started, then finished — then the status-less references
- * (articles/posts/quotes). Newest within each tier.
+ * regardless of whether they've been started — then the status-less references
+ * (articles/posts/quotes). Alphabetical by title within each tier.
  */
-export function byStatusThenRecent(a: KnowledgeItem, b: KnowledgeItem): number {
+export function byStatusThenTitle(a: KnowledgeItem, b: KnowledgeItem): number {
   const aHas = hasStatus(a.category);
   const bHas = hasStatus(b.category);
   if (aHas !== bHas) return aHas ? -1 : 1;
-  if (aHas) {
-    const s = STATUS_RANK[a.status] - STATUS_RANK[b.status];
-    if (s !== 0) return s;
-  }
-  return (b.created_at ?? "").localeCompare(a.created_at ?? "");
+  return (a.title ?? "").localeCompare(b.title ?? "", undefined, { sensitivity: "base" });
 }
 
 export const STATUS_STEPS: { key: KnowledgeStatus; label: string }[] = [

@@ -23,7 +23,7 @@ import {
   STATUS_STEPS,
   VOICE_KIND_LABELS,
   VOICE_LABEL_SINGULAR,
-  byStatusThenRecent,
+  byStatusThenTitle,
   detectPlatform,
   voiceSubtitle,
 } from "@/lib/prayer/knowledge";
@@ -87,7 +87,7 @@ function VoiceHubPage() {
   const name = isGeneral ? "General" : voice!.name;
   const content = db.knowledge_items
     .filter((i) => (isGeneral ? !i.voice_id : i.voice_id === voice!.id))
-    .sort(byStatusThenRecent);
+    .sort(byStatusThenTitle);
 
   function addGeneralContent() {
     if (!addTitle.trim()) return;

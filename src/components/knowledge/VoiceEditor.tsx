@@ -13,7 +13,7 @@ import {
   STATUS_STEPS,
   VOICE_KIND_LABELS,
   VOICE_KIND_OPTIONS,
-  byStatusThenRecent,
+  byStatusThenTitle,
   channelLabel,
   channelOf,
   contentTitle,
@@ -51,7 +51,7 @@ export function VoiceEditor({ voiceId }: { voiceId: string }) {
   const channels = voice.channels ?? [];
   const content = db.knowledge_items
     .filter((i) => i.voice_id === voice.id)
-    .sort(byStatusThenRecent);
+    .sort(byStatusThenTitle);
 
   const save = (patch: Partial<Voice>) => upsertVoice({ ...voice, ...patch });
 
