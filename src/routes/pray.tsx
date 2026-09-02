@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   Copy,
+  ExternalLink,
   FilePlus2,
   MoreVertical,
   Pencil,
@@ -15,6 +16,7 @@ import {
 import { toast } from "sonner";
 import { AppShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
+import { ExternalLink as ExtLink } from "@/components/ui/external-link";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -28,6 +30,11 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DevotionItemsEditor } from "@/components/prayer/DevotionItemsEditor";
 import { ShareDialog } from "@/components/prayer/ShareDialog";
+import {
+  dailyRosaryAppLabel,
+  isExternalDailyRosary,
+  resolveDailyRosaryUrl,
+} from "@/lib/prayer/apps";
 import { buildSharePayload } from "@/lib/prayer/share";
 import { useApp } from "@/lib/prayer/store";
 import {
@@ -168,6 +175,7 @@ function PrayPage() {
     saveSessionPlan,
     deleteSessionPlan,
     saveTemplate,
+    logExternalDailyRosary,
   } = useApp();
   const navigate = useNavigate();
   const { build } = Route.useSearch();
@@ -460,6 +468,11 @@ function PrayPage() {
       : undefined) ??
     db.templates.find((t) => t.id === "tpl-rosary") ??
     db.templates[0];
+  // External mode: the Daily Rosary launches another app (e.g. Hallow) instead of
+  // starting an in-app session. One pinned row, its action swapped for a link out.
+  const externalDaily = isExternalDailyRosary(db.settings);
+  const dailyLaunchUrl = externalDaily ? resolveDailyRosaryUrl(db.settings) : "";
+  const dailyAppLabel = dailyRosaryAppLabel(db.settings);
   const beginDailyRosary = () => {
     if (!dailyTemplate) return;
     const existing = db.sessions.find(
@@ -925,7 +938,7 @@ function PrayPage() {
 
         <TabsContent value="sessions">
           <div className="space-y-4">
-            {dailyTemplate && !dailyFulfiller ? (
+            {!dailyFulfiller && (externalDaily ? !!dailyLaunchUrl : !!dailyTemplate) ? (
               <section>
                 <p className="eyebrow mb-2">Daily</p>
                 <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border">
@@ -939,17 +952,35 @@ function PrayPage() {
                           Daily Rosary
                         </span>
                       </p>
-                      <p className="truncate text-xs text-muted-foreground">{dailyTemplate.name}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {externalDaily ? `Opens in ${dailyAppLabel}` : dailyTemplate?.name}
+                      </p>
                     </div>
                     <div className="flex shrink-0 items-center gap-0.5">
-                      <button
-                        type="button"
-                        aria-label="Begin Daily Rosary"
-                        className="p-1.5 text-primary hover:opacity-80"
-                        onClick={beginDailyRosary}
-                      >
-                        <Play className="size-4" />
-                      </button>
+                      {externalDaily ? (
+                        <ExtLink
+                          href={dailyLaunchUrl}
+                          aria-label={`Open Daily Rosary in ${dailyAppLabel}`}
+                          className="p-1.5 text-primary hover:opacity-80"
+                          onClick={() =>
+                            logExternalDailyRosary({
+                              appLabel: dailyAppLabel,
+                              url: dailyLaunchUrl,
+                            })
+                          }
+                        >
+                          <ExternalLink className="size-4" />
+                        </ExtLink>
+                      ) : (
+                        <button
+                          type="button"
+                          aria-label="Begin Daily Rosary"
+                          className="p-1.5 text-primary hover:opacity-80"
+                          onClick={beginDailyRosary}
+                        >
+                          <Play className="size-4" />
+                        </button>
+                      )}
                     </div>
                   </li>
                 </ul>

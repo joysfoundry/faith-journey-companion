@@ -371,6 +371,14 @@ export interface PrayerSession {
   plan_id?: ID | undefined;
   /** Index of the item the user is currently on. */
   cursor: number;
+  /**
+   * Set when this session was prayed in an external app (e.g. Hallow) rather than
+   * in-app: the app's display label. Such a session has no `session_items` — it is
+   * a completed log so history/streaks count it. See `src/lib/prayer/apps.ts`.
+   */
+  external_app?: string | undefined;
+  /** The URL that was launched for an external session (for "open again"). */
+  external_url?: string | undefined;
 }
 
 export type Frequency = "none" | "daily" | "weekly" | "monthly" | "yearly";
@@ -735,6 +743,17 @@ export interface AppSettings {
    * Family Rosary) as the daily prayer.
    */
   daily_template_id?: ID | undefined;
+  /**
+   * How the Daily Rosary is prayed. Absent / "app" = an in-app session from
+   * `daily_template_id` (the default). "external" = launch another app (e.g.
+   * Hallow) instead — the pinned Daily Rosary row deep-links out rather than
+   * starting a session. See `src/lib/prayer/apps.ts`.
+   */
+  daily_rosary_mode?: string | undefined;
+  /** Which external app the Daily Rosary launches (id from `PRAYER_APPS`, e.g. "hallow"). */
+  daily_rosary_app_id?: string | undefined;
+  /** Custom launch URL when `daily_rosary_app_id === "other"`. */
+  daily_rosary_custom_url?: string | undefined;
   /**
    * The Bible app the reader uses (an id from `BIBLE_APPS`, e.g. "youversion",
    * or "none"/"other"). Powers "open in your Bible" deep-links across the app.

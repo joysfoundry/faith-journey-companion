@@ -35,6 +35,14 @@ import {
   resolveBibleHomeUrl,
   translationById,
 } from "@/lib/bible/apps";
+import {
+  PRAYER_APPS,
+  dailyRosaryAppLabel,
+  effectivePrayerAppId,
+  isExternalDailyRosary,
+  prayerAppById,
+  resolveDailyRosaryUrl,
+} from "@/lib/prayer/apps";
 import { STORAGE_KEY, useApp } from "@/lib/prayer/store";
 
 export const Route = createFileRoute("/settings")({
@@ -74,6 +82,13 @@ function SettingsPage() {
   const previewUrl = buildPassageUrl(settings, PREVIEW_REF);
 
   const dailyId = settings.daily_template_id;
+
+  // Daily Rosary: pray it in-app (pick a devotion) or launch another app (Hallow).
+  const dailyExternal = isExternalDailyRosary(settings);
+  const dailyAppId = effectivePrayerAppId(settings);
+  const chosenPrayerApp = prayerAppById(dailyAppId);
+  const dailyLaunchUrl = resolveDailyRosaryUrl(settings);
+  const dailyAppLabel = dailyRosaryAppLabel(settings);
 
   // Wipe everything this device has saved and reload into a clean, seeded app.
   // Clears the local data blob (prayers, sessions, reflections, name); leaves the
@@ -210,31 +225,106 @@ function SettingsPage() {
           ) : null}
         </section>
 
-        {/* --------------------------- Daily devotion --------------------------- */}
+        {/* --------------------------- Daily prayer --------------------------- */}
         <section className="soft-card p-4">
           <p className="eyebrow">Daily prayer</p>
           <p className="mt-2 text-sm text-muted-foreground">
-            The devotion your Home “daily” card starts from.
+            How your Home “daily” card and the Daily Rosary row begin.
           </p>
+
           <div className="mt-4 space-y-1.5">
-            <Label htmlFor="daily-devotion">Daily devotion</Label>
+            <Label htmlFor="daily-mode">Pray my Daily Rosary</Label>
             <Select
-              value={dailyId ?? "__default__"}
-              onValueChange={(v) => setDailyTemplate(v === "__default__" ? undefined : v)}
+              value={dailyExternal ? "external" : "app"}
+              onValueChange={(v) =>
+                updateSettings({ daily_rosary_mode: v === "external" ? "external" : "app" })
+              }
             >
-              <SelectTrigger id="daily-devotion" className="h-11">
+              <SelectTrigger id="daily-mode" className="h-11">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="__default__">Standard Holy Rosary (default)</SelectItem>
-                {db.templates.map((t) => (
-                  <SelectItem key={t.id} value={t.id}>
-                    {t.name}
-                  </SelectItem>
-                ))}
+                <SelectItem value="app">In the app</SelectItem>
+                <SelectItem value="external">In another app (Hallow…)</SelectItem>
               </SelectContent>
             </Select>
           </div>
+
+          {dailyExternal ? (
+            <>
+              <div className="mt-4 space-y-1.5">
+                <Label htmlFor="daily-app">App</Label>
+                <Select
+                  value={dailyAppId}
+                  onValueChange={(v) => updateSettings({ daily_rosary_app_id: v })}
+                >
+                  <SelectTrigger id="daily-app" className="h-11">
+                    <SelectValue placeholder="Choose an app" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PRAYER_APPS.map((a) => (
+                      <SelectItem key={a.id} value={a.id}>
+                        {a.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {chosenPrayerApp ? (
+                  <p className="text-xs text-muted-foreground">{chosenPrayerApp.blurb}</p>
+                ) : null}
+              </div>
+
+              {dailyAppId === "other" ? (
+                <div className="mt-4 space-y-1.5">
+                  <Label htmlFor="daily-custom-url">App or web address</Label>
+                  <Input
+                    id="daily-custom-url"
+                    type="url"
+                    inputMode="url"
+                    placeholder="https://…"
+                    value={settings.daily_rosary_custom_url ?? ""}
+                    onChange={(e) => updateSettings({ daily_rosary_custom_url: e.target.value })}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    On a phone, links that an app claims open that app; otherwise they open on
+                    the web.
+                  </p>
+                </div>
+              ) : null}
+
+              {dailyLaunchUrl ? (
+                <div className="mt-4">
+                  <ExtLink
+                    href={dailyLaunchUrl}
+                    className="inline-flex items-center gap-1.5 text-sm text-primary underline"
+                  >
+                    Open {dailyAppLabel}
+                    <ExternalLink className="size-3.5" aria-hidden />
+                  </ExtLink>
+                </div>
+              ) : null}
+            </>
+          ) : (
+            <div className="mt-4 space-y-1.5">
+              <Label htmlFor="daily-devotion">Daily devotion</Label>
+              <Select
+                value={dailyId ?? "__default__"}
+                onValueChange={(v) => setDailyTemplate(v === "__default__" ? undefined : v)}
+              >
+                <SelectTrigger id="daily-devotion" className="h-11">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__default__">Standard Holy Rosary (default)</SelectItem>
+                  {db.templates.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </section>
 
         {/* ------------------------------ Start over ------------------------------ */}

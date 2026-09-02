@@ -443,6 +443,12 @@ export interface AppStore {
   setDailyTemplate: (templateId: ID | undefined) => void;
   /** Merge a partial patch into app-level settings (Bible app, translation, …). */
   updateSettings: (patch: Partial<AppSettings>) => void;
+  /**
+   * Log today's Daily Rosary as prayed in an external app (e.g. Hallow) — a
+   * completed, item-less session so history/streaks count it. Idempotent: at most
+   * one external daily log per day. The caller opens the app's URL separately.
+   */
+  logExternalDailyRosary: (opts: { appLabel: string; url: string }) => void;
 }
 
 export const AppStoreContext = createContext<AppStore | null>(null);
@@ -1351,6 +1357,50 @@ export const mutations = {
   },
   setDailyTemplate(db: Database, templateId: ID | undefined): Database {
     return { ...db, settings: { ...db.settings, daily_template_id: templateId } };
+  },
+  logExternalDailyRosary(
+    db: Database,
+    { appLabel, url }: { appLabel: string; url: string },
+  ): Database {
+    const today = todayISO();
+    // The daily rosary's template — same resolution the daily surfaces use — so
+    // this log dedupes against the pinned "Daily Rosary" row's "done today" state.
+    const daily =
+      (db.settings?.daily_template_id
+        ? db.templates.find((t) => t.id === db.settings?.daily_template_id)
+        : undefined) ??
+      db.templates.find((t) => t.id === "tpl-rosary") ??
+      db.templates[0];
+    const templateId = daily?.id ?? "tpl-rosary";
+    // Idempotent: one external daily log per day (guards double-taps).
+    const alreadyLogged = db.sessions.some(
+      (s) =>
+        !!s.external_app &&
+        !s.plan_id &&
+        s.template_id === templateId &&
+        (s.completed_at ?? "").slice(0, 10) === today,
+    );
+    if (alreadyLogged) return db;
+    const now = new Date().toISOString();
+    const session: PrayerSession = {
+      id: newId("session"),
+      template_id: templateId,
+      title: daily?.name ?? "Daily Rosary",
+      context: {
+        date: today,
+        progress_mode: "scroll",
+        include_optional: false,
+        condition_tags: [],
+        prayer_version_overrides: {},
+        audio_enabled: false,
+      },
+      created_at: now,
+      completed_at: now,
+      cursor: 0,
+      external_app: appLabel,
+      external_url: url,
+    };
+    return { ...db, sessions: [session, ...db.sessions] };
   },
 };
 

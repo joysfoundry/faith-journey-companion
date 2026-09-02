@@ -152,6 +152,8 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
         setDb((d) => mutations.setDailyTemplate(d, templateId)),
       updateSettings: (patch: Parameters<typeof mutations.updateSettings>[1]) =>
         setDb((d) => mutations.updateSettings(d, patch)),
+      logExternalDailyRosary: (opts: Parameters<typeof mutations.logExternalDailyRosary>[1]) =>
+        setDb((d) => mutations.logExternalDailyRosary(d, opts)),
     }),
     [
       db,

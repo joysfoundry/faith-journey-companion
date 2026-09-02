@@ -52,6 +52,11 @@ import {
   resolveMysterySet,
   todayISO,
 } from "@/lib/prayer/compiler";
+import {
+  dailyRosaryAppLabel,
+  isExternalDailyRosary,
+  resolveDailyRosaryUrl,
+} from "@/lib/prayer/apps";
 import { useApp } from "@/lib/prayer/store";
 import type { PrayerTemplate } from "@/lib/prayer/types";
 
@@ -218,7 +223,8 @@ function ChangeDevotionDialog({
 }
 
 function Index() {
-  const { db, startSession, startBuiltSession, setDailyTemplate } = useApp();
+  const { db, startSession, startBuiltSession, setDailyTemplate, logExternalDailyRosary } =
+    useApp();
   const navigate = useNavigate();
   const today = todayISO();
   const [journalLinkId, setJournalLinkId] = useState<string | null>(null);
@@ -256,21 +262,32 @@ function Index() {
     : null;
   const dailyDayLabel = dailyOcc?.total ? `Day ${dailyOcc.index} of ${dailyOcc.total}` : null;
 
+  // The Daily Rosary can launch an external app (e.g. Hallow) instead of an in-app
+  // session — but a novena standing in for it (dailyFulfiller) still takes over.
+  const externalDaily = !dailyFulfiller && isExternalDailyRosary(db.settings);
+  const dailyLaunchUrl = externalDaily ? resolveDailyRosaryUrl(db.settings) : "";
+  const dailyAppLabel = dailyRosaryAppLabel(db.settings);
+
   // The daily row shows the chosen devotion (with the day's mysteries when it's a
-  // rosary) — or, when deferred, the novena standing in for it and its Day X of N.
+  // rosary) — or, when deferred, the novena standing in for it and its Day X of N —
+  // or, in external mode, the app it opens in.
   const dailySubtitle = dailyFulfiller
     ? [planTitle(db, dailyFulfiller), dailyDayLabel].filter(Boolean).join(" · ")
-    : isRosary
-      ? `${daily?.name ?? "Rosary"} · ${setName}`
-      : (daily?.name ?? "Prayer");
+    : externalDaily
+      ? `Opens in ${dailyAppLabel}`
+      : isRosary
+        ? `${daily?.name ?? "Rosary"} · ${setName}`
+        : (daily?.name ?? "Prayer");
 
   // The daily's session: while deferred it's the novena's (by plan_id), otherwise
   // the daily's own ad-hoc session (no plan). Either way the row reflects its state.
-  const dailyOpen = dailyFulfiller
-    ? openSessions.find((s) => s.plan_id === dailyFulfiller.id)
-    : daily
-      ? openSessions.find((s) => s.template_id === daily.id && !s.plan_id)
-      : undefined;
+  const dailyOpen = externalDaily
+    ? undefined // external mode never has an in-app session to continue
+    : dailyFulfiller
+      ? openSessions.find((s) => s.plan_id === dailyFulfiller.id)
+      : daily
+        ? openSessions.find((s) => s.template_id === daily.id && !s.plan_id)
+        : undefined;
   const dailyDone = dailyOpen
     ? undefined
     : dailyFulfiller
@@ -462,28 +479,42 @@ function Index() {
                     <ArrowLeftRight className="size-4" aria-hidden />
                   </span>
                 </IconAction>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="size-9 shrink-0 text-primary"
-                  onClick={beginDaily}
-                  aria-label={
-                    dailyOpen
-                      ? "Continue the daily rosary"
-                      : dailyDone
-                        ? "Pray the daily rosary again"
-                        : "Begin the daily rosary"
-                  }
-                  title={
-                    dailyOpen
-                      ? "Continue the daily rosary"
-                      : dailyDone
-                        ? "Pray again"
-                        : "Begin the daily rosary"
-                  }
-                >
-                  <Play className="size-4" aria-hidden />
-                </Button>
+                {externalDaily ? (
+                  <ExtLink
+                    href={dailyLaunchUrl}
+                    aria-label={`Open the daily rosary in ${dailyAppLabel}`}
+                    title={`Open in ${dailyAppLabel}`}
+                    className="inline-flex size-9 shrink-0 items-center justify-center rounded-md text-primary hover:bg-accent/40"
+                    onClick={() =>
+                      logExternalDailyRosary({ appLabel: dailyAppLabel, url: dailyLaunchUrl })
+                    }
+                  >
+                    <ExternalLink className="size-4" aria-hidden />
+                  </ExtLink>
+                ) : (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="size-9 shrink-0 text-primary"
+                    onClick={beginDaily}
+                    aria-label={
+                      dailyOpen
+                        ? "Continue the daily rosary"
+                        : dailyDone
+                          ? "Pray the daily rosary again"
+                          : "Begin the daily rosary"
+                    }
+                    title={
+                      dailyOpen
+                        ? "Continue the daily rosary"
+                        : dailyDone
+                          ? "Pray again"
+                          : "Begin the daily rosary"
+                    }
+                  >
+                    <Play className="size-4" aria-hidden />
+                  </Button>
+                )}
               </div>
             </div>
 

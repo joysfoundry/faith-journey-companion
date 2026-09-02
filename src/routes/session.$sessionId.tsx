@@ -5,6 +5,7 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
+  ExternalLink,
   NotebookPen,
   Pencil,
   Share2,
@@ -155,6 +156,34 @@ function PrayerMode() {
     return (
       <AppShell title="Prayer session" back={{ to: "/pray", label: "Pray" }}>
         <p className="text-sm text-muted-foreground">Preparing your session…</p>
+      </AppShell>
+    );
+  }
+
+  // An external session is a log of a rosary prayed in another app (e.g. Hallow) —
+  // it has no in-app steps, so show a simple record instead of an empty prayer list.
+  if (session.external_app) {
+    return (
+      <AppShell title="Prayer session" back={{ to: "/pray", label: "Pray" }}>
+        <div className="soft-card space-y-3 p-6 text-center">
+          <p className="font-display text-lg">{session.title}</p>
+          <p className="text-sm text-muted-foreground">
+            Prayed in {session.external_app}
+            {session.completed_at
+              ? ` · ${new Date(session.completed_at).toLocaleDateString()}`
+              : ""}
+            .
+          </p>
+          {session.external_url ? (
+            <ExtLink
+              href={session.external_url}
+              className="inline-flex items-center gap-1.5 text-sm text-primary underline"
+            >
+              Open {session.external_app} again
+              <ExternalLink className="size-3.5" aria-hidden />
+            </ExtLink>
+          ) : null}
+        </div>
       </AppShell>
     );
   }
