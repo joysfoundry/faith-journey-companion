@@ -18,7 +18,13 @@
 
 import { normalizeUrl } from "@/lib/bible/apps";
 
-export type PrayerAppId = "hallow" | "other";
+export type PrayerAppId =
+  | "hallow"
+  | "amen"
+  | "comepraytherosary"
+  | "universalis"
+  | "ibreviary"
+  | "other";
 
 export interface PrayerApp {
   id: PrayerAppId;
@@ -41,9 +47,36 @@ export const PRAYER_APPS: PrayerApp[] = [
     url: "https://hallow.com/collections/16/",
   },
   {
+    id: "amen",
+    name: "Amen",
+    // amenapp.org claims /app/* as an iOS Universal Link + Android App Link
+    // (H3Z22FN57J.org.amenapp.amen), so this opens the Amen app on phone (app home;
+    // no public one-tap rosary URL) and the web page otherwise.
+    blurb: "Opens the Amen app (Augustine Institute) — choose the Rosary inside.",
+    url: "https://amenapp.org/app/",
+  },
+  {
+    id: "comepraytherosary",
+    name: "Come Pray the Rosary",
+    blurb: "Pray a live, audio-guided Rosary with others, in your browser.",
+    url: "https://www.comepraytherosary.org",
+  },
+  {
+    id: "universalis",
+    name: "Universalis",
+    blurb: "Daily prayer and the Liturgy of the Hours (opens on the web).",
+    url: "https://universalis.com",
+  },
+  {
+    id: "ibreviary",
+    name: "iBreviary",
+    blurb: "The Liturgy of the Hours and Catholic prayers (opens on the web).",
+    url: "https://www.ibreviary.com",
+  },
+  {
     id: "other",
-    name: "Another app",
-    blurb: "Launch a different app or web page by its address.",
+    name: "Another app or website",
+    blurb: "Paste the address of any prayer app or web page to launch it.",
     url: "",
   },
 ];
@@ -92,6 +125,17 @@ export function resolveDailyRosaryUrl(settings: DailyRosarySettings): string {
 /** A short label for the chosen app — used in row subtitles and "Open X" links. */
 export function dailyRosaryAppLabel(settings: DailyRosarySettings): string {
   const id = effectivePrayerAppId(settings);
-  if (id === "other") return "another app";
+  if (id === "other") {
+    // Show the site's domain ("hallow.com") rather than a generic "another app".
+    const url = normalizeUrl(settings.daily_rosary_custom_url);
+    if (url) {
+      try {
+        return new URL(url).hostname.replace(/^www\./, "");
+      } catch {
+        /* not a parseable URL yet — fall back to the generic label */
+      }
+    }
+    return "another app";
+  }
   return prayerAppById(id)?.name ?? "another app";
 }

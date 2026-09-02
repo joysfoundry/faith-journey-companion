@@ -232,47 +232,37 @@ function SettingsPage() {
             How your Home “daily” card and the Daily Rosary row begin.
           </p>
 
+          {/* One dropdown, all choices visible: pray in-app, or launch a named app
+              (Hallow), or "Another app or website" where you paste a URL. */}
           <div className="mt-4 space-y-1.5">
             <Label htmlFor="daily-mode">Pray my Daily Rosary</Label>
             <Select
-              value={dailyExternal ? "external" : "app"}
+              value={dailyExternal ? dailyAppId : "__in_app__"}
               onValueChange={(v) =>
-                updateSettings({ daily_rosary_mode: v === "external" ? "external" : "app" })
+                v === "__in_app__"
+                  ? updateSettings({ daily_rosary_mode: "app" })
+                  : updateSettings({ daily_rosary_mode: "external", daily_rosary_app_id: v })
               }
             >
               <SelectTrigger id="daily-mode" className="h-11">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="app">In the app</SelectItem>
-                <SelectItem value="external">In another app (Hallow…)</SelectItem>
+                <SelectItem value="__in_app__">In this app</SelectItem>
+                {PRAYER_APPS.map((a) => (
+                  <SelectItem key={a.id} value={a.id}>
+                    {a.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
 
           {dailyExternal ? (
             <>
-              <div className="mt-4 space-y-1.5">
-                <Label htmlFor="daily-app">App</Label>
-                <Select
-                  value={dailyAppId}
-                  onValueChange={(v) => updateSettings({ daily_rosary_app_id: v })}
-                >
-                  <SelectTrigger id="daily-app" className="h-11">
-                    <SelectValue placeholder="Choose an app" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PRAYER_APPS.map((a) => (
-                      <SelectItem key={a.id} value={a.id}>
-                        {a.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {chosenPrayerApp ? (
-                  <p className="text-xs text-muted-foreground">{chosenPrayerApp.blurb}</p>
-                ) : null}
-              </div>
+              {chosenPrayerApp ? (
+                <p className="mt-2 text-xs text-muted-foreground">{chosenPrayerApp.blurb}</p>
+              ) : null}
 
               {dailyAppId === "other" ? (
                 <div className="mt-4 space-y-1.5">
