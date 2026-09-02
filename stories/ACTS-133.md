@@ -2,15 +2,16 @@
 id: ACTS-133
 title: Daily Rosary — launch an external app (Hallow) instead of the in-app session
 spine:
-status: In Progress
+status: Done
+sync: local
 origin: human-directed
 approved_by: JC
 depends_on: []
 relates_to: [ACTS-99, ACTS-100]
 started_at: 2026-09-02T10:20:50-0700
-updated:    2026-09-02T10:20:50-0700
-latest_handoff: null
-sessions: 0
+updated:    2026-09-02T14:34:20-0700
+latest_handoff: stories/ACTS-133/session-01.md
+sessions: 1
 ---
 
 ## Goal
