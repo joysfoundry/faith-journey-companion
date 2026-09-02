@@ -92,6 +92,32 @@ So the honest options are:
       daily card (`index.tsx`) and the Plan pinned row (`pray.tsx`). Session detail
       shows a "Prayed in {app}" record (not an empty prayer list) for external logs.
 
+## Catalog (PRAYER_APPS) — verified 2026-09-02
+Flattened Settings to ONE dropdown (In the app / named apps / Another app or website)
+after JC couldn't find the custom-URL option nested under a second picker.
+- **Hallow** — `https://hallow.com/collections/16/` — verified iOS Universal Link +
+  Android App Link to the actual rosary (native on phone, web otherwise). Ideal.
+- **Amen** (Augustine Institute) — `https://amenapp.org/app/` — verified iOS Universal
+  Link + Android App Link (`H3Z22FN57J.org.amenapp.amen`, `/app/*`). Opens the Amen app
+  on phone (lands on app home — no public one-tap rosary URL; JC OK'd app-home landing),
+  web otherwise.
+- **Come Pray the Rosary** — `https://www.comepraytherosary.org` — web-launch; genuine
+  live/audio rosary site (verified loads).
+- **Universalis** — `https://universalis.com` — web-launch; Liturgy of the Hours, NOT
+  rosary-specific (`/rosary.htm` 404s). Added per JC's "web-launch entries" choice.
+- **iBreviary** — `https://www.ibreviary.com` — web-launch; Liturgy of the Hours, not
+  rosary-specific. Added per JC's choice.
+- **Another app or website** — user pastes any URL (`daily_rosary_custom_url`); label
+  shows the URL's domain (e.g. "hallow.com").
+
+Label: the in-app option reads **"In this app"** (was "In the app").
+
+Research notes (why not more named native apps): most Catholic apps don't expose a
+deep-linkable rosary page with a verified universal link. **Amen** added at app-home
+level (no public one-tap rosary URL; JC OK'd app-home landing). **Laudate** is app-only
+(no web URL to link). Universalis app claims only `/qr/*`; iBreviary has no AASA — both
+added as web-launch. → the custom-URL box covers the long tail.
+
 ## Adding more apps to the dropdown
 - **No code:** pick "Another app" in Settings and paste any URL (`daily_rosary_custom_url`).
 - **Named catalog entry:** add `{ id, name, blurb, url }` to `PRAYER_APPS` in
