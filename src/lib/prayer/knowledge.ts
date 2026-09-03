@@ -420,7 +420,14 @@ export interface PinnedLink {
   label?: string | undefined;
 }
 
-/** Every favorited channel + content link, for the Home library section. */
+/**
+ * Every favorited channel + content link, for the Home Vessels section. Ordered
+ * to match the /formation library and voice pages (ACTS-134): status-bearing
+ * owners (a book/program/video/podcast you're working through) first, then
+ * status-less references (voice websites, articles/posts/quotes), A–Z by owner
+ * name within each tier. A voice owner is always a reference (you don't "finish"
+ * a channel).
+ */
 export function pinnedLinks(voices: Voice[], items: KnowledgeItem[]): PinnedLink[] {
   const out: PinnedLink[] = [];
   for (const v of voices) {
@@ -449,5 +456,15 @@ export function pinnedLinks(voices: Voice[], items: KnowledgeItem[]): PinnedLink
         });
     }
   }
-  return out;
+  const categoryById = new Map(items.map((it) => [it.id, it.category]));
+  const statusBearing = (pin: PinnedLink) => {
+    const category = pin.ownerType === "content" ? categoryById.get(pin.ownerId) : undefined;
+    return category ? hasStatus(category) : false;
+  };
+  return out.sort((a, b) => {
+    const aHas = statusBearing(a);
+    const bHas = statusBearing(b);
+    if (aHas !== bHas) return aHas ? -1 : 1;
+    return a.ownerName.localeCompare(b.ownerName, undefined, { sensitivity: "base" });
+  });
 }

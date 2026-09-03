@@ -85,7 +85,13 @@ export const Route = createFileRoute("/")({
  * One pinned link on Home — a favorited Voice channel or Content link. Opens the
  * link out; a chevron leads to the owning record (a Voice or a Content page).
  */
-function PinnedLinkRow({ pin }: { pin: PinnedLink }) {
+function PinnedLinkRow({
+  pin,
+  onReflect,
+}: {
+  pin: PinnedLink;
+  onReflect: (ownerId: string) => void;
+}) {
   return (
     <SectionRow className="border-t border-border/60 pl-6">
       <div className="flex items-center justify-between gap-3">
@@ -103,6 +109,18 @@ function PinnedLinkRow({ pin }: { pin: PinnedLink }) {
           </span>
           <ExternalLink className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
         </ExtLink>
+        {/* Reflect on the work itself — only content vessels (books/programs) are
+            reflection subjects; a voice/website channel is not. */}
+        {pin.ownerType === "content" ? (
+          <IconAction
+            label={`Write a reflection about ${pin.ownerName}`}
+            onClick={() => onReflect(pin.ownerId)}
+          >
+            <span>
+              <NotebookPen className="size-4" aria-hidden />
+            </span>
+          </IconAction>
+        ) : null}
         {pin.ownerType === "voice" ? (
           <Link
             to="/voice/$voiceId"
@@ -654,7 +672,9 @@ function Index() {
               </p>
             </SectionRow>
           ) : (
-            homePins.map((pin) => <PinnedLinkRow key={`${pin.ownerId}-${pin.url}`} pin={pin} />)
+            homePins.map((pin) => (
+              <PinnedLinkRow key={`${pin.ownerId}-${pin.url}`} pin={pin} onReflect={openJournal} />
+            ))
           )}
         </SectionCard>
 
