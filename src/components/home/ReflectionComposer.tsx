@@ -327,7 +327,7 @@ export function ReflectionComposer({ linkables, prefillLinkId, showDraftStatus }
         <Input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Title or theme (optional)"
+          placeholder="Title or Subject (optional)"
           className="border-0 border-b border-border/70 px-0 font-display text-lg shadow-none focus-visible:ring-0"
         />
         <Textarea
