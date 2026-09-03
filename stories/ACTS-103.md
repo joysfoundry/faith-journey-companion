@@ -2,7 +2,7 @@
 id: ACTS-103
 title: Reflection redesign — inspiration-in-view panel + voice note & OCR capture
 spine:
-status: To Do
+status: In Progress
 origin: human-directed
 approved_by: JC
 priority: low
@@ -10,8 +10,8 @@ depends_on: []
 relates_to: [ACTS-102]
 sync: local
 synced_at: null
-started_at: null
-updated: 2026-08-29T13:38:48-0700
+started_at: 2026-09-02T00:00:00-0700
+updated: 2026-09-02T00:00:00-0700
 latest_handoff: null
 sessions: 0
 ---
@@ -61,23 +61,41 @@ Independent and non-conflicting. ACTS-102 makes Lectio movements create ordinary
 (Lectio, daily-reading, book, standalone) richer to view and capture. The
 inspiration panel reads from exactly the links ACTS-102 sets.
 
-## Acceptance criteria (draft — refine when picked up)
-- [ ] Reflection tab shows the composer with an **inspiration panel** that resolves a
+## Scope decision (2026-09-02, session 01)
+Split into (A) and (B), per the vetted note. **This story = (A) only.** Part (B)
+(voice + OCR, blocked on the Cloud media phase) moved to **[ACTS-134](ACTS-134.md)**.
+The organization layer JC raised in the design walkthrough (optional themes, no-AI tag
+suggestions, group-by Date/Theme/Source) is **[ACTS-135](ACTS-135.md)**. A small
+**asc/desc date sort** toggle was folded into this session (same page, no schema change).
+
+## Acceptance criteria
+- [x] Reflection tab shows the composer with an **inspiration panel** that resolves a
       linked entity's content, or renders a stored `excerpt` for pasted/book sources.
-- [ ] `ReflectionLink` gains an optional `excerpt` snapshot; composer can capture it for
+- [x] `ReflectionLink` gains an optional `excerpt` snapshot; composer can capture it for
       non-entity sources (paste a book passage) — additive, no break to existing links.
-- [ ] **Voice capture** records a note, transcribes it into `body`, saves with
-      `mode: "spoken"` (audio media handling per the Cloud media phase).
-- [ ] **Photo → OCR** captures/attaches an image, OCRs it into `body`, keeps the image
-      as an attachment.
-- [ ] Existing reflections and links continue to render unchanged.
+- [x] New `passage` link target for a pasted book/quote source (models it honestly
+      instead of reusing `intention`).
+- [x] Journal list has an **asc/desc date sort** toggle (folded in this session).
+- [x] Existing reflections and links continue to render unchanged (all fields additive;
+      no `STORAGE_KEY` bump needed).
+- [→] **Voice capture** (`mode: "spoken"`) — moved to [ACTS-134](ACTS-134.md).
+- [→] **Photo → OCR** — moved to [ACTS-134](ACTS-134.md).
 
 ## Tests
-_Convention (ACTS-91): document when picked up. Planned; harness = ACTS-92._
-- **Unit**: link-resolution selector (entity id → content vs. `excerpt` fallback);
-  OCR/transcription adapters map source → `body` (mockable boundary).
-- **Integration**: composer renders the inspiration panel for each source type; voice
-  and photo capture flows set the expected `mode` / attachment / `body`.
-- **E2E**: link a daily reading → its text shows in the panel; paste a book passage →
-  excerpt persists and re-renders; record a voice note → transcript saved; photograph a
-  page → OCR text becomes the entry.
+_Convention (ACTS-91): no runner wired (harness = ACTS-92)._
+- **Unit** — `resolveInspiration` (`src/lib/prayer/inspiration.ts`): **verified** via a
+  standalone Node `--experimental-strip-types` harness against the real code — 19
+  assertions, all passing (passage excerpt trim; learning → voice-name detail + favorite
+  href + quote/body text; missing id → label fallback; session; mass label/detail/notes;
+  daily_reading = reference only, no text; intention excerpt). To be ported when ACTS-92
+  lands a Vitest runner.
+- **Integration** (planned): composer renders the inspiration panel per source type;
+  passage add/remove; sort toggle flips order.
+- **E2E** (planned): paste a book passage → excerpt persists and re-renders in the panel;
+  link a session/knowledge item → reference card shows; flip asc/desc.
+- **Browser verify** (done, session 01): added a `passage` ("Story of a Soul" + excerpt)
+  → chip + live "What inspired this" panel appeared; saved with a body; reopened the
+  entry → detail dialog resolved and rendered the panel (excerpt round-trips through the
+  store); sort toggle flips "newest ↔ oldest first". Fixed a latent bug found in the
+  process: `IconBtn` didn't forward its ref, so the Radix passage popover anchored
+  off-canvas — now `forwardRef` + prop-spread (also fixes the pre-existing Link popover).

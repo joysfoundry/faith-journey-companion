@@ -1,64 +1,67 @@
 ---
 id: ACTS-134
-title: Vessels section — not-started status items sink; seeded USCCB/Hallow/Why We're Catholic don't resurface
+title: Reflection capture by voice note + photo→OCR (media pipeline)
 spine:
-status: Done
+status: To Do
 origin: human-directed
 approved_by: JC
+priority: low
 depends_on: []
-relates_to: [ACTS-130, ACTS-133]
-started_at: 2026-09-02T00:00:00-0700
-updated:    2026-09-02T00:00:00-0700
+relates_to: [ACTS-103, ACTS-102]
+sync: local
+synced_at: null
+started_at: null
+updated: 2026-09-02T00:00:00-0700
 latest_handoff: null
 sessions: 0
 ---
 
 ## Goal
-As someone browsing my Vessels library, I want the works I'm meant to read/watch
-(books, programs, media) to sit at the top in a predictable A–Z order — a
-not-started book like *Why We're Catholic* included — and I want the vessels that
-ship in the seed (USCCB, Hallow, that book) to actually be present.
+As a journaler, I want to **capture reflections by voice** (record → transcribe into
+the entry) and by **photographing a paper journal** (OCR'd into text), so that I can
+reflect however I prefer to journal, not just by typing.
 
-## Bug
-Two issues in the Vessels section:
+_Split from ACTS-103 (2026-09-02). ACTS-103 delivered part (A), the inspiration-in-view
+panel; this is part (B), the two media-capture paths. Both ride the deferred **Cloud
+media phase** (audio/image storage + transcription + OCR), which is why they were
+separated — they are blocked on that pipeline, whereas (A) was not._
 
-1. **Ordering.** `byStatusThenRecent` (from ACTS-130) floated status-bearing
-   items to the top but sub-ordered them by status rank (in-progress →
-   not-started → finished) and then by `created_at`. A not-started book with an
-   old/empty `created_at` sank to the bottom of its tier — *Why We're Catholic*
-   showed up last instead of at the top with the other status items.
+## Motivation & current state
+- `ReflectionMode` **already has `"spoken"`** ([`types.ts:581`](../src/lib/prayer/types.ts));
+  what's missing is the audio-attachment pipeline behind it.
+- The composer's **Camera button is already present but disabled** ("Photos land with the
+  Cloud phase") ([`ReflectionComposer.tsx:147`](../src/components/home/ReflectionComposer.tsx));
+  `photo_count` is reserved on `Reflection` ([`types.ts:607`](../src/lib/prayer/types.ts)).
+- `body` is plain text, so both transcription and OCR output slot straight in with no
+  schema change to the text itself — the schema work is attachment storage/metadata.
 
-2. **Missing seed vessels.** USCCB, Hallow, and *Why We're Catholic* are all in
-   `createSeedDatabase()`, but `loadDatabase()` shallow-merges
-   (`{ ...seed, ...parsed }`), so a saved `voices` / `knowledge_items` array
-   fully replaces the seed's. Existing installs whose local data had diverged
-   never saw the three, and new seed additions only reach them on a STORAGE_KEY
-   bump.
+## Scope (two capture paths)
+1. **Voice note.** Record → store audio → transcribe into `body`; save with
+   `mode: "spoken"`; keep the audio as an attachment.
+2. **Photo → OCR.** Capture/attach an image → OCR into `body` (prefill, editable); keep
+   the source image as a photo attachment (`photo_count`).
 
-## Fix
-- `src/lib/prayer/knowledge.ts` — replaced `byStatusThenRecent` with
-  `byStatusThenTitle`: status-bearing items (book/program/video/podcast) first
-  regardless of started-state, then references, **alphabetical by title** within
-  each tier (case-insensitive). Removed the now-unused `STATUS_RANK`. Updated all
-  four call sites (formation flat + grouped, Word section, voice page/editor).
-- `src/lib/prayer/store.ts` — bumped `STORAGE_KEY` v38→v39 to force a reseed so
-  USCCB / Hallow / *Why We're Catholic* (already in the seed) resurface. (Accepted
-  trade-off: this replaces divergent local test data on first v39 load.)
+Both need the media pipeline: where audio/image bytes live (Supabase storage vs. other),
+the transcription provider, and the OCR provider. **These are external-contract decisions
+— flag and confirm the provider/storage choices with JC before building.**
 
-## Acceptance criteria
-- [x] Status-bearing vessels sort above references; a not-started book appears in
-      the top tier, not last.
-- [x] Within each tier, items sort A–Z by title (case-insensitive).
-- [x] USCCB, Hallow, and *Why We're Catholic* are present after a fresh load
-      (STORAGE_KEY bumped to v39).
-- [x] `npx tsc --noEmit` clean.
+## Acceptance criteria (draft — refine when picked up)
+- [ ] **Voice capture** records a note, transcribes it into `body`, saves with
+      `mode: "spoken"`, and retains the audio attachment.
+- [ ] **Photo → OCR** captures/attaches an image, OCRs it into an editable `body`, and
+      keeps the image as an attachment (`photo_count` reflects it).
+- [ ] Transcription/OCR failures degrade gracefully (entry still saveable by hand).
+- [ ] Existing reflections and links continue to render unchanged.
+
+## Open questions
+- Storage location + retention for audio/images (privacy — this is personal journaling).
+- Transcription + OCR provider(s); on-device vs. cloud; cost.
+- Whether transcription toggle is distinct from Voice-Follow / Record elsewhere in the app.
 
 ## Tests
-- **Unit** (Vitest — pure `src/lib/**`): _planned_ — `byStatusThenTitle` puts a
-      not-started book above a reference, and two books in A–Z order. Harness = ACTS-92.
-- **Integration** (Testing Library): _planned_ — formation list renders status
-      vessels first, alphabetized.
-- **E2E** (Playwright): N/A — covered by unit/integration; no new flow.
-
-## Commit(s)
-- _pending_ — fix: Vessels sort A–Z within tiers (byStatusThenTitle) + reseed vessels (STORAGE_KEY v39)
+_Convention (ACTS-91): document when picked up. Planned; harness = ACTS-92._
+- **Unit**: transcription/OCR adapters map source → `body` (mockable boundary).
+- **Integration**: voice and photo capture flows set the expected `mode` / attachment /
+  `body`; failure path leaves a hand-editable entry.
+- **E2E**: record a voice note → transcript saved with `mode:"spoken"`; photograph a
+  page → OCR text becomes the entry body, image retained.
