@@ -2,7 +2,7 @@
 id: ACTS-135
 title: Reflection organization — optional themes, no-AI tag suggestions, group-by view
 spine:
-status: In Progress
+status: Done
 origin: human-directed
 approved_by: JC
 priority: medium
@@ -11,9 +11,9 @@ relates_to: [ACTS-103, ACTS-102]
 sync: local
 synced_at: null
 started_at: 2026-09-02T00:00:00-0700
-updated: 2026-09-02T00:00:00-0700
-latest_handoff: null
-sessions: 0
+updated: 2026-09-03T00:00:00-0700
+latest_handoff: stories/ACTS-135/session-01.md
+sessions: 1
 ---
 
 ## Goal
