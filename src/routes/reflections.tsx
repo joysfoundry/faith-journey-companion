@@ -352,7 +352,11 @@ function ReflectionsPage() {
   return (
     <AppShell title="Reflection" subtitle="Write freely and link what inspired it">
       <div className="space-y-6">
-        <ReflectionComposer linkables={linkables} prefillLinkId={prefillLinkId ?? null} />
+        <ReflectionComposer
+          linkables={linkables}
+          prefillLinkId={prefillLinkId ?? null}
+          showDraftStatus
+        />
 
         <section>
           <div className="mb-2 space-y-2">

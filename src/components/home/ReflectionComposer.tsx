@@ -24,6 +24,12 @@ interface Props {
   linkables: LinkableItem[];
   /** Item id to pre-link when the user arrives via a "Reflect" icon (provenance). */
   prefillLinkId?: string | null;
+  /**
+   * Show an "in progress" affordance when a shared draft has content — reassures
+   * the reader that unsaved work is auto-saved and resumable. Enabled on the
+   * `/reflections` page (ACTS-136 item 2); Home is the primary compose spot.
+   */
+  showDraftStatus?: boolean;
 }
 
 const GROUP_TARGET: Record<string, ReflectionLinkTarget> = {
@@ -75,7 +81,7 @@ const IconBtn = forwardRef<
  * the reflection, never on the item that inspired it. Renders as flat rows meant
  * to sit inside the Home "Reflection" SectionCard.
  */
-export function ReflectionComposer({ linkables, prefillLinkId }: Props) {
+export function ReflectionComposer({ linkables, prefillLinkId, showDraftStatus }: Props) {
   const { db, addReflection } = useApp();
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
@@ -250,6 +256,12 @@ export function ReflectionComposer({ linkables, prefillLinkId }: Props) {
     <div className="divide-y divide-border/60">
       {/* Composer */}
       <div className="space-y-3 px-5 py-4">
+        {showDraftStatus && draftHasContent ? (
+          <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+            <span className="size-1.5 shrink-0 rounded-full bg-primary" aria-hidden />
+            Draft in progress — saved automatically
+          </div>
+        ) : null}
         <Input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
