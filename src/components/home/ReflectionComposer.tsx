@@ -1,5 +1,15 @@
 import { useNavigate } from "@tanstack/react-router";
-import { BookOpen, Camera, Check, Globe, Link2, MessagesSquare, Trash2, X } from "lucide-react";
+import {
+  BookOpen,
+  Camera,
+  Check,
+  Flame,
+  Globe,
+  Link2,
+  MessagesSquare,
+  Trash2,
+  X,
+} from "lucide-react";
 import { forwardRef, useEffect, useMemo, useState } from "react";
 
 import { InspirationPanel } from "@/components/reflections/InspirationPanel";
@@ -269,35 +279,45 @@ export function ReflectionComposer({ linkables, prefillLinkId, showDraftStatus }
 
   const draftHasContent = hasDraftContent({ title, body, themes, linked, manualLinks });
 
+  // Once you're actually writing, the Lectio entry + "or write freely below"
+  // divider collapse away (ACTS-138) so the composer becomes a clean, focused
+  // journaling space — the two-intents chooser has done its job by then.
+  const isWriting = body.trim().length > 0;
+
   return (
     <div className="divide-y divide-border/60">
       {/* Guided-practice entry (ACTS-138) — a deliberate front door to Lectio
           Divina, set apart from free-writing because it's a specific process,
-          not metadata on a note. Shared by Home + /reflections via this composer. */}
-      <div className="px-5 py-4">
-        <button
-          type="button"
-          onClick={startLectio}
-          className="flex w-full items-center gap-3 rounded-xl border border-primary/40 bg-card px-4 py-3 text-left transition-colors hover:bg-accent"
-        >
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <BookOpen className="size-5" aria-hidden />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block font-display text-base font-medium leading-tight">
-              Reflect with Scripture
+          not metadata on a note. Shared by Home + /reflections via this composer.
+          Hidden once writing begins, to clear the deck for the journal entry. */}
+      {!isWriting && (
+        <div className="px-5 py-4">
+          <button
+            type="button"
+            onClick={startLectio}
+            className="flex w-full items-center gap-3 rounded-xl border border-primary/40 bg-card px-4 py-3 text-left transition-colors hover:bg-accent"
+          >
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Flame className="size-5" aria-hidden />
             </span>
-            <span className="block text-sm text-muted-foreground">
-              Lectio Divina · read, reflect, respond, rest
+            <span className="min-w-0 flex-1">
+              <span className="block font-display text-base font-medium leading-tight">
+                Reflect with Scripture
+              </span>
+              <span className="block text-sm text-muted-foreground">
+                Lectio Divina · read, reflect, respond, rest
+              </span>
             </span>
-          </span>
-          <span className="shrink-0 text-sm font-medium text-primary">Begin</span>
-        </button>
-      </div>
+            <span className="shrink-0 text-sm font-medium text-primary">Begin</span>
+          </button>
+        </div>
+      )}
 
       {/* Composer */}
       <div className="space-y-3 px-5 py-4">
-        <p className="text-center text-xs text-muted-foreground">or jot a thought</p>
+        {!isWriting && (
+          <p className="text-center text-xs text-muted-foreground">or write freely below</p>
+        )}
         {showDraftStatus && draftHasContent ? (
           <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
             <span className="size-1.5 shrink-0 rounded-full bg-primary" aria-hidden />
