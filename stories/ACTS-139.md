@@ -2,13 +2,13 @@
 id: ACTS-139
 title: Reflections page — split into Write / Journal tabs
 spine:
-status: To Do
+status: In Progress
 origin: human-directed
 approved_by: JC
 depends_on: []
 relates_to: [ACTS-103, ACTS-138, ACTS-140, ACTS-135, ACTS-136]
-started_at: 2026-09-03T12:33:01-0700
-updated: 2026-09-03T12:33:01-0700
+started_at: 2026-09-03T15:20:18-0700
+updated: 2026-09-03T15:20:18-0700
 latest_handoff: null
 sessions: 0
 ---
