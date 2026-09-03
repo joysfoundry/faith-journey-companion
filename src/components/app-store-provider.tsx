@@ -139,6 +139,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
         status: Parameters<typeof mutations.setKnowledgeStatus>[2],
       ) => setDb((d) => mutations.setKnowledgeStatus(d, id, status)),
       deleteKnowledgeItem: (id: string) => setDb((d) => mutations.deleteKnowledgeItem(d, id)),
+      toggleItemPinned: (id: string) => setDb((d) => mutations.toggleItemPinned(d, id)),
       toggleContentLinkFavorite: (itemId: string, linkIndex: number) =>
         setDb((d) => mutations.toggleContentLinkFavorite(d, itemId, linkIndex)),
       upsertVoice: (v: Parameters<typeof mutations.upsertVoice>[1]) =>

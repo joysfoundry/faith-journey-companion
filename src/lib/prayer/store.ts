@@ -434,6 +434,7 @@ export interface AppStore {
   updateKnowledgeItem: (item: KnowledgeItem) => void;
   setKnowledgeStatus: (id: ID, status: KnowledgeStatus) => void;
   deleteKnowledgeItem: (id: ID) => void;
+  toggleItemPinned: (id: ID) => void;
   toggleContentLinkFavorite: (itemId: ID, linkIndex: number) => void;
   upsertVoice: (voice: Voice) => void;
   deleteVoice: (id: ID) => void;
@@ -1297,6 +1298,15 @@ export const mutations = {
   },
   deleteKnowledgeItem(db: Database, id: ID): Database {
     return { ...db, knowledge_items: db.knowledge_items.filter((i) => i.id !== id) };
+  },
+  /** Toggle the item-level "Pin to Home" flag (ACTS-137). Independent of link favorites. */
+  toggleItemPinned(db: Database, id: ID): Database {
+    return {
+      ...db,
+      knowledge_items: db.knowledge_items.map((i) =>
+        i.id === id ? { ...i, pinned: !i.pinned } : i,
+      ),
+    };
   },
   /** Toggle a Home pin on one Content link (by item + link index). */
   toggleContentLinkFavorite(db: Database, itemId: ID, linkIndex: number): Database {

@@ -410,14 +410,23 @@ export function voiceSubtitle(voice: Voice): string {
 
 /* -------------------------------- Home ----------------------------------- */
 
-/** A favorited link surfaced on Home, with the record it belongs to. */
+/**
+ * A row surfaced on the Home Vessels card. Three sources feed it: a favorited
+ * Voice channel, a favorited Content link, and an item-level pin (ACTS-137).
+ * `url` is absent for a URL-less item pin — the row then opens the owner's
+ * detail page instead of an external link.
+ */
 export interface PinnedLink {
   ownerId: ID;
   ownerName: string;
   ownerType: "voice" | "content";
-  platform: LinkPlatform;
-  url: string;
+  /** Platform of the external link, when there is one (drives the subtitle fallback). */
+  platform?: LinkPlatform | undefined;
+  /** External URL to open. Absent = a URL-less item pin → open the owner detail page. */
+  url?: string | undefined;
   label?: string | undefined;
+  /** Subtitle override for the row (an item pin shows its category, e.g. "Book"). */
+  subtitle?: string | undefined;
 }
 
 /**
@@ -455,6 +464,26 @@ export function pinnedLinks(voices: Voice[], items: KnowledgeItem[]): PinnedLink
           label: l.label,
         });
     }
+  }
+  // Item-level pins (ACTS-137): a pinned item surfaces itself even with no
+  // favorited link. If it already contributed a favorited-link row above, it's
+  // on Home already — skip it here so a pinned + link-favorited item shows once.
+  const favoritedItemIds = new Set(
+    items.filter((it) => (it.links ?? []).some((l) => l.favorite)).map((it) => it.id),
+  );
+  for (const it of items) {
+    if (!it.pinned || favoritedItemIds.has(it.id)) continue;
+    // No favorited link here (those were excluded), so primaryUrl falls back to
+    // the first link — or is absent, meaning the row opens the item detail page.
+    const url = primaryUrl(it);
+    out.push({
+      ownerId: it.id,
+      ownerName: contentTitle(it),
+      ownerType: "content",
+      platform: url ? it.links?.[0]?.platform : undefined,
+      url,
+      subtitle: CATEGORY_LABELS[it.category],
+    });
   }
   const categoryById = new Map(items.map((it) => [it.id, it.category]));
   const statusBearing = (pin: PinnedLink) => {

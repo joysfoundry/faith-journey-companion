@@ -92,23 +92,37 @@ function PinnedLinkRow({
   pin: PinnedLink;
   onReflect: (ownerId: string) => void;
 }) {
+  const subtitle =
+    pin.subtitle || pin.label || (pin.platform ? LINK_PLATFORM_LABELS[pin.platform] : "");
+  const body = (
+    <span className="min-w-0">
+      <span className="block truncate text-sm font-medium text-foreground">{pin.ownerName}</span>
+      {subtitle ? (
+        <span className="block truncate text-xs text-muted-foreground">{subtitle}</span>
+      ) : null}
+    </span>
+  );
   return (
     <SectionRow className="border-t border-border/60 pl-6">
       <div className="flex items-center justify-between gap-3">
-        <ExtLink
-          href={pin.url}
-          className="flex min-w-0 flex-1 items-center gap-2 transition-colors hover:text-primary"
-        >
-          <span className="min-w-0">
-            <span className="block truncate text-sm font-medium text-foreground">
-              {pin.ownerName}
-            </span>
-            <span className="block truncate text-xs text-muted-foreground">
-              {pin.label || LINK_PLATFORM_LABELS[pin.platform]}
-            </span>
-          </span>
-          <ExternalLink className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
-        </ExtLink>
+        {pin.url ? (
+          <ExtLink
+            href={pin.url}
+            className="flex min-w-0 flex-1 items-center gap-2 transition-colors hover:text-primary"
+          >
+            {body}
+            <ExternalLink className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+          </ExtLink>
+        ) : (
+          // URL-less item pin (ACTS-137): open the item's detail page in-app.
+          <Link
+            to="/knowledge/$knowledgeId"
+            params={{ knowledgeId: pin.ownerId }}
+            className="flex min-w-0 flex-1 items-center gap-2 transition-colors hover:text-primary"
+          >
+            {body}
+          </Link>
+        )}
         {/* Reflect on the work itself — only content vessels (books/programs) are
             reflection subjects; a voice/website channel is not. */}
         {pin.ownerType === "content" ? (
@@ -673,7 +687,11 @@ function Index() {
             </SectionRow>
           ) : (
             homePins.map((pin) => (
-              <PinnedLinkRow key={`${pin.ownerId}-${pin.url}`} pin={pin} onReflect={openJournal} />
+              <PinnedLinkRow
+                key={`${pin.ownerId}-${pin.url ?? "pin"}`}
+                pin={pin}
+                onReflect={openJournal}
+              />
             ))
           )}
         </SectionCard>

@@ -741,6 +741,14 @@ export interface KnowledgeItem {
   reads_scripture?: boolean | undefined;
   /** Where to get / access this content — Amazon, Audible, a video, … */
   links?: KnowledgeLink[] | undefined;
+  /**
+   * Item-level "Pin to Home" (ACTS-137). Pins the whole item to the Home Vessels
+   * card regardless of whether any of its links are favorited — so a book with no
+   * link (or no starred link) can still reach Home. Independent of `links[].favorite`:
+   * pinning the item and starring a link are separate toggles; Home merges both,
+   * de-duped. A URL-less pin's Home row opens the item detail page.
+   */
+  pinned?: boolean | undefined;
   /** Free-form tags for finding a saved item later ("praying", "becomingcatholic"). */
   tags?: string[] | undefined;
   created_at: string;

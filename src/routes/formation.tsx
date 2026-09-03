@@ -9,6 +9,7 @@ import {
   MoreVertical,
   NotebookPen,
   Pencil,
+  Pin,
   Search,
   Star,
   Trash2,
@@ -108,6 +109,7 @@ function KnowledgePage() {
     setKnowledgeStatus,
     deleteKnowledgeItem,
     toggleContentLinkFavorite,
+    toggleItemPinned,
     deleteVoice,
     toggleChannelFavorite,
     upsertVoice,
@@ -225,6 +227,7 @@ function KnowledgePage() {
     voices,
     setKnowledgeStatus,
     toggleContentLinkFavorite,
+    toggleItemPinned,
     onEdit: editItem,
     onDelete: deleteKnowledgeItem,
   };
@@ -494,6 +497,7 @@ function ContentRow({
   hideVoice,
   setKnowledgeStatus,
   toggleContentLinkFavorite,
+  toggleItemPinned,
   onEdit,
   onDelete,
 }: {
@@ -502,6 +506,7 @@ function ContentRow({
   hideVoice?: boolean;
   setKnowledgeStatus: (id: string, status: KnowledgeItem["status"]) => void;
   toggleContentLinkFavorite: (itemId: string, index: number) => void;
+  toggleItemPinned: (id: string) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
 }) {
@@ -534,6 +539,7 @@ function ContentRow({
             </div>
           ) : null}
         </div>
+        <PinItemIcon pinned={!!item.pinned} onToggle={() => toggleItemPinned(item.id)} />
         <ReflectIcon itemId={item.id} title={contentTitle(item)} />
         <RowMenu onEdit={() => onEdit(item.id)} onDelete={() => onDelete(item.id)} />
       </li>
@@ -615,9 +621,30 @@ function ContentRow({
           </div>
         ) : null}
       </div>
+      <PinItemIcon pinned={!!item.pinned} onToggle={() => toggleItemPinned(item.id)} />
       <ReflectIcon itemId={item.id} title={item.title} />
       <RowMenu onEdit={() => onEdit(item.id)} onDelete={() => onDelete(item.id)} />
     </li>
+  );
+}
+
+/**
+ * Item-level "Pin to Home" (ACTS-137) — surfaces the whole item on Home's
+ * Vessels card, no favorited link required. Separate from the per-link stars.
+ */
+function PinItemIcon({ pinned, onToggle }: { pinned: boolean; onToggle: () => void }) {
+  return (
+    <Button
+      size="icon"
+      variant="ghost"
+      onClick={onToggle}
+      aria-label={pinned ? "Unpin from Home" : "Pin to Home"}
+      aria-pressed={pinned}
+      title={pinned ? "Unpin from Home" : "Pin to Home"}
+      className="size-8 shrink-0 text-muted-foreground hover:text-foreground"
+    >
+      <Pin className={`size-4 ${pinned ? "fill-primary text-primary" : ""}`} aria-hidden />
+    </Button>
   );
 }
 

@@ -6,6 +6,7 @@ import {
   MoreVertical,
   NotebookPen,
   Pencil,
+  Pin,
   Plus,
   Star,
   Trash2,
@@ -72,6 +73,7 @@ function KnowledgeRecordPage() {
     updateKnowledgeItem,
     setKnowledgeStatus,
     toggleContentLinkFavorite,
+    toggleItemPinned,
     deleteKnowledgeItem,
     upsertVoice,
   } = useApp();
@@ -409,6 +411,22 @@ function KnowledgeRecordPage() {
                 <span className="text-xs text-muted-foreground">{item.source}</span>
               ) : null}
             </div>
+
+            {/* Item-level Pin to Home (ACTS-137): surfaces this item on Home's
+                Vessels card even with no favorited link. */}
+            <Button
+              variant={item.pinned ? "secondary" : "outline"}
+              size="sm"
+              onClick={() => toggleItemPinned(item.id)}
+              aria-pressed={!!item.pinned}
+              className="w-fit gap-1.5"
+            >
+              <Pin
+                className={`size-4 ${item.pinned ? "fill-primary text-primary" : ""}`}
+                aria-hidden
+              />
+              {item.pinned ? "Pinned to Home" : "Pin to Home"}
+            </Button>
 
             {isQuote(item) ? (
               <blockquote className="border-l-2 border-primary/40 pl-4 text-lg italic leading-relaxed text-foreground">
