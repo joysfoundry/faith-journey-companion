@@ -1,5 +1,6 @@
 import { todaysWord, type LinkableItem } from "@/domain/placeholderData";
 import { defaultContext, planTitle, resolveMysterySet, todayISO } from "@/lib/prayer/compiler";
+import { LECTIO_TEMPLATE_ID } from "@/lib/prayer/seed";
 import type { Database } from "@/lib/prayer/types";
 
 export interface BuildLinkablesOpts {
@@ -59,17 +60,25 @@ export function buildReflectionLinkables(
   // Then every session (newest first), labeled by the plan behind it when there
   // is one, else its own title. Then any plan that has no session yet, so a
   // devotion you've scheduled but not prayed is still taggable.
+  //
+  // Lectio Divina sessions are excluded (ACTS-138): a Lectio *is* a container of
+  // journaling (its per-movement Reflections), not an inspiration you'd tag a
+  // separate note with — listing it here just clutters the picker (and surfaces
+  // abandoned empty sittings). Lectio sittings live in the Journal instead
+  // (ACTS-140).
+  const isLectio = (templateId: string) => templateId === LECTIO_TEMPLATE_ID;
   const sessions = [...db.sessions].sort((a, b) =>
     (b.created_at ?? "").localeCompare(a.created_at ?? ""),
   );
   const plannedWithSession = new Set(sessions.map((s) => s.plan_id).filter(Boolean) as string[]);
   for (const s of sessions) {
+    if (isLectio(s.template_id)) continue;
     const plan = s.plan_id ? db.session_plans.find((p) => p.id === s.plan_id) : undefined;
     const label = plan ? planTitle(db, plan) : s.title?.trim() || "Prayer session";
     push({ id: s.id, label, group: "Prayer & devotion" });
   }
   for (const plan of db.session_plans) {
-    if (plannedWithSession.has(plan.id)) continue;
+    if (plannedWithSession.has(plan.id) || isLectio(plan.template_id)) continue;
     push({ id: plan.id, label: planTitle(db, plan), group: "Prayer & devotion" });
   }
 
