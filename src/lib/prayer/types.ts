@@ -580,7 +580,11 @@ export interface ImportDraft {
 
 export type ReflectionMode = "written" | "spoken" | "open_dialogue";
 
-/** What a reflection can be linked to. Kept flexible and target-agnostic. */
+/**
+ * What a reflection can be linked to. Kept flexible and target-agnostic.
+ * `passage` is the one non-entity source: a book/quote text the user pasted, which
+ * has nothing to resolve by id — its text lives in the link's `excerpt` snapshot.
+ */
 export type ReflectionLinkTarget =
   | "prayer_session"
   | "session_item"
@@ -588,13 +592,20 @@ export type ReflectionLinkTarget =
   | "mass"
   | "learning"
   | "intention"
-  | "mystery";
+  | "mystery"
+  | "passage";
 
 /** A link is stored ON the reflection, never on the item that inspired it. */
 export interface ReflectionLink {
   target_type: ReflectionLinkTarget;
   target_id: ID;
   label?: string | undefined;
+  /**
+   * Snapshot text of the inspiration, for sources with no entity to resolve
+   * (a pasted book `passage`). The inspiration panel renders this verbatim when
+   * present. Entity links leave it empty and resolve their content by `target_id`.
+   */
+  excerpt?: string | undefined;
 }
 
 /** The user's own words. Always the user's own unless they ask for transformation. */

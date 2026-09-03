@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
+  ArrowDownWideNarrow,
+  ArrowUpNarrowWide,
   ChevronDown,
   ChevronsDownUp,
   ChevronsUpDown,
@@ -10,6 +12,7 @@ import {
 import { useEffect, useState } from "react";
 
 import { ReflectionComposer } from "@/components/home/ReflectionComposer";
+import { InspirationPanel } from "@/components/reflections/InspirationPanel";
 import { AppShell } from "@/components/layout/PageShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -138,7 +141,7 @@ function JournalEntryDialog({
   entry: Reflection | undefined;
   onOpenChange: (open: boolean) => void;
 }) {
-  const { updateReflection, deleteReflection } = useApp();
+  const { db, updateReflection, deleteReflection } = useApp();
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
@@ -222,6 +225,7 @@ function JournalEntryDialog({
               <div className="space-y-3">
                 <p className="whitespace-pre-line text-sm text-muted-foreground">{entry.body}</p>
                 <EntryLinks entry={entry} />
+                <InspirationPanel links={entry.links} db={db} />
               </div>
             )}
           </>
@@ -251,10 +255,12 @@ function ReflectionsPage() {
     ...db.knowledge_items.map((k) => ({ id: k.id, label: k.title, group: "Knowledge" })),
   ];
 
-  // Latest entry on top.
-  const entries = [...db.reflections].sort((a, b) =>
-    (b.created_at ?? "").localeCompare(a.created_at ?? ""),
-  );
+  // Sort by date; newest-first by default, toggle to oldest-first.
+  const [sortAsc, setSortAsc] = useState(false);
+  const entries = [...db.reflections].sort((a, b) => {
+    const cmp = (a.created_at ?? "").localeCompare(b.created_at ?? "");
+    return sortAsc ? cmp : -cmp;
+  });
 
   const [openIds, setOpenIds] = useState<Set<string>>(new Set());
   const [detailId, setDetailId] = useState<string | null>(null);
@@ -279,6 +285,24 @@ function ReflectionsPage() {
             <p className="eyebrow">Journal</p>
             {entries.length > 0 ? (
               <div className="flex items-center gap-0.5">
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="size-8 text-muted-foreground hover:text-foreground"
+                  onClick={() => setSortAsc((v) => !v)}
+                  aria-label={sortAsc ? "Sort newest first" : "Sort oldest first"}
+                  title={
+                    sortAsc
+                      ? "Oldest first — tap for newest first"
+                      : "Newest first — tap for oldest first"
+                  }
+                >
+                  {sortAsc ? (
+                    <ArrowUpNarrowWide className="size-4" aria-hidden />
+                  ) : (
+                    <ArrowDownWideNarrow className="size-4" aria-hidden />
+                  )}
+                </Button>
                 <Button
                   size="icon"
                   variant="ghost"
