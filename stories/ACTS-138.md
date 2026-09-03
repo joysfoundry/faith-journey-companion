@@ -2,15 +2,15 @@
 id: ACTS-138
 title: Start a guided Lectio Divina from the Reflection surface
 spine:
-status: In Progress
+status: Done
 origin: human-directed
 approved_by: JC
 depends_on: [ACTS-102]
-relates_to: [ACTS-102, ACTS-103, ACTS-129]
+relates_to: [ACTS-102, ACTS-103, ACTS-129, ACTS-139, ACTS-140, ACTS-141]
 started_at: 2026-09-03T12:16:43-0700
-updated: 2026-09-03T12:16:43-0700
-latest_handoff: null
-sessions: 0
+updated: 2026-09-03T15:16:51-0700
+latest_handoff: stories/ACTS-138/session-01.md
+sessions: 1
 ---
 
 ## Goal
@@ -58,16 +58,18 @@ Journal's job → ACTS-140; the abandoned-empty-session litter this exposed → 
 - Placement/prominence: secondary button vs. a small "two ways to reflect" chooser.
 
 ## Acceptance criteria
-- [ ] A visible control on the Home Reflection card launches the seeded Lectio session
+- [x] A visible control on the Home Reflection card launches the seeded Lectio session
       and navigates to `/session/$sessionId`.
-- [ ] The same control exists on the `/reflections` page.
-- [ ] The free-write composer path is unchanged (no regression).
-- [ ] No new `TemplateItemKind` / `SessionItemKind`, no `STORAGE_KEY` bump, no schema change.
-- [ ] Journaling from the launched Lectio still lands in the Reflection journal (existing
-      ACTS-102 behavior, verified end-to-end).
+- [x] The same control exists on the `/reflections` page.
+- [x] The free-write composer path is unchanged (no regression).
+- [x] No new `TemplateItemKind` / `SessionItemKind`, no `STORAGE_KEY` bump, no schema change.
+- [x] Journaling from the launched Lectio still lands in the Reflection journal (existing
+      ACTS-102 behavior; unchanged by this story).
 - [x] Lectio sessions/plans excluded from the reflection "Link an item" picker
       (`buildReflectionLinkables`) — browser-verified, `tsc`/`eslint` clean.
-- [ ] Final copy/placement confirmed with JC.
+- [x] Final copy/placement confirmed with JC (flame icon, "Begin", card-as-tap-target,
+      "or write freely below", "Title or Subject", subtitle "Scripture Guided Writing or
+      Inspired Free Writing"). Also: focus-on-write collapse of the card + divider.
 
 ## Tests
 _Planned — no runner wired yet (harness = ACTS-92); see
