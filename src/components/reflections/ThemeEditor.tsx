@@ -42,6 +42,17 @@ export function ThemeEditor({
 
   return (
     <div className="space-y-1.5">
+      <div className="flex items-baseline gap-2">
+        <span className="flex items-center gap-1 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+          <Tag className="size-3" aria-hidden />
+          Themes
+        </span>
+        {value.length === 0 ? (
+          <span className="text-xs text-muted-foreground/70">
+            optional — helps you find this later
+          </span>
+        ) : null}
+      </div>
       <div className="flex flex-wrap items-center gap-1.5">
         {value.map((theme) => (
           <Badge key={theme} variant="secondary" className="gap-1 pr-1.5 font-normal">
@@ -70,9 +81,9 @@ export function ThemeEditor({
           }}
           onBlur={() => draft.trim() && add(draft)}
           list={listId}
-          placeholder={value.length === 0 ? "Add a theme (optional)" : "Add another…"}
+          placeholder={value.length === 0 ? "Add a theme…" : "Add another…"}
           aria-label="Add a theme"
-          className="h-7 w-40 flex-1 border-0 px-1 text-sm shadow-none focus-visible:ring-0"
+          className="h-7 w-36 flex-1 rounded-md border border-dashed border-border/80 bg-transparent px-2 text-sm shadow-none focus-visible:border-solid focus-visible:border-primary focus-visible:ring-0"
         />
         <datalist id={listId}>
           {datalist.map((t) => (
