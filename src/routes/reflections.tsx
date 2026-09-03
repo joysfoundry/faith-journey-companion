@@ -350,7 +350,7 @@ function ReflectionsPage() {
     });
 
   return (
-    <AppShell title="Reflection" subtitle="Guided writing with Scripture or Inspired Free Writing">
+    <AppShell title="Reflection" subtitle="Scripture Guided Writing or Inspired Free Writing">
       <div className="space-y-6">
         <ReflectionComposer
           linkables={linkables}
