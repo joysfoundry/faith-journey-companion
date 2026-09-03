@@ -1,3 +1,4 @@
+import { useNavigate } from "@tanstack/react-router";
 import { BookOpen, Camera, Check, Globe, Link2, MessagesSquare, Trash2, X } from "lucide-react";
 import { forwardRef, useEffect, useMemo, useState } from "react";
 
@@ -9,7 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
 import type { LinkableItem } from "@/domain/placeholderData";
-import { newId } from "@/lib/prayer/compiler";
+import { newId, todayISO } from "@/lib/prayer/compiler";
+import { LECTIO_TEMPLATE_ID } from "@/lib/prayer/seed";
 import {
   clearReflectionDraft,
   hasDraftContent,
@@ -82,7 +84,8 @@ const IconBtn = forwardRef<
  * to sit inside the Home "Reflection" SectionCard.
  */
 export function ReflectionComposer({ linkables, prefillLinkId, showDraftStatus }: Props) {
-  const { db, addReflection } = useApp();
+  const { db, addReflection, startSession } = useApp();
+  const navigate = useNavigate();
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [mode, setMode] = useState<"written" | "open_dialogue">("written");
@@ -250,12 +253,51 @@ export function ReflectionComposer({ linkables, prefillLinkId, showDraftStatus }
     resetComposer();
   }
 
+  /**
+   * Launch a guided Lectio Divina (ACTS-138). Free-writing captures a thought;
+   * Lectio is a distinct *practice* — the seeded 4-movement session (ACTS-102),
+   * whose per-movement journaling saves back into this same Reflection journal.
+   * One tap → a fresh session, no config step (the passage is chosen in-session).
+   */
+  function startLectio() {
+    const session = startSession(LECTIO_TEMPLATE_ID, {
+      date: todayISO(),
+      progress_mode: "scroll",
+    });
+    if (session) navigate({ to: "/session/$sessionId", params: { sessionId: session.id } });
+  }
+
   const draftHasContent = hasDraftContent({ title, body, themes, linked, manualLinks });
 
   return (
     <div className="divide-y divide-border/60">
+      {/* Guided-practice entry (ACTS-138) — a deliberate front door to Lectio
+          Divina, set apart from free-writing because it's a specific process,
+          not metadata on a note. Shared by Home + /reflections via this composer. */}
+      <div className="px-5 py-4">
+        <button
+          type="button"
+          onClick={startLectio}
+          className="flex w-full items-center gap-3 rounded-xl border border-primary/40 bg-card px-4 py-3 text-left transition-colors hover:bg-accent"
+        >
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <BookOpen className="size-5" aria-hidden />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-display text-base font-medium leading-tight">
+              Reflect with Scripture
+            </span>
+            <span className="block text-sm text-muted-foreground">
+              Lectio Divina · read, reflect, respond, rest
+            </span>
+          </span>
+          <span className="shrink-0 text-sm font-medium text-primary">Begin</span>
+        </button>
+      </div>
+
       {/* Composer */}
       <div className="space-y-3 px-5 py-4">
+        <p className="text-center text-xs text-muted-foreground">or jot a thought</p>
         {showDraftStatus && draftHasContent ? (
           <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
             <span className="size-1.5 shrink-0 rounded-full bg-primary" aria-hidden />
@@ -271,7 +313,7 @@ export function ReflectionComposer({ linkables, prefillLinkId, showDraftStatus }
         <Textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
-          placeholder="What stayed with you today?"
+          placeholder="What's on your heart today?"
           rows={4}
         />
 
