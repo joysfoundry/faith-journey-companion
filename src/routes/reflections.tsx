@@ -27,6 +27,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { type LinkableItem } from "@/domain/placeholderData";
 import { todayISO } from "@/lib/prayer/compiler";
@@ -325,6 +326,14 @@ function ReflectionsPage() {
     return sortAsc ? cmp : -cmp;
   });
 
+  // Two views on one page (ACTS-139), via the shared Tabs component: "write"
+  // (the composer) and "journal" (the saved entries). Write is the default so
+  // the compose box greets you — and a `?link=` deep-link from a Reflect icon
+  // (ACTS-129) lands here pre-linked. Radix unmounts the inactive tab, but no
+  // state is lost: the journal's group/sort/expand state lives here in the page,
+  // and the composer's in-progress entry is persisted to the shared draft.
+  const [tab, setTab] = useState<"write" | "journal">("write");
+
   const [groupBy, setGroupBy] = useState<GroupBy>("date");
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const groups = groupEntries(entries, groupBy, db);
@@ -351,142 +360,152 @@ function ReflectionsPage() {
 
   return (
     <AppShell title="Reflection" subtitle="Scripture Guided Writing or Inspired Free Writing">
-      <div className="space-y-6">
-        <ReflectionComposer
-          linkables={linkables}
-          prefillLinkId={prefillLinkId ?? null}
-          showDraftStatus
-        />
+      <Tabs value={tab} onValueChange={(v) => setTab(v as "write" | "journal")}>
+        <TabsList className="mb-4 grid w-full grid-cols-2">
+          <TabsTrigger value="write">Write</TabsTrigger>
+          <TabsTrigger value="journal">Journal</TabsTrigger>
+        </TabsList>
 
-        <section>
-          <div className="mb-2 space-y-2">
-            <div className="flex items-center justify-between gap-3">
-              <p className="eyebrow">Journal</p>
+        <TabsContent value="write" className="mt-0">
+          <ReflectionComposer
+            linkables={linkables}
+            prefillLinkId={prefillLinkId ?? null}
+            showDraftStatus
+          />
+        </TabsContent>
+
+        <TabsContent value="journal" className="mt-0">
+          <section>
+            <div className="mb-2 space-y-2">
+              <div className="flex items-center justify-end gap-3">
+                {entries.length > 0 ? (
+                  <div className="flex items-center gap-0.5">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="size-8 text-muted-foreground hover:text-foreground"
+                      onClick={() => setSortAsc((v) => !v)}
+                      aria-label={sortAsc ? "Sort newest first" : "Sort oldest first"}
+                      title={
+                        sortAsc
+                          ? "Oldest first — tap for newest first"
+                          : "Newest first — tap for oldest first"
+                      }
+                    >
+                      {sortAsc ? (
+                        <ArrowUpNarrowWide className="size-4" aria-hidden />
+                      ) : (
+                        <ArrowDownWideNarrow className="size-4" aria-hidden />
+                      )}
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="size-8 text-muted-foreground hover:text-foreground"
+                      onClick={() => setOpenIds(new Set(entries.map((e) => e.id)))}
+                      disabled={allOpen}
+                      aria-label="Expand all"
+                      title="Expand all"
+                    >
+                      <ChevronsUpDown className="size-4" aria-hidden />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="size-8 text-muted-foreground hover:text-foreground"
+                      onClick={() => setOpenIds(new Set())}
+                      disabled={noneOpen}
+                      aria-label="Collapse all"
+                      title="Collapse all"
+                    >
+                      <ChevronsDownUp className="size-4" aria-hidden />
+                    </Button>
+                  </div>
+                ) : null}
+              </div>
               {entries.length > 0 ? (
-                <div className="flex items-center gap-0.5">
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="size-8 text-muted-foreground hover:text-foreground"
-                    onClick={() => setSortAsc((v) => !v)}
-                    aria-label={sortAsc ? "Sort newest first" : "Sort oldest first"}
-                    title={
-                      sortAsc
-                        ? "Oldest first — tap for newest first"
-                        : "Newest first — tap for oldest first"
-                    }
-                  >
-                    {sortAsc ? (
-                      <ArrowUpNarrowWide className="size-4" aria-hidden />
-                    ) : (
-                      <ArrowDownWideNarrow className="size-4" aria-hidden />
-                    )}
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="size-8 text-muted-foreground hover:text-foreground"
-                    onClick={() => setOpenIds(new Set(entries.map((e) => e.id)))}
-                    disabled={allOpen}
-                    aria-label="Expand all"
-                    title="Expand all"
-                  >
-                    <ChevronsUpDown className="size-4" aria-hidden />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="size-8 text-muted-foreground hover:text-foreground"
-                    onClick={() => setOpenIds(new Set())}
-                    disabled={noneOpen}
-                    aria-label="Collapse all"
-                    title="Collapse all"
-                  >
-                    <ChevronsDownUp className="size-4" aria-hidden />
-                  </Button>
+                <div className="flex items-center gap-1">
+                  <span className="mr-1 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                    Group by
+                  </span>
+                  {(["date", "theme", "source"] as GroupBy[]).map((g) => (
+                    <button
+                      key={g}
+                      type="button"
+                      onClick={() => setGroupBy(g)}
+                      aria-pressed={groupBy === g}
+                      className={`rounded-full px-2.5 py-1 text-xs capitalize transition-colors ${
+                        groupBy === g
+                          ? "bg-secondary text-foreground"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {g}
+                    </button>
+                  ))}
                 </div>
               ) : null}
             </div>
-            {entries.length > 0 ? (
-              <div className="flex items-center gap-1">
-                <span className="mr-1 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-                  Group by
-                </span>
-                {(["date", "theme", "source"] as GroupBy[]).map((g) => (
-                  <button
-                    key={g}
-                    type="button"
-                    onClick={() => setGroupBy(g)}
-                    aria-pressed={groupBy === g}
-                    className={`rounded-full px-2.5 py-1 text-xs capitalize transition-colors ${
-                      groupBy === g
-                        ? "bg-secondary text-foreground"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {g}
-                  </button>
+            {entries.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Nothing yet — your saved reflections will appear here, newest first.
+              </p>
+            ) : groupBy === "date" ? (
+              <ul className="divide-y divide-border/70 overflow-hidden rounded-xl border border-border">
+                {entries.map((entry) => (
+                  <JournalRow
+                    key={entry.id}
+                    entry={entry}
+                    open={openIds.has(entry.id)}
+                    onToggle={() => toggle(entry.id)}
+                    onOpen={() => setDetailId(entry.id)}
+                  />
                 ))}
+              </ul>
+            ) : (
+              <div className="space-y-3">
+                {groups.map((group) => {
+                  const collapsed = collapsedGroups.has(group.key);
+                  return (
+                    <div key={group.key}>
+                      <button
+                        type="button"
+                        onClick={() => toggleGroup(group.key)}
+                        className="mb-1 flex w-full items-center gap-1.5 text-left"
+                        aria-expanded={!collapsed}
+                      >
+                        <ChevronDown
+                          className={`size-3.5 text-muted-foreground transition-transform ${
+                            collapsed ? "-rotate-90" : ""
+                          }`}
+                          aria-hidden
+                        />
+                        <span className="text-sm font-medium text-foreground">{group.key}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {group.entries.length}
+                        </span>
+                      </button>
+                      {!collapsed ? (
+                        <ul className="divide-y divide-border/70 overflow-hidden rounded-xl border border-border">
+                          {group.entries.map((entry) => (
+                            <JournalRow
+                              key={`${group.key}:${entry.id}`}
+                              entry={entry}
+                              open={openIds.has(entry.id)}
+                              onToggle={() => toggle(entry.id)}
+                              onOpen={() => setDetailId(entry.id)}
+                            />
+                          ))}
+                        </ul>
+                      ) : null}
+                    </div>
+                  );
+                })}
               </div>
-            ) : null}
-          </div>
-          {entries.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Nothing yet — your saved reflections will appear here, newest first.
-            </p>
-          ) : groupBy === "date" ? (
-            <ul className="divide-y divide-border/70 overflow-hidden rounded-xl border border-border">
-              {entries.map((entry) => (
-                <JournalRow
-                  key={entry.id}
-                  entry={entry}
-                  open={openIds.has(entry.id)}
-                  onToggle={() => toggle(entry.id)}
-                  onOpen={() => setDetailId(entry.id)}
-                />
-              ))}
-            </ul>
-          ) : (
-            <div className="space-y-3">
-              {groups.map((group) => {
-                const collapsed = collapsedGroups.has(group.key);
-                return (
-                  <div key={group.key}>
-                    <button
-                      type="button"
-                      onClick={() => toggleGroup(group.key)}
-                      className="mb-1 flex w-full items-center gap-1.5 text-left"
-                      aria-expanded={!collapsed}
-                    >
-                      <ChevronDown
-                        className={`size-3.5 text-muted-foreground transition-transform ${
-                          collapsed ? "-rotate-90" : ""
-                        }`}
-                        aria-hidden
-                      />
-                      <span className="text-sm font-medium text-foreground">{group.key}</span>
-                      <span className="text-xs text-muted-foreground">{group.entries.length}</span>
-                    </button>
-                    {!collapsed ? (
-                      <ul className="divide-y divide-border/70 overflow-hidden rounded-xl border border-border">
-                        {group.entries.map((entry) => (
-                          <JournalRow
-                            key={`${group.key}:${entry.id}`}
-                            entry={entry}
-                            open={openIds.has(entry.id)}
-                            onToggle={() => toggle(entry.id)}
-                            onOpen={() => setDetailId(entry.id)}
-                          />
-                        ))}
-                      </ul>
-                    ) : null}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </section>
-      </div>
+            )}
+          </section>
+        </TabsContent>
+      </Tabs>
 
       <JournalEntryDialog
         entry={detailEntry}
