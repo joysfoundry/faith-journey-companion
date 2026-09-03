@@ -2,7 +2,7 @@
 id: ACTS-136
 title: Reflection composer — persist the in-progress draft + specific daily-readings tag
 spine:
-status: In Progress
+status: Done
 origin: human-directed
 approved_by: JC
 priority: high
@@ -12,8 +12,8 @@ sync: local
 synced_at: null
 started_at: 2026-09-03T00:00:00-0700
 updated: 2026-09-03T00:00:00-0700
-latest_handoff: null
-sessions: 0
+latest_handoff: stories/ACTS-136/session-01.md
+sessions: 1
 ---
 
 ## Goal
