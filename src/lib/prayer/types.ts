@@ -581,9 +581,10 @@ export interface ImportDraft {
 export type ReflectionMode = "written" | "spoken" | "open_dialogue";
 
 /**
- * What a reflection can be linked to. Kept flexible and target-agnostic.
- * `passage` is the one non-entity source: a book/quote text the user pasted, which
- * has nothing to resolve by id — its text lives in the link's `excerpt` snapshot.
+ * What a reflection can be linked to. Kept flexible and target-agnostic. Two
+ * non-entity sources have nothing to resolve by id: `passage` (a book/quote text
+ * the user pasted, stored in `excerpt`) and `link` (a manually-entered web URL,
+ * stored in `url`).
  */
 export type ReflectionLinkTarget =
   | "prayer_session"
@@ -593,7 +594,8 @@ export type ReflectionLinkTarget =
   | "learning"
   | "intention"
   | "mystery"
-  | "passage";
+  | "passage"
+  | "link";
 
 /** A link is stored ON the reflection, never on the item that inspired it. */
 export interface ReflectionLink {
@@ -606,6 +608,12 @@ export interface ReflectionLink {
    * present. Entity links leave it empty and resolve their content by `target_id`.
    */
   excerpt?: string | undefined;
+  /**
+   * External web URL for a manually-entered `link` source. The inspiration panel
+   * renders it as a reference card with an Open-out link. (Entity links that
+   * happen to have a canonical URL resolve it from the store, not from here.)
+   */
+  url?: string | undefined;
 }
 
 /** The user's own words. Always the user's own unless they ask for transformation. */
@@ -615,6 +623,13 @@ export interface Reflection {
   body: string;
   mode: ReflectionMode;
   links: ReflectionLink[];
+  /**
+   * Optional free-form themes/topics for organizing the journal (ACTS-135) — e.g.
+   * "gratitude", "trust". Always optional: a themeless entry is first-class. Kept
+   * lowercase-normalized so "Trust" and "trust" group together. The "group by
+   * theme" view buckets entries by these; entries with none fall under "Untagged".
+   */
+  themes?: string[] | undefined;
   photo_count: number;
   created_at: string; // ISO datetime — date/time matters in history views
 }

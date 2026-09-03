@@ -7,12 +7,14 @@ import {
   ChevronsUpDown,
   MoreVertical,
   Pencil,
+  Tag,
   Trash2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { ReflectionComposer } from "@/components/home/ReflectionComposer";
 import { InspirationPanel } from "@/components/reflections/InspirationPanel";
+import { ThemeEditor } from "@/components/reflections/ThemeEditor";
 import { AppShell } from "@/components/layout/PageShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,8 +30,46 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { todaysWord, type LinkableItem } from "@/domain/placeholderData";
 import { defaultContext, resolveMysterySet, todayISO } from "@/lib/prayer/compiler";
+import { resolveInspiration } from "@/lib/prayer/inspiration";
 import { useApp } from "@/lib/prayer/store";
-import type { Reflection } from "@/lib/prayer/types";
+import { displayTheme, suggestThemes, themeHistory } from "@/lib/prayer/themes";
+import type { Database, Reflection } from "@/lib/prayer/types";
+
+type GroupBy = "date" | "theme" | "source";
+
+/**
+ * Bucket entries for the journal's group-by view (ACTS-135). "date" is one flat
+ * list; "theme" and "source" split into named sections (an entry with several
+ * themes/links appears under each), with an "Untagged"/"No source" catch-all last.
+ * Assumes `entries` is already date-sorted, so each section keeps that order.
+ */
+function groupEntries(
+  entries: Reflection[],
+  groupBy: GroupBy,
+  db: Database,
+): { key: string; entries: Reflection[] }[] {
+  if (groupBy === "date") return [{ key: "", entries }];
+  const catchAll = groupBy === "theme" ? "Untagged" : "No source";
+  const map = new Map<string, Reflection[]>();
+  const push = (key: string, e: Reflection) => {
+    const arr = map.get(key);
+    if (arr) arr.push(e);
+    else map.set(key, [e]);
+  };
+  for (const e of entries) {
+    if (groupBy === "theme") {
+      const ts = e.themes ?? [];
+      if (ts.length === 0) push(catchAll, e);
+      else for (const t of ts) push(displayTheme(t), e);
+    } else {
+      if (e.links.length === 0) push(catchAll, e);
+      else for (const link of e.links) push(resolveInspiration(link, db).label, e);
+    }
+  }
+  const keys = [...map.keys()].filter((k) => k !== catchAll).sort((a, b) => a.localeCompare(b));
+  if (map.has(catchAll)) keys.push(catchAll);
+  return keys.map((key) => ({ key, entries: map.get(key) ?? [] }));
+}
 
 export const Route = createFileRoute("/reflections")({
   // `?link=<id>` pre-links the composer to the item you reflected from (a session,
@@ -67,7 +107,9 @@ function formatWhen(iso: string): string {
 }
 
 function EntryLinks({ entry }: { entry: Reflection }) {
-  if (entry.links.length === 0 && entry.mode !== "open_dialogue") return null;
+  const themes = entry.themes ?? [];
+  if (entry.links.length === 0 && themes.length === 0 && entry.mode !== "open_dialogue")
+    return null;
   return (
     <div className="flex flex-wrap gap-1.5">
       {entry.mode === "open_dialogue" && (
@@ -75,6 +117,12 @@ function EntryLinks({ entry }: { entry: Reflection }) {
           Open dialogue
         </Badge>
       )}
+      {themes.map((theme) => (
+        <Badge key={`theme:${theme}`} variant="secondary" className="gap-1 font-normal">
+          <Tag className="size-3" aria-hidden />
+          {displayTheme(theme)}
+        </Badge>
+      ))}
       {entry.links.map((link) => (
         <Badge key={link.target_id} variant="secondary" className="font-normal">
           {link.label ?? link.target_id}
@@ -145,18 +193,30 @@ function JournalEntryDialog({
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [themes, setThemes] = useState<string[]>([]);
 
   useEffect(() => {
     // Reset the form only when a different entry opens — not on every keystroke.
     setEditing(false);
     setTitle(entry?.title ?? "");
     setBody(entry?.body ?? "");
+    setThemes(entry?.themes ?? []);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entry?.id]);
 
+  const editSuggestions = suggestThemes(`${title}\n${body}`, {
+    history: themeHistory(db.reflections).map((h) => h.theme),
+    applied: themes,
+  });
+
   function saveEdit() {
     if (!entry || !body.trim()) return;
-    updateReflection({ ...entry, title: title.trim() || undefined, body: body.trim() });
+    updateReflection({
+      ...entry,
+      title: title.trim() || undefined,
+      body: body.trim(),
+      themes: themes.length > 0 ? themes : undefined,
+    });
     setEditing(false);
   }
 
@@ -212,6 +272,12 @@ function JournalEntryDialog({
                   className="font-display"
                 />
                 <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={6} />
+                <ThemeEditor
+                  value={themes}
+                  onChange={setThemes}
+                  suggestions={editSuggestions}
+                  historyThemes={themeHistory(db.reflections).map((h) => h.theme)}
+                />
                 <div className="flex justify-end gap-2">
                   <Button variant="ghost" onClick={() => setEditing(false)}>
                     Cancel
@@ -262,6 +328,17 @@ function ReflectionsPage() {
     return sortAsc ? cmp : -cmp;
   });
 
+  const [groupBy, setGroupBy] = useState<GroupBy>("date");
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const groups = groupEntries(entries, groupBy, db);
+  const toggleGroup = (key: string) =>
+    setCollapsedGroups((s) => {
+      const next = new Set(s);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+
   const [openIds, setOpenIds] = useState<Set<string>>(new Set());
   const [detailId, setDetailId] = useState<string | null>(null);
   const detailEntry = entries.find((e) => e.id === detailId);
@@ -281,50 +358,74 @@ function ReflectionsPage() {
         <ReflectionComposer linkables={linkables} prefillLinkId={prefillLinkId ?? null} />
 
         <section>
-          <div className="mb-2 flex items-center justify-between gap-3">
-            <p className="eyebrow">Journal</p>
+          <div className="mb-2 space-y-2">
+            <div className="flex items-center justify-between gap-3">
+              <p className="eyebrow">Journal</p>
+              {entries.length > 0 ? (
+                <div className="flex items-center gap-0.5">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="size-8 text-muted-foreground hover:text-foreground"
+                    onClick={() => setSortAsc((v) => !v)}
+                    aria-label={sortAsc ? "Sort newest first" : "Sort oldest first"}
+                    title={
+                      sortAsc
+                        ? "Oldest first — tap for newest first"
+                        : "Newest first — tap for oldest first"
+                    }
+                  >
+                    {sortAsc ? (
+                      <ArrowUpNarrowWide className="size-4" aria-hidden />
+                    ) : (
+                      <ArrowDownWideNarrow className="size-4" aria-hidden />
+                    )}
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="size-8 text-muted-foreground hover:text-foreground"
+                    onClick={() => setOpenIds(new Set(entries.map((e) => e.id)))}
+                    disabled={allOpen}
+                    aria-label="Expand all"
+                    title="Expand all"
+                  >
+                    <ChevronsUpDown className="size-4" aria-hidden />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="size-8 text-muted-foreground hover:text-foreground"
+                    onClick={() => setOpenIds(new Set())}
+                    disabled={noneOpen}
+                    aria-label="Collapse all"
+                    title="Collapse all"
+                  >
+                    <ChevronsDownUp className="size-4" aria-hidden />
+                  </Button>
+                </div>
+              ) : null}
+            </div>
             {entries.length > 0 ? (
-              <div className="flex items-center gap-0.5">
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="size-8 text-muted-foreground hover:text-foreground"
-                  onClick={() => setSortAsc((v) => !v)}
-                  aria-label={sortAsc ? "Sort newest first" : "Sort oldest first"}
-                  title={
-                    sortAsc
-                      ? "Oldest first — tap for newest first"
-                      : "Newest first — tap for oldest first"
-                  }
-                >
-                  {sortAsc ? (
-                    <ArrowUpNarrowWide className="size-4" aria-hidden />
-                  ) : (
-                    <ArrowDownWideNarrow className="size-4" aria-hidden />
-                  )}
-                </Button>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="size-8 text-muted-foreground hover:text-foreground"
-                  onClick={() => setOpenIds(new Set(entries.map((e) => e.id)))}
-                  disabled={allOpen}
-                  aria-label="Expand all"
-                  title="Expand all"
-                >
-                  <ChevronsUpDown className="size-4" aria-hidden />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="size-8 text-muted-foreground hover:text-foreground"
-                  onClick={() => setOpenIds(new Set())}
-                  disabled={noneOpen}
-                  aria-label="Collapse all"
-                  title="Collapse all"
-                >
-                  <ChevronsDownUp className="size-4" aria-hidden />
-                </Button>
+              <div className="flex items-center gap-1">
+                <span className="mr-1 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                  Group by
+                </span>
+                {(["date", "theme", "source"] as GroupBy[]).map((g) => (
+                  <button
+                    key={g}
+                    type="button"
+                    onClick={() => setGroupBy(g)}
+                    aria-pressed={groupBy === g}
+                    className={`rounded-full px-2.5 py-1 text-xs capitalize transition-colors ${
+                      groupBy === g
+                        ? "bg-secondary text-foreground"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {g}
+                  </button>
+                ))}
               </div>
             ) : null}
           </div>
@@ -332,7 +433,7 @@ function ReflectionsPage() {
             <p className="text-sm text-muted-foreground">
               Nothing yet — your saved reflections will appear here, newest first.
             </p>
-          ) : (
+          ) : groupBy === "date" ? (
             <ul className="divide-y divide-border/70 overflow-hidden rounded-xl border border-border">
               {entries.map((entry) => (
                 <JournalRow
@@ -344,6 +445,44 @@ function ReflectionsPage() {
                 />
               ))}
             </ul>
+          ) : (
+            <div className="space-y-3">
+              {groups.map((group) => {
+                const collapsed = collapsedGroups.has(group.key);
+                return (
+                  <div key={group.key}>
+                    <button
+                      type="button"
+                      onClick={() => toggleGroup(group.key)}
+                      className="mb-1 flex w-full items-center gap-1.5 text-left"
+                      aria-expanded={!collapsed}
+                    >
+                      <ChevronDown
+                        className={`size-3.5 text-muted-foreground transition-transform ${
+                          collapsed ? "-rotate-90" : ""
+                        }`}
+                        aria-hidden
+                      />
+                      <span className="text-sm font-medium text-foreground">{group.key}</span>
+                      <span className="text-xs text-muted-foreground">{group.entries.length}</span>
+                    </button>
+                    {!collapsed ? (
+                      <ul className="divide-y divide-border/70 overflow-hidden rounded-xl border border-border">
+                        {group.entries.map((entry) => (
+                          <JournalRow
+                            key={`${group.key}:${entry.id}`}
+                            entry={entry}
+                            open={openIds.has(entry.id)}
+                            onToggle={() => toggle(entry.id)}
+                            onOpen={() => setDetailId(entry.id)}
+                          />
+                        ))}
+                      </ul>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
           )}
         </section>
       </div>

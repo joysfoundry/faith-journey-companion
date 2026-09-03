@@ -28,6 +28,15 @@ function fallbackLabel(link: ReflectionLink): string {
   return link.label?.trim() || "Linked source";
 }
 
+/** Human-readable host for a URL detail line ("bible.usccb.org"); the raw url on parse failure. */
+function hostOf(url: string): string {
+  try {
+    return new URL(url).host.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
+}
+
 /**
  * Resolve one reflection link into displayable inspiration. Pure over `db` — for a
  * `passage` it reads the link's own `excerpt`; for entities it looks up the store.
@@ -42,6 +51,15 @@ export function resolveInspiration(link: ReflectionLink, db: Database): Resolved
         detail: "Pasted passage",
         ...(link.excerpt?.trim() ? { text: link.excerpt.trim() } : {}),
       };
+
+    case "link": {
+      const url = link.url?.trim();
+      return {
+        link,
+        label: link.label?.trim() || url || "Link",
+        ...(url ? { detail: hostOf(url), href: url } : {}),
+      };
+    }
 
     case "learning": {
       const item = db.knowledge_items.find((k) => k.id === link.target_id);

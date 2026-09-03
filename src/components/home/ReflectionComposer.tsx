@@ -1,7 +1,8 @@
-import { BookOpen, Camera, Check, Link2, MessagesSquare, X } from "lucide-react";
+import { BookOpen, Camera, Check, Globe, Link2, MessagesSquare, X } from "lucide-react";
 import { forwardRef, useEffect, useMemo, useState } from "react";
 
 import { InspirationPanel } from "@/components/reflections/InspirationPanel";
+import { ThemeEditor } from "@/components/reflections/ThemeEditor";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { LinkableItem } from "@/domain/placeholderData";
 import { newId } from "@/lib/prayer/compiler";
 import { useApp } from "@/lib/prayer/store";
+import { suggestThemes, themeHistory } from "@/lib/prayer/themes";
 import type { ReflectionLink, ReflectionLinkTarget } from "@/lib/prayer/types";
 
 interface Props {
@@ -71,11 +73,16 @@ export function ReflectionComposer({ linkables, prefillLinkId }: Props) {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [mode, setMode] = useState<"written" | "open_dialogue">("written");
+  const [themes, setThemes] = useState<string[]>([]);
   const [linked, setLinked] = useState<string[]>([]);
-  const [passages, setPassages] = useState<ReflectionLink[]>([]);
+  // Non-entity sources the user attaches directly: pasted `passage`s and web `link`s.
+  const [manualLinks, setManualLinks] = useState<ReflectionLink[]>([]);
   const [passageText, setPassageText] = useState("");
   const [passageLabel, setPassageLabel] = useState("");
   const [passageOpen, setPassageOpen] = useState(false);
+  const [linkUrl, setLinkUrl] = useState("");
+  const [linkLabel, setLinkLabel] = useState("");
+  const [linkOpen, setLinkOpen] = useState(false);
 
   useEffect(() => {
     if (!prefillLinkId) return;
@@ -101,16 +108,27 @@ export function ReflectionComposer({ linkables, prefillLinkId }: Props) {
     });
   }
 
-  /** Everything that inspired the entry: linked entities + pasted passages. */
+  /** Everything that inspired the entry: linked entities + pasted passages + web links. */
   const allLinks = useMemo(
-    () => [...entityLinks(), ...passages],
+    () => [...entityLinks(), ...manualLinks],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [linked, passages, linkables],
+    [linked, manualLinks, linkables],
+  );
+
+  // Theme suggestions: contextual to what's written, personalized by prior tags. No AI.
+  const history = useMemo(() => themeHistory(db.reflections), [db.reflections]);
+  const suggestions = useMemo(
+    () =>
+      suggestThemes(`${title}\n${body}`, {
+        history: history.map((h) => h.theme),
+        applied: themes,
+      }),
+    [title, body, themes, history],
   );
 
   function addPassage() {
     if (!passageText.trim()) return;
-    setPassages((prev) => [
+    setManualLinks((prev) => [
       ...prev,
       {
         target_type: "passage",
@@ -124,9 +142,41 @@ export function ReflectionComposer({ linkables, prefillLinkId }: Props) {
     setPassageOpen(false);
   }
 
-  function removePassage(id: string) {
-    setPassages((prev) => prev.filter((p) => p.target_id !== id));
+  /** Prepend https:// when the user omits a scheme, so the URL opens out correctly. */
+  function normalizeUrl(raw: string): string | null {
+    const trimmed = raw.trim();
+    if (!trimmed) return null;
+    const withScheme = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+    try {
+      return new URL(withScheme).toString();
+    } catch {
+      return null;
+    }
   }
+
+  function addWebLink() {
+    const url = normalizeUrl(linkUrl);
+    if (!url) return;
+    setManualLinks((prev) => [
+      ...prev,
+      {
+        target_type: "link",
+        target_id: newId("link"),
+        label: linkLabel.trim() || undefined,
+        url,
+      },
+    ]);
+    setLinkUrl("");
+    setLinkLabel("");
+    setLinkOpen(false);
+  }
+
+  function removeManualLink(id: string) {
+    setManualLinks((prev) => prev.filter((p) => p.target_id !== id));
+  }
+
+  const hasPassage = manualLinks.some((l) => l.target_type === "passage");
+  const hasWebLink = manualLinks.some((l) => l.target_type === "link");
 
   function save() {
     if (!body.trim()) return;
@@ -136,13 +186,15 @@ export function ReflectionComposer({ linkables, prefillLinkId }: Props) {
       body: body.trim(),
       mode,
       links: allLinks,
+      ...(themes.length > 0 ? { themes } : {}),
       photo_count: 0,
       created_at: new Date().toISOString(),
     });
     setTitle("");
     setBody("");
+    setThemes([]);
     setLinked([]);
-    setPassages([]);
+    setManualLinks([]);
     setMode("written");
   }
 
@@ -163,7 +215,14 @@ export function ReflectionComposer({ linkables, prefillLinkId }: Props) {
           rows={4}
         />
 
-        {(linked.length > 0 || passages.length > 0) && (
+        <ThemeEditor
+          value={themes}
+          onChange={setThemes}
+          suggestions={suggestions}
+          historyThemes={history.map((h) => h.theme)}
+        />
+
+        {(linked.length > 0 || manualLinks.length > 0) && (
           <div className="flex flex-wrap gap-1.5">
             {linked.map((id) => (
               <Badge key={id} variant="secondary" className="gap-1 pr-1.5 font-normal">
@@ -178,20 +237,24 @@ export function ReflectionComposer({ linkables, prefillLinkId }: Props) {
                 </button>
               </Badge>
             ))}
-            {passages.map((p) => (
+            {manualLinks.map((l) => (
               <Badge
-                key={p.target_id}
+                key={l.target_id}
                 variant="outline"
                 className="gap-1 pr-1.5 font-normal"
-                title={p.excerpt}
+                title={l.target_type === "passage" ? l.excerpt : l.url}
               >
-                <BookOpen className="size-3" aria-hidden />
-                {p.label}
+                {l.target_type === "passage" ? (
+                  <BookOpen className="size-3" aria-hidden />
+                ) : (
+                  <Globe className="size-3" aria-hidden />
+                )}
+                {l.label ?? (l.target_type === "passage" ? "Passage" : "Link")}
                 <button
                   type="button"
-                  onClick={() => removePassage(p.target_id)}
+                  onClick={() => removeManualLink(l.target_id)}
                   className="ml-0.5 rounded-full p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-                  aria-label={`Remove ${p.label ?? "passage"}`}
+                  aria-label={`Remove ${l.label ?? l.target_type}`}
                 >
                   <X className="size-3" aria-hidden />
                 </button>
@@ -245,7 +308,7 @@ export function ReflectionComposer({ linkables, prefillLinkId }: Props) {
             <PopoverTrigger asChild>
               <IconBtn
                 label="Add a passage"
-                active={passages.length > 0}
+                active={hasPassage}
                 title="Paste a book or quote passage"
               >
                 <BookOpen className="size-4" aria-hidden />
@@ -270,6 +333,48 @@ export function ReflectionComposer({ linkables, prefillLinkId }: Props) {
               <div className="flex justify-end">
                 <Button type="button" size="sm" onClick={addPassage} disabled={!passageText.trim()}>
                   Add passage
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          <Popover open={linkOpen} onOpenChange={setLinkOpen}>
+            <PopoverTrigger asChild>
+              <IconBtn label="Add a link" active={hasWebLink} title="Attach a related web link">
+                <Globe className="size-4" aria-hidden />
+              </IconBtn>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-80 space-y-2 p-3">
+              <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                Related link
+              </p>
+              <Input
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addWebLink();
+                  }
+                }}
+                placeholder="Paste a URL — e.g. bible.usccb.org/…"
+                className="h-8 text-sm"
+                inputMode="url"
+              />
+              <Input
+                value={linkLabel}
+                onChange={(e) => setLinkLabel(e.target.value)}
+                placeholder="Label (optional) — e.g. Today's Gospel"
+                className="h-8 text-sm"
+              />
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={addWebLink}
+                  disabled={!normalizeUrl(linkUrl)}
+                >
+                  Add link
                 </Button>
               </div>
             </PopoverContent>
