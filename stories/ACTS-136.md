@@ -68,6 +68,10 @@ Clicking a Home "Reflect" icon calls `openJournal(linkId)` ([`index.tsx:345`](..
 4. **Decide** the accumulation + entry-point-inconsistency behaviors (unify, or document
    as intended). At minimum, both composers should read/write the same draft so behavior
    is consistent regardless of entry point.
+5. **Source parity with Home** (JC, 2026-09-02): the `/reflections` "Link an item" picker
+   should list *every* source you can tag from Home (all sessions, programs/plans, Mass
+   entries), not just the current subset. (Manual web-URL links are a different capability
+   — tracked in [ACTS-135](ACTS-135.md).)
 
 ## Non-goals
 - Themes/tagging + group-by views (ACTS-135); voice/OCR (ACTS-134); the inspiration
