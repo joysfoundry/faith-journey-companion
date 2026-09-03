@@ -17,7 +17,9 @@ sessions: 0
 As a person who prays Lectio Divina, I want each **Lectio sitting** to read as **one**
 journal item — its four movements (Read / Reflect / Respond / Rest) folded together —
 instead of four loose entries scattered through the journal, so a day's Lectio is one
-reflective unit I can revisit whole.
+reflective unit I can revisit whole. And since Lectio sessions no longer appear in the
+free-write link picker (ACTS-138), the **Journal is now where I see and resume my Lectio
+sittings** — including one I started but haven't finished.
 
 ## Why — the gap
 A Lectio session (ACTS-102) writes **one `Reflection` per movement**, each dual-linked to
@@ -40,6 +42,10 @@ So "Source" is the wrong axis for this. The natural unit is the **session instan
 - Movement order should follow the session's step order, not `created_at`, so Read → Reflect
   → Respond → Rest always reads top-to-bottom.
 - Non-Lectio entries are unaffected; a session with a single reflection still reads fine.
+- **Resume affordance (JC, 2026-09-03):** the sitting group links back to its session
+  (`/session/$sessionId`) so an **in-progress** Lectio can be resumed from the Journal —
+  this is the home for seeing/resuming sittings now that the link picker excludes them
+  (ACTS-138). Interacts with ACTS-141 (don't list an *empty* sitting with no journaling).
 
 ## Open questions (flag before building)
 - New group-by option **vs.** always-fold Lectio sittings inside the existing Date view.
@@ -51,6 +57,7 @@ So "Source" is the wrong axis for this. The natural unit is the **session instan
 - [ ] No entry is double-counted (the Source double-push problem does not recur here).
 - [ ] Multiple sittings are distinct groups (keyed by session id, not shared title).
 - [ ] Non-Lectio reflections and existing Date / Theme / Source groupings still work.
+- [ ] A sitting group offers a way to reopen/resume its session (`/session/$sessionId`).
 - [ ] No data-model change (uses the existing `prayer_session` / `session_item` links); no
       `STORAGE_KEY` bump.
 

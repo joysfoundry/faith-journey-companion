@@ -45,6 +45,13 @@ if (session) navigate({ to: "/session/$sessionId", params: { sessionId: session.
 - Home "Reflection" section card (alongside the free-write composer).
 - `/reflections` page header (alongside the composer).
 
+**Follow-on from review (JC, 2026-09-03):** a launched Lectio creates a session, which
+was then appearing in the free-write "Link an item" picker under Prayer & devotion. A
+Lectio is a *container* of journaling, not an inspiration to tag a separate note with, so
+Lectio sessions/plans are now **excluded** from `buildReflectionLinkables`
+([`linkables.ts`](../src/lib/prayer/linkables.ts)). Seeing/resuming Lectio sittings is the
+Journal's job → ACTS-140; the abandoned-empty-session litter this exposed → ACTS-141.
+
 **Open questions for JC (flag before building):**
 - Label/copy for the CTA (e.g. "Reflect with Scripture (Lectio Divina)").
 - Should the current `?link=<id>` provenance carry into the launched Lectio session?
@@ -58,6 +65,8 @@ if (session) navigate({ to: "/session/$sessionId", params: { sessionId: session.
 - [ ] No new `TemplateItemKind` / `SessionItemKind`, no `STORAGE_KEY` bump, no schema change.
 - [ ] Journaling from the launched Lectio still lands in the Reflection journal (existing
       ACTS-102 behavior, verified end-to-end).
+- [x] Lectio sessions/plans excluded from the reflection "Link an item" picker
+      (`buildReflectionLinkables`) — browser-verified, `tsc`/`eslint` clean.
 - [ ] Final copy/placement confirmed with JC.
 
 ## Tests
