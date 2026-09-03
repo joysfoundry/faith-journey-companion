@@ -2,13 +2,13 @@
 id: ACTS-137
 title: Item-level "Pin to Home" for Vessels (no favorited URL required)
 spine:
-status: To Do
+status: In Progress
 origin: human-directed
 approved_by: JC
 priority: high
 depends_on: []
 relates_to: [ACTS-136, ACTS-134, ACTS-130, ACTS-129]
-started_at: null
+started_at: 2026-09-03T00:00:00-0700
 updated: 2026-09-03T00:00:00-0700
 latest_handoff: null
 sessions: 0
@@ -53,6 +53,26 @@ links** — favorited voice channels and favorited content links
    favorited shows once.
 5. **Decide** the interaction between an item pin and its link favorites (independent
    toggles vs. item-pin implies "show on Home"). Document the choice.
+
+## Decisions (item 5) + implementation log
+_Session 01 (2026-09-03). Confirmed with JC before coding._
+- **Item pin ↔ link favorites = independent toggles.** Pinning the item and starring a
+  link are separate. Home merges both sets **de-duped**: if an item already contributes a
+  favorited-link row, its item-pin is suppressed so it shows once.
+- **URL-less pin row target:** opens the item **detail page** when the item has no link at
+  all; if it has a link, the row opens its `primaryUrl` (the first/favorited link).
+- **Built:**
+  - `KnowledgeItem.pinned?: boolean` (additive, **no `STORAGE_KEY` bump**) +
+    `toggleItemPinned(id)` mutation, store interface, provider wiring.
+  - `PinnedLink` extended (`url?`/`platform?` optional, added `subtitle?`); `pinnedLinks`
+    now appends item pins (de-duped, status-first + A–Z preserved across the merged set).
+  - `PinnedLinkRow` renders an internal `<Link>` to the detail page for URL-less pins.
+  - Item-level pin control: a `Pin` icon-button in the Library `ContentRow` (both the
+    quote and standard rows) and a "Pin to Home" toggle in the knowledge detail VIEW.
+- **Verified:** `tsc --noEmit` clean; ESLint clean; a focused unit check of `pinnedLinks`
+  (de-dupe of pinned + link-favorited, URL-less → detail, primaryUrl fallback, exclusion of
+  unpinned, status-first + A–Z order) — all pass. **Browser/E2E pending:** the preview
+  browser was permission-blocked this session, so the on-screen flow is unverified.
 
 ## Non-goals
 - Reflection composer / draft work (ACTS-136, done).
