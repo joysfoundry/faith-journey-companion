@@ -36,8 +36,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { todaysWord, type LinkableItem } from "@/domain/placeholderData";
+import { type LinkableItem } from "@/domain/placeholderData";
 import { getLiturgicalDay, type LiturgicalDay } from "@/lib/liturgical/calendar";
+import { buildReflectionLinkables } from "@/lib/prayer/linkables";
 import {
   LINK_PLATFORM_LABELS,
   SECTION_LABEL,
@@ -389,19 +390,10 @@ function Index() {
     if (session) navigate({ to: "/session/$sessionId", params: { sessionId: session.id } });
   }
 
-  const linkables: LinkableItem[] = [
-    { id: daily?.id ?? "rosary", label: dailySubtitle, group: "Prayer & devotion" },
-    // The Continue / Today / Done session rows, so a reflection prefilled from
-    // one of their reflect icons resolves to a readable label.
-    ...[...continueList, ...doneList].map((r) => ({
-      id: r.sessionId,
-      label: r.title,
-      group: "Prayer & devotion",
-    })),
-    ...todayList.map((r) => ({ id: r.planId, label: r.title, group: "Prayer & devotion" })),
-    { id: todaysWord.id, label: litDay ? litDay.title : "Daily Readings", group: "Word" },
-    ...db.knowledge_items.map((k) => ({ id: k.id, label: k.title, group: "Knowledge" })),
-  ];
+  // Shared with the /reflections composer so the two pickers never drift (ACTS-136).
+  const linkables: LinkableItem[] = buildReflectionLinkables(db, {
+    dailyReadingLabel: litDay?.title,
+  });
 
   // Home Knowledge card: the links you've pinned — favorited Voice channels and
   // Content links. Curated by the star, not auto-surfaced.

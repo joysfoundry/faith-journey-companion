@@ -30,6 +30,7 @@ const GROUP_TARGET: Record<string, ReflectionLinkTarget> = {
   "Prayer & devotion": "prayer_session",
   Word: "daily_reading",
   Learn: "learning",
+  Mass: "mass",
 };
 
 /**

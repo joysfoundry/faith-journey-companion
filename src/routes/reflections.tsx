@@ -28,8 +28,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { todaysWord, type LinkableItem } from "@/domain/placeholderData";
-import { defaultContext, resolveMysterySet, todayISO } from "@/lib/prayer/compiler";
+import { type LinkableItem } from "@/domain/placeholderData";
+import { todayISO } from "@/lib/prayer/compiler";
+import { getLiturgicalDay, type LiturgicalDay } from "@/lib/liturgical/calendar";
+import { buildReflectionLinkables } from "@/lib/prayer/linkables";
 import { resolveInspiration } from "@/lib/prayer/inspiration";
 import { useApp } from "@/lib/prayer/store";
 import { displayTheme, suggestThemes, themeHistory } from "@/lib/prayer/themes";
@@ -304,22 +306,17 @@ function JournalEntryDialog({
 function ReflectionsPage() {
   const { db } = useApp();
   const { link: prefillLinkId } = Route.useSearch();
-  const today = todayISO();
-  const setId = resolveMysterySet(db, defaultContext({ date: today }));
-  const setName = db.mystery_sets.find((s) => s.id === setId)?.name ?? "Mysteries";
-  const rosary = db.templates.find((t) => t.id === "tpl-rosary") ?? db.templates[0];
 
-  const recentSessions = [...db.sessions]
-    .sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""))
-    .slice(0, 5)
-    .map((s) => ({ id: s.id, label: s.title, group: "Prayer & devotion" }));
+  // Same liturgical-day label as Home (computed client-side to dodge an
+  // SSR/timezone hydration mismatch), so the daily-readings tag reads the same
+  // wherever the reflection is started.
+  const [litDay, setLitDay] = useState<LiturgicalDay | null>(null);
+  useEffect(() => setLitDay(getLiturgicalDay(todayISO())), []);
 
-  const linkables: LinkableItem[] = [
-    ...recentSessions,
-    { id: rosary?.id ?? "rosary", label: `Daily Rosary · ${setName}`, group: "Prayer & devotion" },
-    { id: todaysWord.id, label: "Daily Readings", group: "Word" },
-    ...db.knowledge_items.map((k) => ({ id: k.id, label: k.title, group: "Knowledge" })),
-  ];
+  // The one shared builder, identical to Home's picker (ACTS-136 source parity).
+  const linkables: LinkableItem[] = buildReflectionLinkables(db, {
+    dailyReadingLabel: litDay?.title,
+  });
 
   // Sort by date; newest-first by default, toggle to oldest-first.
   const [sortAsc, setSortAsc] = useState(false);
