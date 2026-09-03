@@ -13,7 +13,7 @@ import {
   Plus,
   Search,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { PrayerSearch } from "@/components/home/PrayerSearch";
 import { WordSection } from "@/components/home/WordSection";
@@ -37,6 +37,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { todaysWord, type LinkableItem } from "@/domain/placeholderData";
+import { getLiturgicalDay, type LiturgicalDay } from "@/lib/liturgical/calendar";
 import {
   LINK_PLATFORM_LABELS,
   SECTION_LABEL,
@@ -230,6 +231,12 @@ function Index() {
   const [journalLinkId, setJournalLinkId] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  // The liturgical day names today's readings (season + governing saint/feast).
+  // Computed client-side to match WordSection and dodge an SSR/timezone hydration
+  // mismatch — falls back to "Daily Readings" until it resolves post-mount, so a
+  // reflection tagged from the readings snapshots the specific day, not the label.
+  const [litDay, setLitDay] = useState<LiturgicalDay | null>(null);
+  useEffect(() => setLitDay(getLiturgicalDay(todayISO())), []);
 
   const setId = resolveMysterySet(db, defaultContext({ date: today }));
   const setName = db.mystery_sets.find((s) => s.id === setId)?.name ?? "Mysteries";
@@ -392,7 +399,7 @@ function Index() {
       group: "Prayer & devotion",
     })),
     ...todayList.map((r) => ({ id: r.planId, label: r.title, group: "Prayer & devotion" })),
-    { id: todaysWord.id, label: "Daily Readings", group: "Word" },
+    { id: todaysWord.id, label: litDay ? litDay.title : "Daily Readings", group: "Word" },
     ...db.knowledge_items.map((k) => ({ id: k.id, label: k.title, group: "Knowledge" })),
   ];
 

@@ -1,4 +1,4 @@
-import { BookOpen, Camera, Check, Globe, Link2, MessagesSquare, X } from "lucide-react";
+import { BookOpen, Camera, Check, Globe, Link2, MessagesSquare, Trash2, X } from "lucide-react";
 import { forwardRef, useEffect, useMemo, useState } from "react";
 
 import { InspirationPanel } from "@/components/reflections/InspirationPanel";
@@ -10,6 +10,12 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Textarea } from "@/components/ui/textarea";
 import type { LinkableItem } from "@/domain/placeholderData";
 import { newId } from "@/lib/prayer/compiler";
+import {
+  clearReflectionDraft,
+  hasDraftContent,
+  loadReflectionDraft,
+  saveReflectionDraft,
+} from "@/lib/prayer/reflectionDraft";
 import { useApp } from "@/lib/prayer/store";
 import { suggestThemes, themeHistory } from "@/lib/prayer/themes";
 import type { ReflectionLink, ReflectionLinkTarget } from "@/lib/prayer/types";
@@ -84,10 +90,37 @@ export function ReflectionComposer({ linkables, prefillLinkId }: Props) {
   const [linkLabel, setLinkLabel] = useState("");
   const [linkOpen, setLinkOpen] = useState(false);
 
+  // The shared draft is loaded post-mount (not in lazy init) so the empty SSR
+  // render and the client's first render match — reading localStorage during
+  // render would be a hydration mismatch. `hydrated` is STATE (not a ref) so the
+  // persist effect skips the empty first commit and can't clobber the stored
+  // draft before the loaded values land.
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => {
+    const draft = loadReflectionDraft();
+    if (draft) {
+      setTitle(draft.title);
+      setBody(draft.body);
+      setMode(draft.mode);
+      setThemes(draft.themes);
+      setLinked(draft.linked);
+      setManualLinks(draft.manualLinks);
+    }
+    setHydrated(true);
+  }, []);
+
+  // A "Reflect" icon pre-links its source; append it to whatever the draft holds.
   useEffect(() => {
     if (!prefillLinkId) return;
     setLinked((prev) => (prev.includes(prefillLinkId) ? prev : [...prev, prefillLinkId]));
   }, [prefillLinkId]);
+
+  // Persist every change so the in-progress entry survives navigating Home ↔
+  // Reflect. Skips the pre-hydration window; clears the buffer once it decays to empty.
+  useEffect(() => {
+    if (!hydrated) return;
+    saveReflectionDraft({ title, body, mode, themes, linked, manualLinks });
+  }, [hydrated, title, body, mode, themes, linked, manualLinks]);
 
   const groups = Array.from(new Set(linkables.map((l) => l.group)));
   const labelFor = (id: string) => linkables.find((l) => l.id === id)?.label ?? id;
@@ -178,6 +211,16 @@ export function ReflectionComposer({ linkables, prefillLinkId }: Props) {
   const hasPassage = manualLinks.some((l) => l.target_type === "passage");
   const hasWebLink = manualLinks.some((l) => l.target_type === "link");
 
+  /** Wipe every composer field back to blank. Callers also clear the draft. */
+  function resetComposer() {
+    setTitle("");
+    setBody("");
+    setThemes([]);
+    setLinked([]);
+    setManualLinks([]);
+    setMode("written");
+  }
+
   function save() {
     if (!body.trim()) return;
     addReflection({
@@ -190,13 +233,17 @@ export function ReflectionComposer({ linkables, prefillLinkId }: Props) {
       photo_count: 0,
       created_at: new Date().toISOString(),
     });
-    setTitle("");
-    setBody("");
-    setThemes([]);
-    setLinked([]);
-    setManualLinks([]);
-    setMode("written");
+    clearReflectionDraft();
+    resetComposer();
   }
+
+  /** Explicit discard — throw the in-progress draft away without saving. */
+  function discard() {
+    clearReflectionDraft();
+    resetComposer();
+  }
+
+  const draftHasContent = hasDraftContent({ title, body, themes, linked, manualLinks });
 
   return (
     <div className="divide-y divide-border/60">
@@ -388,7 +435,16 @@ export function ReflectionComposer({ linkables, prefillLinkId }: Props) {
             <MessagesSquare className="size-4" aria-hidden />
           </IconBtn>
 
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-1">
+            {draftHasContent ? (
+              <IconBtn
+                label="Discard draft"
+                onClick={discard}
+                title="Discard this in-progress draft"
+              >
+                <Trash2 className="size-4" aria-hidden />
+              </IconBtn>
+            ) : null}
             <Button
               type="button"
               size="icon"
