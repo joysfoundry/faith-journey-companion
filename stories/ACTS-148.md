@@ -2,15 +2,15 @@
 id: ACTS-148
 title: Oravia Marian design system + palette (mock in Claude Design → styles.css tokens)
 spine: ACTS-144
-status: In Progress
+status: Done
 origin: human-directed
 approved_by: JC
 depends_on: []
 relates_to: [ACTS-144, ACTS-90, ACTS-96]
 started_at: 2026-09-04T14:06:23-0700
-updated:    2026-09-04T14:06:23-0700
-latest_handoff: null
-sessions: 0
+updated:    2026-09-04T16:20:37-0700
+latest_handoff: ACTS-148/session-01.md
+sessions: 1
 ---
 
 ## Goal
@@ -184,6 +184,10 @@ This is **not** the Illuminated palette. That remains staged in `tokens.css` +
 `stories/ACTS-148/illuminated-app.patch`, unshipped by JC's call.
 
 Documented as its own card: `foundations/published-palette.html`.
+
+## Follow-ons
+- **[ACTS-150](ACTS-150.md)** — wire dark mode.
+- **[ACTS-151](ACTS-151.md)** — ship the Illuminated palette.
 
 ## Acceptance criteria
 - [x] Palette mocked (design-system project on claude.ai/design) and proven through **central
