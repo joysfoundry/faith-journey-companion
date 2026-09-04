@@ -77,13 +77,13 @@ export const Route = createFileRoute("/pray")({
     search["build"] === "1" || search["build"] === true ? { build: true } : {},
   head: () => ({
     meta: [
-      { title: "Pray Plan — ACTS" },
+      { title: "Pray Plan — Oravia" },
       {
         name: "description",
         content:
           "Build prayer sessions and see what's upcoming and completed — start from a devotion or from scratch, add prayers and petitions, set how you listen and when to pray it.",
       },
-      { property: "og:title", content: "Pray Plan — ACTS" },
+      { property: "og:title", content: "Pray Plan — Oravia" },
       {
         property: "og:description",
         content:

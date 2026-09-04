@@ -41,10 +41,8 @@ function GateShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm text-center">
-        <h1 className="font-serif text-4xl font-medium tracking-tight text-foreground">ACTS</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          A calm companion for daily prayer, devotions, and reflection.
-        </p>
+        <h1 className="font-serif text-4xl font-medium tracking-tight text-foreground">Oravia</h1>
+        <p className="mt-2 text-sm text-muted-foreground">Your devotional life, gathered.</p>
         <div className="mt-8">{children}</div>
         <p className="mt-8 text-xs text-muted-foreground/80">
           Private beta · no email or account needed · your entries stay in this browser.

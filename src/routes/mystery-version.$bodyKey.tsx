@@ -14,7 +14,7 @@ import type { MysteryContent, Source } from "@/lib/prayer/types";
 export const Route = createFileRoute("/mystery-version/$bodyKey")({
   head: () => ({
     meta: [
-      { title: "Mystery version — ACTS" },
+      { title: "Mystery version — Oravia" },
       { name: "description", content: "Author a version of the rosary mysteries." },
     ],
   }),

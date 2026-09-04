@@ -85,7 +85,7 @@ export function FollowAlongView({
         </div>
 
         <footer className="mt-12 text-center text-xs text-muted-foreground">
-          Shared from ACTS · read-only
+          Shared from Oravia · read-only
         </footer>
       </div>
     </main>

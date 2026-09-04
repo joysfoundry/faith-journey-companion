@@ -48,12 +48,12 @@ import { STORAGE_KEY, useApp } from "@/lib/prayer/store";
 export const Route = createFileRoute("/settings")({
   head: () => ({
     meta: [
-      { title: "Settings — ACTS" },
+      { title: "Settings — Oravia" },
       {
         name: "description",
         content: "Your daily devotion and the Bible app you read in.",
       },
-      { property: "og:title", content: "Settings — ACTS" },
+      { property: "og:title", content: "Settings — Oravia" },
       {
         property: "og:description",
         content: "Set your Bible app and daily devotion.",

@@ -38,12 +38,12 @@ const HOUR_LABEL: Record<PrayerHour, string> = {
 export const Route = createFileRoute("/template/$templateId")({
   head: () => ({
     meta: [
-      { title: "Devotion Builder — ACTS" },
+      { title: "Devotion Builder — Oravia" },
       {
         name: "description",
         content: "Build a devotion: add prayers, salutations, Scripture, mysteries, and more.",
       },
-      { property: "og:title", content: "Devotion Builder — ACTS" },
+      { property: "og:title", content: "Devotion Builder — Oravia" },
       {
         property: "og:description",
         content: "Devotions expand into full prayer sessions when you begin praying.",

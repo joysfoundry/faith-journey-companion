@@ -57,7 +57,7 @@ export const Route = createFileRoute("/formation")({
     search["add"] === "1" || search["add"] === true ? { add: true } : {},
   head: () => ({
     meta: [
-      { title: `${SECTION_LABEL} — ACTS` },
+      { title: `${SECTION_LABEL} — Oravia` },
       {
         name: "description",
         content: `The ${VOICE_LABEL.toLowerCase()} you follow and the content that forms you.`,

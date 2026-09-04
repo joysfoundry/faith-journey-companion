@@ -174,13 +174,13 @@ export const Route = createFileRoute("/reflections")({
     typeof search["link"] === "string" ? { link: search["link"] } : {},
   head: () => ({
     meta: [
-      { title: "Reflection — ACTS" },
+      { title: "Reflection — Oravia" },
       {
         name: "description",
         content:
           "Write reflections and link them to the prayer, reading, Mass, or book that prompted them.",
       },
-      { property: "og:title", content: "Reflection — ACTS" },
+      { property: "og:title", content: "Reflection — Oravia" },
       {
         property: "og:description",
         content: "Your journal — the connecting tissue across prayer, Word, and learning.",

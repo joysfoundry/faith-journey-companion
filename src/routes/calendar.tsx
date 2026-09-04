@@ -9,12 +9,12 @@ import { defaultContext, resolveMysterySet, todayISO } from "@/lib/prayer/compil
 export const Route = createFileRoute("/calendar")({
   head: () => ({
     meta: [
-      { title: "Prayer Calendar — ACTS" },
+      { title: "Prayer Calendar — Oravia" },
       {
         name: "description",
         content: "See the mysteries for any date and the sessions you have prayed.",
       },
-      { property: "og:title", content: "Prayer Calendar — ACTS" },
+      { property: "og:title", content: "Prayer Calendar — Oravia" },
       {
         property: "og:description",
         content: "Date-based mystery selection at a glance.",

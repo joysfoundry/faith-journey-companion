@@ -14,12 +14,12 @@ import type { SharePayload } from "@/lib/prayer/share";
 export const Route = createFileRoute("/follow/$shareId")({
   head: () => ({
     meta: [
-      { title: "Follow along — ACTS" },
+      { title: "Follow along — Oravia" },
       {
         name: "description",
         content: "Follow along with a shared prayer session — every prayer, in order.",
       },
-      { property: "og:title", content: "Follow along — ACTS" },
+      { property: "og:title", content: "Follow along — Oravia" },
       {
         property: "og:description",
         content: "A shared prayer session to pray along with — no app needed.",

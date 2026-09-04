@@ -80,17 +80,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { title: "ACTS" },
+      { title: "Oravia" },
       { name: "theme-color", content: "#f4f9ff" },
       { name: "mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "default" },
-      { name: "apple-mobile-web-app-title", content: "ACTS" },
+      { name: "apple-mobile-web-app-title", content: "Oravia" },
       {
         name: "description",
         content: "A calm companion for daily prayer, devotions, and reflection.",
       },
-      { property: "og:title", content: "ACTS" },
+      { property: "og:title", content: "Oravia" },
       {
         property: "og:description",
         content: "A calm companion for daily prayer, devotions, and reflection.",
