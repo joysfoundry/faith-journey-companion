@@ -84,6 +84,10 @@ label("Everything stays with you")
 para("Your prayers, reflections, and settings live on this device, in this browser — there is no account, no email, and nothing is sent to a server. That also means they do not sync across devices yet, and clearing your browser data (or Start over in Settings) will erase them.",
      gr(20), INK, 30, 30)
 
+label("A note on the name")
+para("Oravia comes from the Latin ora — “pray” — and via — “the way”: prayer, accompanying us along the way. It also opens with an O and closes with an A — Omega and Alpha, the End and the Beginning, an ancient name for Christ. We so often meet God at the end first — in the questions, in the place we actually are — and find He was the beginning all along. He holds both ends of your thread.",
+     gr(20), INK, 30, 30)
+
 rule(28)
 center("Keep your seeking for God.", gi(27), GOLD, 40, 26)
 tracked_center("TRY THE BETA", hv(13), GOLD, 3, 20, 10)
