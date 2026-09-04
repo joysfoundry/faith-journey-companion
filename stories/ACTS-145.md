@@ -2,12 +2,12 @@
 id: ACTS-145
 title: Home Vessels pins — show status and link together (books, podcasts, programs)
 spine:
-status: In Progress
+status: Done
 origin: human-typed
 depends_on: []
 relates_to: [ACTS-130, ACTS-137, ACTS-129]
 started_at: 2026-09-03T23:42:36-0700
-updated:    2026-09-04T11:14:19-0700
+updated:    2026-09-04T11:16:13-0700
 latest_handoff: ACTS-145/session-01.md
 sessions: 1
 ---

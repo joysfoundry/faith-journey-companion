@@ -1,9 +1,15 @@
 ---
 story: ACTS-145
 session: 01
-wrapped_at: 2026-09-04T11:14:19-0700
-status: In Progress
+wrapped_at: 2026-09-04T11:16:13-0700
+status: Done
+final: true
 ---
+
+> **Closed 2026-09-04 (final).** All acceptance criteria met and browser-verified
+> (desktop + mobile). JC opted to close without the optional live no-link-pin confirm
+> (that branch is covered by construction — see "Verified"). Local-only project: Done
+> locally, no tracker transition needed.
 
 ## What happened
 Built the **Home Vessels status eyebrow**. A content pin on Home's Vessels card now
