@@ -2,14 +2,14 @@
 id: ACTS-143
 title: About the app — menu entry (vision, beta purpose, "everything is local")
 spine:
-status: In Progress
+status: Done
 origin: human-typed
 depends_on: []
 relates_to: [ACTS-90, ACTS-82]
 started_at: 2026-09-03T23:42:36-0700
-updated:    2026-09-04T08:21:53-0700
-latest_handoff: null
-sessions: 0
+updated:    2026-09-04T10:39:26-0700
+latest_handoff: stories/ACTS-143/session-01.md
+sessions: 1
 ---
 
 ## Goal
