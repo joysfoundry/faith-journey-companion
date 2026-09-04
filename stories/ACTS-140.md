@@ -2,15 +2,15 @@
 id: ACTS-140
 title: Group the journal by Lectio sitting (fold a session's movements together)
 spine:
-status: In Progress
+status: Done
 origin: human-directed
 approved_by: JC
 depends_on: []
 relates_to: [ACTS-102, ACTS-103, ACTS-138, ACTS-139, ACTS-135]
 started_at: 2026-09-03T16:13:11-0700
-updated: 2026-09-03T16:13:11-0700
-latest_handoff: null
-sessions: 0
+updated: 2026-09-03T22:38:19-0700
+latest_handoff: stories/ACTS-140/session-01.md
+sessions: 1
 ---
 
 ## Goal
@@ -47,18 +47,19 @@ So "Source" is the wrong axis for this. The natural unit is the **session instan
   this is the home for seeing/resuming sittings now that the link picker excludes them
   (ACTS-138). Interacts with ACTS-141 (don't list an *empty* sitting with no journaling).
 
-## Open questions (flag before building)
-- New group-by option **vs.** always-fold Lectio sittings inside the existing Date view.
-- Group heading: "Lectio Divina · Sep 3" — include the chosen passage/source label if set?
-- What to show collapsed — first line of movement 1, or a movement-count summary?
+## Open questions — resolved (JC, 2026-09-03)
+- Grouping: **always-fold** (no new group-by pill), across Date + Theme + Source.
+- Heading: `Lectio Divina · <date>` with the passage citation when set; and when the
+  reader **pasted** the passage text, show it at the top of the expanded sitting.
+- Collapsed: a movement-count summary (`N movements`) — kept "N movements" over "N of M".
 
 ## Acceptance criteria
-- [ ] A Lectio sitting renders as one collapsible group; its movements are nested, in step order.
-- [ ] No entry is double-counted (the Source double-push problem does not recur here).
-- [ ] Multiple sittings are distinct groups (keyed by session id, not shared title).
-- [ ] Non-Lectio reflections and existing Date / Theme / Source groupings still work.
-- [ ] A sitting group offers a way to reopen/resume its session (`/session/$sessionId`).
-- [ ] No data-model change (uses the existing `prayer_session` / `session_item` links); no
+- [x] A Lectio sitting renders as one collapsible group; its movements are nested, in step order.
+- [x] No entry is double-counted (the Source double-push problem does not recur here).
+- [x] Multiple sittings are distinct groups (keyed by session id, not shared title).
+- [x] Non-Lectio reflections and existing Date / Theme / Source groupings still work.
+- [x] A sitting group offers a way to reopen/resume its session (`/session/$sessionId`).
+- [x] No data-model change (uses the existing `prayer_session` / `session_item` links); no
       `STORAGE_KEY` bump.
 
 ## Tests
