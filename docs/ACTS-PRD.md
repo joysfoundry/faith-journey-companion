@@ -37,7 +37,7 @@ The MVP — **ACTS** — is centered on prayer, especially Catholic devotional p
 
 # **1A. Why ACTS Captures More Than Prayer**
 
-A person's faith journey is shaped not only by prayer, but also by what they read, watch, hear, experience, question, and reflect on. ACTS captures Faith Learning alongside prayer and lived experience so users can make connections over time — turning what they encounter into Reflection, recognizing Insights, and carrying forward Wisdom that can support discernment and action.
+A person's faith journey is shaped not only by prayer, but also by what they read, watch, hear, experience, question, and reflect on. ACTS is *designed* to capture Faith Learning alongside prayer and lived experience so that, over time, users can make connections — turning what they encounter into Reflection, and eventually recognizing Insights and carrying forward Wisdom that can support discernment and action. *These later layers (Insights, Wisdom) are the vision's horizon, not the MVP — see the narrowing below.*
 
 Prayer remains the MVP wedge and the deepest interaction to solve first. Word, Faith Learning, and Reflection are included because they provide the surrounding context of the user's faith journey; they should remain intentionally lighter-weight than the Prayer experience in the MVP.
 
@@ -126,11 +126,15 @@ Home should feel like a personal daily faith space, not a feature dashboard.
 
 *The vision above is the whole horizon. This is the specific product I am building **first**, the problem it attacks, and why it's the right wedge.*
 
+**The vision is deliberately larger than what ACTS solves today.** Part 1 describes the full faith journey — all the way to Insights, Wisdom, and longitudinal discernment. ACTS attacks **one slice of it first: the customized-prayer problem.** The Insights/Wisdom/longitudinal-intelligence layers are the horizon we're building *toward*, not the MVP — so the specific problem below is intentionally scoped narrower than the vision, and the two should not be read as the same size.
+
 ## **What ACTS is**
 
 ACTS is a guided Catholic prayer companion — it turns devotions (the Rosary and its mysteries, Lectio Divina, litanies, novenas, chaplets, hymns) into structured, step-by-step **sessions you actually pray through**, anchored to the liturgical day and shareable so a group can follow along in real time.
 
 ## **The problem I'm solving**
+
+*The problem ACTS solves **today** is prayer composition — praying the way your family and your church actually pray, with Scripture woven in — not longitudinal insight. That larger problem is real, but it's later.*
 
 Catholic prayer practice is **scattered and effortful.** The "content" lives in a dozen places — a physical Rosary pamphlet, a hymnal, a Bible, a saint-of-the-day site, a novena PDF someone texted you — and holding a devotion together (which mystery today? which Scripture? whose turn to lead?) takes mental overhead that pulls you *out* of prayer. ACTS collapses that into one companion that **compiles a devotion into a guided flow** — the right day, the right mysteries and readings, reflection as a first-class step, a way to sing, a way to pray *together* via a follow link — so the tool disappears and the prayer stays.
 
