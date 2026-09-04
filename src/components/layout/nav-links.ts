@@ -3,6 +3,7 @@ import {
   Download,
   Heart,
   Home,
+  Info,
   Lightbulb,
   NotebookPen,
   Settings,
@@ -31,4 +32,5 @@ export const secondaryNavLinks = [
   { to: "/formation", label: SECTION_LABEL, icon: Lightbulb },
   { to: "/import", label: "Add prayers", icon: Download },
   { to: "/settings", label: "Settings", icon: Settings },
+  { to: "/about", label: "About", icon: Info },
 ] as const;
