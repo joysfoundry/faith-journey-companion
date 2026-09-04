@@ -2,15 +2,15 @@
 id: ACTS-139
 title: Reflections page — split into Write / Journal tabs
 spine:
-status: In Progress
+status: Done
 origin: human-directed
 approved_by: JC
 depends_on: []
 relates_to: [ACTS-103, ACTS-138, ACTS-140, ACTS-135, ACTS-136]
 started_at: 2026-09-03T15:20:18-0700
-updated: 2026-09-03T15:20:18-0700
-latest_handoff: null
-sessions: 0
+updated: 2026-09-03T22:40:35-0700
+latest_handoff: stories/ACTS-139/session-01.md
+sessions: 1
 ---
 
 ## Goal
@@ -41,12 +41,12 @@ blends two distinct mental modes: **capture** vs. **browse/revisit**.
 - Does the `showDraftStatus` "draft in progress" affordance move onto the Write tab header?
 
 ## Acceptance criteria
-- [ ] `/reflections` shows Write / Journal tabs; no new route added.
-- [ ] Write tab = composer (Lectio card + free-write); Journal tab = entries + group/sort.
-- [ ] `?link=<id>` opens on Write with the composer pre-linked (no regression to ACTS-129).
-- [ ] Group-by / sort / expand-collapse still work under the Journal tab.
-- [ ] Home reflection surface unchanged.
-- [ ] No data-model change, no `STORAGE_KEY` bump.
+- [x] `/reflections` shows Write / Journal tabs (shared shadcn `Tabs`); no new route added.
+- [x] Write tab = composer (Lectio card + free-write); Journal tab = entries + group/sort.
+- [x] `?link=<id>` opens on Write with the composer pre-linked (no regression to ACTS-129).
+- [x] Group-by / sort / expand-collapse still work under the Journal tab.
+- [x] Home reflection surface unchanged.
+- [x] No data-model change, no `STORAGE_KEY` bump.
 
 ## Tests
 _Planned — no runner wired yet (harness = ACTS-92); see
