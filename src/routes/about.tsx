@@ -110,6 +110,19 @@ function AboutPage() {
           </p>
         </section>
 
+        <section className="space-y-2">
+          <h2 className="font-display text-lg text-foreground">A note on the name</h2>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            Oravia comes from the Latin <span className="italic">ora</span> — &ldquo;pray&rdquo; —
+            and <span className="italic">via</span> — &ldquo;the way&rdquo;: prayer, accompanying
+            us along the way. It also opens with an <span className="text-foreground">O</span> and
+            closes with an <span className="text-foreground">A</span> — Omega and Alpha, the End
+            and the Beginning, an ancient name for Christ. We so often meet God at the end
+            first — in the questions, in the place we actually are — and find He was the beginning
+            all along. He holds both ends of your thread.
+          </p>
+        </section>
+
         <p className="pt-2 text-center font-display text-lg italic text-primary">
           Keep your seeking for God.
         </p>
