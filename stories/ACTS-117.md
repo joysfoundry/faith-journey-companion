@@ -35,40 +35,11 @@ checklist + JC's decisions live in [`docs/V8-CODE-GAP.md`](../docs/V8-CODE-GAP.m
 ## Open (deferred to JC, non-blocking)
 - Resource model (§25D): does Vessels need v8's resource fields (`app_store_url`, `access_model`, `best_for`) + external-app seeds (Hallow, Laudate…), or is the current Vessels model enough?
 
-## v4 PRD sync — deferred (the next continuation of this doc)
-**Hold until BOTH:** (1) the working tree is clean — another chat's in-flight work
-(ACTS-138…146, incl. `.counter`/`README.md`/`JIRA-BACKLOG.md`) is committed + pushed, and
-my `fe132e9` is pushed; (2) the **Oravia rebrand** (ACTS-144 — ACTS → Oravia + Marian
-palette) is **locked**, so v4 can carry the settled product name doc-wide.
-
-When both hold, run `/prd-sync` for **v4** and reconcile v3 against everything shipped
-since the v8 rebase: the **Reflection↔Lectio arc** (ACTS-138 Write/Journal tabs · ACTS-140
-journal grouped by sitting · ACTS-141 empty-session reaping · ACTS-142 themes filed),
-**About page** (ACTS-143), **Home Vessels status + link** (ACTS-145); apply the **Oravia
-rebrand** throughout; re-export the `.docx`. Promote this to its own story via `/start`
-once the tree is clean (filing now would collide with the other chat's dirty `.counter`).
-
-### Reference — the shipped About page (JC: "this sort of sums up this MVP")
-Anchor the v4 vision/problem framing to this copy. Verbatim:
-
-> **About — What this is, and why it's here**
->
-> *A daily place where prayer, Scripture, learning, reflection, and lived experience become part of a meaningful record of how I am trying to live my faith, discern God's will, and live my purpose.*
->
-> **The vision** — ACTS is a personal faith companion for the whole of your faith journey — helping you bring prayer, Scripture, learning, reflection, and lived experience into the rhythms and needs of everyday life. The heart of it is a question: How am I becoming the person God is calling me to be, and how am I living my purpose in alignment with God's will? It's meant to help you deepen your relationship with God — drawing on Scripture and the tradition of the Church — in a way that feels deeply personal and honors how you were formed. It may support discernment, but it never claims to know God's will for you; you discern the meaning.
->
-> **More than a prayer app** — A person's faith journey is shaped not only by prayer, but by what they read, watch, hear, experience, question, and reflect on. ACTS captures that faith learning alongside prayer and lived experience so that, over time, you can make connections — turning what you encounter into reflection, and eventually recognizing insights and carrying forward wisdom that can support discernment and action.
->
-> **One place for your journey** — Today the pieces of a faith life live in a dozen scattered places, on paper and across apps — a Rosary pamphlet, a hymnal, a Bible, a saint-of-the-day site, a family novena someone texted you. ACTS gathers them into one companion, compiling a devotion into a guided flow — the right day, the right mysteries and readings, reflection as a first-class step, a way to sing, and a follow link so others can pray along — so the tool disappears and the prayer stays.
->
-> It's a hub, not a walled garden. Link out to how you already pray — Hallow, Bible in a Year, a catechism program — keep your journaling right alongside your prayer, and gather the resources that inspire you and shape your learning, whether they're digital or on paper.
->
-> **Why a beta** — This is an early, private beta. It's still taking shape — things will change, and some may break. Your feedback is what shapes it. Thank you for praying with it while it grows.
->
-> **Everything stays with you** — Your prayers, reflections, and settings live on this device, in this browser — there's no account, no email, and nothing is sent to a server. That also means they don't sync across devices yet, and clearing your browser data (or Settings → Start over) will erase them.
-
-*Note: the About copy still says "ACTS" — under the Oravia rebrand (ACTS-144) the name
-carries into both the About page and the v4 PRD. Reconcile the name when the rebrand locks.*
+## v4 PRD sync → tracked as ACTS-147
+This story delivered **v3** (the v8 rebase) — the **anchor/base** for the next resync.
+The **v3 → v4 resync** (post-Oravia-rebrand, folding in the About-page framing + everything
+shipped since v8) is its own story: **[ACTS-147](ACTS-147.md)**, gated on the rebrand
+(ACTS-144). The About-page copy and the full v4 worklist live there.
 
 ## Tests
 - N/A — documentation. Verify by cross-checking every v8 §, the code, and the gap table.
