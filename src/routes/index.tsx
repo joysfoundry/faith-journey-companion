@@ -42,7 +42,10 @@ import { buildReflectionLinkables } from "@/lib/prayer/linkables";
 import {
   LINK_PLATFORM_LABELS,
   SECTION_LABEL,
+  hasStatus,
+  nextStatus,
   pinnedLinks,
+  statusLabel,
   type PinnedLink,
 } from "@/lib/prayer/knowledge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -60,7 +63,7 @@ import {
   resolveDailyRosaryUrl,
 } from "@/lib/prayer/apps";
 import { useApp } from "@/lib/prayer/store";
-import type { PrayerTemplate } from "@/lib/prayer/types";
+import type { KnowledgeStatus, PrayerTemplate } from "@/lib/prayer/types";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -88,12 +91,19 @@ export const Route = createFileRoute("/")({
 function PinnedLinkRow({
   pin,
   onReflect,
+  onSetStatus,
 }: {
   pin: PinnedLink;
   onReflect: (ownerId: string) => void;
+  onSetStatus: (ownerId: string, status: KnowledgeStatus) => void;
 }) {
   const subtitle =
     pin.subtitle || pin.label || (pin.platform ? LINK_PLATFORM_LABELS[pin.platform] : "");
+  // ACTS-145: content pins in a status-bearing category (book/program/video/podcast)
+  // carry a progress status. Show it as a compact, tappable eyebrow on the same line
+  // as the link so the row height doesn't grow; tapping cycles Not started → In
+  // progress → Finished → back around, in sync with Formation's ContentRow.
+  const showStatus = pin.category != null && hasStatus(pin.category);
   const body = (
     <span className="min-w-0">
       <span className="block truncate text-sm font-medium text-foreground">{pin.ownerName}</span>
@@ -123,6 +133,25 @@ function PinnedLinkRow({
             {body}
           </Link>
         )}
+        {/* Status eyebrow (ACTS-145) — current status only, tap to cycle; read-only
+            categories (article/post/quote) and voice pins get nothing here. */}
+        {showStatus ? (
+          <button
+            type="button"
+            onClick={() => onSetStatus(pin.ownerId, nextStatus(pin.status))}
+            aria-label={`Status: ${statusLabel(pin.status)}. Tap to change.`}
+            title={`${statusLabel(pin.status)} — tap to change`}
+            className={`shrink-0 whitespace-nowrap text-[10px] font-semibold uppercase tracking-wide transition-colors hover:text-foreground ${
+              pin.status === "finished"
+                ? "text-primary"
+                : pin.status === "in_progress"
+                  ? "text-foreground"
+                  : "text-muted-foreground"
+            }`}
+          >
+            {statusLabel(pin.status)}
+          </button>
+        ) : null}
         {/* Reflect on the work itself — only content vessels (books/programs) are
             reflection subjects; a voice/website channel is not. */}
         {pin.ownerType === "content" ? (
@@ -257,8 +286,14 @@ function ChangeDevotionDialog({
 }
 
 function Index() {
-  const { db, startSession, startBuiltSession, setDailyTemplate, logExternalDailyRosary } =
-    useApp();
+  const {
+    db,
+    startSession,
+    startBuiltSession,
+    setDailyTemplate,
+    logExternalDailyRosary,
+    setKnowledgeStatus,
+  } = useApp();
   const navigate = useNavigate();
   const today = todayISO();
   const [journalLinkId, setJournalLinkId] = useState<string | null>(null);
@@ -691,6 +726,7 @@ function Index() {
                 key={`${pin.ownerId}-${pin.url ?? "pin"}`}
                 pin={pin}
                 onReflect={openJournal}
+                onSetStatus={setKnowledgeStatus}
               />
             ))
           )}

@@ -327,6 +327,22 @@ export const STATUS_STEPS: { key: KnowledgeStatus; label: string }[] = [
   { key: "finished", label: "Finished" },
 ];
 
+/** The display label for a status key (falls back to "Not started"). */
+export function statusLabel(status: KnowledgeStatus | undefined): string {
+  return STATUS_STEPS.find((s) => s.key === status)?.label ?? "Not started";
+}
+
+/**
+ * The next status in the cycle, wrapping Finished → Not started (ACTS-145) — so a
+ * single tap on the Home eyebrow advances progress and can loop back to correct a
+ * mis-tap without a menu.
+ */
+export function nextStatus(current: KnowledgeStatus | undefined): KnowledgeStatus {
+  const i = STATUS_STEPS.findIndex((s) => s.key === current);
+  const next = STATUS_STEPS[(i + 1) % STATUS_STEPS.length];
+  return next ? next.key : "not_started";
+}
+
 /**
  * Heuristic auto-categorization of a piece of Content from a URL — no AI.
  * Returns a best-guess content category the user can override. (Deciding
@@ -427,6 +443,10 @@ export interface PinnedLink {
   label?: string | undefined;
   /** Subtitle override for the row (an item pin shows its category, e.g. "Book"). */
   subtitle?: string | undefined;
+  /** Content pins only: the owning item's category — drives the Home status eyebrow. */
+  category?: KnowledgeCategory | undefined;
+  /** Content pins only: the owning item's progress status (ACTS-145). */
+  status?: KnowledgeStatus | undefined;
 }
 
 /**
@@ -462,6 +482,8 @@ export function pinnedLinks(voices: Voice[], items: KnowledgeItem[]): PinnedLink
           platform: l.platform,
           url: l.url,
           label: l.label,
+          category: it.category,
+          status: it.status,
         });
     }
   }
@@ -483,6 +505,8 @@ export function pinnedLinks(voices: Voice[], items: KnowledgeItem[]): PinnedLink
       platform: url ? it.links?.[0]?.platform : undefined,
       url,
       subtitle: CATEGORY_LABELS[it.category],
+      category: it.category,
+      status: it.status,
     });
   }
   const categoryById = new Map(items.map((it) => [it.id, it.category]));
