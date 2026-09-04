@@ -1,0 +1,146 @@
+/*
+ * Oravia — Marian design system (ACTS-148).
+ *
+ * Drop-in replacement for the :root and .dark blocks in src/styles.css.
+ * Direction: ILLUMINATED (JC, 2026-09-04). The richer variant is kept as its own
+ * card in the design-system project and is NOT reflected here.
+ * All values oklch. The shift from the previous palette: paper moves from cool
+ * blue-grey to warm parchment, primary moves to hue 264, and gold becomes a token
+ * components actually use (as --accent, the ghost/hover fill, and as the section
+ * band) rather than a declared-but-unreferenced value.
+ *
+ * Contrast, sRGB, verified against the ILLUMINATED background (parchment):
+ *   foreground on background        14.77:1
+ *   primary on background            6.63:1
+ *   muted-foreground on background   6.46:1   (worst case: 4.68:1 on --accent)
+ *   burgundy on background           8.03:1
+ *   gold-ink on the section band     5.17:1
+ *   foreground on a gold fill        6.56:1
+ *   dark: every pair >= 5.3:1
+ *
+ * Gold is not an ink. --gold itself on any warm surface fails AA for body text,
+ * so it is a fill / rule / mark colour only. Where gold must carry WORDS, use
+ * --gold-ink, which is dark enough to clear AA on card, parchment and the
+ * section band alike.
+ */
+
+:root {
+  --radius: 0.75rem;
+
+  /* surfaces — Illuminated: the page sits on parchment, cards float above it */
+  --background: oklch(0.958 0.020 86);
+  --card: oklch(0.993 0.006 88);
+  --popover: oklch(0.993 0.006 88);
+  --parchment: oklch(0.928 0.028 84);
+  --muted: oklch(0.928 0.028 84);
+  --secondary: oklch(0.895 0.038 84);
+  --accent: oklch(0.855 0.055 84);
+
+  /* ink */
+  --foreground: oklch(0.238 0.065 264);
+  --card-foreground: oklch(0.238 0.065 264);
+  --popover-foreground: oklch(0.238 0.065 264);
+  --muted-foreground: oklch(0.455 0.036 264);
+  --secondary-foreground: oklch(0.375 0.115 264);
+  --accent-foreground: oklch(0.238 0.065 264);
+
+  /* brand */
+  --primary: oklch(0.455 0.135 264);
+  --primary-foreground: oklch(0.980 0.012 88);
+  --gold: oklch(0.715 0.088 82);
+  --gold-foreground: oklch(0.238 0.065 264);
+  --gold-ink: oklch(0.475 0.072 78);
+  --burgundy: oklch(0.420 0.125 16);
+  --burgundy-foreground: oklch(0.980 0.012 88);
+
+  /* feedback */
+  --destructive: oklch(0.530 0.170 27);
+  --destructive-foreground: oklch(0.980 0.012 88);
+
+  /* structure */
+  --border: oklch(0.885 0.018 80);
+  --input: oklch(0.885 0.018 80);
+  --ring: oklch(0.545 0.140 264);
+
+  /* charts — categorical, deliberately not brand colors */
+  --chart-1: oklch(0.545 0.140 264);
+  --chart-2: oklch(0.620 0.090 220);
+  --chart-3: oklch(0.715 0.088 82);
+  --chart-4: oklch(0.600 0.100 300);
+  --chart-5: oklch(0.580 0.090 175);
+
+  /* sidebar — mirrors the above, no independent decisions */
+  --sidebar: oklch(0.958 0.020 86);
+  --sidebar-foreground: oklch(0.238 0.065 264);
+  --sidebar-primary: oklch(0.455 0.135 264);
+  --sidebar-primary-foreground: oklch(0.980 0.012 88);
+  --sidebar-accent: oklch(0.855 0.055 84);
+  --sidebar-accent-foreground: oklch(0.238 0.065 264);
+  --sidebar-border: oklch(0.885 0.018 80);
+  --sidebar-ring: oklch(0.545 0.140 264);
+}
+
+.dark {
+  /* surfaces */
+  --background: oklch(0.175 0.030 264);
+  --card: oklch(0.215 0.034 264);
+  --popover: oklch(0.215 0.034 264);
+  --parchment: oklch(0.255 0.036 264);
+  --muted: oklch(0.255 0.036 264);
+  --secondary: oklch(0.285 0.030 264);
+  --accent: oklch(0.320 0.030 80);
+
+  /* ink */
+  --foreground: oklch(0.945 0.010 88);
+  --card-foreground: oklch(0.945 0.010 88);
+  --popover-foreground: oklch(0.945 0.010 88);
+  --muted-foreground: oklch(0.760 0.022 80);
+  --secondary-foreground: oklch(0.945 0.010 88);
+  --accent-foreground: oklch(0.945 0.010 88);
+
+  /* brand */
+  --primary: oklch(0.770 0.080 264);
+  --primary-foreground: oklch(0.175 0.030 264);
+  --gold: oklch(0.800 0.070 84);
+  --gold-foreground: oklch(0.175 0.030 264);
+  --gold-ink: oklch(0.800 0.070 84);
+  --burgundy: oklch(0.660 0.120 19);
+  --burgundy-foreground: oklch(0.175 0.030 264);
+
+  /* feedback */
+  --destructive: oklch(0.680 0.150 27);
+  --destructive-foreground: oklch(0.175 0.030 264);
+
+  /* structure */
+  --border: oklch(0.330 0.030 264);
+  --input: oklch(0.330 0.030 264);
+  --ring: oklch(0.770 0.080 264);
+
+  /* charts */
+  --chart-1: oklch(0.770 0.080 264);
+  --chart-2: oklch(0.700 0.080 220);
+  --chart-3: oklch(0.800 0.070 84);
+  --chart-4: oklch(0.680 0.100 300);
+  --chart-5: oklch(0.680 0.080 175);
+
+  /* sidebar */
+  --sidebar: oklch(0.255 0.036 264);
+  --sidebar-foreground: oklch(0.945 0.010 88);
+  --sidebar-primary: oklch(0.770 0.080 264);
+  --sidebar-primary-foreground: oklch(0.175 0.030 264);
+  --sidebar-accent: oklch(0.320 0.030 80);
+  --sidebar-accent-foreground: oklch(0.945 0.010 88);
+  --sidebar-border: oklch(0.330 0.030 264);
+  --sidebar-ring: oklch(0.770 0.080 264);
+}
+
+/*
+ * Two additions the @theme inline block needs, since --burgundy is new:
+ *   --color-burgundy: var(--burgundy);
+ *   --color-burgundy-foreground: var(--burgundy-foreground);
+ *
+ * And the devotional shadow re-tuned from hue 255 to 264:
+ *   --shadow-devotional:
+ *     0 1px 2px oklch(0.238 0.065 264 / 0.07),
+ *     0 10px 28px oklch(0.238 0.065 264 / 0.08);
+ */
