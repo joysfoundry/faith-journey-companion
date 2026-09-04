@@ -1,0 +1,24 @@
+<!--
+  Oravia mark — "the cross in the compass" (ACTS-148, variant 5a).
+
+  A gold ring that reads three ways at once: the O of Oravia, a compass bezel,
+  and — because the vertical axis runs long and the crossbar sits above centre —
+  a cross. The compass is what you see; the cross is what you notice a moment later.
+
+  Canvas is square (100×100) so it drops into favicons, app icons and avatars
+  without letterboxing. Two cuts:
+    · regular  — 24px and up
+    · small    — 16–20px (heavier ring, shorter arms, so it survives)
+
+  Geometry, regular cut:
+    ring     cx 50  cy 50  r 33  stroke 6
+    cross    N 20  S 80  E 71  W 29   crossbar y 42
+             vertical shaft half-width 4.2, horizontal half-height 3.6
+    The 60:42 vertical-to-horizontal ratio and the crossbar above centre are
+    load-bearing — equalise either and the cross stops reading (and it starts
+    looking like a crosshair).
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" fill="none" role="img" aria-label="Oravia">
+  <circle cx="50" cy="50" r="33" stroke="currentColor" stroke-width="6" fill="none"/>
+  <path d="M50 20 L54.2 38.4 L71 42 L54.2 45.6 L50 80 L45.8 45.6 L29 42 L45.8 38.4 Z" fill="currentColor"/>
+</svg>
