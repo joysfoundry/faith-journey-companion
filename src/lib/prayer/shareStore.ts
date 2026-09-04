@@ -8,10 +8,11 @@
  * link uses, so the guest view decodes it identically — the backend just trades a
  * ~10 KB URL for a tiny one.
  *
- * Access is public by design (anon insert + select) so a guest with no account can
- * create and hand off a link. See the migration for the RLS policies.
+ * The table is not reachable from the browser: reads and writes go through the
+ * server functions in share.functions.ts, which validate the slug and cap payload
+ * size. See the migration for the locked-down access model.
  */
-import { supabase } from "@/integrations/supabase/client";
+import { loadShare, saveShare } from "./share.functions";
 
 import { decodeShare, encodeShare, type SharePayload } from "./share";
 
@@ -66,21 +67,20 @@ export async function createShare(payload: SharePayload): Promise<string> {
   const compressed = encodeShare(payload);
   for (let attempt = 0; attempt < 3; attempt++) {
     const slug = buildSlug(payload);
-    const { error } = await supabase.from("shared_sessions").insert({ slug, payload: compressed });
-    if (!error) return slug;
-    // 23505 = unique_violation → try a fresh suffix; anything else is fatal.
-    if (error.code !== "23505") throw error;
+    const result = await saveShare({ data: { slug, payload: compressed } });
+    if (result.ok) return result.slug;
+    if (result.reason !== "collision") throw new Error("Could not create a share link");
   }
   throw new Error("Could not create a share link (slug collisions)");
 }
 
 /** Fetch a share by slug and decode it. Returns null when missing/garbled. */
 export async function fetchShare(slug: string): Promise<SharePayload | null> {
-  const { data, error } = await supabase
-    .from("shared_sessions")
-    .select("payload")
-    .eq("slug", slug)
-    .maybeSingle();
-  if (error || !data) return null;
-  return decodeShare(data.payload);
+  try {
+    const { payload } = await loadShare({ data: { slug } });
+    if (!payload) return null;
+    return decodeShare(payload);
+  } catch {
+    return null;
+  }
 }
