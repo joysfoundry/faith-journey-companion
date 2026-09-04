@@ -2,15 +2,15 @@
 id: ACTS-141
 title: Don't leave empty Lectio sessions behind when Begin is abandoned
 spine:
-status: To Do
+status: Done
 origin: human-directed
 approved_by: JC
 depends_on: []
 relates_to: [ACTS-138, ACTS-102, ACTS-140]
-started_at: 2026-09-03T12:33:01-0700
-updated: 2026-09-03T12:33:01-0700
-latest_handoff: null
-sessions: 0
+started_at: 2026-09-03T22:44:22-0700
+updated: 2026-09-03T23:09:38-0700
+latest_handoff: stories/ACTS-141/session-01.md
+sessions: 1
 ---
 
 ## Goal
@@ -41,12 +41,13 @@ Lean **B, Lectio-scoped** first unless JC wants the general fix. Confirm "empty"
 no `reflections` linked to the session **and** no completed steps.
 
 ## Acceptance criteria
-- [ ] Tapping Begin and leaving without journaling does not leave a persisted Lectio
-      session behind (or it is pruned promptly).
-- [ ] A Lectio with any journaling / progress is preserved and resumable (no data loss).
-- [ ] The reflection picker and the Journal sitting view (ACTS-140) never show an empty
+- [x] Tapping Begin and leaving without journaling does not leave a persisted Lectio
+      session behind (reaped on Close; load sweep backstops other exits).
+- [x] A Lectio with any journaling / progress is preserved and resumable (no data loss).
+- [x] The reflection picker and the Journal sitting view (ACTS-140) never show an empty
       sitting.
-- [ ] Decision recorded: lazy-create vs. prune, and Lectio-only vs. all templates.
+- [x] Decision recorded: **prune** (not lazy-create), **Lectio-only**; on-exit via Close
+      (not an unmount effect — that broke navigation) plus a load-time sweep.
 
 ## Tests
 _Planned — no runner wired yet (harness = ACTS-92); see
