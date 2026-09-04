@@ -2,13 +2,13 @@
 id: ACTS-140
 title: Group the journal by Lectio sitting (fold a session's movements together)
 spine:
-status: To Do
+status: In Progress
 origin: human-directed
 approved_by: JC
 depends_on: []
 relates_to: [ACTS-102, ACTS-103, ACTS-138, ACTS-139, ACTS-135]
-started_at: 2026-09-03T12:33:01-0700
-updated: 2026-09-03T12:33:01-0700
+started_at: 2026-09-03T16:13:11-0700
+updated: 2026-09-03T16:13:11-0700
 latest_handoff: null
 sessions: 0
 ---
