@@ -138,6 +138,53 @@ Apply the patch above, then settle:
    triduum/easter) **and** `color` (green/violet/white/red/rose) for *every* day — an always-on
    hook for burgundy (or a full liturgical-colour system) that nothing currently renders.
 
+## Session-02 (2026-09-04) — the mark, and a tuned live palette
+
+### The mark — SHIPPED
+**Variant 5a, "the cross in the compass".** A gold ring reading three ways: the **O** of Oravia,
+a **compass** bezel, and — because the vertical runs long (60 units vs 42) and the crossbar sits
+above centre (y42) — a **cross**. Spec + assets in
+[`docs/brand/design-system/brand/`](../docs/brand/design-system/brand/).
+
+Origin: JC's original compass icon was found in `public/icon-512.png` (it had been there all
+along) and JC spotted that its elongated south point was already doing the work of a cross.
+Making that deliberate is the whole design.
+
+**Geometry is load-bearing:** equalise the arms or centre the crossbar and it stops reading as a
+cross and starts reading as a crosshair. Two cuts — regular (24px+) and small (16–20px, heavier
+ring). Behaviour across sizes: compass-first at 48px+, resolves to a clean cross-in-ring at 32px
+and below.
+
+### Icons — LIVE IN THE APP
+`public/` now carries the mark: `favicon.ico` (multi-res 16/24/32/48/64), `icon-192`, `icon-512`,
+`icon-maskable-512`, `apple-touch-icon`, plus `oravia-mark.svg`.
+**This replaced Lovable's default heart favicon, which had been shipping in the beta.**
+
+Two cache traps had to be defused for it to actually show live:
+1. `public/sw.js` served images **stale-while-revalidate** and precached `/icon-192.png` — existing
+   users would have kept the old icons. `VERSION` bumped `fj-v1` → `fj-v2` (the file's own header
+   documents this as the deploy procedure), and the shell precache URL aligned to `?v=2`.
+2. Browser favicon caches are sticky, so the `<link rel="icon">` / `apple-touch-icon` hrefs and the
+   manifest icon `src`s now carry `?v=2`.
+`manifest.webmanifest` `theme_color` `#f4f9ff` → `#e9f2fc` (the actual header colour).
+
+Verified by fetching each asset from the running dev server with `cache: 'reload'` — all 200, all
+matching the newly installed byte counts.
+
+### Live palette — TUNED, not replaced
+JC: *"update the current to match any of blues and golds in the marian palette so that we can use
+this logo on current app design that will be published."*
+
+**16 tokens** moved in `src/styles.css` — primary/ring/gold/ink hues to 264 and the antique gold,
+plus the chart and sidebar slots that mirror them. **Surfaces deliberately untouched**: the beta
+keeps its cool blue-grey paper. Contrast re-verified: primary 7.05:1 on the page, 7.37:1 on a
+card, 6.60:1 on the header; ink 14.26:1; muted ink 5.00:1.
+
+This is **not** the Illuminated palette. That remains staged in `tokens.css` +
+`stories/ACTS-148/illuminated-app.patch`, unshipped by JC's call.
+
+Documented as its own card: `foundations/published-palette.html`.
+
 ## Acceptance criteria
 - [x] Palette mocked (design-system project on claude.ai/design) and proven through **central
       tokens** (`src/styles.css`), not scattered literals — then reverted; ships via the patch.
