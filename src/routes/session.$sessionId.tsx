@@ -133,9 +133,25 @@ function useAutoScrollToCurrent<T extends HTMLElement>(
 
 function PrayerMode() {
   const { sessionId } = Route.useParams();
-  const { db, ready, toggleItemDone, finishSession, saveSessionReflection, setSessionPassage } =
-    useApp();
+  const {
+    db,
+    ready,
+    toggleItemDone,
+    finishSession,
+    saveSessionReflection,
+    setSessionPassage,
+    pruneEmptyLectioSession,
+  } = useApp();
   const navigate = useNavigate();
+
+  // Reap an abandoned empty Lectio on the explicit way out (ACTS-141) — see
+  // `leaveSession` below. Not an unmount effect: this router unmounts/remounts the
+  // route mid-navigation, so an unmount prune would delete the session you just
+  // opened. The load-time sweep backstops any exit that doesn't go through here.
+  const leaveSession = () => {
+    navigate({ to: "/" });
+    pruneEmptyLectioSession(sessionId);
+  };
 
   const session = db.sessions.find((s) => s.id === sessionId);
   const items = db.session_items
@@ -241,9 +257,13 @@ function PrayerMode() {
       <div className="sticky top-0 z-10 border-b border-border/70 bg-background/95 backdrop-blur">
         <div className="mx-auto w-full max-w-lg px-5 pb-3 pt-6">
           <div className="flex items-center justify-between gap-3">
-            <Link to="/" className="inline-flex items-center gap-1 text-sm text-muted-foreground">
+            <button
+              type="button"
+              onClick={leaveSession}
+              className="inline-flex items-center gap-1 text-sm text-muted-foreground"
+            >
               <X className="size-4" /> Close
-            </Link>
+            </button>
             <p className="truncate text-sm font-medium">{session.title}</p>
             <div className="flex shrink-0 items-center gap-1.5">
               <Button

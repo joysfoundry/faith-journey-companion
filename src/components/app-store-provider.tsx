@@ -10,7 +10,9 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   dbRef.current = db;
 
   useEffect(() => {
-    setDb(loadDatabase());
+    // Sweep any empty Lectio sessions left by an abandoned "Begin" (ACTS-141) as
+    // the db loads, so accumulated ones are cleared even without an on-exit prune.
+    setDb(mutations.pruneEmptyLectioSessions(loadDatabase()));
     setReady(true);
   }, []);
 
@@ -110,6 +112,8 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
         setDb((d) => mutations.setSessionPassage(d, sessionId, reference, text)),
       finishSession: (id: string) => setDb((d) => mutations.finishSession(d, id)),
       deleteSession: (id: string) => setDb((d) => mutations.deleteSession(d, id)),
+      pruneEmptyLectioSession: (id: string) =>
+        setDb((d) => mutations.pruneSessionIfEmptyLectio(d, id)),
       saveSessionPlan: (plan: Parameters<typeof mutations.saveSessionPlan>[1]) =>
         setDb((d) => mutations.saveSessionPlan(d, plan)),
       deleteSessionPlan: (id: string) => setDb((d) => mutations.deleteSessionPlan(d, id)),

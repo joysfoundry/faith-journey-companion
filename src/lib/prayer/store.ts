@@ -32,7 +32,7 @@ import type {
   VoiceKind,
 } from "./types";
 import { RECURRENCE_ONCE, type Recurrence } from "./types";
-import { createSeedDatabase } from "./seed";
+import { createSeedDatabase, LECTIO_TEMPLATE_ID } from "./seed";
 import { detectRepetitionCount, stripRepetition } from "./importer";
 import {
   completeSessionItem,
@@ -418,6 +418,8 @@ export interface AppStore {
   setSessionPassage: (sessionId: ID, reference: string, text: string) => void;
   finishSession: (sessionId: ID) => void;
   deleteSession: (sessionId: ID) => void;
+  /** Reap this session on exit if it's an empty Lectio (ACTS-141); no-op otherwise. */
+  pruneEmptyLectioSession: (sessionId: ID) => void;
   saveSessionPlan: (plan: SessionPlan) => void;
   deleteSessionPlan: (planId: ID) => void;
   addIntention: (intention: Intention) => void;
@@ -507,6 +509,24 @@ function templateItemFromStep(
   }
 
   return { kind: "heading", label: clean || text };
+}
+
+/**
+ * Whether a Lectio session is "empty" and safe to reap (ACTS-141): it's a Lectio,
+ * carries no journaling (no `Reflection` links back to it), and shows no progress
+ * (no `complete` step). Conservative — any engagement (a saved reflection or a
+ * completed step) keeps it.
+ */
+function isEmptyLectioSession(db: Database, sessionId: ID): boolean {
+  const session = db.sessions.find((s) => s.id === sessionId);
+  if (!session || session.template_id !== LECTIO_TEMPLATE_ID) return false;
+  const hasReflection = db.reflections.some((r) =>
+    r.links.some((l) => l.target_type === "prayer_session" && l.target_id === sessionId),
+  );
+  if (hasReflection) return false;
+  return !db.session_items.some(
+    (i) => i.session_id === sessionId && i.completion_status === "complete",
+  );
 }
 
 /* ---------------- pure reducers used by the provider ---------------- */
@@ -1018,6 +1038,32 @@ export const mutations = {
       ...db,
       sessions: db.sessions.filter((s) => s.id !== sessionId),
       session_items: db.session_items.filter((i) => i.session_id !== sessionId),
+    };
+  },
+  /**
+   * Drop one Lectio session if it's empty (ACTS-141) — no journaling and no
+   * progress. Tapping "Begin" persists a session immediately, so backing out
+   * without writing anything leaves an empty sitting behind; this reaps it on
+   * exit. No-op for any non-Lectio session or one with content.
+   */
+  pruneSessionIfEmptyLectio(db: Database, sessionId: ID): Database {
+    if (!isEmptyLectioSession(db, sessionId)) return db;
+    return {
+      ...db,
+      sessions: db.sessions.filter((s) => s.id !== sessionId),
+      session_items: db.session_items.filter((i) => i.session_id !== sessionId),
+    };
+  },
+  /** Sweep every empty Lectio session (ACTS-141) — a backstop, run on load. */
+  pruneEmptyLectioSessions(db: Database): Database {
+    const empties = new Set(
+      db.sessions.filter((s) => isEmptyLectioSession(db, s.id)).map((s) => s.id),
+    );
+    if (empties.size === 0) return db;
+    return {
+      ...db,
+      sessions: db.sessions.filter((s) => !empties.has(s.id)),
+      session_items: db.session_items.filter((i) => !empties.has(i.session_id)),
     };
   },
   /** Add or update a saved session plan (upsert by id). */
