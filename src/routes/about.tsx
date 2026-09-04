@@ -9,13 +9,13 @@ export const Route = createFileRoute("/about")({
       {
         name: "description",
         content:
-          "What Oravia is, the vision behind it, why it's a beta, and how your data stays on your device.",
+          "A daily place where prayer, Scripture, learning, reflection, and lived experience become meaningful woven threads of how I am trying to live my faith, discern God’s will, and live my purpose.",
       },
       { property: "og:title", content: "About — Oravia" },
       {
         property: "og:description",
         content:
-          "A personal faith companion — prayer, Scripture, learning, reflection, and lived experience, brought into everyday life.",
+          "A daily place where prayer, Scripture, learning, reflection, and lived experience become meaningful woven threads of how I am trying to live my faith, discern God’s will, and live my purpose.",
       },
     ],
   }),
