@@ -1,0 +1,267 @@
+diff --git a/src/components/home/SectionCard.tsx b/src/components/home/SectionCard.tsx
+index 26afb85..d981381 100644
+--- a/src/components/home/SectionCard.tsx
++++ b/src/components/home/SectionCard.tsx
+@@ -14,16 +14,23 @@ export function SectionCard({
+   actions,
+   children,
+   bodyClassName,
++  crowned = false,
+ }: {
+   title: string;
+   /** Icon buttons / an overflow menu shown at the top-right of the header. */
+   actions?: ReactNode;
+   children: ReactNode;
+   bodyClassName?: string;
++  /**
++   * Marks this as the section carrying the day's Scripture: adds a gold rule
++   * along the top edge. Deliberately opt-in and rationed to one section — the
++   * rule only reads as significant while it stays rare.
++   */
++  crowned?: boolean;
+ }) {
+   return (
+-    <Card className="overflow-hidden border-border/70">
+-      <div className="flex items-center justify-between gap-3 border-b border-border/60 bg-muted/40 px-5 py-3">
++    <Card className={cn("overflow-hidden border-border/70", crowned && "border-t-2 border-t-gold")}>
++      <div className="flex items-center justify-between gap-3 border-b border-border/60 bg-accent/60 px-5 py-3">
+         <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground/80">
+           {title}
+         </h2>
+diff --git a/src/routes/index.tsx b/src/routes/index.tsx
+index 6b3ed65..2949594 100644
+--- a/src/routes/index.tsx
++++ b/src/routes/index.tsx
+@@ -471,7 +471,7 @@ function Index() {
+       <div className="space-y-5">
+         {/* A — Prayer & Devotion: header search, today's rosary, today's sessions */}
+         <Card className="overflow-hidden border-border/70">
+-          <div className="flex items-center justify-between gap-3 border-b border-border/60 bg-muted/40 px-5 py-3">
++          <div className="flex items-center justify-between gap-3 border-b border-border/60 bg-accent/60 px-5 py-3">
+             <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground/80">
+               Prayer & Devotion
+             </h2>
+@@ -692,6 +692,7 @@ function Index() {
+         {/* C — Word */}
+         <SectionCard
+           title="Word"
++          crowned
+           actions={
+             <IconAction label="Open the full Word page" asChild>
+               <Link to="/word">
+diff --git a/src/styles.css b/src/styles.css
+index 5e72462..bbc0665 100644
+--- a/src/styles.css
++++ b/src/styles.css
+@@ -5,9 +5,10 @@
+ @custom-variant dark (&:is(.dark *));
+ 
+ /*
+- * Faith Journey design system.
++ * Oravia design system (ACTS-148) — "Illuminated".
+  *
+- * Calm Marian blue palette: cool paper surfaces, deep blue ink, soft gold accent.
++ * Marian palette: warm parchment surfaces, deep Marian blue ink and primary,
++ * antique gold as accent/section band, burgundy for liturgical marks.
+  * Display serif (Cormorant Garamond) for prayer text, humanist sans (Karla) for UI.
+  * All colors use oklch. Never hardcode color utilities in components.
+  */
+@@ -45,6 +46,9 @@
+   --color-ring-offset-background: var(--background);
+   --color-gold: var(--gold);
+   --color-gold-foreground: var(--gold-foreground);
++  --color-gold-ink: var(--gold-ink);
++  --color-burgundy: var(--burgundy);
++  --color-burgundy-foreground: var(--burgundy-foreground);
+   --color-parchment: var(--parchment);
+   --color-chart-1: var(--chart-1);
+   --color-chart-2: var(--chart-2);
+@@ -59,84 +63,117 @@
+   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+   --color-sidebar-border: var(--sidebar-border);
+   --color-sidebar-ring: var(--sidebar-ring);
+-  --shadow-devotional: 0 1px 2px oklch(0.3 0.06 255 / 0.07), 0 10px 28px oklch(0.3 0.06 255 / 0.08);
++  --shadow-devotional: 0 1px 2px oklch(0.238 0.065 264 / 0.07), 0 10px 28px oklch(0.238 0.065 264 / 0.08);
+ }
+ 
+ :root {
+   --radius: 0.75rem;
+-  --background: oklch(0.981 0.01 250);
+-  --foreground: oklch(0.27 0.045 260);
+-  --parchment: oklch(0.958 0.017 250);
+-  --card: oklch(0.995 0.005 250);
+-  --card-foreground: oklch(0.27 0.045 260);
+-  --popover: oklch(0.995 0.005 250);
+-  --popover-foreground: oklch(0.27 0.045 260);
+-  --primary: oklch(0.45 0.115 258);
+-  --primary-foreground: oklch(0.985 0.008 250);
+-  --secondary: oklch(0.935 0.022 250);
+-  --secondary-foreground: oklch(0.33 0.055 258);
+-  --muted: oklch(0.945 0.016 250);
+-  --muted-foreground: oklch(0.53 0.035 256);
+-  --accent: oklch(0.9 0.04 252);
+-  --accent-foreground: oklch(0.31 0.06 258);
+-  --gold: oklch(0.78 0.1 82);
+-  --gold-foreground: oklch(0.27 0.045 260);
+-  --destructive: oklch(0.53 0.17 27);
+-  --destructive-foreground: oklch(0.98 0.01 250);
+-  --border: oklch(0.895 0.02 250);
+-  --input: oklch(0.895 0.02 250);
+-  --ring: oklch(0.55 0.1 256);
+-  --chart-1: oklch(0.55 0.11 256);
+-  --chart-2: oklch(0.62 0.09 220);
+-  --chart-3: oklch(0.78 0.1 82);
+-  --chart-4: oklch(0.6 0.1 300);
+-  --chart-5: oklch(0.58 0.09 175);
+-  --sidebar: oklch(0.958 0.017 250);
+-  --sidebar-foreground: oklch(0.27 0.045 260);
+-  --sidebar-primary: oklch(0.45 0.115 258);
+-  --sidebar-primary-foreground: oklch(0.985 0.008 250);
+-  --sidebar-accent: oklch(0.9 0.04 252);
+-  --sidebar-accent-foreground: oklch(0.31 0.06 258);
+-  --sidebar-border: oklch(0.895 0.02 250);
+-  --sidebar-ring: oklch(0.55 0.1 256);
++
++  /* surfaces — Illuminated: the page sits on parchment, cards float above it */
++  --background: oklch(0.958 0.020 86);
++  --card: oklch(0.993 0.006 88);
++  --popover: oklch(0.993 0.006 88);
++  --parchment: oklch(0.928 0.028 84);
++  --muted: oklch(0.928 0.028 84);
++  --secondary: oklch(0.895 0.038 84);
++  --accent: oklch(0.855 0.055 84);
++
++  /* ink */
++  --foreground: oklch(0.238 0.065 264);
++  --card-foreground: oklch(0.238 0.065 264);
++  --popover-foreground: oklch(0.238 0.065 264);
++  --muted-foreground: oklch(0.455 0.036 264);
++  --secondary-foreground: oklch(0.375 0.115 264);
++  --accent-foreground: oklch(0.238 0.065 264);
++
++  /* brand */
++  --primary: oklch(0.455 0.135 264);
++  --primary-foreground: oklch(0.980 0.012 88);
++  --gold: oklch(0.715 0.088 82);
++  --gold-foreground: oklch(0.238 0.065 264);
++  --gold-ink: oklch(0.475 0.072 78);
++  --burgundy: oklch(0.420 0.125 16);
++  --burgundy-foreground: oklch(0.980 0.012 88);
++
++  /* feedback */
++  --destructive: oklch(0.530 0.170 27);
++  --destructive-foreground: oklch(0.980 0.012 88);
++
++  /* structure */
++  --border: oklch(0.885 0.018 80);
++  --input: oklch(0.885 0.018 80);
++  --ring: oklch(0.545 0.140 264);
++
++  /* charts — categorical, deliberately not brand colors */
++  --chart-1: oklch(0.545 0.140 264);
++  --chart-2: oklch(0.620 0.090 220);
++  --chart-3: oklch(0.715 0.088 82);
++  --chart-4: oklch(0.600 0.100 300);
++  --chart-5: oklch(0.580 0.090 175);
++
++  /* sidebar — mirrors the above, no independent decisions */
++  --sidebar: oklch(0.958 0.020 86);
++  --sidebar-foreground: oklch(0.238 0.065 264);
++  --sidebar-primary: oklch(0.455 0.135 264);
++  --sidebar-primary-foreground: oklch(0.980 0.012 88);
++  --sidebar-accent: oklch(0.855 0.055 84);
++  --sidebar-accent-foreground: oklch(0.238 0.065 264);
++  --sidebar-border: oklch(0.885 0.018 80);
++  --sidebar-ring: oklch(0.545 0.140 264);
+ }
+ 
+ .dark {
+-  --background: oklch(0.2 0.03 258);
+-  --foreground: oklch(0.945 0.012 250);
+-  --parchment: oklch(0.24 0.035 258);
+-  --card: oklch(0.25 0.037 258);
+-  --card-foreground: oklch(0.945 0.012 250);
+-  --popover: oklch(0.25 0.037 258);
+-  --popover-foreground: oklch(0.945 0.012 250);
+-  --primary: oklch(0.78 0.09 250);
+-  --primary-foreground: oklch(0.22 0.035 258);
+-  --secondary: oklch(0.3 0.035 258);
+-  --secondary-foreground: oklch(0.945 0.012 250);
+-  --muted: oklch(0.29 0.03 258);
+-  --muted-foreground: oklch(0.74 0.03 250);
+-  --accent: oklch(0.34 0.05 258);
+-  --accent-foreground: oklch(0.945 0.012 250);
+-  --gold: oklch(0.8 0.09 82);
+-  --gold-foreground: oklch(0.22 0.035 258);
+-  --destructive: oklch(0.6 0.16 27);
+-  --destructive-foreground: oklch(0.97 0.01 250);
+-  --border: oklch(0.945 0.012 250 / 14%);
+-  --input: oklch(0.945 0.012 250 / 18%);
+-  --ring: oklch(0.72 0.08 250);
+-  --chart-1: oklch(0.72 0.09 256);
+-  --chart-2: oklch(0.7 0.08 220);
+-  --chart-3: oklch(0.8 0.09 82);
+-  --chart-4: oklch(0.68 0.1 300);
+-  --chart-5: oklch(0.68 0.08 175);
+-  --sidebar: oklch(0.24 0.035 258);
+-  --sidebar-foreground: oklch(0.945 0.012 250);
+-  --sidebar-primary: oklch(0.78 0.09 250);
+-  --sidebar-primary-foreground: oklch(0.22 0.035 258);
+-  --sidebar-accent: oklch(0.34 0.05 258);
+-  --sidebar-accent-foreground: oklch(0.945 0.012 250);
+-  --sidebar-border: oklch(0.945 0.012 250 / 14%);
+-  --sidebar-ring: oklch(0.72 0.08 250);
++  /* surfaces */
++  --background: oklch(0.175 0.030 264);
++  --card: oklch(0.215 0.034 264);
++  --popover: oklch(0.215 0.034 264);
++  --parchment: oklch(0.255 0.036 264);
++  --muted: oklch(0.255 0.036 264);
++  --secondary: oklch(0.285 0.030 264);
++  --accent: oklch(0.320 0.030 80);
++
++  /* ink */
++  --foreground: oklch(0.945 0.010 88);
++  --card-foreground: oklch(0.945 0.010 88);
++  --popover-foreground: oklch(0.945 0.010 88);
++  --muted-foreground: oklch(0.760 0.022 80);
++  --secondary-foreground: oklch(0.945 0.010 88);
++  --accent-foreground: oklch(0.945 0.010 88);
++
++  /* brand */
++  --primary: oklch(0.770 0.080 264);
++  --primary-foreground: oklch(0.175 0.030 264);
++  --gold: oklch(0.800 0.070 84);
++  --gold-foreground: oklch(0.175 0.030 264);
++  --gold-ink: oklch(0.800 0.070 84);
++  --burgundy: oklch(0.660 0.120 19);
++  --burgundy-foreground: oklch(0.175 0.030 264);
++
++  /* feedback */
++  --destructive: oklch(0.680 0.150 27);
++  --destructive-foreground: oklch(0.175 0.030 264);
++
++  /* structure */
++  --border: oklch(0.330 0.030 264);
++  --input: oklch(0.330 0.030 264);
++  --ring: oklch(0.770 0.080 264);
++
++  /* charts */
++  --chart-1: oklch(0.770 0.080 264);
++  --chart-2: oklch(0.700 0.080 220);
++  --chart-3: oklch(0.800 0.070 84);
++  --chart-4: oklch(0.680 0.100 300);
++  --chart-5: oklch(0.680 0.080 175);
++
++  /* sidebar */
++  --sidebar: oklch(0.255 0.036 264);
++  --sidebar-foreground: oklch(0.945 0.010 88);
++  --sidebar-primary: oklch(0.770 0.080 264);
++  --sidebar-primary-foreground: oklch(0.175 0.030 264);
++  --sidebar-accent: oklch(0.320 0.030 80);
++  --sidebar-accent-foreground: oklch(0.945 0.010 88);
++  --sidebar-border: oklch(0.330 0.030 264);
++  --sidebar-ring: oklch(0.770 0.080 264);
+ }
+ 
+ @layer base {
