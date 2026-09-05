@@ -3,8 +3,8 @@
 
 The image a scraper shows when the beta link is shared (ACTS-158). Sibling of
 make_about.py / make_flyer.py: same brand voice, same "edit the copy here and
-re-run" contract. Uses the DARK palette from oravia-brand.html on purpose -- a
-deep blue card reads as something in a feed of white ones.
+re-run" contract. Uses the DARK palette on purpose -- a deep blue card reads as
+something in a feed of white ones.
 
 1200x630 is the Open Graph 1.91:1 slot. Drawn at 2x and downsampled so the
 Georgia text and the hairline rules stay crisp.
@@ -18,7 +18,7 @@ W, H = 1200 * S, 630 * S
 CX = W // 2
 OUT = "../../public/og-cover.png"
 
-# --- palette: oravia-brand.html -------------------------------------------
+# --- palette: the dark cut of the brand -------------------------------------------
 BLUE_HI = (28, 58, 104)                # --blue-1 lifted, the glow at top centre
 BLUE_1  = (22, 48, 90)                 # Marian blue
 BLUE_2  = (15, 36, 68)                 # deep vignette

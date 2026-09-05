@@ -23,9 +23,11 @@ to beta testers alongside the app link.
 - **`mark.py`** — the cross-in-compass, transcribed from `public/oravia-mark.svg` and
   imported by all three generators. The mark was hand-drawn in each of them before, which
   is how the flyer kept a retired identity unnoticed. Change the SVG first, then this.
-- ⚠️ **`oravia-brand.html`** — **RETIRED** (ACTS-159). The old dark-blue web version; its
+- ~~`oravia-brand.html`~~ — **deleted** (ACTS-159). The old dark-blue web version; its
   published artifact carried the superseded flame-and-open-O mark, no beta link, and
-  pre-trim copy. Superseded by `oravia-about.html` above. Do not regenerate from it.
+  pre-trim copy. Replaced by `oravia-about.html` above. Recoverable from git history if
+  the dark treatment is ever wanted again; `docs/brand/design-system/brand/mark-at-size.html`
+  still cites it as the source of the retired mark, which is left as the historical record.
 - **`make_about.py` / `make_flyer.py` / `make_og.py`** — Pillow generators for the PNGs. Edit copy/sizing
   here and re-run (uses macOS Georgia/Helvetica system fonts).
 
