@@ -1,0 +1,326 @@
+<title>Oravia Beta Invitation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Karla:wght@400;500;600&display=swap">
+
+<style>
+  /* ------------------------------------------------------------------
+     Oravia — the About card, as a page.
+
+     The web twin of docs/brand/oravia-about.png. Palette is lifted verbatim
+     from make_about.py so the two pieces are the same object in two media;
+     the faces are the app's own (Cormorant Garamond + Karla, per
+     src/routes/__root.tsx) rather than the PNG's Georgia, which Pillow only
+     uses because it is limited to macOS system fonts.
+
+     DELIBERATELY SINGLE-THEME. This is an ivory printed invitation, not a UI
+     — a letterpress card has no dark mode. Every colour is therefore painted
+     explicitly, including the body ground, so the page holds its own on a
+     dark host instead of borrowing it.
+     ------------------------------------------------------------------ */
+
+  :root {
+    --ivory:      #f6f1e5;  /* the card ground */
+    --ivory-edge: #efe8d8;  /* frame inner wash */
+    --blue:       #1e3a5f;  /* Marian blue — wordmark, headings, display */
+    --ink:        #322f28;  /* warm ink — running text */
+    --ink-soft:   #57503f;  /* secondary text */
+    --gold:       #a07c3a;  /* antique gold — rules, eyebrows, the thread */
+    --gold-soft:  #c0a068;
+    --link:       #264a7a;
+
+    --measure: 62ch;
+  }
+
+  body {
+    margin: 0;
+    padding: 24px 16px 56px;
+    background: var(--ivory);
+    color: var(--ink);
+    font-family: "Karla", system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.72;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .card {
+    max-width: calc(var(--measure) + 96px);
+    margin: 0 auto;
+    padding: clamp(30px, 6vw, 62px) clamp(22px, 5vw, 48px);
+    border: 1px solid var(--gold-soft);
+    background: var(--ivory);
+  }
+
+  /* ---- masthead ---------------------------------------------------- */
+
+  .masthead { text-align: center; }
+
+  .mark {
+    width: 54px;
+    height: 54px;
+    color: var(--blue);
+    display: block;
+    margin: 0 auto 18px;
+  }
+
+  .wordmark {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-weight: 600;
+    font-size: clamp(46px, 11vw, 62px);
+    line-height: 1;
+    letter-spacing: .005em;
+    color: var(--blue);
+    margin: 0;
+  }
+
+  .tagline {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .26em;
+    color: var(--gold);
+    margin: 14px 0 0;
+  }
+
+  /* ---- the thread: a hairline broken by a bead --------------------- */
+
+  .thread {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin: 30px 0;
+  }
+  .thread::before,
+  .thread::after {
+    content: "";
+    height: 1px;
+    width: 96px;
+    background: var(--gold-soft);
+  }
+  .thread i {
+    width: 7px;
+    height: 7px;
+    background: var(--gold);
+    transform: rotate(45deg);
+  }
+
+  /* ---- display voice ----------------------------------------------- */
+
+  .blessing {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-style: italic;
+    font-weight: 500;
+    font-size: clamp(23px, 5.4vw, 29px);
+    line-height: 1.32;
+    color: var(--blue);
+    text-align: center;
+    text-wrap: balance;
+    margin: 0 auto;
+    max-width: 22ch;
+  }
+
+  .epigraph {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-style: italic;
+    font-size: clamp(18px, 3.6vw, 21px);
+    line-height: 1.52;
+    color: var(--blue);
+    border-left: 2px solid var(--gold-soft);
+    padding-left: 20px;
+    margin: 30px auto 0;
+    max-width: var(--measure);
+  }
+
+  /* ---- sections ---------------------------------------------------- */
+
+  main {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    max-width: var(--measure);
+    margin: 38px auto 0;
+  }
+
+  section { display: flex; flex-direction: column; gap: 12px; }
+
+  .eyebrow {
+    font-size: 10.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .26em;
+    color: var(--gold);
+    margin: 0;
+    /* Centred over left-aligned body copy, matching make_about.py, where the section
+       labels are drawn with tracked_center() while the paragraphs range left. The
+       last letter's trailing letter-spacing would pull a centred label visibly off
+       axis, so it is compensated with an equal left indent. */
+    text-align: center;
+    text-indent: .26em;
+  }
+
+  p { margin: 0; }
+  section p:not(.eyebrow) { font-size: 15px; color: var(--ink); }
+
+  .q {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-style: italic;
+    font-size: 1.14em;
+    color: var(--blue);
+  }
+
+  /* ---- sign-off + the way in --------------------------------------- */
+
+  .signoff {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-style: italic;
+    font-weight: 500;
+    font-size: clamp(22px, 5vw, 27px);
+    color: var(--gold);
+    text-align: center;
+    margin: 0;
+  }
+
+  .invite { text-align: center; margin-top: 30px; }
+
+  .invite .eyebrow { margin-bottom: 10px; }
+
+  .invite a {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: clamp(21px, 4.6vw, 25px);
+    color: var(--link);
+    text-decoration: none;
+    border-bottom: 1px solid var(--gold-soft);
+    padding-bottom: 3px;
+    transition: border-color .18s ease, color .18s ease;
+  }
+  .invite a:hover { color: var(--blue); border-color: var(--blue); }
+  .invite a:focus-visible {
+    outline: 2px solid var(--blue);
+    outline-offset: 4px;
+    border-radius: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .invite a { transition: none; }
+  }
+
+  /* ---- print: this doubles as the PDF ------------------------------ */
+
+  @media print {
+    body { padding: 0; background: #fff; }
+    .card { border-color: #c9b48a; max-width: none; }
+    .invite a { color: var(--link); border-bottom: none; }
+    .invite a::after { content: " (myoravia.lovable.app)"; font-size: .7em; color: var(--ink-soft); }
+  }
+</style>
+
+<div class="card">
+
+  <header class="masthead">
+    <!-- the ACTS-148 cross-in-compass, from public/oravia-mark.svg -->
+    <svg class="mark" viewBox="0 0 100 100" fill="none" role="img" aria-label="Oravia">
+      <circle cx="50" cy="50" r="33" stroke="currentColor" stroke-width="6" fill="none"></circle>
+      <path d="M50 20 L54.2 38.4 L71 42 L54.2 45.6 L50 80 L45.8 45.6 L29 42 L45.8 38.4 Z" fill="currentColor"></path>
+    </svg>
+    <h1 class="wordmark">Oravia</h1>
+    <p class="tagline">Your devotional life, gathered</p>
+  </header>
+
+  <div class="thread" aria-hidden="true"><i></i></div>
+
+  <p class="blessing">God is weaving something beautiful through your life.</p>
+
+  <p class="epigraph">
+    A daily place where prayer, Scripture, learning, reflection, and lived experience
+    become meaningful woven threads of how I am trying to live my faith, discern
+    God&rsquo;s will, and live my purpose.
+  </p>
+
+  <main>
+
+    <section>
+      <p class="eyebrow">The vision</p>
+      <p>
+        Oravia is a personal faith companion for the whole of your faith journey &mdash;
+        helping you bring prayer, Scripture, learning, reflection, and lived experience
+        into the rhythms and needs of everyday life. The heart of it is a question:
+        <span class="q">how am I becoming the person God is calling me to be, and how am
+        I living my purpose in alignment with God&rsquo;s will?</span> It is meant to help
+        you deepen your relationship with God &mdash; drawing on Scripture and the
+        tradition of the Church &mdash; in a way that feels deeply personal and honors how
+        you were formed. It may support discernment, but it never claims to know
+        God&rsquo;s will for you; you discern the meaning.
+      </p>
+    </section>
+
+    <section>
+      <p class="eyebrow">More than a prayer app</p>
+      <p>
+        A person&rsquo;s faith journey is shaped not only by prayer, but by what they read,
+        watch, hear, experience, question, and reflect on. Oravia gathers that faith
+        learning alongside prayer and lived experience &mdash; the books and podcasts, the
+        apps you already use, the voices and accounts that inspire you &mdash; so that,
+        over time, you can make connections and carry forward what supports discernment
+        and action.
+      </p>
+    </section>
+
+    <section>
+      <p class="eyebrow">One place for your journey</p>
+      <p>
+        Today the pieces of a faith life live in a dozen scattered places, on paper and
+        across apps &mdash; a Rosary pamphlet, a hymnal, a Bible, a saint-of-the-day site,
+        a family novena someone texted you. Oravia gathers them into one companion, and
+        keeps your reflection right alongside your prayer.
+      </p>
+      <p>
+        It is a hub, not a walled garden. Link out to how you already pray &mdash; Hallow,
+        Bible in a Year, a catechism program &mdash; and gather the resources and voices
+        that shape your learning, whether digital or on paper.
+      </p>
+    </section>
+
+    <section>
+      <p class="eyebrow">Why a beta</p>
+      <p>
+        This is an early, private beta. It is still taking shape &mdash; things will
+        change, and some may break. Your feedback is what shapes it. Thank you for praying
+        with it while it grows.
+      </p>
+    </section>
+
+    <section>
+      <p class="eyebrow">Everything stays with you</p>
+      <p>
+        Your prayers, reflections, and settings live on this device, in this browser
+        &mdash; there is no account, no email, and nothing is sent to a server. That also
+        means they do not sync across devices yet, and clearing your browser data (or
+        Start over in Settings) will erase them.
+      </p>
+    </section>
+
+    <section>
+      <p class="eyebrow">A note on the name</p>
+      <p>
+        Oravia comes from the Latin <span class="q">ora</span> &mdash; &ldquo;pray&rdquo;
+        &mdash; and <span class="q">via</span> &mdash; &ldquo;the way&rdquo;: prayer,
+        accompanying us along the way. It also opens with an O and closes with an A
+        &mdash; Omega and Alpha, the End and the Beginning, an ancient name for Christ. We
+        so often meet God at the end first &mdash; in the questions, in the place we
+        actually are &mdash; and find He was the beginning all along. He holds both ends of
+        your thread.
+      </p>
+    </section>
+
+  </main>
+
+  <div class="thread" aria-hidden="true"><i></i></div>
+
+  <p class="signoff">Keep your seeking for God.</p>
+
+  <div class="invite">
+    <p class="eyebrow">Try the beta</p>
+    <a href="https://myoravia.lovable.app">myoravia.lovable.app</a>
+  </div>
+
+</div>

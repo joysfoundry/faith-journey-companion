@@ -14,8 +14,18 @@ to beta testers alongside the app link.
   `<head>`, so it appears by itself in iMessage/Slack/Facebook/X. Regenerate with
   `python3 make_og.py` and **bump the `?v=` on `OG_IMAGE` in `src/routes/__root.tsx`** —
   scrapers cache the old image hard.
-- **`oravia-brand.html`** — the web version of the brand/About page (published as a private
-  Artifact; share via its Share menu). Same content as the About card.
+- **`oravia-about.html`** — the About card **as a page**, published at
+  <https://claude.ai/code/artifact/0a832e6c-efa7-4cea-91bb-5503fee85a41>.
+  The one to send with the beta link: it reflows on a phone (the PNG needs pinch-zoom),
+  the beta URL is tappable, and `@media print` turns ⌘P into a clean PDF. Same palette as
+  `oravia-about.png`, but set in the app's own Cormorant Garamond + Karla rather than the
+  PNG's Georgia (a Pillow limitation, not a brand choice).
+- **`mark.py`** — the cross-in-compass, transcribed from `public/oravia-mark.svg` and
+  imported by all three generators. The mark was hand-drawn in each of them before, which
+  is how the flyer kept a retired identity unnoticed. Change the SVG first, then this.
+- ⚠️ **`oravia-brand.html`** — **RETIRED** (ACTS-159). The old dark-blue web version; its
+  published artifact carried the superseded flame-and-open-O mark, no beta link, and
+  pre-trim copy. Superseded by `oravia-about.html` above. Do not regenerate from it.
 - **`make_about.py` / `make_flyer.py` / `make_og.py`** — Pillow generators for the PNGs. Edit copy/sizing
   here and re-run (uses macOS Georgia/Helvetica system fonts).
 
