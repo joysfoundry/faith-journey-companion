@@ -75,11 +75,11 @@ uncommitted work before this session touched it.
 
 - **Push these commits** — the only genuinely blocking item.
 - **Commit Crave's diagram** in a Crave session.
-- **Version pinning** — Archify is `2.17.0-dev.1` from the tip of `main`, a prerelease.
-  Frozen on disk, so stable in practice; re-pull at a tagged release when one exists.
+- ~~Version pinning~~ — **done 2026-09-05**: pinned to stable `2.16.0`.
 - **`--repo-root` evidence mode** — would make diagrams fail loudly when the code drifts.
   Not wired up; wants a public GitHub URL in the spec.
-- **Ping re-enabled 2026-09-05** — see the ACTS-146 addendum. Silent until stable ≥ 2.17.0.
+- **Pinned to stable 2.16.0, ping on** (2026-09-05) — but the check times out on this
+  machine; use the manual `curl`. See the ACTS-146 addenda.
 - Still open from before: **ACTS-105** (canon/doc sync + CRV), **ACTS-113** (in-app Insights
   → Wisdom).
 
@@ -99,9 +99,9 @@ uncommitted work before this session touched it.
 > nodes, and text must stay ≥6px projected at a 1440px viewport, so keep the viewBox under
 > ~1395 wide and edge labels to one or two words.
 >
-> Archify's update ping was **re-enabled on 2026-09-05** (stock file restored; the patch and
-> its `.orig` are gone). It is mute in practice, though: installed `2.17.0-dev.1` vs stable
-> `2.16.0`, so 2.16.x releases compare as older and stay silent — it only speaks at stable
-> `2.17.0`. Moving to the stable channel is what would actually deliver security notices.
+> Archify is pinned to **stable `2.16.0`** (2026-09-05, verified by tree SHA) with the update
+> ping **on** and stock. Two caveats: the check cannot complete on this machine (first Node
+> network call ~4.5s vs a hardcoded 1s timeout), so check for updates with a one-line `curl`
+> instead — see the ACTS-146 addenda. Do not re-patch the timeout.
 > When using the `skills` CLI again, set `DO_NOT_TRACK=1 DISABLE_TELEMETRY=1`: its telemetry
 > is opt-out.

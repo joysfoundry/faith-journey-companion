@@ -47,8 +47,15 @@ its own. Edit the JSON for small corrections; re-render rather than hand-editing
   shrinks the text below the readability floor. Keep the viewBox under ~1395 wide and keep
   edge labels to one or two words.
 - **View notes cap at 140 characters.**
-- **The update ping is ON** (re-enabled 2026-09-05, ACTS-146). It is GET-only to a hardcoded
-  GitHub Pages manifest, at most once per 72h, and never auto-installs. **But it is
-  currently mute:** the installed build is `2.17.0-dev.1` and the stable channel is
-  `2.16.0`, so anything released on the 2.16.x line — security fixes included — compares as
-  *older* and stays silent. It only starts speaking at stable `2.17.0`.
+- **Archify is pinned to stable `2.16.0`** (2026-09-05), verified by matching the release
+  manifest's `treeSha` (`a198a3e0…`) against the `archify/` subtree at tag `v2.16.0`.
+- **The update ping is on and now on the right channel** — installed matches stable, so a
+  future `2.16.1` or `2.17.0` *would* notify. **But it cannot actually complete on this
+  machine:** the first network call in a fresh Node process costs ~4.5s here (curl does the
+  same request in 0.1s; not IPv6, not a proxy — a second call in the same process is 28ms),
+  and the checker's timeout is a hardcoded 1s with no env override. It fails silently and
+  backs off, exactly as designed, so nothing breaks — just don't rely on it. Check by hand:
+
+  ```bash
+  curl -s https://tt-a1i.github.io/archify/skill-updates/archify/stable.json | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['version'], d['publishedAt'])"
+  ```

@@ -138,3 +138,43 @@ deliver the notices.
 First live run failed (`check-failed`, 1s timeout on a cold start) and backed off six hours
 exactly as designed — the soft-failure path confirmed working. Subsequent runs report
 `cache-valid`. `doctor` still 15/15.
+
+## Addendum 2 — 2026-09-05: pinned to stable 2.16.0
+JC took the pinning decision the first addendum argued for. **Archify is now stable
+`2.16.0`**, off the `2.17.0-dev.1` prerelease.
+
+**How it was installed, and how it was verified.** Cloned `tt-a1i/archify` at tag `v2.16.0`
+and checked the payload against the release manifest before installing: the manifest's
+`treeSha` is `a198a3e0d03cd08eb582062a52dc4b0bd5b0aa4f`, and the repo's `archify/` **subtree**
+at that tag hashes to exactly that. (The repo *root* tree does not match — the manifest pins
+the skill subdirectory, not the whole repo.) Spot-checked the older build for the same
+properties as the original audit: no `pre`/`postinstall`, no runtime dependencies, no
+`eval`, no network calls outside tests and the update checker. Previous install backed up
+before the swap. `doctor` 15/15 on 2.16.0.
+
+**The version gap is closed** — installed now equals the stable channel, so `2.16.1` or
+`2.17.0` would both notify.
+
+**But the check still cannot run here, for an unrelated reason.** Measured: the first
+network call in a fresh Node process takes ~4.2–5.0s on this machine, while `curl` does the
+identical request in 0.1–0.18s. Not IPv6 (forcing `ipv4first` changes nothing and IPv6 curl
+is fast), not a proxy (no proxy env). A *second* fetch inside the same process takes 28ms —
+so it is a one-time per-process networking startup cost. The checker is a short-lived
+process making exactly one fetch with a **hardcoded 1s timeout and no env override**, so it
+times out every time, caches the failure, and backs off. Harmless by design, but it means
+**the ping will not notify us in practice** regardless of channel.
+
+Deliberately **not** patching the timeout: that would re-introduce exactly the local
+modification, and the re-apply-after-update burden, that removing the last patch got rid of.
+The manual check is one line and faster than the built-in one:
+
+```bash
+curl -s https://tt-a1i.github.io/archify/skill-updates/archify/stable.json | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['version'], d['publishedAt'])"
+```
+
+**Both diagrams re-rendered and re-checked under 2.16.0** — 9/9 artifact checks, `issues: []`
+each. The only change in the output was the `<meta name="generator">` stamp, so the
+downgrade caused no visual regression.
+
+This closes the last open question on this story; only `--repo-root` evidence mode remains,
+and it is recorded as a future enhancement rather than unfinished work.
