@@ -130,7 +130,13 @@ export const BIBLE_TRANSLATIONS: BibleTranslation[] = [
   },
 ];
 
-export const DEFAULT_TRANSLATION = "NIV";
+/**
+ * The translation assumed until the reader picks one. **NABRE** (JC, 2026-09-04,
+ * ACTS-153): it is the Catholic canon — deuterocanon included — and it is the
+ * translation behind the USCCB daily readings this app already links to, so the
+ * default matches the Word page. NIV and the rest stay one tap away in Settings.
+ */
+export const DEFAULT_TRANSLATION = "NABRE";
 
 export function translationById(id: string | undefined): BibleTranslation {
   return (
