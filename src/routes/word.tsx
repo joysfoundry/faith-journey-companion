@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 
-import { WordSection } from "@/components/home/WordSection";
+import { OnlineBibleLink, WordSection } from "@/components/home/WordSection";
 import { AppShell } from "@/components/layout/PageShell";
 
 export const Route = createFileRoute("/word")({
@@ -26,7 +26,11 @@ function WordPage() {
   const navigate = useNavigate();
 
   return (
-    <AppShell title="Word" subtitle="Today's readings and your reading programs">
+    <AppShell
+      title="Word"
+      subtitle="Today's readings and your reading programs"
+      action={<OnlineBibleLink />}
+    >
       <WordSection onReflect={() => navigate({ to: "/reflections" })} />
     </AppShell>
   );

@@ -16,7 +16,7 @@ import {
 import { useEffect, useState } from "react";
 
 import { PrayerSearch } from "@/components/home/PrayerSearch";
-import { WordSection } from "@/components/home/WordSection";
+import { OnlineBibleLink, WordSection } from "@/components/home/WordSection";
 import { ReflectionComposer } from "@/components/home/ReflectionComposer";
 import { SectionCard, SectionRow } from "@/components/home/SectionCard";
 import { AppShell } from "@/components/layout/AppShell";
@@ -693,11 +693,14 @@ function Index() {
         <SectionCard
           title="Word"
           actions={
-            <IconAction label="Open the full Word page" asChild>
-              <Link to="/word">
-                <BookOpen className="size-4" aria-hidden />
-              </Link>
-            </IconAction>
+            <>
+              <OnlineBibleLink />
+              <IconAction label="Open the full Word page" asChild>
+                <Link to="/word">
+                  <BookOpen className="size-4" aria-hidden />
+                </Link>
+              </IconAction>
+            </>
           }
         >
           <WordSection onReflect={openJournal} />

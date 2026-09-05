@@ -1,12 +1,4 @@
-import {
-  BookOpen,
-  ChevronDown,
-  ChevronRight,
-  ExternalLink,
-  Mic,
-  NotebookPen,
-  Plus,
-} from "lucide-react";
+import { ChevronDown, ChevronRight, ExternalLink, Mic, NotebookPen, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 
@@ -54,6 +46,35 @@ function RowIcon({
 }
 
 /**
+ * Section-level link out to the reader's own Bible — the app they chose in
+ * Settings (asked at first launch, ACTS-153). Belongs in the Word *header*, not
+ * in the body: Daily Readings opens today's USCCB Mass readings while this opens
+ * their Bible, and stacking the two made the second read as a child of the first
+ * (ACTS-154). Renders nothing when they have no Bible set — "I don't use one
+ * yet", or "another app" with no URL.
+ *
+ * Deliberately not a `BookOpen`: the Word header already carries one meaning
+ * "open the full Word page", and two identical glyphs meaning different things is
+ * the ACTS-152 trap. The text label plus the small external-link chevron carries
+ * it instead.
+ */
+export function OnlineBibleLink() {
+  const { db } = useApp();
+  const bibleHomeUrl = resolveBibleHomeUrl(db.settings);
+  if (!bibleHomeUrl) return null;
+
+  return (
+    <ExtLink
+      href={bibleHomeUrl}
+      className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+    >
+      Online Bible
+      <ExternalLink className="size-3 shrink-0 text-muted-foreground/70" aria-hidden />
+    </ExtLink>
+  );
+}
+
+/**
  * Word: today's Mass readings, the optional "heard at Mass" capture, and any
  * Bible-reading programs. Reading programs are Knowledge `program` items flagged
  * `reads_scripture` — still managed in the Knowledge library, but surfaced here
@@ -61,8 +82,6 @@ function RowIcon({
  */
 export function WordSection({ onReflect }: { onReflect: (linkId: string) => void }) {
   const { db, addMassExperience } = useApp();
-  // The reader's Bible (YouVersion by default) — linked as "Online Bible".
-  const bibleHomeUrl = resolveBibleHomeUrl(db.settings);
   const readingPrograms = db.knowledge_items
     .filter((i) => isScriptureProgram(i) && i.status !== "finished")
     .sort(byStatusThenTitle);
@@ -129,18 +148,6 @@ export function WordSection({ onReflect }: { onReflect: (linkId: string) => void
             <NotebookPen className="size-4" aria-hidden />
           </RowIcon>
         </div>
-
-        {/* Open the reader's own Bible (from Settings; YouVersion by default). */}
-        {bibleHomeUrl ? (
-          <ExtLink
-            href={bibleHomeUrl}
-            className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-primary"
-          >
-            <BookOpen className="size-3.5" aria-hidden />
-            Online Bible
-            <ExternalLink className="size-3 text-muted-foreground/70" aria-hidden />
-          </ExtLink>
-        ) : null}
 
         <Collapsible open={massOpen} onOpenChange={setMassOpen} className="mt-3">
           <CollapsibleTrigger className="flex w-full items-center gap-1.5 border-t border-border/60 pt-2 text-left text-xs text-muted-foreground transition-colors hover:text-foreground">
