@@ -84,7 +84,7 @@ function BibleStep({ onAnswer, onSkip }: StepProps) {
       <GateShell>
         <form onSubmit={submit} className="space-y-5">
           <StepHeading
-            title="Where do you read Scripture?"
+            title="Where do you read Scripture online?"
             blurb="Cited verses and the day's readings will open in your Bible, so you're never hunting for the right page."
           />
 
