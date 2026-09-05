@@ -77,8 +77,15 @@ function AboutPage() {
             across apps — a Rosary pamphlet, a hymnal, a Bible, a saint-of-the-day site, a
             family novena someone texted you. Oravia gathers them into one companion, compiling
             a devotion into a guided flow — the right day, the right mysteries and readings,
-            reflection as a first-class step, a way to sing, and a follow link so others can
-            pray along — so the tool disappears and the prayer stays.
+            reflection as a first-class step, and a way to sing — so the tool disappears and
+            the prayer stays.
+          </p>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            Build a devotion once, the way you have learned to pray it, and it&rsquo;s there
+            every time — no flipping between a booklet, a holy card, and a printout. Share it
+            and others pray it right alongside you; anyone still learning has the words in
+            front of them, in order, so they can stay in the prayer instead of wondering what
+            comes next.
           </p>
           <p className="text-sm leading-relaxed text-muted-foreground">
             It&rsquo;s a hub, not a walled garden. Link out to how you already pray — Hallow,
