@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 from PIL import Image, ImageDraw, ImageFont
 
+from mark import draw_mark
+
 S = 2
 W = 1600 * S
 HMAX = 2600 * S
@@ -54,6 +56,13 @@ def rule(after):
     r=6*S; d.polygon([(CX,y-r),(CX+r,y),(CX,y+r),(CX-r,y)],fill=GOLD); y+=after*S
 
 # masthead
+# The mark crowns the wordmark in BLUE, not gold: gold is already carrying the rule,
+# the tracked labels and the link on this card, and the mark should read as identity
+# rather than as another piece of ornament.
+_mk = draw_mark(84 * S, BLUE)
+img.paste(_mk, (CX - _mk.width // 2, y), _mk)
+y += _mk.height + 26 * S
+
 center("Oravia", gb(50), BLUE, 64, 8)
 tracked_center("YOUR DEVOTIONAL LIFE, GATHERED", hv(14), GOLD, 4, 22, 18)
 rule(30)

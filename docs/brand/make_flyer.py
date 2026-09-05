@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 from PIL import Image, ImageDraw, ImageFont
 
+from mark import draw_mark
+
 S = 2  # supersample scale
 W, H = 1080 * S, 1920 * S
 CX = W // 2
@@ -46,16 +48,12 @@ def divider(y):
     r=8*S
     d.polygon([(CX,y*S-r),(CX+r,y*S),(CX,y*S+r),(CX-r,y*S)],fill=GOLD)
 
-# ---- mark: guiding flame + open O + thread ----
-cx,cy,rr=540*S,200*S,56*S
-# flame (teardrop)
-d.polygon([(cx,94*S),(cx+13*S,120*S),(cx+20*S,137*S),(cx+11*S,147*S),(cx,150*S),
-           (cx-11*S,147*S),(cx-20*S,137*S),(cx-13*S,120*S)],fill=GOLD)
-# open ring (gap at top)
-d.arc([cx-rr,cy-rr,cx+rr,cy+rr],start=290,end=610,fill=GOLD,width=int(4*S))
-# center dot + tail
-d.ellipse([cx-5*S,cy-5*S,cx+5*S,cy+5*S],fill=GOLD)
-d.line([(cx,cy+rr),(cx,300*S)],fill=GOLD,width=int(2.4*S))
+# ---- mark: the ACTS-148 cross-in-compass (replaced the retired flame + open O) ----
+_mk = draw_mark(150 * S, GOLD)
+img.paste(_mk, (CX - _mk.width // 2, 116 * S), _mk)
+# No thread stub below the mark: the retired flame sat in an OPEN ring and needed the
+# tail to close the composition. This ring is closed, so a dash under it reads as an
+# orphan rather than as the thread.
 
 # ---- identity ----
 center("Oravia",378,gb(128),IVORY)
