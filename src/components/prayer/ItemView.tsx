@@ -5,6 +5,7 @@
  * completion, no interaction of its own. `showMeditation` reveals a mystery's text
  * that would otherwise wait for a tap in "choose during session".
  */
+import { FormattedText } from "@/components/reflections/FormattedText";
 import { ExternalLink as ExtLink } from "@/components/ui/external-link";
 import { ordinalWord } from "@/lib/prayer/compiler";
 import type { SessionItem } from "@/lib/prayer/types";
@@ -136,7 +137,7 @@ export function ItemView({
         ) : null}
         {response ? (
           <p className="prayer-text mt-6 whitespace-pre-wrap border-l-2 border-primary/40 pl-4 text-left">
-            {response}
+            <FormattedText text={response} />
           </p>
         ) : null}
       </div>

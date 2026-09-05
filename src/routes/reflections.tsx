@@ -14,7 +14,9 @@ import {
 import { useEffect, useState } from "react";
 
 import { ReflectionComposer } from "@/components/home/ReflectionComposer";
+import { FormattedText } from "@/components/reflections/FormattedText";
 import { InspirationPanel } from "@/components/reflections/InspirationPanel";
+import { RichTextArea } from "@/components/reflections/RichTextArea";
 import { ThemeEditor } from "@/components/reflections/ThemeEditor";
 import { AppShell } from "@/components/layout/PageShell";
 import { Badge } from "@/components/ui/badge";
@@ -29,7 +31,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
 import { type LinkableItem } from "@/domain/placeholderData";
 import { todayISO } from "@/lib/prayer/compiler";
 import { getLiturgicalDay, type LiturgicalDay } from "@/lib/liturgical/calendar";
@@ -269,7 +270,9 @@ function JournalRow({
       </div>
       {open ? (
         <div className="space-y-2 px-4 pb-4 pl-11">
-          <p className="whitespace-pre-line text-sm text-muted-foreground">{entry.body}</p>
+          <p className="whitespace-pre-line text-sm text-muted-foreground">
+            <FormattedText text={entry.body} />
+          </p>
           <EntryLinks entry={entry} />
         </div>
       ) : null}
@@ -362,7 +365,7 @@ function SittingGroup({
                     {m.title ?? "Reflection"}
                   </p>
                   <p className="line-clamp-2 whitespace-pre-line text-sm text-muted-foreground">
-                    {m.body}
+                    <FormattedText text={m.body} />
                   </p>
                 </button>
               </li>
@@ -464,7 +467,12 @@ function JournalEntryDialog({
                   placeholder="Title or theme (optional)"
                   className="font-display"
                 />
-                <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={6} />
+                <RichTextArea
+                  value={body}
+                  onChange={setBody}
+                  rows={6}
+                  ariaLabel="Your reflection"
+                />
                 <ThemeEditor
                   value={themes}
                   onChange={setThemes}
@@ -482,7 +490,9 @@ function JournalEntryDialog({
               </div>
             ) : (
               <div className="space-y-3">
-                <p className="whitespace-pre-line text-sm text-muted-foreground">{entry.body}</p>
+                <p className="whitespace-pre-line text-sm text-muted-foreground">
+                  <FormattedText text={entry.body} />
+                </p>
                 <EntryLinks entry={entry} />
                 <InspirationPanel links={entry.links} db={db} />
               </div>

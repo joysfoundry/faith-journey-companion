@@ -13,6 +13,7 @@ import {
 import { forwardRef, useEffect, useMemo, useState } from "react";
 
 import { InspirationPanel } from "@/components/reflections/InspirationPanel";
+import { RichTextArea } from "@/components/reflections/RichTextArea";
 import { ThemeEditor } from "@/components/reflections/ThemeEditor";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -330,11 +331,12 @@ export function ReflectionComposer({ linkables, prefillLinkId, showDraftStatus }
           placeholder="Title or Subject (optional)"
           className="border-0 border-b border-border/70 px-0 font-display text-lg shadow-none focus-visible:ring-0"
         />
-        <Textarea
+        <RichTextArea
           value={body}
-          onChange={(e) => setBody(e.target.value)}
+          onChange={setBody}
           placeholder="What's on your heart today?"
           rows={4}
+          ariaLabel="Your reflection"
         />
 
         <ThemeEditor

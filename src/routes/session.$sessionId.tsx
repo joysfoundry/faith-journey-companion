@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ItemView } from "@/components/prayer/ItemView";
+import { RichTextArea } from "@/components/reflections/RichTextArea";
 import { ShareDialog } from "@/components/prayer/ShareDialog";
 import { ExternalLink as ExtLink } from "@/components/ui/external-link";
 import { Progress } from "@/components/ui/progress";
@@ -685,12 +686,13 @@ function ReflectionCard({
       {item.body?.trim() ? (
         <p className="prayer-text mt-4 text-center text-muted-foreground">{item.body}</p>
       ) : null}
-      <Textarea
+      <RichTextArea
         value={text}
-        onChange={(e) => setText(e.target.value)}
+        onChange={setText}
         placeholder="Write in your own words…"
         rows={4}
         className="mt-5"
+        ariaLabel={item.title}
       />
       <div className="mt-3 flex items-center justify-end gap-2">
         {saved && !text.trim() ? (

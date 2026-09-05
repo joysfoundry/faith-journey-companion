@@ -816,6 +816,12 @@ export interface AppSettings {
    * "asked and declined" from "never asked". Additive: no `STORAGE_KEY` bump.
    */
   onboarding_completed_at?: string | undefined;
+  /**
+   * Hide the reflection composer's formatting toolbar (ACTS-156). Absent /
+   * false = shown, so the feature is discoverable by default; the keyboard
+   * shortcuts keep working either way. Additive: no `STORAGE_KEY` bump.
+   */
+  reflection_toolbar_hidden?: boolean | undefined;
 }
 
 export interface Database {
