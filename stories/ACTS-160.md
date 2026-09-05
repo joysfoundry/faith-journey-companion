@@ -2,15 +2,15 @@
 id: ACTS-160
 title: Serve the beta invitation from the app's own origin
 spine:
-status: In Progress
+status: Done
 origin: human-directed
 approved_by: JC
 depends_on: []
 relates_to: [ACTS-158, ACTS-159, ACTS-82]
 started_at: 2026-09-05T15:00:00-0700
-updated:    2026-09-05T15:00:00-0700
-latest_handoff: null
-sessions: 0
+updated:    2026-09-05T16:10:00-0700
+latest_handoff: ACTS-160/session-01.md
+sessions: 1
 ---
 
 ## Goal
