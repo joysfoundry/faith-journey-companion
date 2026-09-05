@@ -47,6 +47,14 @@ a real iMessage share of `myoravia.lovable.app` (JC, 2026-09-05).
   `<head>` is served to crawlers regardless. The card is therefore visible to anyone
   holding the link even though the app is not — accepted, it is an invite card.
 
+- **No call-to-action on the card. Closed by JC 2026-09-05** — "no need for a way to
+  continue, it works as it is." The whole preview is tappable, so a button would be
+  decoration; the card names the app and the URL and stops there.
+- **`oravia-about.png` was never published as an artifact.** It is a repo file that gets
+  sent as an image, so stale copies circulate with no canonical version to correct —
+  the only fix for an old one is to re-send the regenerated file. Checked against the
+  account's artifacts: the ivory About card is not among them.
+
 ## Tests
 - **Unit** (Vitest — pure `src/lib/**`): N/A — no new pure logic beyond one env-read
   helper; covered by the build + head check below.
