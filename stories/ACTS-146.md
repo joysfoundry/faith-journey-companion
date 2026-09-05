@@ -2,15 +2,15 @@
 id: ACTS-146
 title: Install the Archify skill (dev tooling) — audited safe
 spine:
-status: In Progress
+status: Done
 origin: human-directed
 approved_by: JC
 depends_on: []
 relates_to: [ACTS-104, ACTS-105]
 started_at: 2026-09-04T09:42:04-0700
-updated:    2026-09-04T23:22:18-0700
-latest_handoff: null
-sessions: 0
+updated:    2026-09-04T23:49:05-0700
+latest_handoff: ACTS-146/session-01.md
+sessions: 1
 ---
 
 ## Goal
