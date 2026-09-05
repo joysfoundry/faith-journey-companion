@@ -1,3 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+<!--
+  Oravia — the beta invitation.
+
+  Served STATICALLY from public/, not routed through the app, which is the whole
+  point: files here are handed straight to the browser, so this page sits outside
+  the client-side beta gate in src/components/beta-gate.tsx. A recipient reads the
+  invitation with no passcode, no name prompt and no account, then taps through.
+
+  Lives on the app's own origin rather than a third-party host so the invitation
+  and the app it invites you to share one domain (ACTS-160).
+-->
+
+<meta name="description" content="Oravia — a personal faith companion for the whole of your faith journey. A free beta: no account needed, and your entries stay on your device.">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Oravia">
+<meta property="og:url" content="https://myoravia.lovable.app/invite.html">
+<meta property="og:title" content="Oravia — Your devotional life, gathered">
+<meta property="og:description" content="Prayer, Scripture, learning, and reflection — woven into one daily rhythm. A free beta: no account needed, and your entries stay on your device.">
+<meta property="og:image" content="https://myoravia.lovable.app/og-cover.png?v=1">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The Oravia mark over the words Oravia, Your devotional life gathered — a free beta, no account needed.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Oravia — Your devotional life, gathered">
+<meta name="twitter:description" content="Prayer, Scripture, learning, and reflection — woven into one daily rhythm. A free beta: no account needed, and your entries stay on your device.">
+<meta name="twitter:image" content="https://myoravia.lovable.app/og-cover.png?v=1">
+
+<link rel="icon" href="/favicon.ico?v=2" type="image/x-icon">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
+
 <title>Oravia Beta Invitation</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -213,6 +250,8 @@
     .invite a::after { content: " (myoravia.lovable.app)"; font-size: .7em; color: var(--ink-soft); }
   }
 </style>
+</head>
+<body>
 
 <div class="card">
 
@@ -324,3 +363,6 @@
   </div>
 
 </div>
+
+</body>
+</html>

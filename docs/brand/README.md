@@ -14,11 +14,12 @@ to beta testers alongside the app link.
   `<head>`, so it appears by itself in iMessage/Slack/Facebook/X. Regenerate with
   `python3 make_og.py` and **bump the `?v=` on `OG_IMAGE` in `src/routes/__root.tsx`** —
   scrapers cache the old image hard.
-- **`oravia-about.html`** — the About card **as a page**, published at
-  <https://claude.ai/code/artifact/0a832e6c-efa7-4cea-91bb-5503fee85a41>.
-  The one to send with the beta link: it reflows on a phone (the PNG needs pinch-zoom),
-  the beta URL is tappable, and `@media print` turns ⌘P into a clean PDF. Same palette as
-  `oravia-about.png`, but set in the app's own Cormorant Garamond + Karla rather than the
+- **`../../public/invite.html`** — the About card **as a page**, served from the app's own
+  origin at **`myoravia.lovable.app/invite.html`** (ACTS-160). The one to send with the beta
+  link: it reflows on a phone (the PNG needs pinch-zoom), the beta URL is tappable, and
+  `@media print` turns ⌘P into a clean PDF. Lives in `public/` so it is handed straight to
+  the browser — **outside the beta gate**, no passcode or account to read it. Same palette
+  as `oravia-about.png`, but set in the app's own Cormorant Garamond + Karla rather than the
   PNG's Georgia (a Pillow limitation, not a brand choice).
 - **`mark.py`** — the cross-in-compass, transcribed from `public/oravia-mark.svg` and
   imported by all three generators. The mark was hand-drawn in each of them before, which
