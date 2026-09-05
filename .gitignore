@@ -33,3 +33,12 @@ dist-ssr
 
 # npm lockfile (project uses bun)
 package-lock.json
+
+# Local env — holds VITE_SUPABASE_* and VITE_BETA_PASSCODE.
+# NOTE: .env is still *tracked* (committed before this entry existed), so this only
+# stops a NEW .env from being added. To actually untrack it you also need
+#   git rm --cached .env
+# which is deliberately NOT done: there is no .env.example, so an untracked .env
+# would leave a fresh clone / CI build with no Supabase config.
+.env
+.env.local
