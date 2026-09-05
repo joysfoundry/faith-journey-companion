@@ -75,6 +75,33 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   );
 }
 
+/**
+ * Absolute origin for the tags a link-scraper reads. `og:image` and `og:url` MUST be
+ * absolute — Facebook, iMessage, Slack and X all drop a relative path silently, which
+ * is how we ended up with Apple screenshotting the beta gate instead (ACTS-158).
+ *
+ * From env so a preview deploy advertises its own origin rather than prod. Resolved
+ * the way `integrations/supabase/client.ts` does it — `VITE_*` first, bare name as the
+ * SSR fallback — with the prod host as the last resort so a build with no env set
+ * still produces a working card. No trailing slash.
+ */
+const SITE_ORIGIN = (
+  import.meta.env["VITE_PUBLIC_URL"] ||
+  // Guarded, unlike the supabase client's twin of this: `VITE_PUBLIC_URL` is normally
+  // UNSET, so this arm is the usual path — and `process` does not exist in the browser,
+  // where `head()` also runs on every client navigation. Unguarded it throws in the root
+  // route and blanks the app.
+  (typeof process !== "undefined" ? process.env["PUBLIC_URL"] : undefined) ||
+  "https://myoravia.lovable.app"
+).replace(/\/+$/, "");
+
+/** Cache-buster; bump alongside any redraw of `public/og-cover.png`. Scrapers cache hard. */
+const OG_IMAGE = `${SITE_ORIGIN}/og-cover.png?v=1`;
+
+const SHARE_BLURB =
+  "Prayer, Scripture, learning, and reflection — woven into one calm daily rhythm. " +
+  "A free beta: no account needed, and your entries stay on your device.";
+
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
     meta: [
@@ -90,13 +117,28 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         name: "description",
         content: "A calm companion for daily prayer, devotions, and reflection.",
       },
-      { property: "og:title", content: "Oravia" },
-      {
-        property: "og:description",
-        content: "A calm companion for daily prayer, devotions, and reflection.",
-      },
+      { property: "og:title", content: "Oravia — Your devotional life, gathered" },
+      { property: "og:description", content: SHARE_BLURB },
       { property: "og:type", content: "website" },
+      { property: "og:site_name", content: "Oravia" },
+      { property: "og:url", content: SITE_ORIGIN },
+      { property: "og:locale", content: "en_US" },
+      // Only the root sets an image, so every route inherits the card: child heads
+      // override og:title / og:description by key and leave these alone.
+      { property: "og:image", content: OG_IMAGE },
+      { property: "og:image:secure_url", content: OG_IMAGE },
+      { property: "og:image:type", content: "image/png" },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      {
+        property: "og:image:alt",
+        content:
+          "The Oravia mark over the words Oravia, Your devotional life gathered — a free beta, no account needed.",
+      },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Oravia — Your devotional life, gathered" },
+      { name: "twitter:description", content: SHARE_BLURB },
+      { name: "twitter:image", content: OG_IMAGE },
     ],
     links: [
       {

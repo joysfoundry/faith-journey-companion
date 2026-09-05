@@ -74,11 +74,14 @@ export const Route = createFileRoute("/")({
         content:
           "Devotion, need, word, and learning in one calm daily companion — with reflections that connect them.",
       },
-      { property: "og:title", content: "Oravia — Your daily prayer companion" },
-      {
-        property: "og:description",
-        content: "Devotion, need, word, and learning in one calm daily companion.",
-      },
+      // The share headline (ACTS-158). This is the URL people actually send, and this
+      // override — not the root's — is what a scraper prints in bold under the card,
+      // so it carries the brand tagline rather than a second, competing description.
+      { property: "og:title", content: "Oravia — Your devotional life, gathered" },
+      { name: "twitter:title", content: "Oravia — Your devotional life, gathered" },
+      // Deliberately NO og:description here — the root's blurb carries the "free beta,
+      // no account needed, entries stay on your device" line, which is the point of the
+      // card. Overriding it locally used to silently drop that from every share of "/".
     ],
   }),
   component: Index,
