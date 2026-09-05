@@ -56,7 +56,11 @@ function isErrorLike(value: unknown): value is Error {
 // recorded for consumeLastCapturedError and expanded before serialization.
 const originalConsoleError = console.error.bind(console);
 console.error = (...args: unknown[]) => {
-  if (args.some(isRequestAbort)) return;
+  const abortedRequest = args.find(isRequestAbort);
+  if (abortedRequest) {
+    record(abortedRequest);
+    return;
+  }
 
   const expanded = args.map((arg) => {
     if (!isErrorLike(arg)) return arg;

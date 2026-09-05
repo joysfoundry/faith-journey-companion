@@ -7,7 +7,8 @@ export function isRequestAbort(error: unknown): boolean {
     if (
       current.name === "AbortError" ||
       current.message === "aborted" ||
-      current.message === "The operation was aborted"
+      current.message === "The operation was aborted" ||
+      (current as Error & { code?: string }).code === "ECONNRESET"
     ) {
       return true;
     }
