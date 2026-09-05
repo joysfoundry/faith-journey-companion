@@ -2,14 +2,14 @@
 id: ACTS-161
 title: Stand down the private-beta passcode gate
 spine:
-status: In Progress
+status: Done
 origin: human-typed
 approved_by: JC
 depends_on: []
 relates_to: [ACTS-82, ACTS-153, ACTS-158, ACTS-160]
 started_at: 2026-09-05T13:15:11-0700
-updated:    2026-09-05T16:30:00-0700
-latest_handoff: null
+updated:    2026-09-05T15:16:41-0700
+latest_handoff: ACTS-161/session-01.md
 sessions: 1
 ---
 
