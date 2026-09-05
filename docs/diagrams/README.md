@@ -47,5 +47,8 @@ its own. Edit the JSON for small corrections; re-render rather than hand-editing
   shrinks the text below the readability floor. Keep the viewBox under ~1395 wide and keep
   edge labels to one or two words.
 - **View notes cap at 140 characters.**
-- **The update ping is disabled** (ACTS-146) — Archify will never announce new versions.
-  Re-check `github.com/tt-a1i/archify` by hand.
+- **The update ping is ON** (re-enabled 2026-09-05, ACTS-146). It is GET-only to a hardcoded
+  GitHub Pages manifest, at most once per 72h, and never auto-installs. **But it is
+  currently mute:** the installed build is `2.17.0-dev.1` and the stable channel is
+  `2.16.0`, so anything released on the 2.16.x line — security fixes included — compares as
+  *older* and stays silent. It only starts speaking at stable `2.17.0`.

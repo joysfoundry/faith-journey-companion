@@ -107,3 +107,34 @@ DO_NOT_TRACK=1 DISABLE_TELEMETRY=1 npx -y skills@1.5.23 add tt-a1i/archify -g -s
 ## Tests
 _N/A — dev-tooling install, no app (`src/**`) code change. Verification is the doctor/demo
 check in the acceptance criteria, not the app test suite (harness = ACTS-92)._
+
+## Addendum — 2026-09-05: ping re-enabled, and a gap it exposed
+JC reversed the ping decision after a second look at the audit. **Re-enabled** by restoring
+the stock `scripts/check-update.mjs` from the `.orig` copy (the local patch and the `.orig`
+are both gone; the file is now pristine, honouring `ARCHIFY_UPDATE_CHECK_DISABLED=1`).
+
+Why the reversal holds up: the checker is GET-only to one hardcoded URL (it throws on any
+other), sends a single `accept` header with no query, body, auth or custom UA, sets
+`redirect: 'error'`, times out at 1s, runs **at most once per 72h**, backs off 6h then 24h
+on failure, and never downloads, installs or executes. It is hosted on **GitHub Pages**, so
+GitHub sees the request and the author gets no access logs. `SKILL.md` also forbids quoting
+or translating the remote summary, so a tampered manifest cannot inject text.
+
+**The gap this exposed — the reason the reversal does not yet buy what it was meant to.**
+The live manifest publishes stable **`2.16.0`**; the installed build is **`2.17.0-dev.1`**.
+Verified against the skill's own `compareSemver`:
+
+| Stable release | Notifies? |
+|---|---|
+| 2.16.0, 2.16.1 | **silent** — compares older than the dev build |
+| 2.17.0, 2.18.0 | notifies |
+
+So while on this prerelease, **any security fix shipped on the 2.16.x line stays silent** —
+the version number says we are ahead while we are actually running unreleased code. The
+check only starts speaking at stable 2.17.0. This makes the still-open "version pinning"
+question load-bearing rather than cosmetic: moving to stable 2.16.0 is what would actually
+deliver the notices.
+
+First live run failed (`check-failed`, 1s timeout on a cold start) and backed off six hours
+exactly as designed — the soft-failure path confirmed working. Subsequent runs report
+`cache-valid`. `doctor` still 15/15.

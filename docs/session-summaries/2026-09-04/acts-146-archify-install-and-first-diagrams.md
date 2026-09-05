@@ -79,7 +79,7 @@ uncommitted work before this session touched it.
   Frozen on disk, so stable in practice; re-pull at a tagged release when one exists.
 - **`--repo-root` evidence mode** — would make diagrams fail loudly when the code drifts.
   Not wired up; wants a public GitHub URL in the spec.
-- **Re-apply the ping patch** after any manual Archify update.
+- **Ping re-enabled 2026-09-05** — see the ACTS-146 addendum. Silent until stable ≥ 2.17.0.
 - Still open from before: **ACTS-105** (canon/doc sync + CRV), **ACTS-113** (in-app Insights
   → Wisdom).
 
@@ -99,7 +99,9 @@ uncommitted work before this session touched it.
 > nodes, and text must stay ≥6px projected at a 1440px viewport, so keep the viewBox under
 > ~1395 wide and edge labels to one or two words.
 >
-> Archify's update ping is disabled at the source, so it will never announce releases —
-> re-check `github.com/tt-a1i/archify` by hand, and re-apply the patch after any update.
+> Archify's update ping was **re-enabled on 2026-09-05** (stock file restored; the patch and
+> its `.orig` are gone). It is mute in practice, though: installed `2.17.0-dev.1` vs stable
+> `2.16.0`, so 2.16.x releases compare as older and stay silent — it only speaks at stable
+> `2.17.0`. Moving to the stable channel is what would actually deliver security notices.
 > When using the `skills` CLI again, set `DO_NOT_TRACK=1 DISABLE_TELEMETRY=1`: its telemetry
 > is opt-out.
