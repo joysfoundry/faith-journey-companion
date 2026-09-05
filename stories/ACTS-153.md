@@ -2,13 +2,13 @@
 id: ACTS-153
 title: First-launch onboarding — ask Bible app + Daily Rosary (defaults, changeable in Settings)
 spine:
-status: In Progress
+status: Done
 origin: human-typed
 depends_on: []
 relates_to: [ACTS-133, ACTS-82, ACTS-144, ACTS-143]
 started_at: 2026-09-04T20:07:46-0700
 updated:    2026-09-04T20:07:46-0700
-latest_handoff: null
+latest_handoff: ACTS-153/session-01.md
 sessions: 1
 ---
 
