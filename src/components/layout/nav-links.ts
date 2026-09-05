@@ -3,6 +3,7 @@ import {
   BookOpen,
   CalendarDays,
   Download,
+  FileDown,
   Heart,
   Home,
   Info,
@@ -31,6 +32,7 @@ export const primaryNavLinks = [
 export const secondaryNavLinks = [
   { to: "/formation", label: SECTION_LABEL, icon: Amphora },
   { to: "/import", label: "Add prayers", icon: Download },
+  { to: "/export", label: "Export journey", icon: FileDown },
   { to: "/settings", label: "Settings", icon: Settings },
   { to: "/about", label: "About", icon: Info },
 ] as const;

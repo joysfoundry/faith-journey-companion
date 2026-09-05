@@ -8,7 +8,17 @@ import type {
   TemplateItem,
 } from "./types";
 
-const now = "2024-01-01T00:00:00.000Z";
+/**
+ * The timestamp every pre-installed record carries. A fixed sentinel, not a real
+ * moment: it marks a row as something the app shipped with rather than something
+ * the user did. Real records are stamped `new Date().toISOString()`, which can
+ * never equal this, so an exact match is a reliable "this came with the app"
+ * test (see `journeyExport.ts`, which keeps seeded rows from being read as the
+ * user's own history).
+ */
+export const SEED_EPOCH = "2024-01-01T00:00:00.000Z";
+
+const now = SEED_EPOCH;
 
 function prayer(
   id: string,

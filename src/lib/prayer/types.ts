@@ -822,6 +822,14 @@ export interface AppSettings {
    * shortcuts keep working either way. Additive: no `STORAGE_KEY` bump.
    */
   reflection_toolbar_hidden?: boolean | undefined;
+  /**
+   * ISO timestamp of the last journey export the user actually *took* — copied
+   * to the clipboard or downloaded (ACTS-157). Opening the export screen does
+   * not stamp it, so "since last export" can never skip entries the user never
+   * received. Absent = never exported, and the option is hidden. Additive: no
+   * `STORAGE_KEY` bump.
+   */
+  last_export_at?: string | undefined;
 }
 
 export interface Database {
