@@ -60,9 +60,9 @@ Note the preview browser's localStorage was cleared several times during this, s
 app there has re-seeded. That is the in-app browser, not a device with real data.
 
 ## Git state at handoff
-**Committed, NOT pushed** — `bdae185` + `908a3ac` sit ahead of `origin/main` behind the
-usual in-sandbox git-auth failure (`could not read Username`). **JC pushes from their own
-client**, as always.
+**Committed and pushed.** `bdae185` + `908a3ac` + `1ae212e` (this close) — the in-sandbox
+push failed on the usual git-auth error and **JC pushed from their own client**, confirmed
+2026-09-05: `origin/main` == `1ae212e`, nothing ahead.
 
 ## Next
 **The one thing left is JC's, and it is the actual stand-down:** clear
