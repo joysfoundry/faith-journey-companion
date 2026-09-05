@@ -2,15 +2,15 @@
 id: ACTS-155
 title: Repair the stale verify-merge.ts harness script (dead Learn API)
 spine:
-status: In Progress
+status: Done
 origin: human-directed
 approved_by: JC
 depends_on: []
 relates_to: [ACTS-92, ACTS-91, ACTS-154]
 started_at: 2026-09-04T20:53:17-0700
-updated:    2026-09-04T20:53:17-0700
-latest_handoff: null
-sessions: 0
+updated:    2026-09-04T21:14:40-0700
+latest_handoff: ACTS-155/session-01.md
+sessions: 1
 ---
 
 ## Goal
