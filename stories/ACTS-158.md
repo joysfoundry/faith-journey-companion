@@ -2,14 +2,14 @@
 id: ACTS-158
 title: Social share preview card (Open Graph / Twitter) for the beta link
 spine:
-status: In Progress
+status: Done
 origin: human-typed
 depends_on: []
 relates_to: [ACTS-144, ACTS-148, ACTS-82]
 started_at: 2026-09-05T12:06:37-0700
-updated:    2026-09-05T12:06:37-0700
-latest_handoff: null
-sessions: 0
+updated:    2026-09-05T15:40:00-0700
+latest_handoff: ACTS-158/session-01.md
+sessions: 1
 ---
 
 ## Goal
