@@ -118,7 +118,7 @@ tracked("YOUR DEVOTIONAL LIFE, GATHERED", hv(17), GOLD, 5, 268 * S)
 rule(318 * S)
 
 center("Prayer, Scripture, learning, and reflection —", gi(30), IVORY_S, 358 * S)
-center("woven into one calm daily rhythm.", gi(30), IVORY_S, 400 * S)
+center("woven into one daily rhythm.", gi(30), IVORY_S, 400 * S)
 
 tracked("FREE BETA  ·  NO ACCOUNT NEEDED  ·  YOUR ENTRIES STAY ON YOUR DEVICE",
         hv(16), IVORY_M, 3, 486 * S)

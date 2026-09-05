@@ -99,7 +99,7 @@ const SITE_ORIGIN = (
 const OG_IMAGE = `${SITE_ORIGIN}/og-cover.png?v=1`;
 
 const SHARE_BLURB =
-  "Prayer, Scripture, learning, and reflection — woven into one calm daily rhythm. " +
+  "Prayer, Scripture, learning, and reflection — woven into one daily rhythm. " +
   "A free beta: no account needed, and your entries stay on your device.";
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
@@ -115,7 +115,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "apple-mobile-web-app-title", content: "Oravia" },
       {
         name: "description",
-        content: "A calm companion for daily prayer, devotions, and reflection.",
+        content: "A companion for daily prayer, devotions, and reflection.",
       },
       { property: "og:title", content: "Oravia — Your devotional life, gathered" },
       { property: "og:description", content: SHARE_BLURB },

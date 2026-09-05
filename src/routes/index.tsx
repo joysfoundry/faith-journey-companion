@@ -72,7 +72,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Devotion, need, word, and learning in one calm daily companion — with reflections that connect them.",
+          "Devotion, need, word, and learning in one daily companion — with reflections that connect them.",
       },
       // The share headline (ACTS-158). This is the URL people actually send, and this
       // override — not the root's — is what a scraper prints in bold under the card,
