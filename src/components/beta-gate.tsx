@@ -2,6 +2,9 @@ import { useEffect, useState, type ReactNode, type FormEvent } from "react";
 import { useRouterState } from "@tanstack/react-router";
 
 import { useApp } from "@/lib/prayer/store";
+import { needsOnboarding } from "@/lib/prayer/onboarding";
+import { GateShell, Splash } from "@/components/gate-shell";
+import { Onboarding } from "@/components/onboarding";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +19,9 @@ import { Label } from "@/components/ui/label";
  *   2. Name      — asks who's praying, purely to personalize. The name is stored
  *      in the app Database's `settings.display_name`, so it lives in the SAME
  *      localStorage blob as everything else the person creates.
+ *   3. Onboarding — the two first-launch preference questions (Bible app, Daily
+ *      Rosary). Lives in `onboarding.tsx`: this file is about *access*, that one
+ *      is about *preferences*, and only the frame (`GateShell`) is shared.
  *
  * IMPORTANT — this is NOT authentication. The passcode is baked into the client
  * bundle at build time, so anyone who reads the source can find it. It keeps the
@@ -30,27 +36,6 @@ const UNLOCK_KEY = "acts-beta-unlocked-v1";
 
 // Vite replaces this at build time. Set it in the host (Lovable) env to arm the gate.
 const PASSCODE: string = (import.meta.env["VITE_BETA_PASSCODE"] as string | undefined) ?? "";
-
-function Splash() {
-  // Minimal, theme-colored hold to avoid a flash of the gate/app before we've
-  // read localStorage and the store has hydrated.
-  return <div className="min-h-screen bg-background" aria-hidden />;
-}
-
-function GateShell({ children }: { children: ReactNode }) {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="w-full max-w-sm text-center">
-        <h1 className="font-serif text-4xl font-medium tracking-tight text-foreground">Oravia</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Your devotional life, gathered.</p>
-        <div className="mt-8">{children}</div>
-        <p className="mt-8 text-xs text-muted-foreground/80">
-          Private beta · no email or account needed · your entries stay in this browser.
-        </p>
-      </div>
-    </div>
-  );
-}
 
 export function BetaGate({ children }: { children: ReactNode }) {
   const { db, ready, updateSettings } = useApp();
@@ -155,6 +140,11 @@ export function BetaGate({ children }: { children: ReactNode }) {
       </GateShell>
     );
   }
+
+  // Step 3 — the first-launch questions (Bible app, Daily Rosary). Asked once of
+  // everyone, including testers who already have data (JC, 2026-09-04) — the
+  // stamp, not the answers, is what records that we asked.
+  if (needsOnboarding(db.settings)) return <Onboarding />;
 
   return <>{children}</>;
 }

@@ -809,6 +809,13 @@ export interface AppSettings {
    * whole local DB — including who this data belongs to — migrates in one piece.
    */
   display_name?: string | undefined;
+  /**
+   * ISO timestamp of when the first-launch questions (Bible app, Daily Rosary)
+   * were answered *or* skipped — see `src/lib/prayer/onboarding.ts`. Skipping
+   * writes no preference, so this stamp is the only thing that distinguishes
+   * "asked and declined" from "never asked". Additive: no `STORAGE_KEY` bump.
+   */
+  onboarding_completed_at?: string | undefined;
 }
 
 export interface Database {
