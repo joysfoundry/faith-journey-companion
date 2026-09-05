@@ -91,7 +91,7 @@ para("Oravia comes from the Latin ora — “pray” — and via — “the way�
 rule(28)
 center("Keep your seeking for God.", gi(27), GOLD, 40, 26)
 tracked_center("TRY THE BETA", hv(13), GOLD, 3, 20, 10)
-center("www.myoravia.lovable.app", gr(23), LINK, 32, 0)
+center("myoravia.lovable.app", gr(23), LINK, 32, 0)
 
 # crop to content + balanced bottom margin, then frame
 final_h = int(y + 104 * S)
