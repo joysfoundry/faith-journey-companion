@@ -62,7 +62,7 @@ out.push(`Fixed mystery set (Luminous): mysteries=[${mysteryTitles.join(", ")}] 
 const novena = compile("tpl-54-novena", { novena_instance_id: "none" });
 out.push(`54-Day Novena: ${novena.items.length} items compiled`);
 
-// Journey layer: Reflection / Learning / Mass persist through store reducers
+// Journey layer: Reflection / Knowledge / Mass persist through store reducers
 let j = db;
 j = mutations.addReflection(j, {
   id: newId("reflection"),
@@ -73,14 +73,14 @@ j = mutations.addReflection(j, {
   photo_count: 0,
   created_at: new Date().toISOString(),
 });
-j = mutations.addLearningItem(j, {
-  id: "learn-x",
+j = mutations.addKnowledgeItem(j, {
+  id: "know-x",
   title: "Test book",
-  content_type: "book",
+  category: "book",
   status: "not_started",
   created_at: new Date().toISOString(),
 });
-j = mutations.setLearningStatus(j, "learn-x", "finished");
+j = mutations.setKnowledgeStatus(j, "know-x", "finished");
 j = mutations.addMassExperience(j, {
   id: newId("mass"),
   date: "2026-08-19",
@@ -89,10 +89,10 @@ j = mutations.addMassExperience(j, {
   transcript_status: "none",
   created_at: new Date().toISOString(),
 });
-const seededLearning = createSeedDatabase().learning_items.length;
+const seededKnowledge = createSeedDatabase().knowledge_items.length;
 out.push(
-  `Journey layer: reflections=${j.reflections.length} (link ${j.reflections[0].links[0]?.target_type}), ` +
-    `learning=${j.learning_items.length} (seeded ${seededLearning}, learn-x=${j.learning_items.find((l) => l.id === "learn-x")?.status}), ` +
+  `Journey layer: reflections=${j.reflections.length} (link ${j.reflections[0]?.links[0]?.target_type}), ` +
+    `knowledge=${j.knowledge_items.length} (seeded ${seededKnowledge}, know-x=${j.knowledge_items.find((k) => k.id === "know-x")?.status}), ` +
     `mass=${j.mass_experiences.length}`,
 );
 
