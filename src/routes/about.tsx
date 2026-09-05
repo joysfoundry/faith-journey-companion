@@ -61,37 +61,41 @@ function AboutPage() {
         <section className="space-y-2">
           <h2 className="font-display text-lg text-foreground">More than a prayer app</h2>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            A person&rsquo;s faith journey is shaped not only by prayer, but by what they
-            read, watch, hear, experience, question, and reflect on. Oravia captures that faith
-            learning alongside prayer and lived experience so that, over time, you can make
-            connections — turning what you encounter into reflection, and eventually
-            recognizing insights and carrying forward wisdom that can support discernment and
-            action.
+            Prayer takes more than one shape — some days your own words, some days a devotion
+            you were taught and have prayed the same way for years. Oravia honors both. Today
+            those prayers are scattered across paper and apps; digitized here, they live in one
+            place, so you can customize a devotion the way you, your family, or your parish
+            pray it: your prayers, in your order, with your intentions.
+          </p>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            Build it once and it&rsquo;s there every time — no flipping, nothing to lose. Each
+            devotion compiles into a guided flow — the right day, the right mysteries and
+            readings, reflection as a first-class step, and a way to sing — so the tool
+            disappears and the prayer stays.
+          </p>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            And it can be shared, so others pray it right alongside you: anyone still learning
+            has the words in front of them, in order, free to stay in the prayer instead of
+            wondering what comes next.
           </p>
         </section>
 
         <section className="space-y-2">
           <h2 className="font-display text-lg text-foreground">One place for your journey</h2>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            Today the pieces of a faith life live in a dozen scattered places, on paper and
-            across apps — a Rosary pamphlet, a hymnal, a Bible, a saint-of-the-day site, a
-            family novena someone texted you. Oravia gathers them into one companion, compiling
-            a devotion into a guided flow — the right day, the right mysteries and readings,
-            reflection as a first-class step, and a way to sing — so the tool disappears and
-            the prayer stays.
+            A faith journey is shaped not only by prayer, but by what you read, watch, hear,
+            experience, question, and reflect on. Oravia gathers that learning alongside your
+            prayer and lived experience — the books and podcasts, the apps you already use, the
+            voices that inspire you — so that over time you can make connections and carry
+            forward what supports discernment and action.
           </p>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            Build a devotion once, the way you have learned to pray it, and it&rsquo;s there
-            every time — no flipping between a booklet, a holy card, and a printout. Share it
-            and others pray it right alongside you; anyone still learning has the words in
-            front of them, in order, so they can stay in the prayer instead of wondering what
-            comes next.
-          </p>
-          <p className="text-sm leading-relaxed text-muted-foreground">
-            It&rsquo;s a hub, not a walled garden. Link out to how you already pray — Hallow,
-            Bible in a Year, a catechism program — keep your journaling right alongside your
-            prayer, and gather the resources that inspire you and shape your learning, whether
-            they&rsquo;re digital or on paper.
+            It&rsquo;s a hub, not a walled garden: link out to how you already pray — Hallow,
+            Bible in a Year, a catechism program — and gather what shapes your learning,
+            whether digital or on paper. Having it in one place is not only for you. When
+            someone asks what you&rsquo;re reading, or praying, or working through, it&rsquo;s
+            right there to hand on — and the people walking with you are part of your journey
+            too.
           </p>
         </section>
 
