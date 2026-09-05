@@ -1,0 +1,317 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Oravia — where a devotion's data actually lives",
+    "subtitle": "TanStack Start app; devotional data stays in the browser, only sharing and import cross the network",
+    "output": "oravia-request-flow.html",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "local-path",
+        "label": "The everyday path",
+        "focus": [
+          "devotee",
+          "routes",
+          "store",
+          "localdb"
+        ],
+        "note": "Praying, journalling and reflecting never leave the device: routes read and mutate one in-memory Database that is mirrored to localStorage."
+      },
+      {
+        "id": "share-path",
+        "label": "Sharing crosses the network",
+        "focus": [
+          "store",
+          "serverfn",
+          "supaadmin",
+          "shared"
+        ],
+        "note": "Only a deliberate share leaves the browser. The table is RLS-locked, so the write goes through a service-role server function."
+      },
+      {
+        "id": "outbound",
+        "label": "Outbound reads",
+        "focus": [
+          "routes",
+          "bible",
+          "serverfn",
+          "source"
+        ],
+        "note": "Two read-only exits: a deep link handing the user to their own Bible app, and a server-side fetch of an imported source text."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "devotee",
+      "type": "external",
+      "label": "Devotee",
+      "sublabel": "Browser",
+      "pos": [
+        40,
+        300
+      ],
+      "size": [
+        130,
+        60
+      ]
+    },
+    {
+      "id": "routes",
+      "type": "frontend",
+      "label": "TanStack Router",
+      "sublabel": "src/routes — 23 routes",
+      "pos": [
+        280,
+        300
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "store",
+      "type": "frontend",
+      "label": "AppStoreProvider",
+      "sublabel": "React context + mutations",
+      "pos": [
+        550,
+        300
+      ],
+      "size": [
+        170,
+        64
+      ],
+      "tag": "single Database object"
+    },
+    {
+      "id": "localdb",
+      "type": "database",
+      "label": "localStorage",
+      "sublabel": "prayer-companion-db-v39",
+      "pos": [
+        830,
+        300
+      ],
+      "size": [
+        170,
+        64
+      ],
+      "tag": "system of record"
+    },
+    {
+      "id": "compiler",
+      "type": "frontend",
+      "label": "Session compiler",
+      "sublabel": "lib/prayer/compiler.ts",
+      "pos": [
+        550,
+        140
+      ],
+      "size": [
+        170,
+        60
+      ]
+    },
+    {
+      "id": "bible",
+      "type": "external",
+      "label": "Bible app",
+      "sublabel": "deep link, no embedding",
+      "pos": [
+        280,
+        140
+      ],
+      "size": [
+        160,
+        60
+      ],
+      "tag": "licensing"
+    },
+    {
+      "id": "serverfn",
+      "type": "backend",
+      "label": "Server functions",
+      "sublabel": "createServerFn + CSRF",
+      "pos": [
+        550,
+        470
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "source",
+      "type": "external",
+      "label": "Source URL",
+      "sublabel": "USCCB / web import",
+      "pos": [
+        280,
+        470
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "supaadmin",
+      "type": "security",
+      "label": "supabaseAdmin",
+      "sublabel": "service-role key, server only",
+      "pos": [
+        830,
+        470
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "shared",
+      "type": "database",
+      "label": "shared_sessions",
+      "sublabel": "Postgres + RLS",
+      "pos": [
+        1110,
+        470
+      ],
+      "size": [
+        160,
+        64
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "The browser — devotional data never leaves",
+      "wraps": [
+        "routes",
+        "store",
+        "localdb",
+        "compiler"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Supabase",
+      "wraps": [
+        "supaadmin",
+        "shared"
+      ]
+    },
+    {
+      "kind": "security-group",
+      "label": "attachSupabaseAuth + CSRF on every server fn",
+      "wraps": [
+        "serverfn"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "devotee-to-routes",
+      "from": "devotee",
+      "to": "routes",
+      "label": "navigate",
+      "variant": "emphasis"
+    },
+    {
+      "id": "routes-to-store",
+      "from": "routes",
+      "to": "store",
+      "label": "read / mutate"
+    },
+    {
+      "id": "store-to-localdb",
+      "from": "store",
+      "to": "localdb",
+      "label": "persist",
+      "variant": "emphasis"
+    },
+    {
+      "id": "store-to-compiler",
+      "from": "store",
+      "to": "compiler",
+      "label": "compile steps",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "labelDy": -68
+    },
+    {
+      "id": "routes-to-bible",
+      "from": "routes",
+      "to": "bible",
+      "label": "hand off passage",
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "labelDy": -68
+    },
+    {
+      "id": "store-to-serverfn",
+      "from": "store",
+      "to": "serverfn",
+      "label": "share / import only",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 62
+    },
+    {
+      "id": "serverfn-to-source",
+      "from": "serverfn",
+      "to": "source",
+      "label": "fetch text",
+      "variant": "dashed"
+    },
+    {
+      "id": "serverfn-to-supaadmin",
+      "from": "serverfn",
+      "to": "supaadmin",
+      "label": "share row",
+      "variant": "security"
+    },
+    {
+      "id": "supaadmin-to-shared",
+      "from": "supaadmin",
+      "to": "shared",
+      "label": "insert"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Local by default",
+      "items": [
+        "One Database object in React context",
+        "Mirrored to localStorage on every change",
+        "Seeded on first run; key version bumps reseed"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Only two network exits",
+      "items": [
+        "A deliberate share writes shared_sessions",
+        "Import fetches a source URL server-side",
+        "Bible passages are a deep link, never embedded"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Why a server function",
+      "items": [
+        "shared_sessions is RLS-locked to the browser",
+        "The service-role key stays server-side",
+        "CSRF + auth middleware wrap every server fn"
+      ]
+    }
+  ]
+}
