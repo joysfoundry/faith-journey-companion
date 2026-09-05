@@ -2,15 +2,15 @@
 id: ACTS-159
 title: Refresh or retire the published Oravia brand artifact
 spine:
-status: To Do
+status: Done
 origin: human-directed
 approved_by: JC
 depends_on: []
 relates_to: [ACTS-144, ACTS-148, ACTS-158]
-started_at:
-updated: 2026-09-05T14:20:00-0700
-latest_handoff: null
-sessions: 0
+started_at: 2026-09-05T14:20:00-0700
+updated: 2026-09-05T14:45:00-0700
+latest_handoff: ACTS-159/session-01.md
+sessions: 1
 ---
 
 ## Goal
@@ -65,11 +65,14 @@ HTML page with the same copy — the exact drift that created this story.
 - [x] ~~If refreshed: same URL~~ — N/A, not refreshed.
 - [x] If retired: note where testers should be pointed instead. → the artifact above.
 
-## Left to settle before this closes
-[`docs/brand/oravia-brand.html`](../docs/brand/oravia-brand.html) — the **source of the
-retired artifact** — is still in the repo, still carrying the old flame-and-open-O mark
-and the pre-trim copy. It is now the only file in `docs/brand/` that nothing points at.
-Delete it, or mark it superseded in place? Either way it should not be regenerated from.
+## Settled at close
+`docs/brand/oravia-brand.html` — the retired artifact's source — **deleted** (JC,
+2026-09-05), recoverable from git history. Two dangling references cleaned up:
+`make_og.py`'s palette comments (comments only; `og-cover.png` regenerates
+byte-identical) and the README entry. `design-system/brand/mark-at-size.html` still
+cites the path as the source of the retired mark and is **left alone deliberately** —
+that page is the analysis of why the flame was retired, so rewriting it would edit the
+record rather than fix a reference.
 
 ## Tests
 - **Unit / Integration / E2E:** N/A — brand collateral outside the app bundle; nothing
