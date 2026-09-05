@@ -8,7 +8,7 @@ approved_by: JC
 depends_on: []
 relates_to: [ACTS-144, ACTS-148, ACTS-158]
 started_at:
-updated: 2026-09-05T13:05:00-0700
+updated: 2026-09-05T14:20:00-0700
 latest_handoff: null
 sessions: 0
 ---
@@ -41,18 +41,35 @@ Three drifts from the current brand:
    About edits landed, so it no longer tracks `src/routes/about.tsx` (the canonical copy)
    or the About card.
 
-## Open
-- **Refresh or retire?** The PNG collateral (`oravia-about.png`, `oravia-flyer.png`) and
-  the ACTS-158 share card now cover the same job. If the artifact is not pulling weight,
-  retiring it beats maintaining a fourth surface with the same copy on it.
-- If refreshed, decide whether it regenerates from a single source alongside the PNGs
-  rather than being hand-maintained HTML that drifts again.
+## Decision — RETIRE (JC, 2026-09-05)
+Not refreshed. A **replacement was built and published** while closing ACTS-158, so the
+old artifact has nothing left to do:
+
+**<https://claude.ai/code/artifact/0a832e6c-efa7-4cea-91bb-5503fee85a41>**
+— "Oravia Beta Invitation", 🧭. Source in the repo at
+[`docs/brand/oravia-about.html`](../docs/brand/oravia-about.html).
+
+It is the web twin of `oravia-about.png`: current cross-in-compass mark, current About
+copy, the palette lifted verbatim from `make_about.py`, and the beta link as a real
+tappable `<a>` rather than a string to retype. Chosen over a .docx because the piece is
+sent to phones — it reflows, the text is selectable and screen-reader accessible, and the
+mark is inline SVG. A `@media print` block makes ⌘P → Save as PDF produce the file
+version, so the docx need never exist.
+
+**Why retire rather than refresh the old URL:** it was private and only ever hand-shared,
+so no public link breaks. Refreshing in place would have meant hand-maintaining a second
+HTML page with the same copy — the exact drift that created this story.
 
 ## Acceptance criteria
-- [ ] Decide refresh vs. retire.
-- [ ] If refreshed: current mark, current About copy, and a working beta link, published
-      to the **same URL** so links already sent keep resolving.
-- [ ] If retired: note where testers should be pointed instead.
+- [x] Decide refresh vs. retire. → **Retire.**
+- [x] ~~If refreshed: same URL~~ — N/A, not refreshed.
+- [x] If retired: note where testers should be pointed instead. → the artifact above.
+
+## Left to settle before this closes
+[`docs/brand/oravia-brand.html`](../docs/brand/oravia-brand.html) — the **source of the
+retired artifact** — is still in the repo, still carrying the old flame-and-open-O mark
+and the pre-trim copy. It is now the only file in `docs/brand/` that nothing points at.
+Delete it, or mark it superseded in place? Either way it should not be regenerated from.
 
 ## Tests
 - **Unit / Integration / E2E:** N/A — brand collateral outside the app bundle; nothing
