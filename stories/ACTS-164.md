@@ -2,15 +2,15 @@
 id: ACTS-164
 title: Say the "build it once, share it, pray alongside" promise on the About page
 spine:
-status: In Progress
+status: Done
 origin: human-typed
 approved_by: JC
 depends_on: []
 relates_to: [ACTS-143, ACTS-160, ACTS-94]
 started_at: 2026-09-05T15:39:48-0700
-updated:    2026-09-05T15:39:48-0700
-latest_handoff: null
-sessions: 0
+updated:    2026-09-05T15:50:54-0700
+latest_handoff: ACTS-164/session-01.md
+sessions: 1
 ---
 
 ## Goal
