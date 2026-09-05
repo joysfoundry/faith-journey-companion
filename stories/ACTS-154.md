@@ -2,14 +2,14 @@
 id: ACTS-154
 title: Move the "Online Bible" link onto the Word card header (it reads as a sub-item of Daily Readings)
 spine:
-status: To Do
+status: Done
 origin: human-typed
 depends_on: []
 relates_to: [ACTS-153, ACTS-152, ACTS-145]
 started_at: 2026-09-04T20:36:01-0700
-updated:    2026-09-04T20:36:01-0700
-latest_handoff: null
-sessions: 0
+updated:    2026-09-04T21:04:12-0700
+latest_handoff: ACTS-154/session-01.md
+sessions: 1
 ---
 
 ## Goal
@@ -39,21 +39,21 @@ one visually subordinate to the other, reads as redundancy.
   utility.
 
 ## Acceptance criteria
-- [ ] "Online Bible" no longer renders inside the Daily Readings block.
-- [ ] It appears on the **Word card header** via `SectionCard`'s `actions` slot, at a
+- [x] "Online Bible" no longer renders inside the Daily Readings block.
+- [x] It appears on the **Word card header** via `SectionCard`'s `actions` slot, at a
       weight that reads as a section-level link rather than a sub-item.
-- [ ] ⚠️ **Not a second book icon.** The header already carries `BookOpen` for "open the
+- [x] ⚠️ **Not a second book icon.** The header already carries `BookOpen` for "open the
       full Word page"; two identical glyphs meaning different things is the ACTS-152
       trap. Use the text label (optionally with the small external-link chevron), or a
       distinct icon.
-- [ ] It still resolves through `resolveBibleHomeUrl(db.settings)` and is **omitted
+- [x] It still resolves through `resolveBibleHomeUrl(db.settings)` and is **omitted
       entirely** when that returns "" (e.g. "I don't use one yet", or "another app" with
       no URL) — today's conditional render must survive the move.
-- [ ] Both surfaces are correct: `WordSection` is shared, so Home **and** `/word` change
+- [x] Both surfaces are correct: `WordSection` is shared, so Home **and** `/word` change
       together — check the header treatment works on the `/word` page, which has its own
       `AppShell` heading rather than a `SectionCard`.
-- [ ] Mobile: the header row (title + up to two actions) doesn't wrap or crowd.
-- [ ] `tsc --noEmit` clean; browser-verified on Home and `/word`.
+- [x] Mobile: the header row (title + up to two actions) doesn't wrap or crowd.
+- [x] `tsc --noEmit` clean; browser-verified on Home and `/word`.
 
 ## Notes
 No model or storage change — presentation only, so **no `STORAGE_KEY` bump**.
