@@ -87,10 +87,16 @@ has no support at all. **Do not re-file this** without JC reopening it. ACTS-103
 voice+OCR scope as written; nothing was split out.
 
 ## Git state at handoff
-**Committed, NOT pushed.** `6ff9f71` (code) + `e4d317a` (docs) sit on local `main`; a
-third docs commit closes this story. `git push origin main` failed with
+**Committed, NOT pushed** *(at handoff time)*. `6ff9f71` (code) + `e4d317a` (docs) sat on
+local `main`, plus `d9abe31` closing this story. `git push origin main` failed with
 `could not read Username for 'https://github.com': Device not configured` — the same
-git-auth condition that hit ACTS-153. **Push from a git client.**
+git-auth condition that hit ACTS-153.
+
+**Resolved 2026-09-04:** JC pushed from their own git client. All three commits verified
+on `origin/main` (`git ls-remote` head = `d9abe319…`, local level with remote). The same
+sweep found that **every** earlier "push pending (auth)" commit had also landed, so those
+stale markers were cleared from the board and the ledger; past handoffs keep their
+point-in-time wording.
 
 ## Next
 Nothing — story closed. Two threads left open elsewhere, neither blocking:
