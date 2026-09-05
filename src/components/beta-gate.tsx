@@ -28,6 +28,13 @@ import { Label } from "@/components/ui/label";
  * public out of a private beta; it does not protect data. Real accounts come with
  * ACTS-82/87/88. See docs for the migration path.
  *
+ * STATUS — the passcode step is STOOD DOWN in production (ACTS-161, 2026-09-05):
+ * VITE_BETA_PASSCODE is deliberately empty in the host env, so step 1 is skipped
+ * and the app opens straight to the name prompt. The branch below is kept ON
+ * PURPOSE — it is the whole reason this was reversible in one env field rather
+ * than a rewrite. Delete it as part of ACTS-82/87/88, when real accounts make it
+ * genuinely dead, and not before.
+ *
  * Public "follow-along" share links (`/follow/*`, ACTS-94) are exempt from both
  * steps — a guest with no passcode and no name must still be able to open a link.
  */
