@@ -2,15 +2,15 @@
 id: ACTS-157
 title: Export my journey for AI insights — menu item, built-in prompt, date range
 spine:
-status: In Progress
+status: Done
 origin: human-typed
 approved_by: JC
 depends_on: []
 relates_to: [ACTS-113, ACTS-135, ACTS-103, ACTS-102, ACTS-143, ACTS-82]
 started_at: 2026-09-04T22:26:03-0700
-updated: 2026-09-05T00:05:00-0700
-latest_handoff: null
-sessions: 0
+updated: 2026-09-04T23:10:00-0700
+latest_handoff: stories/ACTS-157/session-01.md
+sessions: 1
 ---
 
 ## Goal
