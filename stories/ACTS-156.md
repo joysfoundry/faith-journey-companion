@@ -2,15 +2,15 @@
 id: ACTS-156
 title: Formatting toolbar (bold / italic / underline) in the reflection box, hideable
 spine:
-status: In Progress
+status: Done
 origin: human-typed
 approved_by: JC
 depends_on: []
 relates_to: [ACTS-136, ACTS-135, ACTS-103, ACTS-102, ACTS-139]
 started_at: 2026-09-04T21:22:36-0700
-updated: 2026-09-04T22:14:00-0700
-latest_handoff: null
-sessions: 0
+updated: 2026-09-04T22:06:43-0700
+latest_handoff: stories/ACTS-156/session-01.md
+sessions: 1
 ---
 
 ## Goal
