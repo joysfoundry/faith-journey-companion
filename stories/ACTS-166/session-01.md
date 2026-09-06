@@ -71,9 +71,15 @@ Driving the dialog with `javascript_tool` clicks was the way through.
 
 ## Git state at handoff
 
-`8da86e2` (code) + `74acf68` (story docs) are on `origin/main` — **JC pushed them**
-between sessions. The close commit `a265367` is committed locally and **awaiting JC's
-push**.
+`8da86e2` (code) + `74acf68` (story docs) and the close commit `a265367` are all on
+`origin/main` — **JC pushed each of them**, promptly, within minutes of the commit.
+
+⚠️ **Do not `git commit --amend` in this repo.** This session amended the already-pushed
+`a265367` into `c76380e` to correct a wrong push claim, which diverged local from remote
+and gave JC three conflicted files on the next `git pull` — `docs/JIRA-BACKLOG.md`,
+`stories/README.md` and this file, the exact three the amend touched. Resolved by keeping
+the corrected text. **JC pushes fast and Lovable writes straight to `main`: treat every
+commit as already published and correct it with a follow-up commit, never an amend.**
 
 ⚠️ `git push` fails from this environment as always (`could not read Username for
 'https://github.com'`), confirmed again on the close commit. A first reading of
