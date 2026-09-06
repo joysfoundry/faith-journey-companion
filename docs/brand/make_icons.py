@@ -77,8 +77,10 @@ def _tile(size, radius_frac):
 def icon(size, ring_frac=RING_FRAC, radius_frac=CORNER_FRAC, cut=REGULAR):
     """One app icon: the mark centred on a navy tile, scaled from the ring."""
     tile = _tile(size, radius_frac)
-    # The ring is 2r of the mark's 100-unit canvas, so the canvas must be that much
-    # larger than the ring we actually want to see.
+    # Pillow's ellipse() strokes INSIDE the bounding box, so the visible outer diameter
+    # here is 2r of the mark's 100-unit canvas. Do NOT port this formula to SVG, which
+    # centres a stroke on its path and so reaches 2*(r + stroke/2) = 72 units instead --
+    # the same off-by-a-stroke in the other direction.
     canvas = round(size * ring_frac * 100 / (2 * cut["r"]))
     if (size - canvas) % 2:  # keep the paste offset whole, so the mark sits dead centre
         canvas += 1
