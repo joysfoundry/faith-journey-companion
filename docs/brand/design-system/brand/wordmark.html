@@ -1,0 +1,125 @@
+<!-- @dsCard group="Brand" name="The mark as the O" subtitle="Proposed wordmark — not adopted; the mark beside the word still ships" -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Karla:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#0e1d3d;--gold:#bf9e61;--gold-navy:#c6a15b;--cream:#f4ecd8;--parchment:#f7f1e2;--card:#fefdf8;--border:#dfd8cc;--muted:#5a657a;--ink:#3d4a63}
+*{box-sizing:border-box}
+body{margin:0;background:var(--parchment);color:var(--ink);font-family:Karla,system-ui,sans-serif;font-size:14px}
+.wrap{max-width:1000px;margin:0 auto;padding:40px 40px 90px}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#806436}
+h1{font-family:'Cormorant Garamond',Georgia,serif;font-size:44px;font-weight:500;letter-spacing:-.01em;line-height:1.05;margin:6px 0 0;color:var(--navy)}
+.lede{font-size:14px;line-height:1.6;max-width:760px;margin-top:12px;text-wrap:pretty}
+h2{font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin:48px 0 4px;color:var(--navy)}
+.note{font-size:12.5px;line-height:1.55;max-width:790px;margin:8px 0 0}
+.row{display:flex;flex-wrap:wrap;gap:20px;margin-top:20px;align-items:flex-end}
+.tile{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px 28px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:14px}
+.tile.navy{background:#16305a;border-color:#16305a}
+.cap{font-size:10px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);text-align:center;line-height:1.5}
+.tile.navy .cap{color:#9fb0cc}
+.lock{font-family:'Cormorant Garamond',Georgia,serif;font-weight:500;color:var(--navy);line-height:1;white-space:nowrap}
+.lock svg{display:block}
+.tag{font-size:8.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);font-family:Karla,sans-serif;font-weight:500}
+.rule{margin-top:10px;max-width:790px;border-top:1px solid var(--border)}
+.rule div{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid rgba(223,216,204,.5)}
+.rule b{flex:none;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;width:44px;padding-top:1px}
+.rule span{font-size:12.5px;line-height:1.5}
+.do b{color:#2f6b4f}.dont b{color:#832835}
+</style>
+<div class="wrap">
+<div class="eyebrow">Oravia &middot; Brand</div>
+<h1>The mark as the O</h1>
+<p class="lede">The mark was drawn as the <strong>O of Oravia</strong> from the start. This sets it back into the word it came from. Every specimen below is generated from the same geometry as <code>public/oravia-mark.svg</code>, and the ring is fitted to the <strong>measured</strong> cap height of Cormorant Garamond at that size &mdash; not to an em ratio, which is how a lockup ends up three percent off and subtly wrong.</p>
+<div id="sheet"></div>
+</div>
+
+<script>
+const NAVY='#0e1d3d', GOLD='#bf9e61', GOLDN='#c6a15b', CREAM='#f4ecd8';
+const REG={r:33,sw:6,path:'M50 20 L54.2 38.4 L71 42 L54.2 45.6 L50 80 L45.8 45.6 L29 42 L45.8 38.4 Z'};
+const SML={r:32,sw:8,path:'M50 22 L55 38 L68 42 L55 46.4 L50 78 L45 46.4 L32 42 L45 38 Z'};
+
+/* Rasterise a Cormorant "O" and find its ink box. Gives the true cap height and
+   how far the round overshoots the baseline -- both needed to seat the ring. */
+const _mc={};
+function metrics(px){
+  if(_mc[px]) return _mc[px];
+  const c=document.createElement('canvas'); c.width=px*3; c.height=px*3;
+  const x=c.getContext('2d');
+  x.fillStyle='#fff'; x.fillRect(0,0,c.width,c.height);
+  x.fillStyle='#000'; x.font='500 '+px+'px "Cormorant Garamond", Georgia, serif';
+  x.textBaseline='alphabetic'; x.fillText('O', px, px*2);
+  const d=x.getImageData(0,0,c.width,c.height).data;
+  let top=1e9,bot=-1;
+  for(let y=0;y<c.height;y++) for(let X=0;X<c.width;X++)
+    if(d[(y*c.width+X)*4]<128){ if(y<top)top=y; if(y>bot)bot=y; }
+  return _mc[px]={cap:bot-top+1, overshoot:bot-px*2};
+}
+
+/* The mark drawn so its ring's OUTER edge is exactly `d` px across.
+   SVG centres a stroke on its path, so the visible diameter is 2*(r + sw/2) = 72
+   units in both cuts -- NOT 2r. Sizing off 2r is the same off-by-a-stroke that
+   put the app icons at 40% of their tile; do not reintroduce it here. */
+const OUTER=72;
+function mark(d,color,cut,cross){
+  const box=d*100/OUTER;
+  return {box, svg:`<svg width="${box}" height="${box}" viewBox="0 0 100 100" fill="none">
+    <circle cx="50" cy="50" r="${cut.r}" stroke="${color}" stroke-width="${cut.sw}" fill="none"/>
+    ${cross?`<path d="${cut.path}" fill="${color}"/>`:''}</svg>`};
+}
+
+function lock(px,{color=NAVY,markColor=null,fit=1.03,small=false,cross=true}={}){
+  const m=metrics(px), cut=small?SML:REG, d=m.cap*fit;
+  const {box,svg}=mark(d,markColor||color,cut,cross);
+  /* inline-block sits its BOTTOM on the baseline; the ring bottom is (box-d)/2
+     above that, so push down by the gap plus the overshoot a real O has. */
+  const drop=(box-d)/2+m.overshoot;
+  return `<span class="lock" style="font-size:${px}px;color:${color}">
+    <span style="display:inline-block;vertical-align:baseline;position:relative;top:${drop}px;margin-right:${-px*0.012}px">${svg}</span>ravia</span>`;
+}
+
+const S=[];
+const sec=(t,n)=>S.push(`<h2>${t}</h2><p class="note">${n}</p>`);
+const row=i=>S.push(`<div class="row">${i.join('')}</div>`);
+const tile=(inner,cap,navy)=>`<div class="tile${navy?' navy':''}">${inner}<div class="cap">${cap}</div></div>`;
+
+sec('1 &middot; Fitting the ring to the O it replaces',
+ '<code>fit</code> is the ring\'s <strong>outer</strong> diameter divided by the measured ink height of a real Cormorant O &mdash; overshoot included. So <code>1.00</code> is a true match to the letter being replaced, not an approximation of it. It still reads a touch small, because a thin monoline ring carries less weight than a modulated serif O of the same size, so the eye wants a little more.');
+row([0.98,1.00,1.03,1.06,1.10].map(f=>tile(lock(64,{fit:f}),`fit ${f.toFixed(2)}`)));
+
+sec('2 &middot; With and without the cross',
+ 'Inside a word the cross competes with the letterforms, and a ringed cross is a symbol people already read &mdash; so "Oravia" can flash as &#8853;ravia before it resolves. Ring-only is calmer and more legible, but then it is just an O and the mark has stopped doing its job.');
+row([tile(lock(64,{}),'full mark<br>the point of it'),
+     tile(lock(64,{cross:false}),'ring only<br>calmer, says nothing')]);
+
+sec('3 &middot; Colour',
+ 'The mark can take the accent while the word stays ink. That is the one place gold is safe in a lockup &mdash; gold is a fill and mark colour, and cannot carry words.');
+row([tile(lock(64,{}),'all ink'),
+     tile(lock(64,{markColor:GOLD}),'gold O, ink word<br>recommended'),
+     tile(lock(64,{color:CREAM}),'all cream',1),
+     tile(lock(64,{color:CREAM,markColor:GOLDN}),'gold O, cream word',1)]);
+
+sec('4 &middot; With the tagline','The collateral lockup.');
+row([tile(`${lock(74,{markColor:GOLD})}<div class="tag">Your devotional life, gathered</div>`,'parchment'),
+     tile(`${lock(74,{color:CREAM,markColor:GOLDN})}<div class="tag" style="color:${GOLDN}">Your devotional life, gathered</div>`,'navy',1)]);
+
+sec('5 &middot; Does it survive going small?',
+ 'Where a mark-as-letter lockup usually dies. The app header sets the wordmark at 20px. Below about 28px the regular ring thins to a hairline and the cross fills in, so these swap to the small cut.');
+row([[96,0],[64,0],[40,0],[28,0],[22,1],[18,1]].map(([p,sm])=>
+  tile(lock(p,{markColor:GOLD,small:!!sm}),`${p}px${sm?'<br>small cut':''}`)));
+
+sec('6 &middot; Against what ships today',
+ 'The header today sets the mark <em>beside</em> the word. Both are defensible and they say different things: beside reads as a product with a logo; inside reads as a name that happens to contain its own symbol.');
+row([tile(`<span style="display:flex;align-items:center;gap:10px"><svg width="30" height="30" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="33" stroke="${GOLD}" stroke-width="6" fill="none"/><path d="${REG.path}" fill="${GOLD}"/></svg><span style="font-family:'Cormorant Garamond',serif;font-size:38px;color:${NAVY};line-height:1">Oravia</span></span>`,'today &mdash; mark beside word'),
+     tile(lock(38,{markColor:GOLD}),'mark as the O')]);
+
+S.push(`<h2>Rules</h2><div class="rule">
+<div class="do"><b>Do</b><span>Size the ring by its <strong>outer</strong> edge (2 &times; (r + stroke/2) = 72 units, not 2r) against the <em>measured</em> ink height of a real O, and seat it with the same baseline overshoot the round letters have.</span></div>
+<div class="do"><b>Do</b><span>Let the O carry gold while the word stays ink or cream. Never the reverse &mdash; gold cannot carry words.</span></div>
+<div class="do"><b>Do</b><span>Swap to the small cut below 28px, earlier than the standalone mark needs it: inside a word the ring has letterforms competing with it.</span></div>
+<div class="dont"><b>Don't</b><span>Use it as the only lockup. It is a display treatment &mdash; the standalone mark still owns app icons, favicons and avatars, where there is no word to sit in.</span></div>
+<div class="dont"><b>Don't</b><span>Drop the cross to make it read more like an O. That trades away the entire reason the mark exists.</span></div>
+<div class="dont"><b>Don't</b><span>Letterspace the word to "balance" the O. Fix the fit instead.</span></div>
+</div>`);
+
+document.getElementById('sheet').innerHTML=S.join('');
+</script>

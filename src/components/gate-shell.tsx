@@ -1,5 +1,10 @@
 import type { ReactNode } from "react";
 
+import {
+  OraviaWordmark,
+  WORDMARK_LOCKUP_ENABLED,
+} from "./layout/OraviaWordmark";
+
 /**
  * The arrival frame — wordmark, tagline, and a centered card of content.
  *
@@ -8,12 +13,29 @@ import type { ReactNode } from "react";
  * and onboarding (Bible + Daily Rosary — *preferences*, see `onboarding.tsx`).
  * Keeping the frame here means both read as one arrival rather than two screens
  * that happen to look similar.
+ *
+ * This is the LARGEST the name appears anywhere in the app and the first thing a
+ * new person sees, so it moves with the header rather than after it: both branch
+ * on `WORDMARK_LOCKUP_ENABLED` (currently `false`). Note the mark has never
+ * appeared on this screen at all — turning the flag on adds it here, it does not
+ * merely rearrange it.
  */
 export function GateShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm text-center">
-        <h1 className="font-serif text-4xl font-medium tracking-tight text-foreground">Oravia</h1>
+        <h1 className="font-serif text-4xl font-medium tracking-tight text-foreground">
+          {WORDMARK_LOCKUP_ENABLED ? (
+            <OraviaWordmark
+              fontSize={36}
+              className="inline-block font-serif font-medium"
+              markClassName="text-gold"
+              title="Oravia"
+            />
+          ) : (
+            "Oravia"
+          )}
+        </h1>
         <p className="mt-2 text-sm text-muted-foreground">Your devotional life, gathered.</p>
         <div className="mt-8">{children}</div>
         <p className="mt-8 text-xs text-muted-foreground/80">

@@ -15,6 +15,16 @@
  *
  * Colour comes from `currentColor`, so set it on the element or a parent.
  */
+
+/**
+ * The cross path, per cut. Exported so `OraviaWordmark` draws the same shape
+ * rather than keeping a second copy that can drift — which is how the flyer
+ * ended up still carrying the retired flame-and-open-O.
+ */
+export const REGULAR_CROSS =
+  "M50 20 L54.2 38.4 L71 42 L54.2 45.6 L50 80 L45.8 45.6 L29 42 L45.8 38.4 Z";
+export const SMALL_CROSS = "M50 22 L55 38 L68 42 L55 46.4 L50 78 L45 46.4 L32 42 L45 38 Z";
+
 export function OraviaMark({
   size = 28,
   small = false,
@@ -43,15 +53,12 @@ export function OraviaMark({
       {small ? (
         <>
           <circle cx="50" cy="50" r="32" stroke="currentColor" strokeWidth="8" fill="none" />
-          <path d="M50 22 L55 38 L68 42 L55 46.4 L50 78 L45 46.4 L32 42 L45 38 Z" fill="currentColor" />
+          <path d={SMALL_CROSS} fill="currentColor" />
         </>
       ) : (
         <>
           <circle cx="50" cy="50" r="33" stroke="currentColor" strokeWidth="6" fill="none" />
-          <path
-            d="M50 20 L54.2 38.4 L71 42 L54.2 45.6 L50 80 L45.8 45.6 L29 42 L45.8 38.4 Z"
-            fill="currentColor"
-          />
+          <path d={REGULAR_CROSS} fill="currentColor" />
         </>
       )}
     </svg>
