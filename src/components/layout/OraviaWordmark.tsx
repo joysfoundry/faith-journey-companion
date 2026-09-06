@@ -3,18 +3,21 @@ import { REGULAR_CROSS, SMALL_CROSS } from "./OraviaMark";
 /**
  * The mark set *inside* the word — the ring becomes the O of Oravia.
  *
- * LIVE. Both call sites (`Brand.tsx`, `gate-shell.tsx`) branch on the flag
- * below; set `false` and every surface reverts to the mark *beside* the word in
- * one edit. Specimens, fit ladder and do/don't rules live in
- * `docs/brand/design-system/brand/wordmark.html`.
+ * NOT LIVE — and it has been live once, on purpose. JC shipped it, looked at it
+ * in the real app, and turned it back off. The flag below is the whole switch:
+ * both call sites (`Brand.tsx`, `gate-shell.tsx`) branch on it, so `true`
+ * restores every surface in one edit. Specimens, fit ladder and do/don't rules
+ * live in `docs/brand/design-system/brand/wordmark.html`, whose card is marked
+ * **Proposed, not adopted** — which is once again accurate.
  *
- * ⚠️ **This shrinks the mark in the header.** `Brand.tsx` used to set a 30px
- * `OraviaMark` next to 20px text — a ring 21.6px across, 1.5× the type. As the O
- * it is bound to the type instead, so at the same 20px it measures **13.3px:
- * 62% of what it was**. That is inherent to the idea, not a bug — but if the
- * header needs its old presence back, raise the wordmark's `fontSize` there
- * rather than breaking the fit ratio, which is what keeps the ring reading as a
- * letter instead of an ornament parked next to one.
+ * ⚠️ **The reason it is off: as the O, the mark shrinks.** `Brand.tsx` used to
+ * set a 30px `OraviaMark` beside 20px text — a ring 21.6px across, free to be
+ * 1.5× the type. Bound to the type as its letter it can only be letter-sized:
+ * 13.3px at 20px type, and 16.0px (74%) even after the header was raised to the
+ * 24px `LOCKUP_SIZE` it still carries. Going further means 32px type to break
+ * even, or 28px+ where the mark swaps to the regular cut — a different shape.
+ * If this is revisited, raise `fontSize`, never `FIT`: the ratio is what keeps
+ * the ring reading as a letter rather than an ornament parked next to one.
  *
  * Two numbers are load-bearing and were measured, not guessed:
  *
@@ -29,7 +32,7 @@ import { REGULAR_CROSS, SMALL_CROSS } from "./OraviaMark";
  * = 66. Sizing off 2r is the off-by-a-stroke that shipped the app icons at 40%
  * of their tile (ACTS-167); it renders the ring ~9% small here.
  */
-export const WORDMARK_LOCKUP_ENABLED = true;
+export const WORDMARK_LOCKUP_ENABLED = false;
 
 /** Ink height of a Cormorant "O" as a fraction of font-size. Measured. */
 const O_INK = 0.648;
