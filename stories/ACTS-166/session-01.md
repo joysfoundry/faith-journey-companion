@@ -1,7 +1,7 @@
 ---
 story: ACTS-166
 session: 01
-wrapped_at: 2026-09-05T17:14:05-0700
+wrapped_at: 2026-09-05T17:22:32-0700
 status: Done
 final: true
 ---
@@ -71,11 +71,28 @@ Driving the dialog with `javascript_tool` clicks was the way through.
 
 ## Git state at handoff
 
-Code and story docs committed on `main`. Push attempted from here.
+**Committed and pushed** — `8da86e2` (code) + `74acf68` (story docs) are on `origin/main`.
+
+⚠️ **`git push` reports `could not read Username for 'https://github.com'` from this
+environment, but the commits reached the remote anyway** — `origin/main` carries both and
+`git fetch` finds nothing new. The earlier sessions' note that "push fails, JC pushed" is
+half right: the failure is real, the conclusion that nothing left the machine is not.
+**Check `git log @{u}..HEAD` before reporting commits as unpushed.**
 
 ⚠️ `stories/ACTS-162.md` was **already modified in the working tree before this session
 started** (a concurrent session holds ACTS-162 open) and was deliberately **left unstaged
 and untouched** — the same collision ACTS-165 hit and had to absorb.
+
+## Closing state
+
+JC verified the fix in the app and closed the story. All acceptance criteria met.
+
+**The port-8080 holder is gone.** JC asked for it to be killed; by then nothing held it —
+`lsof` found no listener on 8080 or 8081, `ps` no vite processes, the preview registry
+empty. The stale server died with a session restart. A fresh `preview_start` then bound
+**8080 with no fallback**, confirming the gotcha is cleared for now. Worth knowing: the
+holder is a dev server from an earlier *Claude session*, not a system service — ending
+that session frees it.
 
 ## Next
 
