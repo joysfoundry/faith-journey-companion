@@ -58,7 +58,9 @@ import {
   todayISO,
 } from "@/lib/prayer/compiler";
 import {
+  PRAYER_APPS,
   dailyRosaryAppLabel,
+  effectivePrayerAppId,
   isExternalDailyRosary,
   resolveDailyRosaryUrl,
 } from "@/lib/prayer/apps";
@@ -218,71 +220,108 @@ function IconAction({
   );
 }
 
-/** Pick which devotion the Home "daily" card starts. Persisted in settings. */
+/**
+ * Pick what the Home "daily" card starts: a devotion prayed here, or a hand-off
+ * to another app (Hallow &c). Both live in one list because they are one choice
+ * — external mode outranks the chosen devotion on the Daily Rosary row, so a
+ * picker offering only devotions would appear to do nothing while Hallow is on.
+ * Persisted in settings.
+ */
 function ChangeDevotionDialog({
   open,
   onOpenChange,
   templates,
   currentId,
-  onChoose,
+  externalAppId,
+  customAppLabel,
+  onChooseTemplate,
+  onChooseApp,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   templates: PrayerTemplate[];
   currentId: string | undefined;
-  onChoose: (id: string | undefined) => void;
+  /** The chosen app's id while the daily opens externally; null when prayed here. */
+  externalAppId: string | null;
+  /** Domain label shown for the custom app once Settings has a URL for it. */
+  customAppLabel: string | null;
+  onChooseTemplate: (id: string | undefined) => void;
+  onChooseApp: (appId: string) => void;
 }) {
+  function Row({
+    title,
+    subtitle,
+    checked,
+    onSelect,
+  }: {
+    title: string;
+    subtitle?: string | undefined;
+    checked: boolean;
+    onSelect: () => void;
+  }) {
+    return (
+      <li>
+        <button
+          type="button"
+          onClick={() => {
+            onSelect();
+            onOpenChange(false);
+          }}
+          className="flex w-full items-center justify-between gap-3 py-3 text-left"
+        >
+          <span className="min-w-0">
+            <span className="block truncate text-sm font-medium">{title}</span>
+            {subtitle ? (
+              <span className="block truncate text-xs text-muted-foreground">{subtitle}</span>
+            ) : null}
+          </span>
+          {checked ? <Check className="size-4 shrink-0 text-primary" aria-hidden /> : null}
+        </button>
+      </li>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="font-display text-xl font-normal">Daily devotion</DialogTitle>
-          <DialogDescription>Choose the devotion your daily prayer starts from.</DialogDescription>
+          <DialogDescription>
+            Choose the devotion your daily prayer starts from — or the app it opens in.
+          </DialogDescription>
         </DialogHeader>
-        <ul className="max-h-80 divide-y divide-border/60 overflow-y-auto">
-          <li>
-            <button
-              type="button"
-              onClick={() => {
-                onChoose(undefined);
-                onOpenChange(false);
-              }}
-              className="flex w-full items-center justify-between gap-3 py-3 text-left"
-            >
-              <span>
-                <span className="block text-sm font-medium">Standard Holy Rosary</span>
-                <span className="block text-xs text-muted-foreground">App default</span>
-              </span>
-              {currentId === undefined ? (
-                <Check className="size-4 text-primary" aria-hidden />
-              ) : null}
-            </button>
-          </li>
-          {templates.map((t) => (
-            <li key={t.id}>
-              <button
-                type="button"
-                onClick={() => {
-                  onChoose(t.id);
-                  onOpenChange(false);
-                }}
-                className="flex w-full items-center justify-between gap-3 py-3 text-left"
-              >
-                <span className="min-w-0">
-                  <span className="block truncate text-sm font-medium">{t.name}</span>
-                  {t.description ? (
-                    <span className="block truncate text-xs text-muted-foreground">
-                      {t.description}
-                    </span>
-                  ) : null}
-                </span>
-                {currentId === t.id ? (
-                  <Check className="size-4 shrink-0 text-primary" aria-hidden />
-                ) : null}
-              </button>
-            </li>
-          ))}
-        </ul>
+        <div className="max-h-80 overflow-y-auto">
+          <p className="eyebrow pb-1 pt-1">Pray here</p>
+          <ul className="divide-y divide-border/60">
+            <Row
+              title="Standard Holy Rosary"
+              subtitle="App default"
+              checked={!externalAppId && currentId === undefined}
+              onSelect={() => onChooseTemplate(undefined)}
+            />
+            {templates.map((t) => (
+              <Row
+                key={t.id}
+                title={t.name}
+                subtitle={t.description ?? undefined}
+                checked={!externalAppId && currentId === t.id}
+                onSelect={() => onChooseTemplate(t.id)}
+              />
+            ))}
+          </ul>
+          <p className="eyebrow pb-1 pt-4">Open in another app</p>
+          <ul className="divide-y divide-border/60">
+            {PRAYER_APPS.map((a) => (
+              <Row
+                key={a.id}
+                title={a.id === "other" ? (customAppLabel ?? a.name) : a.name}
+                subtitle={a.blurb}
+                checked={externalAppId === a.id}
+                onSelect={() => onChooseApp(a.id)}
+              />
+            ))}
+          </ul>
+        </div>
       </DialogContent>
     </Dialog>
   );
@@ -294,6 +333,7 @@ function Index() {
     startSession,
     startBuiltSession,
     setDailyTemplate,
+    updateSettings,
     logExternalDailyRosary,
     setKnowledgeStatus,
   } = useApp();
@@ -760,7 +800,22 @@ function Index() {
         onOpenChange={setPickerOpen}
         templates={db.templates}
         currentId={dailyId}
-        onChoose={setDailyTemplate}
+        externalAppId={externalDaily ? effectivePrayerAppId(db.settings) : null}
+        customAppLabel={db.settings?.daily_rosary_custom_url ? dailyAppLabel : null}
+        onChooseTemplate={(id) => {
+          setDailyTemplate(id);
+          // External mode outranks the chosen devotion on the Daily Rosary row,
+          // so picking one here has to return the daily to in-app.
+          if (externalDaily) updateSettings({ daily_rosary_mode: "app" });
+        }}
+        onChooseApp={(appId) => {
+          updateSettings({ daily_rosary_mode: "external", daily_rosary_app_id: appId });
+          // "Another app or website" needs an address, and Settings is the only
+          // place to type one — so hand off there when it isn't set yet.
+          if (appId === "other" && !db.settings?.daily_rosary_custom_url) {
+            navigate({ to: "/settings" });
+          }
+        }}
       />
     </AppShell>
   );
