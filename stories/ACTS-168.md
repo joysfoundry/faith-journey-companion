@@ -79,8 +79,10 @@ _Per ACTS-91; no runner yet (ACTS-92), so these are **planned**._
 **Turning this on shrinks the mark in the header.** `Brand.tsx` set a 30px `OraviaMark`
 beside 20px text — a ring **21.6px** across, 1.5× the type, free to be as large as it liked.
 Bound to the type as its O it is **13.3px** at the same font-size: **62%** of what it was.
-Inherent to the idea, not a defect. If the header needs its presence back, raise the
-wordmark's `fontSize` there — do not change `FIT`, which is what keeps the ring reading as a
+Inherent to the idea, not a defect. **Done: the header now runs at 24px** (`LOCKUP_SIZE` in
+`Brand.tsx`), which puts the ring at **16.0px — 74%** of the old mark, and is as far as the row
+goes before the tagline beneath stops sitting comfortably. If it needs more still, raise that
+`fontSize` — do not change `FIT`, which is what keeps the ring reading as a
 letter rather than an ornament parked beside one. The arrival screen has the opposite story:
 it gains a mark it never had, at 36px.
 
