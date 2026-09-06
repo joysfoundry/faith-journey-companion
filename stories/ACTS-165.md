@@ -2,15 +2,15 @@
 id: ACTS-165
 title: Swap the About sections — prayer/devotions under "More than a prayer app", learning + fellowship under "One place for your journey"
 spine:
-status: In Progress
+status: Done
 origin: human-typed
 approved_by: JC
 depends_on: []
 relates_to: [ACTS-164, ACTS-143, ACTS-160]
 started_at: 2026-09-05T16:32:42-0700
-updated:    2026-09-05T16:32:42-0700
-latest_handoff: null
-sessions: 0
+updated:    2026-09-05T17:02:45-0700
+latest_handoff: ACTS-165/session-01.md
+sessions: 1
 ---
 
 ## Goal
@@ -35,20 +35,20 @@ prayer/devotion paragraphs. JC's call is to swap them.
 `public/invite.html` — edited together, contractions differing on purpose.
 
 ## Acceptance criteria
-- [ ] "More than a prayer app" opens by honoring **both** open and structured prayer
-- [ ] It states the value prop as a contrast (most prayer apps hand you a fixed text;
+- [x] "More than a prayer app" opens by honoring **both** open and structured prayer
+- [x] It states the value prop as a contrast (most prayer apps hand you a fixed text;
       this one lets you compose the devotion), not as a category label
-- [ ] The scattered-sources list appears **once** — the ACTS-164 copy said
+- [x] The scattered-sources list appears **once** — the ACTS-164 copy said
       "scattered places → gathered" twice, which is the redundancy JC flagged
-- [ ] "One place for your journey" carries the learning + hub paragraphs and closes on
+- [x] "One place for your journey" carries the learning + hub paragraphs and closes on
       **fellowship** — one place is easy to hand on, and others are part of your journey
-- [ ] The devotion paragraphs keep the **guided-flow** clause and its closing line
+- [x] The devotion paragraphs keep the **guided-flow** clause and its closing line
       ("so the tool disappears and the prayer stays") — restored after the first pass
       dropped them with the redundancy trim
-- [ ] The devotion is described as one you **customize the way you, your family, or your
+- [x] The devotion is described as one you **customize the way you, your family, or your
       parish pray it** — the promise is communal, not only personal
-- [ ] Both `about.tsx` and `invite.html` updated, each in its own voice
-- [ ] `tsc` + `vite build` clean
+- [x] Both `about.tsx` and `invite.html` updated, each in its own voice
+- [x] `tsc` + `vite build` clean
 
 ## Decisions taken during the edit
 - **Restored, after being cut:** the guided-flow clause ("the right day, the right
