@@ -59,7 +59,9 @@ flag on *adds* the mark to the arrival screen; it does not merely rearrange it.
       `group`/`name`/`subtitle`; it was first written with `section`/`title`/`order` and
       would have been silently skipped).
 - [x] Synced to claude.ai/design.
-- [ ] **JC decides** whether to flip the flag. That is the whole open question.
+- [x] **JC decided: on.** Flag flipped in `266a008` after reviewing all four surfaces.
+- [ ] JC sees it in the real app after publish, and confirms the header still carries enough
+      presence at 62% of the old mark size (see below).
 
 ## Tests
 _Per ACTS-91; no runner yet (ACTS-92), so these are **planned**._
@@ -72,6 +74,15 @@ _Per ACTS-91; no runner yet (ACTS-92), so these are **planned**._
 - **E2E** (Playwright): **N/A** — no user flow changes while the flag is off.
 - **Verified instead**: flag flipped both ways against the running dev server, geometry
   and computed colours read out of the live DOM, `tsc --noEmit` clean both ways.
+
+## The one real tradeoff
+**Turning this on shrinks the mark in the header.** `Brand.tsx` set a 30px `OraviaMark`
+beside 20px text — a ring **21.6px** across, 1.5× the type, free to be as large as it liked.
+Bound to the type as its O it is **13.3px** at the same font-size: **62%** of what it was.
+Inherent to the idea, not a defect. If the header needs its presence back, raise the
+wordmark's `fontSize` there — do not change `FIT`, which is what keeps the ring reading as a
+letter rather than an ornament parked beside one. The arrival screen has the opposite story:
+it gains a mark it never had, at 36px.
 
 ## Notes
 - If the answer is "no", the removal is `OraviaWordmark.tsx` plus two branches — the
