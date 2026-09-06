@@ -2,10 +2,10 @@
  * App data lives in localStorage, so this only caches the shell + static assets
  * so the app loads offline. Runtime caching only (no build manifest): assets are
  * cached as they're fetched. Bump VERSION to invalidate old caches on deploy. */
-const VERSION = "fj-v2"; // bumped for the Oravia mark (ACTS-148) — drops the cached Lovable icons
+const VERSION = "fj-v3"; // bumped for the larger app-icon mark; fj-v2 was the Oravia mark (ACTS-148)
 const SHELL = `fj-shell-${VERSION}`;
 const RUNTIME = `fj-runtime-${VERSION}`;
-const SHELL_URLS = ["/", "/manifest.webmanifest", "/icon-192.png?v=2"];
+const SHELL_URLS = ["/", "/manifest.webmanifest", "/icon-192.png?v=3"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
