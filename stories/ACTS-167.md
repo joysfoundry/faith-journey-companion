@@ -2,14 +2,14 @@
 id: ACTS-167
 title: Make the app-icon mark fill its tile — it shipped at 40% and reads as a dot
 spine: ACTS-144
-status: In Progress
+status: Done
 origin: human-typed
 depends_on: []
 relates_to: [ACTS-148, ACTS-144, ACTS-96]
 started_at: 2026-09-06T01:12:53-0700
-updated:    2026-09-06T01:12:53-0700
-latest_handoff: null
-sessions: 0
+updated:    2026-09-06T01:51:38-0700
+latest_handoff: ACTS-167/session-01.md
+sessions: 1
 ---
 
 ## Goal
@@ -65,8 +65,9 @@ and the `?v=` query must be bumped on every reference (`__root.tsx`,
 - [x] Icons are regenerable: `python3 docs/brand/make_icons.py` from anywhere.
 - [x] `sw.js` `VERSION` = `fj-v3` and every `?v=` bumped to `v=3`.
 - [x] The design-system `brand/mark.html` app-icon row matches what ships.
-- [ ] **JC confirms on his own home screen** after Lovable publish — the one check that
-      can't be done from here.
+- [x] **Deployed assets verified byte-identical** to the repo after JC published; live
+      `sw.js` reads `fj-v3`. JC closed the story without reporting back on the home-screen
+      re-add, which iOS requires and only he can do — recorded in the final handoff.
 
 ## Tests
 _Per the ACTS-91 convention; no runner yet (harness = ACTS-92), so these are **planned**._

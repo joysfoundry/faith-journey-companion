@@ -2,14 +2,14 @@
 id: ACTS-168
 title: The mark as the O — a wordmark lockup, built and wired but switched off
 spine: ACTS-144
-status: In Progress
+status: Done
 origin: human-typed
 depends_on: []
 relates_to: [ACTS-148, ACTS-167, ACTS-144]
 started_at: 2026-09-06T02:10:00-0700
-updated:    2026-09-06T02:10:00-0700
-latest_handoff: null
-sessions: 0
+updated:    2026-09-06T01:51:38-0700
+latest_handoff: ACTS-168/session-01.md
+sessions: 1
 ---
 
 ## Goal
@@ -60,8 +60,8 @@ flag on *adds* the mark to the arrival screen; it does not merely rearrange it.
       would have been silently skipped).
 - [x] Synced to claude.ai/design.
 - [x] **JC decided: on.** Flag flipped in `266a008` after reviewing all four surfaces.
-- [ ] JC sees it in the real app after publish, and confirms the header still carries enough
-      presence at 62% of the old mark size (see below).
+- [x] **JC saw it in the real app and decided against it.** Flag back to `false` in
+      `3478d35`; the header bump to 24px (74%) was not enough to justify the lockup.
 
 ## Tests
 _Per ACTS-91; no runner yet (ACTS-92), so these are **planned**._
