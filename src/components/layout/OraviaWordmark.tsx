@@ -3,12 +3,18 @@ import { REGULAR_CROSS, SMALL_CROSS } from "./OraviaMark";
 /**
  * The mark set *inside* the word — the ring becomes the O of Oravia.
  *
- * NOT LIVE. Both call sites (`Brand.tsx`, `gate-shell.tsx`) are wired and
- * branch on the flag below, which ships `false`: the app still renders the mark
- * *beside* the word. Flip `WORDMARK_LOCKUP_ENABLED` to `true` — one line, one
- * place — and every surface switches together. Specimens, rationale and the
- * do/don't rules live in `docs/brand/design-system/brand/wordmark.html`, where
- * the design-system card is deliberately marked **Proposed, not adopted**.
+ * LIVE. Both call sites (`Brand.tsx`, `gate-shell.tsx`) branch on the flag
+ * below; set `false` and every surface reverts to the mark *beside* the word in
+ * one edit. Specimens, fit ladder and do/don't rules live in
+ * `docs/brand/design-system/brand/wordmark.html`.
+ *
+ * ⚠️ **This shrinks the mark in the header.** `Brand.tsx` used to set a 30px
+ * `OraviaMark` next to 20px text — a ring 21.6px across, 1.5× the type. As the O
+ * it is bound to the type instead, so at the same 20px it measures **13.3px:
+ * 62% of what it was**. That is inherent to the idea, not a bug — but if the
+ * header needs its old presence back, raise the wordmark's `fontSize` there
+ * rather than breaking the fit ratio, which is what keeps the ring reading as a
+ * letter instead of an ornament parked next to one.
  *
  * Two numbers are load-bearing and were measured, not guessed:
  *
@@ -23,7 +29,7 @@ import { REGULAR_CROSS, SMALL_CROSS } from "./OraviaMark";
  * = 66. Sizing off 2r is the off-by-a-stroke that shipped the app icons at 40%
  * of their tile (ACTS-167); it renders the ring ~9% small here.
  */
-export const WORDMARK_LOCKUP_ENABLED = false;
+export const WORDMARK_LOCKUP_ENABLED = true;
 
 /** Ink height of a Cormorant "O" as a fraction of font-size. Measured. */
 const O_INK = 0.648;
