@@ -4,6 +4,18 @@ import { OraviaMark } from "./OraviaMark";
 import { OraviaWordmark, WORDMARK_LOCKUP_ENABLED } from "./OraviaWordmark";
 
 /**
+ * The lockup runs one step larger than the plain wordmark's `text-xl` (20px).
+ *
+ * As the O, the ring can only be as big as a letter, so at 20px it measured
+ * 13.3px against the 21.6px the standalone 30px mark used to carry — 62%. At 24
+ * it is 16.0px (74%), which is as far as this row goes before the tagline
+ * beneath it stops sitting comfortably. Raise this, never `FIT`: the ratio is
+ * what keeps the ring reading as a letter rather than an ornament beside one.
+ * Past 28 the mark also swaps to the regular cut, which is a different shape.
+ */
+const LOCKUP_SIZE = 24;
+
+/**
  * App lockup — the mark (ACTS-148) beside the "Oravia" wordmark (from Latin
  * *ora*, "pray" + *via*, "the way"). With `tagline`, the brand line "Your
  * devotional life, gathered." sits beneath in small letter-spaced caps.
@@ -29,7 +41,11 @@ export function Brand({ onClick, tagline = false }: { onClick?: () => void; tagl
       )}
       <span className="block">
         {WORDMARK_LOCKUP_ENABLED ? (
-          <OraviaWordmark fontSize={20} className="block font-display" markClassName="text-gold" />
+          <OraviaWordmark
+            fontSize={LOCKUP_SIZE}
+            className="block font-display"
+            markClassName="text-gold"
+          />
         ) : (
           <span className="block font-display text-xl leading-none tracking-wide">Oravia</span>
         )}
