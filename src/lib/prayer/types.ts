@@ -204,6 +204,13 @@ export type TemplateItemKind =
   | "intention"
   | "petition"
   | "meditation"
+  /**
+   * Free-form prayer in the user's own words, addressed to God (ACTS-108).
+   * Distinct from `intention`/`petition` (why I am praying, and the devotion's
+   * own asks) and from `reflection` (my words *about* what I noticed). Capturing
+   * the words is optional: praying and writing nothing completes the step.
+   */
+  | "open_prayer"
   | "external_link"
   | "scripture"
   | "reflection"
@@ -465,6 +472,7 @@ export type SessionItemKind =
   | "intention"
   | "petition"
   | "meditation"
+  | "open_prayer"
   | "external_link"
   | "scripture"
   | "reflection"

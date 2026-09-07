@@ -1896,6 +1896,24 @@ function lectioItems(): TemplateItem[] {
 }
 const lectioItemsList = lectioItems();
 
+export const OPEN_PRAYER_TEMPLATE_ID = "tpl-open-prayer";
+
+/**
+ * Open Prayer (ACTS-108) — a devotion that is nothing but space for the user's
+ * own words. Seeded so it is there from day one and can be set as the daily
+ * start like any other devotion.
+ *
+ * It stays deliberately thin: one component, one prompt, no structure to get
+ * through. Anything more would contradict what it is for.
+ */
+const openPrayerItems: TemplateItem[] = [
+  ti(OPEN_PRAYER_TEMPLATE_ID, 0, {
+    kind: "open_prayer",
+    label: "Open Prayer",
+    body: "Say whatever you want to say to God — thanks, sorrow, a question, a plea, or nothing in particular. Take as long as you like.",
+  }),
+];
+
 const allPrayers = [...base, ...songs];
 
 export function createSeedDatabase(): Database {
@@ -2225,6 +2243,19 @@ export function createSeedDatabase(): Database {
         created_at: now,
       },
       {
+        id: OPEN_PRAYER_TEMPLATE_ID,
+        name: "Open Prayer",
+        description:
+          "Time set aside to pray in your own words — anything you want to say to God. Writing it down is optional.",
+        kind: "standard",
+        mystery_presentation: "title_only",
+        mystery_count: 0,
+        notes:
+          "You can always talk and pray to God — you need no app, and nothing needs to be written down or tracked. This devotion simply sets aside the space, for anyone who wants to be more intentional about it. Inside a longer devotion, an Open Prayer component does the same thing: it makes room for unstructured prayer between the structured parts.",
+        built_in: true,
+        created_at: now,
+      },
+      {
         id: LECTIO_TEMPLATE_ID,
         name: "Lectio Divina",
         description:
@@ -2254,6 +2285,7 @@ export function createSeedDatabase(): Database {
       ...litanyLoretoItems,
       ...litanyForTheDeadItemsList,
       ...lectioItemsList,
+      ...openPrayerItems,
     ],
     sessions: [],
     session_items: [],

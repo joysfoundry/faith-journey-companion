@@ -86,6 +86,35 @@ function compact<T extends object>(obj: T): T {
   return out;
 }
 
+/**
+ * The `configuration` keys a guest is allowed to see — the ones `ItemView` needs
+ * to render the *devotion*. Everything else is the sharer's own writing and stays
+ * home: `response`/`reflection_id` (a journaled reflection) and `open_prayer`
+ * (words prayed to God, ACTS-108). Sharing a session must never publish what the
+ * sharer wrote inside it, so this is an allowlist — a new private key is private
+ * by default rather than by remembering to exclude it.
+ */
+const SHARED_CONFIG_KEYS = [
+  "decade",
+  "heading",
+  "presentation",
+  "fruit",
+  "scripture_text",
+  "external_options",
+  "segment_labels",
+] as const;
+
+function shareConfiguration(
+  config: Record<string, unknown> | undefined,
+): Record<string, unknown> | undefined {
+  if (!config) return undefined;
+  const out: Record<string, unknown> = {};
+  for (const key of SHARED_CONFIG_KEYS) {
+    if (config[key] !== undefined) out[key] = config[key];
+  }
+  return Object.keys(out).length ? out : undefined;
+}
+
 /** Keep only the fields the guest view renders — nothing session-local or identifying. */
 export function toShareItem(item: SessionItem): ShareItem {
   return compact<ShareItem>({
@@ -96,7 +125,7 @@ export function toShareItem(item: SessionItem): ShareItem {
     repetition_index: item.repetition_index,
     repetition_total: item.repetition_total,
     mystery_ordinal: item.mystery_ordinal,
-    configuration: item.configuration,
+    configuration: shareConfiguration(item.configuration),
   });
 }
 

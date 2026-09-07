@@ -44,7 +44,7 @@ import {
   uncompleteSessionItem,
 } from "./compiler";
 
-export const STORAGE_KEY = "prayer-companion-db-v39";
+export const STORAGE_KEY = "prayer-companion-db-v40";
 
 /**
  * Migrate a legacy string recurrence ("daily"/"custom"/…) to the structured
@@ -410,6 +410,14 @@ export interface AppStore {
    * and marks the step complete. Empty text clears the entry and re-opens the step.
    */
   saveSessionReflection: (sessionId: ID, itemId: ID, text: string) => void;
+  /**
+   * Complete an Open Prayer step (ACTS-108). `text` is what the user chose to
+   * write, and may be empty — praying without capturing is a finished prayer,
+   * so the step completes either way and the item is never pruned.
+   */
+  saveSessionOpenPrayer: (sessionId: ID, itemId: ID, text: string) => void;
+  /** Re-open a completed Open Prayer step, keeping anything already written. */
+  reopenSessionOpenPrayer: (itemId: ID) => void;
   /**
    * Set the passage every scripture step in a session reads (Lectio: one passage,
    * re-read). `reference` is the citation; `text` is the optional pasted passage
@@ -942,6 +950,39 @@ export const mutations = {
             }
           : i,
       ),
+    };
+  },
+  /**
+   * Complete an Open Prayer step. Unlike a reflection, an empty body does *not*
+   * re-open the step or delete anything: an uncaptured open prayer is saved as
+   * an empty, completed item, because the prayer happened between God and the
+   * user whether or not any of it was written down (PRD §23A, ACTS-108).
+   *
+   * The words live on the item's `configuration`, not in the reflections
+   * journal — an open prayer is speech *to* God, not a journal entry about it.
+   */
+  saveSessionOpenPrayer(db: Database, _sessionId: ID, itemId: ID, text: string): Database {
+    const item = db.session_items.find((i) => i.id === itemId);
+    if (!item || item.kind !== "open_prayer") return db;
+    const body = text.trim();
+    return {
+      ...db,
+      session_items: db.session_items.map((i) =>
+        i.id === itemId
+          ? {
+              ...completeSessionItem(i, "manual"),
+              configuration: { ...(i.configuration ?? {}), open_prayer: body },
+            }
+          : i,
+      ),
+    };
+  },
+  reopenSessionOpenPrayer(db: Database, itemId: ID): Database {
+    const item = db.session_items.find((i) => i.id === itemId);
+    if (!item || item.kind !== "open_prayer") return db;
+    return {
+      ...db,
+      session_items: db.session_items.map((i) => (i.id === itemId ? uncompleteSessionItem(i) : i)),
     };
   },
   setSessionPassage(db: Database, sessionId: ID, reference: string, text: string): Database {

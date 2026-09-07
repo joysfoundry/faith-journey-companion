@@ -140,6 +140,8 @@ function PrayerMode() {
     toggleItemDone,
     finishSession,
     saveSessionReflection,
+    saveSessionOpenPrayer,
+    reopenSessionOpenPrayer,
     setSessionPassage,
     pruneEmptyLectioSession,
   } = useApp();
@@ -331,6 +333,8 @@ function PrayerMode() {
             passageText={passageText}
             onSetPassage={(ref, text) => setSessionPassage(session.id, ref, text)}
             onSaveReflection={(itemId, text) => saveSessionReflection(session.id, itemId, text)}
+            onSaveOpenPrayer={(itemId, text) => saveSessionOpenPrayer(session.id, itemId, text)}
+            onReopenOpenPrayer={reopenSessionOpenPrayer}
             bibleUrl={bibleUrl}
             bibleHome={bibleHome}
           />
@@ -390,6 +394,8 @@ function PrayersTab({
   passageText,
   onSetPassage,
   onSaveReflection,
+  onSaveOpenPrayer,
+  onReopenOpenPrayer,
   bibleUrl,
   bibleHome,
 }: {
@@ -409,6 +415,8 @@ function PrayersTab({
   passageText: string;
   onSetPassage: (reference: string, text: string) => void;
   onSaveReflection: (itemId: string, text: string) => void;
+  onSaveOpenPrayer: (itemId: string, text: string) => void;
+  onReopenOpenPrayer: (itemId: string) => void;
   bibleUrl: (ref: string) => string;
   bibleHome: string;
 }) {
@@ -463,6 +471,21 @@ function PrayersTab({
                 current={current}
                 cardRef={current ? currentRef : undefined}
                 onSave={(text) => onSaveReflection(item.id, text)}
+              />
+            );
+          }
+
+          // Free-form prayer: also written into rather than tapped done, but on
+          // its own terms — writing is optional (ACTS-108).
+          if (item.kind === "open_prayer") {
+            return (
+              <OpenPrayerCard
+                key={item.id}
+                item={item}
+                current={current}
+                cardRef={current ? currentRef : undefined}
+                onSave={(text) => onSaveOpenPrayer(item.id, text)}
+                onReopen={() => onReopenOpenPrayer(item.id)}
               />
             );
           }
@@ -700,6 +723,99 @@ function ReflectionCard({
         ) : null}
         <Button size="sm" onClick={() => onSave(text)} disabled={!dirty}>
           {text.trim() ? "Save" : done ? "Clear" : "Save"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * An Open Prayer step (ACTS-108): pray in your own words, and write them down or
+ * don't. Two things make this card different from `ReflectionCard`:
+ *
+ * - **Capture is optional.** "I prayed this" completes the step with an empty
+ *   body, and that empty item is saved, not pruned — the prayer happened whether
+ *   or not it was written down. So clearing the field never un-saves the step;
+ *   re-opening it is an explicit, separate choice.
+ * - **The ACTS shape is offered**, quietly, above the field — a way in for anyone
+ *   who doesn't know what to pray. It is a suggestion, never a required structure;
+ *   the sequenced four-movement mode is a separate feature (ACTS-149).
+ *
+ * The field is a plain textarea (`RichTextArea`) precisely so the device
+ * keyboard's own dictation types into it: speaking a prayer is the keyboard's
+ * job, not ours (PRD §23A).
+ */
+function OpenPrayerCard({
+  item,
+  current,
+  cardRef,
+  onSave,
+  onReopen,
+}: {
+  item: SessionItem;
+  current: boolean;
+  cardRef?: React.Ref<HTMLDivElement> | undefined;
+  onSave: (text: string) => void;
+  onReopen: () => void;
+}) {
+  const saved = (item.configuration as { open_prayer?: string } | undefined)?.open_prayer ?? "";
+  const [text, setText] = useState(saved);
+  useEffect(() => setText(saved), [saved]);
+  const done = item.completion_status === "complete";
+  const written = text.trim().length > 0;
+  const dirty = text.trim() !== saved.trim();
+
+  return (
+    <div
+      ref={cardRef}
+      aria-current={current ? "step" : undefined}
+      className={cn(
+        "relative rounded-2xl border px-5 py-6 transition",
+        done
+          ? "border-border/60 bg-muted/30"
+          : current
+            ? "border-primary bg-card shadow-sm ring-2 ring-primary/30"
+            : "border-border bg-card",
+      )}
+    >
+      {current && !done ? (
+        <span className="absolute left-4 top-3 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+          Now
+        </span>
+      ) : null}
+      {done ? (
+        <span className="absolute right-4 top-3 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+          <Check className="size-3" /> {saved.trim() ? "Saved" : "Prayed"}
+        </span>
+      ) : null}
+      <p className="eyebrow text-center">{item.title}</p>
+      {item.body?.trim() ? (
+        <p className="prayer-text mt-4 text-center text-muted-foreground">{item.body}</p>
+      ) : null}
+      <p className="mt-5 text-center text-xs uppercase tracking-wider text-muted-foreground">
+        Adoration · Contrition · Thanksgiving · Supplication
+      </p>
+      <RichTextArea
+        value={text}
+        onChange={setText}
+        placeholder="Pray in your own words…"
+        rows={4}
+        className="mt-2"
+        ariaLabel={item.title}
+      />
+      <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+        Writing it down is optional — either way this is saved when you finish. You can always talk
+        and pray to God without this app, and without keeping any record. Capturing here is just one
+        way to be intentional about it.
+      </p>
+      <div className="mt-3 flex items-center justify-end gap-2">
+        {done ? (
+          <Button size="sm" variant="ghost" onClick={onReopen} className="mr-auto">
+            Re-open
+          </Button>
+        ) : null}
+        <Button size="sm" onClick={() => onSave(text)} disabled={done && !dirty}>
+          {written ? "Save" : "I prayed this"}
         </Button>
       </div>
     </div>

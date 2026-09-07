@@ -690,6 +690,18 @@ function expandTemplate(state: CompileState, template: PrayerTemplate, depth: nu
       continue;
     }
 
+    // Free-form prayer (ACTS-108). `body` is the optional prompt; the words the
+    // user prays are captured in Prayer Mode onto `configuration.open_prayer`
+    // — or not captured at all, which is an equally complete way to pray it.
+    if (item.kind === "open_prayer") {
+      push({
+        kind: "open_prayer",
+        title: item.label ?? "Open Prayer",
+        body: item.body ?? "",
+      });
+      continue;
+    }
+
     if (item.kind === "petition" || item.kind === "meditation") {
       push({
         kind: item.kind,
@@ -870,7 +882,9 @@ export function sessionProgress(items: SessionItem[]): { done: number; total: nu
       i.kind === "external_link" ||
       // A reflection is an action the user takes (writing a response), so it
       // counts toward progress — it's completed by saving, or by skipping.
-      i.kind === "reflection",
+      i.kind === "reflection" ||
+      // So is an open prayer, whether or not the user writes anything down.
+      i.kind === "open_prayer",
   );
   return {
     done: prayable.filter((i) => i.completion_status === "complete").length,

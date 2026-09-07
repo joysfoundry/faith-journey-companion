@@ -48,14 +48,15 @@ here. The **info button** and the **four-movement ACTS mode** (A·C·T·S as seq
 stay in ACTS-149.
 
 ## Acceptance criteria
-- [ ] New `open_prayer` item kind (Template + Session), addable in the builder; compiler expands it to one session step
-- [ ] Pray-mode step: pray freely, capture optional — type words, or move on having written nothing
-- [ ] **An uncaptured open prayer is saved, not discarded**: the item persists with an empty body and `completion_status: "complete"`. Explicitly *unlike* the empty-Reflection reaping (ACTS-138–141) — do not prune it
-- [ ] Field accepts keyboard dictation: a plain `<textarea>` (reuse `RichTextArea`), no app-side audio or transcription toggle
-- [ ] The ACTS shape offered at the field for anyone unsure what to pray — header above the box (see Copy)
-- [ ] Helper text says capture is optional and that the component is saved either way (see Copy)
-- [ ] Optional "Save as reusable Personal Prayer" when words *were* captured
-- [ ] STORAGE_KEY bump if the seed/model changes
+- [x] New `open_prayer` item kind (Template + Session), addable in the builder; compiler expands it to one session step
+- [x] Pray-mode step: pray freely, capture optional — type words, or move on having written nothing
+- [x] **An uncaptured open prayer is saved, not discarded**: the item persists with an empty body and `completion_status: "complete"`. Explicitly *unlike* the empty-Reflection reaping (ACTS-138–141) — do not prune it
+- [x] Field accepts keyboard dictation: a plain `<textarea>` (reuse `RichTextArea`), no app-side audio or transcription toggle
+- [x] The ACTS shape offered at the field for anyone unsure what to pray — header above the box (see Copy)
+- [x] Helper text says capture is optional and that the component is saved either way (see Copy)
+- [x] **Seeded as a daily-startable devotion** — "Open Prayer" (`tpl-open-prayer`), one component, choosable like any other devotion (JC, 2026-09-07)
+- [x] STORAGE_KEY bump — v39 → v40 (new seeded devotion)
+- [ ] Optional "Save as reusable Personal Prayer" when words *were* captured — **not built yet**
 
 ## Decisions & doc changes (2026-09-07)
 
@@ -74,13 +75,67 @@ future syncs.
 Also updated: the board row ([stories/README.md](README.md)) and the backlog row
 ([docs/JIRA-BACKLOG.md](../docs/JIRA-BACKLOG.md)).
 
-## Copy (draft — for JC)
-Two jobs, so two places rather than one crowded one:
+## Copy (shipped — refine freely)
+Three jobs, three places, so none of them is crowded:
 
 - **Header above the box** — the *shape*, for someone who doesn't know what to pray:
   > Adoration · Contrition · Thanksgiving · Supplication
-- **Placeholder inside the box** — the *permission*, so no one feels owed a paragraph:
-  > Pray in your own words. Writing them down is optional — this is saved either way.
+- **Placeholder inside the box** — short, so the field still reads as somewhere to write:
+  > Pray in your own words…
+- **Helper text under the box** — the *permission*, including JC's point that the app is
+  not the prayer (2026-09-07):
+  > Writing it down is optional — either way this is saved when you finish. You can always
+  > talk and pray to God without this app, and without keeping any record. Capturing here is
+  > just one way to be intentional about it.
+- **Builder tip** (shown under an Open prayer component in the Session/Devotion builder):
+  > Makes room for unstructured prayer inside the devotion — the person prays in their own
+  > words, and writing it down is always optional. Anyone can talk and pray to God without
+  > this app or any record; this is only here for someone who wants to be more intentional
+  > about their devotion.
+- **Seeded devotion note** (`tpl-open-prayer`), same idea at devotion scale:
+  > You can always talk and pray to God — you need no app, and nothing needs to be written
+  > down or tracked. This devotion simply sets aside the space…
+
+## What shipped (session 1)
+
+| Area | File |
+| :---- | :---- |
+| `open_prayer` kind, both unions | `src/lib/prayer/types.ts` |
+| Compiles to one step; counts toward progress | `src/lib/prayer/compiler.ts` |
+| `saveSessionOpenPrayer` (completes even when empty) + `reopenSessionOpenPrayer` | `src/lib/prayer/store.ts` |
+| `OpenPrayerCard` — ACTS header, field, helper text, "I prayed this" / "Save" / "Re-open" | `src/routes/session.$sessionId.tsx` |
+| Read-only rendering (Prayer Mode + guest follow) | `src/components/prayer/ItemView.tsx` |
+| Add-menu entry, defaults, prompt field, builder tip | `src/components/prayer/DevotionItemsEditor.tsx` |
+| Seeded "Open Prayer" devotion (`tpl-open-prayer`) | `src/lib/prayer/seed.ts` |
+| **Share privacy fix** — `configuration` allowlist | `src/lib/prayer/share.ts` |
+
+**The words live on the session item** (`configuration.open_prayer`), not in the reflections
+journal: an open prayer is speech *to* God, not a journal entry about it. Verified in the
+browser that saving one creates **zero** Reflection records.
+
+### Share leak found and fixed (pre-existing, ACTS-94)
+`toShareItem` claimed to keep "nothing session-local or identifying" but copied
+`configuration` **wholesale** — so sharing a Lectio session you had journaled in published
+your written reflection to anyone with the link. Open Prayer would have leaked the same way,
+so `toShareItem` now uses an **allowlist** of the keys the guest view needs to render the
+devotion (`decade`, `heading`, `presentation`, `fruit`, `scripture_text`, `external_options`,
+`segment_labels`). A new private key is now private by default rather than by remembering.
+Worth its own backlog row for the reflection half of the fix (shipped links already sent).
+
+## Verified (browser, dev server)
+No test runner yet (ACTS-92), so this was checked by hand in Prayer Mode:
+
+- `tsc --noEmit` clean; `vite build` succeeds; eslint clean on changed files (two pre-existing
+  prettier errors in `DevotionItemsEditor.tsx` were fixed incidentally by formatting).
+- Seeded **Open Prayer** appears in the devotion picker; building from it yields one step.
+- **Uncaptured path**: "I prayed this" on an empty field → badge reads **PRAYED**, progress
+  **1 / 1**, and localStorage holds `{ open_prayer: "", completion_status: "complete" }` —
+  saved, not pruned.
+- **Written path**: typing + Save → badge **SAVED**, text persisted, `db.reflections.length === 0`.
+- **Re-open** returns the step to pending, keeping the text.
+- **Share stripping**: `toShareItem` on an item carrying `open_prayer`, `response` and
+  `reflection_id` emits only `{ decade }` — the private keys are gone.
+- No console errors.
 
 ## Tests
 - **Unit** (Vitest): compiler expands an `open_prayer` item; an empty open prayer persists as an empty completed item (regression guard against the reflection prune path).

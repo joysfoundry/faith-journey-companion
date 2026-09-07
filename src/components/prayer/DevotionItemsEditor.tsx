@@ -30,6 +30,7 @@ export const KIND_LABELS: Record<TemplateItem["kind"], string> = {
   intention: "Intention",
   petition: "Petition",
   meditation: "Meditation",
+  open_prayer: "Open prayer",
   external_link: "External link",
   scripture: "Scripture",
   reflection: "Reflection",
@@ -47,6 +48,7 @@ const ADD_TYPES: { kind: TemplateItem["kind"]; label: string }[] = [
   { kind: "intention", label: "Intention" },
   { kind: "petition", label: "Petition" },
   { kind: "meditation", label: "Meditation" },
+  { kind: "open_prayer", label: "Open prayer" },
   { kind: "reflection", label: "Reflection" },
   { kind: "mystery_placeholder", label: "Mystery" },
   { kind: "external_link", label: "External link" },
@@ -157,6 +159,7 @@ export function DevotionItemsEditor({
       intention: { label: "Intention", body: "" },
       petition: { label: "Petition", body: "" },
       meditation: { label: "Meditation", body: "" },
+      open_prayer: { label: "Open Prayer", body: "" },
       reflection: { label: "Reflection", body: "" },
       mystery_placeholder: {
         mystery_ordinal: mysteryCount + 1,
@@ -344,9 +347,9 @@ export function DevotionItemsEditor({
                             : item.kind === "prayer" || item.kind === "song"
                               ? (prayer?.title ?? (item.kind === "song" ? "Song" : "Prayer"))
                               : item.kind === "template_block"
-                                ? (item.label ||
+                                ? item.label ||
                                   db.templates.find((t) => t.id === item.block_template_id)?.name ||
-                                  "Devotion block")
+                                  "Devotion block"
                                 : (item.label ?? KIND_LABELS[item.kind])}
                         </span>
                         {item.kind === "song" ? (
@@ -417,6 +420,7 @@ export function DevotionItemsEditor({
                         {item.kind === "intention" ||
                         item.kind === "petition" ||
                         item.kind === "meditation" ||
+                        item.kind === "open_prayer" ||
                         item.kind === "reflection" ? (
                           <div className="mt-2 space-y-2">
                             <Input
@@ -433,11 +437,22 @@ export function DevotionItemsEditor({
                                   ? "Meditation prompt (optional)"
                                   : item.kind === "reflection"
                                     ? "Journaling prompt"
-                                    : "Text (optional)"
+                                    : item.kind === "open_prayer"
+                                      ? "Prompt for the free-form prayer (optional)"
+                                      : "Text (optional)"
                               }
                               onChange={(e) => update(index, { body: e.target.value })}
                               className="text-sm"
                             />
+                            {item.kind === "open_prayer" ? (
+                              <p className="text-xs leading-relaxed text-muted-foreground">
+                                Makes room for unstructured prayer inside the devotion — the person
+                                prays in their own words, and writing it down is always optional.
+                                Anyone can talk and pray to God without this app or any record; this
+                                is only here for someone who wants to be more intentional about
+                                their devotion.
+                              </p>
+                            ) : null}
                           </div>
                         ) : null}
 

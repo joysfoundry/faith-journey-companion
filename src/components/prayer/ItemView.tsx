@@ -144,6 +144,29 @@ export function ItemView({
     );
   }
 
+  // Free-form prayer (ACTS-108). A guest following along never sees the words —
+  // `toShareItem` strips them — so this only ever renders the sharer's own.
+  if (item.kind === "open_prayer") {
+    const prayed = (item.configuration as { open_prayer?: string } | undefined)?.open_prayer;
+    return (
+      <div>
+        <p className="eyebrow text-center">{item.title}</p>
+        {item.body?.trim() ? (
+          <p className="prayer-text mt-4 text-center text-muted-foreground">{item.body}</p>
+        ) : null}
+        {prayed?.trim() ? (
+          <p className="prayer-text mt-6 whitespace-pre-wrap border-l-2 border-primary/40 pl-4 text-left">
+            <FormattedText text={prayed} />
+          </p>
+        ) : prayed === "" ? (
+          <p className="mt-4 text-center text-sm italic text-muted-foreground">
+            Prayed in your own words.
+          </p>
+        ) : null}
+      </div>
+    );
+  }
+
   if (item.kind === "external_link") {
     const config = (item.configuration ?? {}) as {
       external_options?: { label: string; url: string; is_default?: boolean }[];
