@@ -497,7 +497,7 @@ export const Route = createFileRoute("/prayers")({
 });
 
 function LibraryPage() {
-  const { db, deletePrayer, deleteTemplate, saveHowTo } = useApp();
+  const { db, deletePrayer, deleteTemplate, saveHowTo, startOpenPrayer } = useApp();
   const navigate = useNavigate();
   const [tab, setTab] = useState("prayers");
   const [query, setQuery] = useState("");
@@ -621,6 +621,30 @@ function LibraryPage() {
         </TabsList>
 
         <TabsContent value="prayers" className="mt-4">
+          {/*
+            Open Prayer belongs in the library (PRD §23A, "from the Prayer
+            Library") even though it is not a Prayer record: it has no wording
+            to store until someone prays it. So it sits above the list as a way
+            in rather than inside it as a row.
+          */}
+          <div className="soft-card mb-3 flex items-center gap-3 px-4 py-3">
+            <div className="min-w-0 flex-1">
+              <p className="font-medium">Open Prayer</p>
+              <p className="text-xs text-muted-foreground">
+                Pray in your own words. Writing it down is optional.
+              </p>
+            </div>
+            <Button
+              size="sm"
+              onClick={() => {
+                const session = startOpenPrayer();
+                if (session)
+                  navigate({ to: "/session/$sessionId", params: { sessionId: session.id } });
+              }}
+            >
+              <Play className="mr-1.5 size-4" /> Pray now
+            </Button>
+          </div>
           <div className="relative mb-3">
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input

@@ -50,6 +50,15 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const startOpenPrayer = useCallback(
+    (ctx: Parameters<typeof mutations.startOpenPrayer>[1] = {}) => {
+      const result = mutations.startOpenPrayer(dbRef.current, ctx);
+      setDb(result.db);
+      return result.session as PrayerSession | undefined;
+    },
+    [],
+  );
+
   const startBuiltSession = useCallback(
     (
       templateId: string | null,
@@ -104,6 +113,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       startSession,
       startBuiltSession,
       startSinglePrayer,
+      startOpenPrayer,
       setCursor: (id: string, cursor: number) => setDb((d) => mutations.setCursor(d, id, cursor)),
       toggleItemDone: (id: string) => setDb((d) => mutations.toggleItemDone(d, id)),
       saveSessionReflection: (sessionId: string, itemId: string, text: string) =>
@@ -172,6 +182,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       startSession,
       startBuiltSession,
       startSinglePrayer,
+      startOpenPrayer,
       createTemplateFromHowTo,
       duplicateTemplate,
     ],

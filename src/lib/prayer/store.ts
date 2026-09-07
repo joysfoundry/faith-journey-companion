@@ -401,6 +401,13 @@ export interface AppStore {
     planId?: ID,
   ) => PrayerSession | undefined;
   startSinglePrayer: (prayerId: ID, ctx?: Partial<SessionContext>) => PrayerSession | undefined;
+  /**
+   * Start praying in your own words right now — a one-off session holding a
+   * single Open Prayer step (ACTS-108, PRD §23A "from the Prayer Library").
+   * Needs no Prayer record, because an open prayer has no words until the
+   * person prays them.
+   */
+  startOpenPrayer: (ctx?: Partial<SessionContext>) => PrayerSession | undefined;
   setCursor: (sessionId: ID, cursor: number) => void;
   toggleItemDone: (itemId: ID) => void;
   /**
@@ -864,6 +871,45 @@ export const mutations = {
       prayer_version_id: version?.id,
       title: prayer.title,
       body: version?.body ?? "",
+      progress_mode: context.progress_mode,
+      completion_status: "pending",
+      completion_method: null,
+    };
+    return {
+      db: {
+        ...db,
+        sessions: [session, ...db.sessions],
+        session_items: [...db.session_items, item],
+      },
+      session,
+    };
+  },
+  /**
+   * A one-off Open Prayer session: one step, no devotion, nothing to recite.
+   * Deliberately not modeled as a Prayer record — the Prayer library holds
+   * wordings, and this is the absence of one.
+   */
+  startOpenPrayer(
+    db: Database,
+    ctx: Partial<SessionContext> = {},
+  ): { db: Database; session?: PrayerSession } {
+    const context = defaultContext({ progress_mode: "scroll", ...ctx });
+    const sessionId = newId("session");
+    const session: PrayerSession = {
+      id: sessionId,
+      template_id: "",
+      title: "Open Prayer",
+      context,
+      created_at: new Date().toISOString(),
+      cursor: 0,
+    };
+    const item: SessionItem = {
+      id: newId("item"),
+      session_id: sessionId,
+      kind: "open_prayer",
+      position: 0,
+      title: "Open Prayer",
+      body: "Say whatever you want to say to God — thanks, sorrow, a question, a plea, or nothing in particular. Take as long as you like.",
       progress_mode: context.progress_mode,
       completion_status: "pending",
       completion_method: null,

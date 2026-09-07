@@ -112,6 +112,19 @@ Three jobs, three places, so none of them is crowded:
 | `saveOpenPrayerAsPrayer` — keep the words as a reusable Personal Prayer | `src/lib/prayer/store.ts` |
 | "Keep this as one of your prayers" + naming row + "Kept in your prayers" link | `src/routes/session.$sessionId.tsx` |
 | Open prayer excluded from `estimateMinutes`; builder shows "Takes as long as you like" | `src/lib/prayer/compiler.ts`, `src/routes/pray.tsx` |
+| `startOpenPrayer` + "Pray now" entry at the top of the **Prayers** tab | `src/lib/prayer/store.ts`, `src/routes/prayers.tsx` |
+
+### Where Open Prayer lives (JC asked, 2026-09-07)
+Three surfaces, because it plays three roles — and *not* a Prayer record, because a Prayer
+is a wording and an open prayer has none until it is prayed:
+
+1. **Prayers tab** — a "Pray now" card above the list (PRD §23A, "from the Prayer Library").
+   Starts a one-off session with a single open prayer step. This is the way in for "I just
+   want to talk to God"; it needs no devotion and no setup.
+2. **Devotions tab** — the seeded `tpl-open-prayer`, which is what makes it schedulable and
+   choosable as the daily start (a daily start is picked from devotions, per ACTS-166).
+3. **Builder component** — "Open prayer" in the add menu, for making room inside a longer
+   devotion.
 
 **The words live on the session item** (`configuration.open_prayer`), not in the reflections
 journal: an open prayer is speech *to* God, not a journal entry about it. Verified in the
