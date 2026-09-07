@@ -348,6 +348,7 @@ function PrayerMode() {
             onSetPassage={(ref, text) => setSessionPassage(session.id, ref, text)}
             onSaveReflection={(itemId, text) => saveSessionReflection(session.id, itemId, text)}
             soleOpenPrayer={openPrayerOnly}
+            displayName={db.settings.display_name}
             onSaveOpenPrayer={(itemId, text) => {
               saveSessionOpenPrayer(session.id, itemId, text);
               finishIfOpenPrayerOnly();
@@ -421,6 +422,7 @@ function PrayersTab({
   onSetPassage,
   onSaveReflection,
   soleOpenPrayer,
+  displayName,
   onSaveOpenPrayer,
   onReopenOpenPrayer,
   onKeepOpenPrayer,
@@ -444,6 +446,7 @@ function PrayersTab({
   onSetPassage: (reference: string, text: string) => void;
   onSaveReflection: (itemId: string, text: string) => void;
   soleOpenPrayer: boolean;
+  displayName: string | undefined;
   onSaveOpenPrayer: (itemId: string, text: string) => void;
   onReopenOpenPrayer: (itemId: string) => void;
   onKeepOpenPrayer: (itemId: string, title: string) => void;
@@ -513,6 +516,7 @@ function PrayersTab({
                 key={item.id}
                 item={item}
                 soleStep={soleOpenPrayer}
+                displayName={displayName}
                 current={current}
                 cardRef={current ? currentRef : undefined}
                 onSave={(text) => onSaveOpenPrayer(item.id, text)}
@@ -785,6 +789,7 @@ function OpenPrayerCard({
   onReopen,
   onKeep,
   soleStep,
+  displayName,
 }: {
   item: SessionItem;
   current: boolean;
@@ -794,6 +799,8 @@ function OpenPrayerCard({
   onKeep: (title: string) => void;
   /** This prayer is the whole session, so saving it also finished the session. */
   soleStep: boolean;
+  /** The user's own name, for prefilling the title of a kept prayer. */
+  displayName: string | undefined;
 }) {
   const config = (item.configuration ?? {}) as { open_prayer?: string; saved_prayer_id?: string };
   const saved = config.open_prayer ?? "";
@@ -806,7 +813,11 @@ function OpenPrayerCard({
   // Keeping the prayer is offered only once there are words to keep, and only
   // after they are saved — there is nothing to name while the field is still
   // being written into.
+  // Prefilled with the user's own name so naming a kept prayer is finishing a
+  // phrase ("Joy's …") rather than facing an empty box. Left untouched, it falls
+  // back to the prayer's opening words — a bare "Joy's" is never a title.
   const keptId = config.saved_prayer_id;
+  const possessive = ownerPossessive(displayName);
   const [naming, setNaming] = useState(false);
   const [name, setName] = useState("");
   const canKeep = done && !dirty && saved.trim().length > 0 && !keptId;
@@ -884,7 +895,9 @@ function OpenPrayerCard({
               <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder={suggestPrayerTitle(saved)}
+                placeholder={
+                  possessive ? `${possessive} evening prayer` : suggestPrayerTitle(saved)
+                }
                 aria-label="Name this prayer"
                 className="h-9 text-sm"
                 autoFocus
@@ -892,7 +905,7 @@ function OpenPrayerCard({
               <Button
                 size="sm"
                 onClick={() => {
-                  onKeep(name.trim() || suggestPrayerTitle(saved));
+                  onKeep(keptTitle(name, possessive, saved));
                   setNaming(false);
                 }}
               >
@@ -905,7 +918,10 @@ function OpenPrayerCard({
           ) : (
             <button
               type="button"
-              onClick={() => setNaming(true)}
+              onClick={() => {
+                setName(possessive ? `${possessive} ` : "");
+                setNaming(true);
+              }}
               className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
             >
               Keep this as one of your prayers
@@ -918,8 +934,29 @@ function OpenPrayerCard({
 }
 
 /**
+ * "Joy" → "Joy's", "Chris" → "Chris'". Empty when the user never gave a name,
+ * in which case the title falls back to the prayer's own opening words.
+ */
+function ownerPossessive(displayName: string | undefined): string {
+  const name = displayName?.trim();
+  if (!name) return "";
+  return /s$/i.test(name) ? `${name}'` : `${name}'s`;
+}
+
+/**
+ * What to actually call a kept prayer. The field opens prefilled with "Joy's ",
+ * so a user who taps Keep without typing would otherwise save a prayer called
+ * "Joy's" — that falls back to the opening words instead.
+ */
+function keptTitle(typed: string, possessive: string, body: string): string {
+  const title = typed.trim();
+  if (!title || title === possessive.trim()) return suggestPrayerTitle(body);
+  return title;
+}
+
+/**
  * A first guess at a name for a kept open prayer — its opening words. Only ever
- * a placeholder: the user types over it, and their own title wins.
+ * a fallback: the user types their own title, and theirs wins.
  */
 function suggestPrayerTitle(body: string): string {
   const firstLine = body.trim().split(/\n/)[0] ?? "";

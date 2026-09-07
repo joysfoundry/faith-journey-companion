@@ -127,6 +127,14 @@ twice and roll a recurring plan forward an extra day.
 The button also reads **"Prayed, not writing it down"** now — it is the no-capture choice,
 not a second Finish.
 
+### Naming a kept prayer starts with your own name (JC, 2026-09-07)
+The title field opens prefilled with the user's own name in the possessive — "Joy's " with
+the cursor after it — so naming a kept prayer is finishing a phrase rather than facing an
+empty box. Taken from `settings.display_name` (the beta-gate name prompt); "Chris" becomes
+"Chris'" rather than "Chris's". Tapping Keep without typing anything more would otherwise
+save a prayer called "Joy's", so a bare prefix falls back to the prayer's opening words.
+With no display name set, the opening-words suggestion is used as before.
+
 ### Where Open Prayer lives (JC asked, 2026-09-07)
 Three surfaces, because it plays three roles — and *not* a Prayer record, because a Prayer
 is a wording and an open prayer has none until it is prayed:
