@@ -1,13 +1,14 @@
 ---
 story: ACTS-108
 session: 01
+final: true
 wrapped_at: 2026-09-07T15:52:15-0700
 ---
 
-# ACTS-108 — session-01
+# ACTS-108 — session-01 (final handoff)
 
-**Status: In Progress** — every acceptance criterion is met and verified in the browser;
-left open only because JC may still want copy/placement tweaks. Nothing is blocked.
+**Status: Done.** Every acceptance criterion is met and verified in the running app, and
+JC closed the story after reviewing the shipped behaviour. One session, start to finish.
 
 ## What happened
 
@@ -84,23 +85,41 @@ No test runner yet (ACTS-92), so by hand in the running app plus static checks:
 - No console errors (the `displayName` errors seen mid-session were a stale HMR state
   between two edits; the page renders correctly, which it could not if it still threw).
 
-## Git state at handoff
-**Code: committed and pushed** — `origin/main` at `6a7ce8c`. Eleven commits, all prefixed
-`ACTS-108:` except two `docs:` ones.
+## Late additions (after the first draft of this handoff)
+- **"Add title (optional)"** labels the kept-prayer name field, which had read as a
+  required step in the way of keeping the prayer. Verified that skipping is honest:
+  clearing the field and tapping Keep named the prayer from its opening words
+  ("Keep us close to you this").
 
-**These handoff docs: committed, NOT pushed** — no git credentials in this environment
-(`could not read Username`). JC pushes from their own git client, as usual.
+## Git state at handoff
+**Committed and pushed** — `origin/main` at `c772db8`; thirteen commits (`ACTS-108:` plus
+three `docs:`). JC pushed from their own git client, since this environment has no
+credentials. The closing docs commit still needs the same treatment.
+
+Untouched throughout (belongs to **ACTS-162**, not this story): `public/invite.html`,
+`src/routes/about.tsx`, `stories/ACTS-162.md`, and untracked
+`supabase/migrations/0003_feedback.sql`.
 
 Untouched in the working tree (belongs to **ACTS-162**, not this story):
 `public/invite.html`, `src/routes/about.tsx`, `stories/ACTS-162.md`, and untracked
 `supabase/migrations/0003_feedback.sql`.
 
-## Next
-1. **JC's call on copy/placement** — the button label, the helper text, and whether Open
-   Prayer should stay in the Devotions list at all (dropping `tpl-open-prayer` would cost
-   the daily-start path).
-2. **File the share-leak follow-up** — already-published follow links still carry
-   journaled reflections in their payload; decide whether to invalidate them.
-3. **ACTS-149** can now start: it rides this kind (`spine: ACTS-108`) for the info button
+## Acceptance criteria — all met
+- [x] `open_prayer` kind (Template + Session), addable in the builder, compiled to one step
+- [x] Capture optional — write, or move on having written nothing
+- [x] An uncaptured open prayer saves **empty + completed**, never pruned
+- [x] Field takes device-keyboard dictation (plain textarea, no app-side audio)
+- [x] ACTS shape offered at the field
+- [x] Helper text: capture optional, saved either way, and the app is not the prayer
+- [x] Keep as a reusable Personal Prayer (optional title, prefilled with the user's name)
+- [x] Seeded as a daily-startable devotion; STORAGE_KEY v39 → v40
+- [x] Never timed
+
+## Follow-ons (not this story)
+1. **Share-leak follow-up — worth filing.** The allowlist fix stops new leaks, but
+   follow-along links published *before* it still carry journaled reflections in their
+   payload. Decide whether to invalidate them.
+2. **ACTS-149 is unblocked** — it rides this kind (`spine: ACTS-108`) for the info button
    and the sequenced four-movement ACTS mode.
-4. Close ACTS-108 with `/done` once 1 is settled.
+3. Open question JC may revisit: whether Open Prayer should stay in the **Devotions** list
+   at all. Dropping `tpl-open-prayer` would cost the daily-start path, so it stays for now.
