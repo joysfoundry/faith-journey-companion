@@ -736,6 +736,9 @@ function PrayPage() {
                   <div className="mt-2 flex h-12 items-center rounded-md border border-input bg-muted/40 px-3 text-sm">
                     {estMin > 0 ? (
                       <span className="tabular-nums">~{estMin} min</span>
+                    ) : items.length > 0 ? (
+                      // Nothing here is timed — an open-prayer-only session (ACTS-108).
+                      <span className="text-muted-foreground">Takes as long as you like</span>
                     ) : (
                       <span className="text-muted-foreground">Add prayers to estimate</span>
                     )}

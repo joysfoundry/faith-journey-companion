@@ -112,6 +112,8 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
         setDb((d) => mutations.saveSessionOpenPrayer(d, sessionId, itemId, text)),
       reopenSessionOpenPrayer: (itemId: string) =>
         setDb((d) => mutations.reopenSessionOpenPrayer(d, itemId)),
+      saveOpenPrayerAsPrayer: (itemId: string, title: string) =>
+        setDb((d) => mutations.saveOpenPrayerAsPrayer(d, itemId, title)),
       setSessionPassage: (sessionId: string, reference: string, text: string) =>
         setDb((d) => mutations.setSessionPassage(d, sessionId, reference, text)),
       finishSession: (id: string) => setDb((d) => mutations.finishSession(d, id)),

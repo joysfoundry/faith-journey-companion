@@ -32,12 +32,14 @@ export function newId(prefix: string): string {
 /* Dedication tokens — pray a devotion "for" a named soul (ACTS-121)   */
 /* ------------------------------------------------------------------ */
 
-const PRONOUN_FORMS: Record<import("./types").Pronoun, { subj: string; obj: string; poss: string }> =
-  {
-    she: { subj: "she", obj: "her", poss: "her" },
-    he: { subj: "he", obj: "him", poss: "his" },
-    they: { subj: "they", obj: "them", poss: "their" },
-  };
+const PRONOUN_FORMS: Record<
+  import("./types").Pronoun,
+  { subj: string; obj: string; poss: string }
+> = {
+  she: { subj: "she", obj: "her", poss: "her" },
+  he: { subj: "he", obj: "him", poss: "his" },
+  they: { subj: "they", obj: "them", poss: "their" },
+};
 
 /**
  * Substitute dedication tokens in prayer text for a session prayed for a soul.
@@ -55,10 +57,7 @@ const PRONOUN_FORMS: Record<import("./types").Pronoun, { subj: string; obj: stri
  * they/them/their) and `{us}` stays "us" — so an un-dedicated session reads
  * exactly as the traditional text.
  */
-export function substituteDedication(
-  text: string,
-  forWhom?: import("./types").Dedication,
-): string {
+export function substituteDedication(text: string, forWhom?: import("./types").Dedication): string {
   if (!text || text.indexOf("{") === -1) return text;
   const forms = PRONOUN_FORMS[forWhom?.pronoun ?? "they"];
   const name = forWhom?.name?.trim() || "the faithful departed";
@@ -840,7 +839,6 @@ function expandTemplate(state: CompileState, template: PrayerTemplate, depth: nu
       });
     }
   }
-
 }
 
 export function ordinalWord(n: number): string {
@@ -897,16 +895,23 @@ export function sessionProgress(items: SessionItem[]): { done: number; total: nu
  * Model: recited prayer runs ~180 words/min, plus a few seconds per step to
  * announce and transition. Calibrated so a full five-decade Rosary lands near
  * ~20 min. The app derives this — users never type it.
+ *
+ * Open prayer is deliberately **not** estimated (ACTS-108): free-form prayer
+ * takes as long as it takes, and timing it from the length of its prompt would
+ * quietly contradict "take as long as you like." A session that is nothing but
+ * open prayer therefore estimates at 0, which every caller renders as no
+ * estimate at all rather than a misleading "~1 min".
  */
 export function estimateMinutes(items: SessionItem[]): number {
   const WORDS_PER_MIN = 180;
   const OVERHEAD_SEC_PER_ITEM = 3;
   const words = (t?: string) => (t ? t.trim().split(/\s+/).filter(Boolean).length : 0);
-  const seconds = items.reduce(
+  const timed = items.filter((i) => i.kind !== "open_prayer");
+  const seconds = timed.reduce(
     (sum, it) => sum + (words(it.body) / WORDS_PER_MIN) * 60 + OVERHEAD_SEC_PER_ITEM,
     0,
   );
-  return items.length === 0 ? 0 : Math.max(1, Math.round(seconds / 60));
+  return timed.length === 0 ? 0 : Math.max(1, Math.round(seconds / 60));
 }
 
 /** Expands the compact template into a human-readable preview (no session). */

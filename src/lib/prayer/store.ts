@@ -419,6 +419,12 @@ export interface AppStore {
   /** Re-open a completed Open Prayer step, keeping anything already written. */
   reopenSessionOpenPrayer: (itemId: ID) => void;
   /**
+   * Keep what was prayed as a reusable Personal Prayer, under the user's own
+   * title. Only meaningful when words were actually written; saving twice is a
+   * no-op, so the offer can stay on screen without risking duplicates.
+   */
+  saveOpenPrayerAsPrayer: (itemId: ID, title: string) => void;
+  /**
    * Set the passage every scripture step in a session reads (Lectio: one passage,
    * re-read). `reference` is the citation; `text` is the optional pasted passage
    * text, propagated to each scripture step's body (empty leaves them reference-only).
@@ -983,6 +989,56 @@ export const mutations = {
     return {
       ...db,
       session_items: db.session_items.map((i) => (i.id === itemId ? uncompleteSessionItem(i) : i)),
+    };
+  },
+  /**
+   * Keep an open prayer as a reusable Personal Prayer (PRD §23A, ACTS-108) —
+   * the user's own words, offered back to them as something they can pray again
+   * or drop into another devotion.
+   *
+   * It carries no source: the provenance *is* that the user wrote it, and
+   * inventing an origin would be dishonest (see the provenance rules in
+   * `taxonomy.ts`). `saved_prayer_id` on the item records that this already
+   * happened, so the offer never duplicates the prayer.
+   */
+  saveOpenPrayerAsPrayer(db: Database, itemId: ID, title: string): Database {
+    const item = db.session_items.find((i) => i.id === itemId);
+    if (!item || item.kind !== "open_prayer") return db;
+    const config = (item.configuration ?? {}) as { open_prayer?: string; saved_prayer_id?: ID };
+    const body = (config.open_prayer ?? "").trim();
+    // Nothing to keep, or already kept — an uncaptured prayer has no words to save.
+    if (!body || config.saved_prayer_id) return db;
+
+    const now = new Date().toISOString();
+    const prayerId = newId("prayer");
+    const versionId = newId("ver");
+    const prayer: Prayer = {
+      id: prayerId,
+      title: title.trim() || "Open Prayer",
+      prayer_type: "other",
+      expression_type: "vocal",
+      tags: ["Personal"],
+      favorite: false,
+      default_version_id: versionId,
+      created_at: now,
+    };
+    const version: PrayerVersion = {
+      id: versionId,
+      prayer_id: prayerId,
+      label: "As prayed",
+      body,
+      language: "en",
+      created_at: now,
+    };
+    return {
+      ...db,
+      prayers: [...db.prayers, prayer],
+      prayer_versions: [...db.prayer_versions, version],
+      session_items: db.session_items.map((i) =>
+        i.id === itemId
+          ? { ...i, configuration: { ...(i.configuration ?? {}), saved_prayer_id: prayerId } }
+          : i,
+      ),
     };
   },
   setSessionPassage(db: Database, sessionId: ID, reference: string, text: string): Database {

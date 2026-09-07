@@ -142,6 +142,7 @@ function PrayerMode() {
     saveSessionReflection,
     saveSessionOpenPrayer,
     reopenSessionOpenPrayer,
+    saveOpenPrayerAsPrayer,
     setSessionPassage,
     pruneEmptyLectioSession,
   } = useApp();
@@ -335,6 +336,7 @@ function PrayerMode() {
             onSaveReflection={(itemId, text) => saveSessionReflection(session.id, itemId, text)}
             onSaveOpenPrayer={(itemId, text) => saveSessionOpenPrayer(session.id, itemId, text)}
             onReopenOpenPrayer={reopenSessionOpenPrayer}
+            onKeepOpenPrayer={saveOpenPrayerAsPrayer}
             bibleUrl={bibleUrl}
             bibleHome={bibleHome}
           />
@@ -396,6 +398,7 @@ function PrayersTab({
   onSaveReflection,
   onSaveOpenPrayer,
   onReopenOpenPrayer,
+  onKeepOpenPrayer,
   bibleUrl,
   bibleHome,
 }: {
@@ -417,6 +420,7 @@ function PrayersTab({
   onSaveReflection: (itemId: string, text: string) => void;
   onSaveOpenPrayer: (itemId: string, text: string) => void;
   onReopenOpenPrayer: (itemId: string) => void;
+  onKeepOpenPrayer: (itemId: string, title: string) => void;
   bibleUrl: (ref: string) => string;
   bibleHome: string;
 }) {
@@ -486,6 +490,7 @@ function PrayersTab({
                 cardRef={current ? currentRef : undefined}
                 onSave={(text) => onSaveOpenPrayer(item.id, text)}
                 onReopen={() => onReopenOpenPrayer(item.id)}
+                onKeep={(title) => onKeepOpenPrayer(item.id, title)}
               />
             );
           }
@@ -751,19 +756,30 @@ function OpenPrayerCard({
   cardRef,
   onSave,
   onReopen,
+  onKeep,
 }: {
   item: SessionItem;
   current: boolean;
   cardRef?: React.Ref<HTMLDivElement> | undefined;
   onSave: (text: string) => void;
   onReopen: () => void;
+  onKeep: (title: string) => void;
 }) {
-  const saved = (item.configuration as { open_prayer?: string } | undefined)?.open_prayer ?? "";
+  const config = (item.configuration ?? {}) as { open_prayer?: string; saved_prayer_id?: string };
+  const saved = config.open_prayer ?? "";
   const [text, setText] = useState(saved);
   useEffect(() => setText(saved), [saved]);
   const done = item.completion_status === "complete";
   const written = text.trim().length > 0;
   const dirty = text.trim() !== saved.trim();
+
+  // Keeping the prayer is offered only once there are words to keep, and only
+  // after they are saved — there is nothing to name while the field is still
+  // being written into.
+  const keptId = config.saved_prayer_id;
+  const [naming, setNaming] = useState(false);
+  const [name, setName] = useState("");
+  const canKeep = done && !dirty && saved.trim().length > 0 && !keptId;
 
   return (
     <div
@@ -818,8 +834,63 @@ function OpenPrayerCard({
           {written ? "Save" : "I prayed this"}
         </Button>
       </div>
+      {keptId ? (
+        <p className="mt-3 border-t border-border/60 pt-3 text-xs text-muted-foreground">
+          Kept in your prayers —{" "}
+          <Link to="/prayer/$prayerId" params={{ prayerId: keptId }} className="underline">
+            open it
+          </Link>
+          .
+        </p>
+      ) : canKeep ? (
+        <div className="mt-3 border-t border-border/60 pt-3">
+          {naming ? (
+            <div className="flex items-center gap-2">
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder={suggestPrayerTitle(saved)}
+                aria-label="Name this prayer"
+                className="h-9 text-sm"
+                autoFocus
+              />
+              <Button
+                size="sm"
+                onClick={() => {
+                  onKeep(name.trim() || suggestPrayerTitle(saved));
+                  setNaming(false);
+                }}
+              >
+                Keep
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setNaming(false)}>
+                Cancel
+              </Button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setNaming(true)}
+              className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+            >
+              Keep this as one of your prayers
+            </button>
+          )}
+        </div>
+      ) : null}
     </div>
   );
+}
+
+/**
+ * A first guess at a name for a kept open prayer — its opening words. Only ever
+ * a placeholder: the user types over it, and their own title wins.
+ */
+function suggestPrayerTitle(body: string): string {
+  const firstLine = body.trim().split(/\n/)[0] ?? "";
+  const words = firstLine.split(/\s+/).filter(Boolean).slice(0, 6).join(" ");
+  const trimmed = words.replace(/[.,;:!?—-]+$/, "");
+  return trimmed.length > 3 ? trimmed : "Open Prayer";
 }
 
 /** Short label for a step on the Guide — e.g. "Hail Mary (1/10)". */

@@ -8,7 +8,7 @@ approved_by: JC
 depends_on: []
 relates_to: [ACTS-102, ACTS-104, ACTS-149, ACTS-156]
 started_at: 2026-08-29T21:25:05-0700
-updated:    2026-09-07T14:51:11-0700
+updated:    2026-09-07T15:14:58-0700
 latest_handoff: null
 sessions: 0
 ---
@@ -56,7 +56,8 @@ stay in ACTS-149.
 - [x] Helper text says capture is optional and that the component is saved either way (see Copy)
 - [x] **Seeded as a daily-startable devotion** — "Open Prayer" (`tpl-open-prayer`), one component, choosable like any other devotion (JC, 2026-09-07)
 - [x] STORAGE_KEY bump — v39 → v40 (new seeded devotion)
-- [ ] Optional "Save as reusable Personal Prayer" when words *were* captured — **not built yet**
+- [x] Optional "Save as reusable Personal Prayer" when words *were* captured
+- [x] **No time estimate on an open prayer** — free-form prayer takes as long as it takes (JC, 2026-09-07)
 
 ## Decisions & doc changes (2026-09-07)
 
@@ -108,6 +109,9 @@ Three jobs, three places, so none of them is crowded:
 | Add-menu entry, defaults, prompt field, builder tip | `src/components/prayer/DevotionItemsEditor.tsx` |
 | Seeded "Open Prayer" devotion (`tpl-open-prayer`) | `src/lib/prayer/seed.ts` |
 | **Share privacy fix** — `configuration` allowlist | `src/lib/prayer/share.ts` |
+| `saveOpenPrayerAsPrayer` — keep the words as a reusable Personal Prayer | `src/lib/prayer/store.ts` |
+| "Keep this as one of your prayers" + naming row + "Kept in your prayers" link | `src/routes/session.$sessionId.tsx` |
+| Open prayer excluded from `estimateMinutes`; builder shows "Takes as long as you like" | `src/lib/prayer/compiler.ts`, `src/routes/pray.tsx` |
 
 **The words live on the session item** (`configuration.open_prayer`), not in the reflections
 journal: an open prayer is speech *to* God, not a journal entry about it. Verified in the
@@ -136,6 +140,20 @@ No test runner yet (ACTS-92), so this was checked by hand in Prayer Mode:
 - **Share stripping**: `toShareItem` on an item carrying `open_prayer`, `response` and
   `reflection_id` emits only `{ decade }` — the private keys are gone.
 - No console errors.
+
+### Session 1b — keeping a prayer, and un-timing it
+- **Keep as a Personal Prayer**: offered only once words are saved (never on an uncaptured
+  prayer, nothing to keep). Naming row pre-fills a suggestion from the opening words —
+  "Thank you for this day, Lord" — which the user types over. Keeping created
+  `prayer_type: "other"`, `expression_type: "vocal"`, tag **Personal**, version label
+  **"As prayed"**, and **no `source_id`** — the provenance *is* that the user wrote it, and
+  inventing an origin would break the honesty rule in `taxonomy.ts`. The prayer opens at
+  `/prayer/<id>` as a first-class prayer: Pray now, Edit, favorite, reflect.
+- `saved_prayer_id` on the item makes the offer collapse to "Kept in your prayers — open it",
+  so it can't duplicate; the mutation is a no-op if called again.
+- **No estimate**: an open prayer contributes nothing to `estimateMinutes`, so the session
+  header now reads "1 STEPS · IN ORDER" with no "~1 MIN". A session with items but no timed
+  ones shows "Takes as long as you like" in the builder rather than "Add prayers to estimate".
 
 ## Tests
 - **Unit** (Vitest): compiler expands an `open_prayer` item; an empty open prayer persists as an empty completed item (regression guard against the reflection prune path).
