@@ -891,29 +891,34 @@ function OpenPrayerCard({
       ) : canKeep ? (
         <div className="mt-3 border-t border-border/60 pt-3">
           {naming ? (
-            <div className="flex items-center gap-2">
-              <Input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder={
-                  possessive ? `${possessive} evening prayer` : suggestPrayerTitle(saved)
-                }
-                aria-label="Name this prayer"
-                className="h-9 text-sm"
-                autoFocus
-              />
-              <Button
-                size="sm"
-                onClick={() => {
-                  onKeep(keptTitle(name, possessive, saved));
-                  setNaming(false);
-                }}
-              >
-                Keep
-              </Button>
-              <Button size="sm" variant="ghost" onClick={() => setNaming(false)}>
-                Cancel
-              </Button>
+            <div>
+              {/* Optional, and said so: leaving it be names the prayer from its
+                  own opening words rather than blocking the save. */}
+              <p className="mb-1.5 text-xs text-muted-foreground">Add title (optional)</p>
+              <div className="flex items-center gap-2">
+                <Input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder={
+                    possessive ? `${possessive} evening prayer` : suggestPrayerTitle(saved)
+                  }
+                  aria-label="Add title (optional)"
+                  className="h-9 text-sm"
+                  autoFocus
+                />
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    onKeep(keptTitle(name, possessive, saved));
+                    setNaming(false);
+                  }}
+                >
+                  Keep
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setNaming(false)}>
+                  Cancel
+                </Button>
+              </div>
             </div>
           ) : (
             <button
