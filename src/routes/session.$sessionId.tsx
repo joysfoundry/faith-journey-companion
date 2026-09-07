@@ -250,6 +250,19 @@ function PrayerMode() {
     navigate({ to: "/" });
   };
 
+  /**
+   * A session that is nothing but one open prayer has no second act: completing
+   * the prayer *is* finishing the session, so it finishes itself and the footer
+   * "Finish" button is not shown at all (ACTS-108). Guarded on `completed_at`
+   * because re-opening and re-saving a finished session must not finish it
+   * twice — that would roll a recurring plan forward an extra day.
+   */
+  const openPrayerOnly = items.length === 1 && items[0]?.kind === "open_prayer";
+  const finishIfOpenPrayerOnly = () => {
+    if (!openPrayerOnly || session.completed_at) return;
+    finishSession(session.id);
+  };
+
   return (
     <Tabs
       value={tab}
@@ -334,7 +347,16 @@ function PrayerMode() {
             passageText={passageText}
             onSetPassage={(ref, text) => setSessionPassage(session.id, ref, text)}
             onSaveReflection={(itemId, text) => saveSessionReflection(session.id, itemId, text)}
-            onSaveOpenPrayer={(itemId, text) => saveSessionOpenPrayer(session.id, itemId, text)}
+            soleOpenPrayer={openPrayerOnly}
+            onSaveOpenPrayer={(itemId, text) => {
+              saveSessionOpenPrayer(session.id, itemId, text);
+              finishIfOpenPrayerOnly();
+              // Nothing was written, so there is nothing left to offer — leave
+              // the session rather than parking on a finished screen. Written
+              // prayers stay put, so "keep this as one of your prayers" is
+              // still there to accept.
+              if (openPrayerOnly && !text.trim() && !session.completed_at) navigate({ to: "/" });
+            }}
             onReopenOpenPrayer={reopenSessionOpenPrayer}
             onKeepOpenPrayer={saveOpenPrayerAsPrayer}
             bibleUrl={bibleUrl}
@@ -357,9 +379,11 @@ function PrayerMode() {
 
       <footer className="sticky bottom-0 border-t border-border/70 bg-card/95 backdrop-blur">
         <div className="mx-auto w-full max-w-lg px-5 py-4">
-          <Button className="h-14 w-full text-base" onClick={finish}>
-            {progress.done >= progress.total && progress.total > 0 ? "Finish session" : "Finish"}
-          </Button>
+          {openPrayerOnly ? null : (
+            <Button className="h-14 w-full text-base" onClick={finish}>
+              {progress.done >= progress.total && progress.total > 0 ? "Finish session" : "Finish"}
+            </Button>
+          )}
           <label className="mt-3 flex items-center justify-center gap-2 text-xs text-muted-foreground">
             <input
               type="checkbox"
@@ -396,6 +420,7 @@ function PrayersTab({
   passageText,
   onSetPassage,
   onSaveReflection,
+  soleOpenPrayer,
   onSaveOpenPrayer,
   onReopenOpenPrayer,
   onKeepOpenPrayer,
@@ -418,6 +443,7 @@ function PrayersTab({
   passageText: string;
   onSetPassage: (reference: string, text: string) => void;
   onSaveReflection: (itemId: string, text: string) => void;
+  soleOpenPrayer: boolean;
   onSaveOpenPrayer: (itemId: string, text: string) => void;
   onReopenOpenPrayer: (itemId: string) => void;
   onKeepOpenPrayer: (itemId: string, title: string) => void;
@@ -486,6 +512,7 @@ function PrayersTab({
               <OpenPrayerCard
                 key={item.id}
                 item={item}
+                soleStep={soleOpenPrayer}
                 current={current}
                 cardRef={current ? currentRef : undefined}
                 onSave={(text) => onSaveOpenPrayer(item.id, text)}
@@ -757,6 +784,7 @@ function OpenPrayerCard({
   onSave,
   onReopen,
   onKeep,
+  soleStep,
 }: {
   item: SessionItem;
   current: boolean;
@@ -764,6 +792,8 @@ function OpenPrayerCard({
   onSave: (text: string) => void;
   onReopen: () => void;
   onKeep: (title: string) => void;
+  /** This prayer is the whole session, so saving it also finished the session. */
+  soleStep: boolean;
 }) {
   const config = (item.configuration ?? {}) as { open_prayer?: string; saved_prayer_id?: string };
   const saved = config.open_prayer ?? "";
@@ -831,9 +861,14 @@ function OpenPrayerCard({
           </Button>
         ) : null}
         <Button size="sm" onClick={() => onSave(text)} disabled={done && !dirty}>
-          {written ? "Save" : "I prayed this"}
+          {written ? "Save" : "Prayed, not writing it down"}
         </Button>
       </div>
+      {soleStep && done ? (
+        <p className="mt-2 text-right text-xs text-muted-foreground">
+          Session complete — close when you're ready.
+        </p>
+      ) : null}
       {keptId ? (
         <p className="mt-3 border-t border-border/60 pt-3 text-xs text-muted-foreground">
           Kept in your prayers —{" "}

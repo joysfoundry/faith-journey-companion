@@ -114,6 +114,19 @@ Three jobs, three places, so none of them is crowded:
 | Open prayer excluded from `estimateMinutes`; builder shows "Takes as long as you like" | `src/lib/prayer/compiler.ts`, `src/routes/pray.tsx` |
 | `startOpenPrayer` + "Pray now" entry at the top of the **Prayers** tab | `src/lib/prayer/store.ts`, `src/routes/prayers.tsx` |
 
+### A lone open prayer finishes itself (JC, 2026-09-07)
+"I prayed this" and the footer "Finish" read as two ways to end the same thing when the
+open prayer *is* the whole session. So when a session holds exactly one open prayer step:
+the footer Finish button is not rendered at all, and completing the prayer finishes the
+session. Praying without writing navigates home (nothing left to offer); a written prayer
+stays on screen so "keep this as one of your prayers" is still there to accept, with a
+"Session complete — close when you're ready" note in place of the button. Finishing is
+guarded on `completed_at`, so re-opening and re-saving a finished session can't finish it
+twice and roll a recurring plan forward an extra day.
+
+The button also reads **"Prayed, not writing it down"** now — it is the no-capture choice,
+not a second Finish.
+
 ### Where Open Prayer lives (JC asked, 2026-09-07)
 Three surfaces, because it plays three roles — and *not* a Prayer record, because a Prayer
 is a wording and an open prayer has none until it is prayed:
