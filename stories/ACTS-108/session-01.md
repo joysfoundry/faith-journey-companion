@@ -85,8 +85,11 @@ No test runner yet (ACTS-92), so by hand in the running app plus static checks:
   between two edits; the page renders correctly, which it could not if it still threw).
 
 ## Git state at handoff
-**Committed and pushed** — `origin/main` at `6a7ce8c`. Eleven commits, all prefixed
+**Code: committed and pushed** — `origin/main` at `6a7ce8c`. Eleven commits, all prefixed
 `ACTS-108:` except two `docs:` ones.
+
+**These handoff docs: committed, NOT pushed** — no git credentials in this environment
+(`could not read Username`). JC pushes from their own git client, as usual.
 
 Untouched in the working tree (belongs to **ACTS-162**, not this story):
 `public/invite.html`, `src/routes/about.tsx`, `stories/ACTS-162.md`, and untracked
