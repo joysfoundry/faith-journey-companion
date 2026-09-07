@@ -9,7 +9,7 @@ last synced: 2026-08-29 · ba18ff0 *(v3.1 is a targeted amendment, not a full sy
 
 | Date | § touched | Change | Source |
 | :---- | :---- | :---- | :---- |
-| 2026-09-07 | §23A, §23B, §31A, §32 (DoD 31/33) | **Open Prayer clarified** (ACTS-108). (1) *Dictation:* the "Transcribe Open Prayer On/Off" requirement assumed app-controlled audio; replaced by a constraint that free-form fields accept **device-keyboard dictation**, toggled at the keyboard — the app ships no audio capture or transcription. (2) *Uncaptured prayer:* an Open Prayer with nothing written is **saved empty and completed**, never pruned or counted unfinished. (3) *ACTS prompt:* the A·C·T·S shape is offered at the field for anyone unsure what to pray. Dropped `allow_voice_input` / `default_transcription_enabled` from OpenPrayerPrompt. | JC, in session |
+| 2026-09-07 | §23A, §23B, §31A, §32 (DoD 31/33) | **Open Prayer clarified** (ACTS-108). (1) *Dictation:* the "Transcribe Open Prayer On/Off" requirement assumed app-controlled audio; replaced by a constraint that free-form fields accept **device-keyboard dictation**, toggled at the keyboard — the app ships no audio capture or transcription. (2) *Uncaptured prayer:* an Open Prayer with nothing written is **saved empty and completed**, never pruned or counted unfinished. (3) *ACTS prompt:* the A·C·T·S shape is offered at the field for anyone unsure what to pray. (4) *Not timed:* an Open Prayer contributes nothing to a session's time estimate. Dropped `allow_voice_input` / `default_transcription_enabled` from OpenPrayerPrompt. | JC, in session |
 
 Umbrella vision: **Faith Journey** — the longitudinal experience/model that brings prayer, Scripture, learning, reflection, and lived experience together in service of discerning God's will and living one's purpose. *(Umbrella name is a working placeholder — TBD.)*
 Shipping now: **ACTS** — a guided Catholic prayer companion. *(ACTS = **A**doration, **C**ontrition, **T**hanksgiving, **S**upplication — the traditional shape of prayer.)*
@@ -745,6 +745,8 @@ Open Prayer supports three creation/capture moments:
 * While building a Template or one-time Session: add Open Prayer and choose Write Now or Leave Open Until Session.  
 * During Active Prayer Mode: when the Session reaches an Open Prayer item, the user may write their prayer or pray without capturing it. If words were written, the user may optionally Save as Reusable Prayer afterward.
 
+**An Open Prayer is never timed.** It contributes nothing to a session's estimated duration, and a session made only of open prayer shows no estimate at all. Putting a number on free-form prayer would contradict the invitation to take as long as you like.
+
 **An uncaptured Open Prayer is still a completed Open Prayer.** When nothing is written, the prayer was between God and the user alone; the app saves the component with an empty body and a completed status. It is never pruned, and the Session is never treated as unfinished because of it. Silence is a finished prayer, not an abandoned step.
 
 ## Helping Someone Who Does Not Know What to Pray
@@ -767,7 +769,7 @@ My Intention/UserIntention, user-fillable Petition/DevotionIntention, and Open P
 
 A PrayerPlan may have an overall UserIntention while a specific PrayerSession may also capture a day-specific UserIntention. Neither should overwrite sourced DevotionIntentions/Petitions.
 
-*Shipped note:* **Open Prayer is [In Progress]** — ACTS-108, opened 2026-09-07; the `open_prayer` item kind is being added now. This section was amended the same day (dictation; uncaptured-but-completed; the ACTS prompt at the field).
+*Shipped note:* **Open Prayer is [Shipped]** — ACTS-108, built 2026-09-07: the `open_prayer` item kind, a Prayer-Mode step where capture is optional, the ACTS prompt at the field, "keep as a reusable Personal Prayer", and a seeded **Open Prayer** devotion (`tpl-open-prayer`) startable like any other. This section was amended the same day (dictation; uncaptured-but-completed; the ACTS prompt at the field).
 
 # **23B. Meditation, Open Prayer, and Reflection**
 
