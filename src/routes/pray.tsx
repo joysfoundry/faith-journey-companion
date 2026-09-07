@@ -1040,13 +1040,21 @@ function PrayPage() {
                           day: "numeric",
                         })
                       : "Any time";
+                    // Nothing timed here means no duration to show — an
+                    // open-prayer-only plan takes as long as it takes (ACTS-108).
+                    // Checked against the plan's own items rather than trusting
+                    // `duration_min`, which may be a stale snapshot from a save
+                    // made before open prayer stopped counting.
+                    const planItems = plan.items ?? [];
+                    const timed =
+                      planItems.length > 0 && planItems.some((i) => i.kind !== "open_prayer");
                     const sub = [
                       dayLabel,
                       plan.purpose ? tpl?.name : null,
                       plan.recurrence.freq !== "none" ? recurrenceLabel(plan.recurrence) : null,
                       plan.start_time ? plan.start_time : null,
                       plan.hour ? HOUR_LABEL[plan.hour] : null,
-                      plan.duration_min ? `~${plan.duration_min} min` : null,
+                      plan.duration_min && timed ? `~${plan.duration_min} min` : null,
                     ]
                       .filter(Boolean)
                       .join(" · ");
