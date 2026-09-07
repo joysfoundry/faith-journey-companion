@@ -334,7 +334,7 @@ export function ReflectionComposer({ linkables, prefillLinkId, showDraftStatus }
         <RichTextArea
           value={body}
           onChange={setBody}
-          placeholder="What's on your heart today?"
+          placeholder="What's on your heart today? What did you learn?"
           rows={4}
           ariaLabel="Your reflection"
         />
