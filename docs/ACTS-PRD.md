@@ -2,8 +2,14 @@
 **Now shipping: ACTS** — *the prayer-first product*
 
 **Product Vision & Requirements Document**
-v3 · updated 2026-08-29 · rebased onto the "Final Build-Ready MVP PRD v8" base
-last synced: 2026-08-29 · ba18ff0
+v3.1 · updated 2026-09-07 · rebased onto the "Final Build-Ready MVP PRD v8" base
+last synced: 2026-08-29 · ba18ff0 *(v3.1 is a targeted amendment, not a full sync — see Amendments below)*
+
+**Amendments since v3**
+
+| Date | § touched | Change | Source |
+| :---- | :---- | :---- | :---- |
+| 2026-09-07 | §23A, §23B, §31A, §32 (DoD 31/33) | **Open Prayer clarified** (ACTS-108). (1) *Dictation:* the "Transcribe Open Prayer On/Off" requirement assumed app-controlled audio; replaced by a constraint that free-form fields accept **device-keyboard dictation**, toggled at the keyboard — the app ships no audio capture or transcription. (2) *Uncaptured prayer:* an Open Prayer with nothing written is **saved empty and completed**, never pruned or counted unfinished. (3) *ACTS prompt:* the A·C·T·S shape is offered at the field for anyone unsure what to pray. Dropped `allow_voice_input` / `default_transcription_enabled` from OpenPrayerPrompt. | JC, in session |
 
 Umbrella vision: **Faith Journey** — the longitudinal experience/model that brings prayer, Scripture, learning, reflection, and lived experience together in service of discerning God's will and living one's purpose. *(Umbrella name is a working placeholder — TBD.)*
 Shipping now: **ACTS** — a guided Catholic prayer companion. *(ACTS = **A**doration, **C**ontrition, **T**hanksgiving, **S**upplication — the traditional shape of prayer.)*
@@ -731,25 +737,37 @@ The USCCB starter library is a seed and preferred reference source, not a closed
 
 Open Prayer is a first-class Session component for free-form personal prayer. It is different from My Intention/UserIntention and from a sourced DevotionIntention or Petition. My Intention answers why I am praying; a sourced DevotionIntention/Petition is part of the devotion; Open Prayer captures the actual words I choose to pray from my heart.
 
+Open Prayer is a component for **open dialogue**: the person prays whatever they want, and capturing it is optional. Speaking is never a separate mode — a user who wants to speak their prayer into the app dictates with their device keyboard (see *Dictation* below), which is simply another way of writing.
+
 Open Prayer supports three creation/capture moments:
 
-* From the Prayer Library: choose Open Prayer, type or speak a prayer, and optionally Save as Prayer. Saving creates a reusable Personal Prayer + PrayerVersion, typically categorized as Other/Personal with Source = Personal.  
-* While building a Template or one-time Session: add Open Prayer and choose Write Now, Speak Now → Transcribe, or Leave Open Until Session.  
-* During Active Prayer Mode: when the Session reaches an Open Prayer item, offer Write, Speak, or Pray Without Capturing. If transcription is enabled, spoken words are transcribed and saved to that Session; the user may optionally Save as Reusable Prayer afterward.
+* From the Prayer Library: choose Open Prayer, write a prayer, and optionally Save as Prayer. Saving creates a reusable Personal Prayer + PrayerVersion, typically categorized as Other/Personal with Source = Personal.  
+* While building a Template or one-time Session: add Open Prayer and choose Write Now or Leave Open Until Session.  
+* During Active Prayer Mode: when the Session reaches an Open Prayer item, the user may write their prayer or pray without capturing it. If words were written, the user may optionally Save as Reusable Prayer afterward.
 
-## Transcription Control During a Session
+**An uncaptured Open Prayer is still a completed Open Prayer.** When nothing is written, the prayer was between God and the user alone; the app saves the component with an empty body and a completed status. It is never pruned, and the Session is never treated as unfinished because of it. Silence is a finished prayer, not an abandoned step.
 
-Transcription of free-form prayer must be optional and controllable for the Session. The user can turn Transcribe Open Prayer On or Off before or during the Session. If Off, the user may pray aloud without saving audio or text.
+## Helping Someone Who Does Not Know What to Pray
 
-Keep microphone behaviors distinct: Voice Follow uses the microphone for navigation and saves neither audio nor text; Transcribe Prayer uses the microphone to create text and does not require saving audio; Record Session saves audio and may optionally create a transcript.
+Free-form is freeing for some and paralyzing for others. Where an Open Prayer is offered, the app should quietly suggest the **ACTS** shape — Adoration, Contrition, Thanksgiving, Supplication — as a way in, and should make clear that capturing the prayer is optional and that the component is saved either way. This is a prompt, never a required structure: the sequenced four-movement ACTS mode and its explanatory info button are a separate feature (ACTS-149).
+
+## Dictation — the Device Keyboard, Not an App Feature
+
+*(Amended 2026-09-07 — JC. Supersedes the earlier "Transcribe Open Prayer On/Off" requirement.)*
+
+The original requirement assumed the app controlled the audio: our recording, our transcription, our on/off toggle. On a phone none of that is ours to build. The device keyboard already dictates, and the user turns dictation on and off **at the keyboard**, where they already know how.
+
+So the requirement becomes a constraint on our field rather than a feature we ship: **any free-form capture field must be an ordinary text input that accepts keyboard dictation** — a real text area, with no custom input handling that would swallow dictated text. The app ships no audio capture, no transcription service, and no in-app transcription toggle for free-form prayer.
+
+Keep the remaining microphone behaviors distinct: Voice Follow uses the microphone for navigation and saves neither audio nor text; Record Session saves audio and may optionally create a transcript. Neither is touched by dictation, which never reaches the app as audio at all — only as typed text.
 
 ## Shared Text / Voice Capture for Intention and Petition
 
-My Intention/UserIntention, user-fillable Petition/DevotionIntention, and Open Prayer remain separate domain concepts, but they should share a reusable text/voice capture experience. When adding one to a Session, allow the user to type it, speak it for transcription, leave it blank until Active Prayer Mode where appropriate, or continue without capture.
+My Intention/UserIntention, user-fillable Petition/DevotionIntention, and Open Prayer remain separate domain concepts, but they should share a reusable text capture experience. When adding one to a Session, allow the user to write it (by keyboard or keyboard dictation), leave it blank until Active Prayer Mode where appropriate, or continue without capture.
 
 A PrayerPlan may have an overall UserIntention while a specific PrayerSession may also capture a day-specific UserIntention. Neither should overwrite sourced DevotionIntentions/Petitions.
 
-*Shipped note:* **Open Prayer is [Future]** — there is no `open_prayer` item kind yet (ACTS-108). JC wants it.
+*Shipped note:* **Open Prayer is [In Progress]** — ACTS-108, opened 2026-09-07; the `open_prayer` item kind is being added now. This section was amended the same day (dictation; uncaptured-but-completed; the ACTS prompt at the field).
 
 # **23B. Meditation, Open Prayer, and Reflection**
 
@@ -765,7 +783,7 @@ Meditation may be silent, guided, written, or spoken. A user may complete a Medi
 
 ## Open Prayer
 
-Open Prayer is the user's own prayer words addressed to God, spoken or written from the heart. It is not defined by the medium: an Open Prayer may be typed, spoken and transcribed, recorded, or prayed without capture.
+Open Prayer is the user's own prayer words addressed to God, spoken or written from the heart. It is not defined by the medium: an Open Prayer may be written (by keyboard or keyboard dictation) or simply prayed without capture. Praying it aloud to God and writing nothing is as complete as writing a page.
 
 Open Prayer asks: What am I saying to God in my own words?
 
@@ -791,7 +809,7 @@ This flow is especially useful for purpose and discernment questions such as: "L
 
 * Allow a Meditation SessionItem to contain a title, prompt, source content, Scripture reference, Mystery link, optional suggested duration, and Source.  
 * Allow the user to remain in silence and continue without capture.  
-* Optionally offer: Pray in My Own Words, Write My Prayer, Speak My Prayer, Reflect, or Continue in Silence.  
+* Optionally offer: Pray in My Own Words, Write My Prayer, Reflect, or Continue in Silence. *(Speaking is not a separate offer — a user who wants to speak dictates into the writing field with the device keyboard; see §23A.)*  
 * If the user chooses Pray in My Own Words, create/capture an Open Prayer response.  
 * If the user chooses Reflect, create a linked Reflection in the user's own words.  
 * Do not automatically convert a Meditation into an Open Prayer or Reflection.
@@ -1317,8 +1335,6 @@ In addition to the core models already defined, include the following audio and 
 * prompt_text  
 * allow_prewrite  
 * allow_session_entry  
-* allow_voice_input  
-* default_transcription_enabled  
 * allow_save_as_prayer  
 * source_id when applicable
 
@@ -1329,10 +1345,8 @@ In addition to the core models already defined, include the following audio and 
 * session_id  
 * user_id  
 * prompt_id  
-* captured_text  
-* capture_method: typed, voice_transcription, audio_recording, uncaptured, prewritten  
-* transcription_enabled  
-* audio_recording_id when explicitly recorded  
+* captured_text — empty when the user prayed without capturing  
+* capture_method: typed, uncaptured, prewritten *(dictated text arrives as `typed`; the app cannot tell, and does not need to)*  
 * saved_as_prayer_id when converted to reusable Prayer  
 * created_at  
 * updated_at
@@ -1344,14 +1358,14 @@ In addition to the core models already defined, include the following audio and 
 * user_intention_id  
 * text  
 * capture_method  
-* transcription_enabled  
 * created_at
 
 ## Session microphone / capture settings
 
 * voice_follow_enabled  
-* transcribe_open_prayer_enabled  
 * record_session_enabled
+
+*(`transcribe_open_prayer_enabled` was removed 2026-09-07 — dictation is the device keyboard's, toggled there; see §23A.)*
 
 ## **Resource**
 
@@ -1404,8 +1418,6 @@ In addition to the core models already defined, include the following audio and 
 * suggested_duration_seconds or minutes  
 * allow_open_prayer_response  
 * allow_reflection_response  
-* allow_voice_input  
-* allow_transcription  
 * created_at  
 * updated_at
 
@@ -1420,7 +1432,6 @@ Meditation itself remains the prayer experience. A user response should be store
 ## Reflection capture mode
 
 * written  
-* spoken_transcription  
 * open_dialogue
 
 Open Dialogue is a user-facing Reflection capture mode. Reflection remains the underlying domain object.
@@ -1553,9 +1564,9 @@ Avoid productivity-dashboard aesthetics, task-manager pressure, social-feed patt
 28. Ship with the USCCB Basic Prayers starter library as Traditional Prayers with source/provenance preserved.  
 29. Ship with the USCCB How to Pray the Rosary as the seeded default Rosary How To, including USCCB Mystery content/guidance as modeled.  
 30. Allow a How To to retain multiple sources and allow the user to edit an imported How To without destroying the original sourced version.  
-31. Add Open Prayer to a Template or Session; type, speak/transcribe, leave open until prayer time, or pray without capture.  
+31. Add Open Prayer to a Template or Session; write it, leave it open until prayer time, or pray without capturing — and have an uncaptured Open Prayer save as an empty, completed component rather than an unfinished one.  
 32. Save an Open Prayer as a reusable Personal Prayer when the user chooses.  
-33. Turn free-form prayer transcription On or Off before or during a Session while keeping Voice Follow and Record Session as separate microphone behaviors.  
+33. Accept device-keyboard dictation in every free-form capture field (no in-app audio or transcription), while keeping Voice Follow and Record Session as separate microphone behaviors.  
 34. Allow My Intention/UserIntention and user-fillable Petition/DevotionIntention to use the same type/speak capture interaction while remaining separate domain objects.  
 35. Optionally name a PrayerSession and assign a Session Purpose without requiring either field.  
 36. Leave Session Purpose blank and have the system treat it as Not Specified / Unsure rather than inferring one.  
