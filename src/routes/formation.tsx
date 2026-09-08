@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VoiceEditor } from "@/components/knowledge/VoiceEditor";
+import { QuickAddLink } from "@/components/knowledge/QuickAddLink";
 import { newId } from "@/lib/prayer/compiler";
 import {
   GROUP_LABELS,
@@ -247,7 +248,13 @@ function KnowledgePage() {
         </TabsList>
 
         {/* ADD — a Voice and its content, all in one form ------------------ */}
-        <TabsContent value="add" className="mt-0">
+        <TabsContent value="add" className="mt-0 space-y-4">
+          <QuickAddLink />
+          <div className="flex items-center gap-3 text-[11px] uppercase tracking-wide text-muted-foreground">
+            <span className="h-px flex-1 bg-border/60" />
+            or add by hand
+            <span className="h-px flex-1 bg-border/60" />
+          </div>
           {draftVoiceId ? <VoiceEditor voiceId={draftVoiceId} /> : null}
           <Button className="mt-4 h-11 w-full" onClick={() => goTab("library")}>
             Done
