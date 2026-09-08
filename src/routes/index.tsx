@@ -420,14 +420,30 @@ function Index() {
   const representedIds = new Set<string>();
   const doneSeen = new Set<string>(daily ? [daily.id] : []);
   const continueList: { id: string; title: string; sessionId: string }[] = [];
-  const todayList: { id: string; title: string; planId: string }[] = [];
+  const todayList: { id: string; title: string; planId: string; date: string }[] = [];
   const doneList: { id: string; title: string; sessionId: string }[] = [];
   const addDone = (key: string, row: { id: string; title: string; sessionId: string }) => {
     if (doneSeen.has(key)) return;
     doneSeen.add(key);
     doneList.push(row);
   };
-  for (const plan of db.session_plans.filter((p) => p.date === today)) {
+  // The "Today" list also looks a week ahead: plans due within the next 7 days show
+  // inline, each with its date, soonest first — so what's coming is visible without
+  // opening the Plan tab. Each plan appears once at its stored next occurrence; a
+  // recurrence is not expanded into one row per day (a daily plan would flood the week).
+  const HORIZON_DAYS = 7;
+  const weekHorizon = (() => {
+    const d = new Date(`${today}T00:00`);
+    d.setDate(d.getDate() + HORIZON_DAYS);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  })();
+  const upcomingPlans = db.session_plans
+    .filter((p) => p.date != null && p.date >= today && p.date <= weekHorizon)
+    .sort((a, b) => (a.date ?? "").localeCompare(b.date ?? ""));
+  for (const plan of upcomingPlans) {
     // The novena standing in for the Daily Rosary is shown on the Daily row only.
     if (plan.id === dailyFulfiller?.id) continue;
     const title = planTitle(db, plan);
@@ -435,11 +451,11 @@ function Index() {
     if (openS) {
       representedIds.add(openS.id);
       continueList.push({ id: plan.id, title, sessionId: openS.id });
-    } else if (latestDoneToday((s) => s.plan_id === plan.id)) {
+    } else if (plan.date === today && latestDoneToday((s) => s.plan_id === plan.id)) {
       // Completed today — surfaced as Done by the completed-sessions pass below.
       // (Kept out of Today so a finished once-plan doesn't reappear as "start".)
     } else {
-      todayList.push({ id: plan.id, title, planId: plan.id });
+      todayList.push({ id: plan.id, title, planId: plan.id, date: plan.date ?? today });
     }
   }
   // Other in-progress sessions (not the daily, not a today-plan already listed).
@@ -668,7 +684,15 @@ function Index() {
                 className="flex items-center justify-between gap-3 border-t border-border/60 px-5 py-3"
               >
                 <span className="min-w-0">
-                  <span className="eyebrow block">Today</span>
+                  <span className="eyebrow block">
+                    {row.date && row.date !== today
+                      ? new Date(`${row.date}T00:00`).toLocaleDateString(undefined, {
+                          weekday: "short",
+                          month: "short",
+                          day: "numeric",
+                        })
+                      : "Today"}
+                  </span>
                   <span className="truncate font-display text-base">{row.title}</span>
                 </span>
                 <div className="flex shrink-0 items-center gap-0.5">
