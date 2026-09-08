@@ -26,14 +26,19 @@ the app serves production users only after JC clicks **Publish** in Lovable. So 
 **ACTS-108 is on `main` but unreleased** — it has not been Published. Git has no record
 of the Publish click, so "released" cannot be derived from the branch alone.
 
-Two independent axes:
+Two independent axes — standard engineering vocabulary, where **deploy ≠ release**:
 
-- **Release axis (git-derived).** A commit is *released* iff it is an ancestor of a
-  movable **`prod` git tag**. JC bumps `prod` when they Publish:
-  `scripts/published.sh mark` (→ HEAD) or `scripts/published.sh mark <sha>`. A commit on
-  HEAD but not under `prod` is **unreleased**. This is the only honest way to mirror a
-  Publish that leaves no git trace — a manual sync point JC controls.
-- **Visibility axis (declared).** There is **no per-feature flag infrastructure** in this
+- **Location axis (git-derived), the pipeline:**
+  `committed (local) → on a remote branch (not merged) → on main (pushed; Lovable
+  preview/staging) → Published to production (Lovable PUBLISH)`. `stage_of()`
+  classifies each commit against `prod` / `origin/main` / `refs/remotes/origin/*` /
+  local. A commit is *Published* iff it is an ancestor of the movable **`prod` tag**;
+  JC bumps it at Publish (`mark [<sha>]`) — the only honest way to mirror a Publish
+  that leaves no git trace. Immediate need JC named: *is it released to the public —
+  and if not, is it local, on a remote branch, or on main.*
+- **Release axis (declared).** DEPLOY ≠ RELEASE: code can be *deployed to production*
+  yet gated behind a feature flag (a "dark launch") — live in prod, invisible to
+  users. There is **no per-feature flag infrastructure** in this
   codebase (only the whole-app beta passcode in `src/components/beta-gate.tsx`). So a
   released-but-hidden story is **declared** in its frontmatter:
   `visibility: unreleased | flagged | live` (+ optional `flag: <name>`). The live example
