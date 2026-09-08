@@ -109,7 +109,7 @@ git rev-list HEAD "^$MAIN_REF"   > "$LOCAL_FILE"  # local commits not on main
 : > "$BR_FILE"
 for b in $BRANCHES; do
   name="${b#refs/remotes/origin/}"
-  git rev-list "$b" "^$MAIN_REF" | sed "s/\$/ ${name}/" >> "$BR_FILE"  # sha<space>branch
+  git rev-list "$b" "^$MAIN_REF" | awk -v n="$name" '{print $0" "n}' >> "$BR_FILE"  # sha<space>branch
 done
 
 # Universe of commits we might attribute to stories: main + local + branches.
