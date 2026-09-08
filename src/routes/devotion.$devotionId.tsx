@@ -329,6 +329,13 @@ function DevotionStep({
   } else if (item.kind === "external_link") {
     title = item.label ?? "Pray along";
     urls = (item.external_options ?? []).map((o) => o.url);
+  } else if (item.kind === "template_block") {
+    // A nested devotion block: title it by its own label, else the referenced
+    // devotion's name — never the raw "template_block" kind or (empty label) a
+    // blank row. Mirrors the compiler's expandTemplate + templateOutline.
+    const block = db.templates.find((t) => t.id === item.block_template_id);
+    title = item.label?.trim() || block?.name || "Devotion block";
+    detail = "Devotion";
   } else {
     body = item.body;
   }
