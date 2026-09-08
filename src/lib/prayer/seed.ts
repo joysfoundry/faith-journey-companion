@@ -1449,6 +1449,84 @@ mysteryData.forEach((set) => {
   });
 });
 
+// Mater Dei Catholic Church \u2014 a parish mystery body (ACTS-172). The devotion's
+// default body (`mater-dei-catholic-church`) is filled for EVERY mystery so it
+// resolves on any day: the Glorious set carries the parish's own NABRE Scripture
+// (their Weekly Rosary), and the other sets reuse the USCCB Scripture as a
+// placeholder \u2014 attributed to USCCB \u2014 until the parish supplies its own. Unwritten
+// prose reflections stay empty; the transcribed Scripture is what prays.
+const materDeiGloriousBodies: Record<
+  number,
+  { variant: MysteryContent["variant"]; ref: string; text: string; body: string }
+> = {
+  1: {
+    variant: "scripture",
+    ref: "Matthew 28:5-6",
+    text: 'The Angel said to the women, "Do not be afraid! I know that you are seeking Jesus the crucified. He is not here, for He has been raised as He said"',
+    body: "",
+  },
+  2: {
+    variant: "full_meditation",
+    ref: "Acts 1:9\u201311",
+    text: "As the Apostles were looking on, Jesus was lifted up, and a cloud took Him from their sight.  This Jesus who has been taken up from you into heaven will return in the same way as you have seen Him going into heaven.",
+    body: "Jesus is lifted up into a cloud and ascends into heaven before the eyes of the Apostles.",
+  },
+  3: {
+    variant: "scripture",
+    ref: "Acts 2:4",
+    text: "And they were all filled with the Holy Spirit and began to speak in different tongues, as the Spirit enabled them to proclaim.",
+    body: "",
+  },
+  4: {
+    variant: "scripture",
+    ref: "1 Thessalonians 4:14, 17",
+    text: "For if we believe that Jesus died and rose, so too will God, through Jesus, bring with Him those who have fallen asleep.  Thus we shall always be with the Lord.",
+    body: "",
+  },
+  5: {
+    variant: "scripture",
+    ref: "Revelation 12:1",
+    text: "A great sign appeared in the sky, a woman clothed with the sun, with the moon under her feet, and on her head a crown of twelve stars.",
+    body: "",
+  },
+};
+mysteryData.forEach((set) => {
+  const key = set.set.toLowerCase();
+  set.items.forEach((_item, idx) => {
+    const id = `${key}-${idx + 1}`;
+    const md = key === "glorious" ? materDeiGloriousBodies[idx + 1] : undefined;
+    if (md) {
+      mystery_contents.push({
+        id: `${id}-mater-dei-catholic-church`,
+        mystery_id: id,
+        variant: md.variant,
+        body_key: "mater-dei-catholic-church",
+        label: "Mater Dei Catholic Church",
+        body: md.body,
+        scripture_ref: md.ref,
+        scripture_text: md.text,
+        source_id: "src-mater-dei-catholic-church",
+      });
+      return;
+    }
+    const u = usccbBodies[key]?.[idx];
+    if (u) {
+      mystery_contents.push({
+        id: `${id}-mater-dei-catholic-church`,
+        mystery_id: id,
+        variant: "scripture",
+        body_key: "mater-dei-catholic-church",
+        label: "Mater Dei Catholic Church",
+        body: "",
+        scripture_ref: u.ref,
+        scripture_text: u.text,
+        fruit: u.fruit,
+        source_id: "src-usccb-rosary",
+      });
+    }
+  });
+});
+
 function ti(
   templateId: string,
   position: number,
@@ -1916,6 +1994,46 @@ const openPrayerItems: TemplateItem[] = [
 
 const allPrayers = [...base, ...songs];
 
+/**
+ * Mater Dei Catholic Church Weekly Rosary (ACTS-172) — the parish's own order,
+ * as the ministry prays it: it opens with an intention, keeps the Fatima Prayer
+ * after every decade, and closes with the Litany of Loreto (a nested devotion
+ * block), the Hail Holy Queen, and the Mater Dei Parish Prayer. Mysteries carry
+ * the parish's `mater-dei-catholic-church` body (see `default_mystery_body`).
+ */
+function materDeiRosaryItems(): TemplateItem[] {
+  const templateId = "tpl-mater-dei-weekly-rosary";
+  const items: TemplateItem[] = [];
+  let p = 0;
+  const add = (partial: Partial<TemplateItem> & { kind: TemplateItem["kind"] }) =>
+    items.push(ti(templateId, p++, partial));
+
+  add({ kind: "prayer", prayer_id: "sign-of-the-cross" });
+  add({
+    kind: "intention",
+    label: "For the virtues of Faith, Hope, Charity, and our own personal intentions",
+  });
+  add({ kind: "prayer", prayer_id: "apostles-creed" });
+  add({ kind: "prayer", prayer_id: "our-father" });
+  add({ kind: "prayer", prayer_id: "hail-mary", repetition_count: 3 });
+  add({ kind: "prayer", prayer_id: "glory-be" });
+  for (let d = 1; d <= 5; d++) {
+    add({ kind: "mystery_placeholder", mystery_ordinal: d, label: `Decade ${d}` });
+    add({ kind: "prayer", prayer_id: "our-father" });
+    add({ kind: "prayer", prayer_id: "hail-mary", repetition_count: 10 });
+    add({ kind: "prayer", prayer_id: "glory-be" });
+    add({ kind: "prayer", prayer_id: "fatima-prayer" });
+  }
+  // The Litany of Loreto, nested as a devotion block (titled by the block's name).
+  add({ kind: "template_block", block_template_id: "tpl-litany-loreto" });
+  add({ kind: "prayer", prayer_id: "hail-holy-queen" });
+  add({ kind: "prayer", prayer_id: "mater-dei-parish-prayer" });
+  add({ kind: "prayer", prayer_id: "sign-of-the-cross" });
+  return items;
+}
+
+const materDeiRosaryItemsList = materDeiRosaryItems();
+
 export function createSeedDatabase(): Database {
   return {
     settings: { bible_app_id: "youversion", bible_translation: "NIV" },
@@ -2047,6 +2165,13 @@ export function createSeedDatabase(): Database {
         source_type: "manual",
         name: "Mater Dei Catholic Parish — Parish Prayer card",
         attribution: "Mater Dei Catholic Parish, Diocese of San Diego (established 2004)",
+        created_at: now,
+      },
+      {
+        id: "src-mater-dei-catholic-church",
+        source_type: "written",
+        name: "Mater Dei Catholic Church",
+        attribution: "Mater Dei using New American Bible (Revised Edition)",
         created_at: now,
       },
     ],
@@ -2269,9 +2394,24 @@ export function createSeedDatabase(): Database {
         built_in: true,
         created_at: now,
       },
+      {
+        id: "tpl-mater-dei-weekly-rosary",
+        name: "Mater Dei Catholic Church Weekly Rosary",
+        description:
+          "Rosary led by ministry after each Sunday Mass and before Mass on Saturday.",
+        kind: "rosary",
+        mystery_presentation: "title_and_description",
+        default_mystery_body: "mater-dei-catholic-church",
+        mystery_count: 5,
+        default_recurrence: { freq: "weekly", interval: 1 },
+        source_id: "src-mater-dei-catholic-church",
+        built_in: true,
+        created_at: now,
+      },
     ],
     template_items: [
       ...rosaryItemsList,
+      ...materDeiRosaryItemsList,
       ...rosaryForDeadItemsList,
       ...caroItemsList,
       ...novenaItems,
