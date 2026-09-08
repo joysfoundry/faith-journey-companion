@@ -2,15 +2,15 @@
 id: ACTS-171
 title: "Quick-add a link to Vessels — paste an Instagram/web URL and auto-fill the item"
 spine: ACTS-171
-status: In Progress
+status: Done
 origin: human-directed
 approved_by: JC
 depends_on: []
 relates_to: [ACTS-137]
 started_at: 2026-09-07T18:20:22-0700
-updated:    2026-09-07T19:05:00-0700
-latest_handoff: ACTS-171/session-01.md
-sessions: 1
+updated:    2026-09-07T20:42:26-0700
+latest_handoff: ACTS-171/session-02.md
+sessions: 2
 ---
 
 ## Goal
@@ -81,13 +81,20 @@ Vessel. So "save this IG link" is a multi-field chore.
       coded but not runtime-tested against a private host._
 - [x] `tsc --noEmit` clean.
 
-## Still open (next session)
-- Save a non-social article URL end-to-end; runtime-check the SSRF guard rejects a
-  `http://localhost` / `169.254.169.254` link.
-- Write the documented tests (Vitest for `fetchLinkPreview` parsing + guard; Testing Library
-  for the quick-add attribution paths).
-- Consider a `?url=` entry so the quick-add can also be deep-linked (cheap groundwork toward
-  the deferred iOS Shortcut, without committing to share-target).
+## Outcome — DONE 2026-09-07
+Shipped and browser-verified across two sessions (see [session-01](ACTS-171/session-01.md),
+[session-02](ACTS-171/session-02.md)). Beyond the original quick-add, session 02 landed the
+**Vessel = person / Channel = its name-or-@username** model: the account's profile URL becomes
+the Channel so repeat posts auto-attribute, and `VoiceEditor` channel rows gained a name field.
+Commits `b70743e`, `1e4e9f3`, `34b46fb` (+ docs) — pushed.
+
+## Deferred (not blocking — closed here, revisit if wanted)
+- Non-social **article** save end-to-end + a runtime **SSRF-guard** check
+  (`http://localhost` / `169.254.169.254` rejected).
+- The documented **tests** (Vitest for `fetchLinkPreview` parsing + `extractAuthor` + guard;
+  Testing Library for the quick-add attribution/naming paths).
+- A `?url=` deep-link entry (cheap groundwork toward the deferred iOS Shortcut).
+- Phase B (Web Share Target + iOS Shortcut) and Phase C (real photo storage) — not filed.
 
 ## Tests
 _Convention ACTS-91._
