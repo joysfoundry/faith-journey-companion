@@ -10,6 +10,8 @@ started_at: 2026-09-06T02:10:00-0700
 updated:    2026-09-06T01:51:38-0700
 latest_handoff: ACTS-168/session-01.md
 sessions: 1
+visibility: flagged        # deployed to prod, gated by WORDMARK_LOCKUP_ENABLED=false (ACTS-170)
+flag: WORDMARK_LOCKUP_ENABLED
 ---
 
 ## Goal
