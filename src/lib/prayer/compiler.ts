@@ -656,7 +656,11 @@ function expandTemplate(state: CompileState, template: PrayerTemplate, depth: nu
       if (!blockId || state.stack.includes(blockId) || depth >= MAX_BLOCK_DEPTH) continue;
       const block = db.templates.find((t) => t.id === blockId);
       if (!block) continue;
-      if (item.label) push({ kind: "heading", title: item.label });
+      // A devotion block always introduces itself with a heading: the item's own
+      // label, or (when it has none) the referenced devotion's name — never blank.
+      // Mirrors `templateOutline` below; matched here so the compiled step list
+      // shows a title for a devotion-block step. (`block` is non-null; see above.)
+      push({ kind: "heading", title: item.label?.trim() || block.name });
       state.stack.push(blockId);
       expandTemplate(state, block, depth + 1);
       state.stack.pop();
