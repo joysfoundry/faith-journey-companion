@@ -21,20 +21,18 @@ _Statuses: **To Do** · **In Progress** · **Blocked** · **Done**. Commits are 
 
 _Where each story sits on the path to users — **generated**, not hand-maintained;
 regenerate with `scripts/published.sh --md`. Snapshot: **2026-09-07**.
-Production line: `prod` @ `7a5f729`. Released = shipped via Lovable **PUBLISH**;
+Production line: `prod` @ `104c00b`. Released = shipped via Lovable **PUBLISH**;
 deploy ≠ release (code behind a flag is in production but not released to users)._
 
-**Not yet Published (3)** — on the path, not live to users:
+**Not yet Published (0)** — on the path, not live to users:
 
-- **ACTS-108** (Done) — on main — staging, not yet Published
-- **ACTS-169** (To Do) — on main — staging, not yet Published
-- **ACTS-170** (In Progress) — on main — staging, not yet Published
+- _none_
 
 **In production, behind a flag (1)** — deployed, not released to users:
 
 - **ACTS-168** (Done) — deployed to prod, not released (flag: `WORDMARK_LOCKUP_ENABLED`)
 
-_All other numbered stories with commits are **Published to production** (62).
+_All other numbered stories with commits are **Published to production** (65).
 Stories with no commits yet (13) are omitted._
 <!-- RELEASE-STATUS:END -->
 
