@@ -2,15 +2,15 @@
 id: ACTS-174
 title: "Home: show upcoming sessions (next 7 days) inline with their date, not just today"
 spine: ACTS-174
-status: To Do
+status: Done
 origin: human-directed
 approved_by: JC
 depends_on: []
 relates_to: [ACTS-173, ACTS-99]
 started_at: 2026-09-08T03:53:49-0700
-updated:    2026-09-08T03:53:49-0700
-latest_handoff: null
-sessions: 0
+updated:    2026-09-08T04:05:00-0700
+latest_handoff: ACTS-174/session-01.md
+sessions: 1
 ---
 
 ## Goal
@@ -55,13 +55,26 @@ for (const plan of db.session_plans.filter((p) => p.date === today)) { … today
   "Today" vs later divider? Recommend: inline, date badge carries the distinction.
 
 ## Acceptance criteria
-- [ ] Home's Prayer & Devotion lists plans with `date` in `[today, today+7]`, inline, sorted
-      by date, each future row showing its date.
-- [ ] A plan later today/this week appears on Home before its day (with the date); today's
-      rows are unchanged in behavior (start/continue/done).
-- [ ] Recurring plans appear once (next occurrence), not expanded per day.
-- [ ] The daily rosary row and Done-today handling are unaffected.
-- [ ] `tsc --noEmit` clean.
+- [x] Home's Prayer & Devotion lists plans with `date` in `[today, today+7]`, inline, sorted
+      by date, each future row showing its date. _Verified: "SAT, SEP 12 · The Holy Rosary"
+      shows under "TODAY · Open Prayer"._
+- [x] A plan later this week appears on Home before its day (with the date); today's rows are
+      unchanged in behavior (start/continue/done).
+- [x] Recurring plans appear once (next occurrence), not expanded per day. _The daily Open
+      Prayer shows once, at today._
+- [x] The daily rosary row and Done-today handling are unaffected (the done-today skip is now
+      gated on `plan.date === today`).
+- [x] `tsc --noEmit` clean.
+
+## Outcome — DONE 2026-09-08
+Implemented in `src/routes/index.tsx` only. Widened the plan window from `p.date === today`
+to `[today, today+HORIZON_DAYS]` (`HORIZON_DAYS = 7`, `weekHorizon` computed from `today`),
+sorted soonest-first, and the "Today" row's eyebrow now renders a `Sat, Sep 12`-style date for
+future rows (label-less "Today" for today). Each plan shows once at its stored next occurrence
+— no per-day expansion — so the ACTS-173 daily Open Prayer stays a single "Today" row. The
+done-today skip is gated on `plan.date === today` so a future row is never mistaken for a
+finished one. Browser-verified (screenshot); `tsc` clean. Decisions taken (were open Qs):
+recurrence = next-only, horizon = fixed 7, inline with a date badge (no divider).
 
 ## Tests
 _Convention ACTS-91._
