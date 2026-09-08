@@ -2429,7 +2429,22 @@ export function createSeedDatabase(): Database {
     ],
     sessions: [],
     session_items: [],
-    session_plans: [],
+    // A standing daily Open Prayer on Home's "Prayer & Devotion" section (ACTS-173).
+    // Endless daily recurrence; `date` is stamped at SEED_EPOCH and rolled up to
+    // today by loadDatabase's catch-up (an endless daily is due every day), so it
+    // surfaces on Home from day one. `purpose` omitted — planTitle uses the
+    // template name ("Open Prayer").
+    session_plans: [
+      {
+        id: "plan-daily-open-prayer",
+        template_id: OPEN_PRAYER_TEMPLATE_ID,
+        date: SEED_EPOCH.slice(0, 10),
+        starts_on: SEED_EPOCH.slice(0, 10),
+        recurrence: { freq: "daily", interval: 1 },
+        context: {},
+        created_at: now,
+      },
+    ],
     intentions: [],
     import_drafts: [],
     reflections: [],

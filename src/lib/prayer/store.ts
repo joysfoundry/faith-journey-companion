@@ -140,11 +140,31 @@ export function normalizeVariants(db: Database): Database {
 
   // Migrate stored plans to the structured recurrence model and anchor the
   // series (starts_on) so "Day N of M" has a fixed reference. Idempotent.
-  const session_plans = (db.session_plans ?? []).map((plan) => ({
-    ...plan,
-    recurrence: migrateRecurrence((plan as { recurrence?: unknown }).recurrence),
-    ...(plan.starts_on ? {} : plan.date ? { starts_on: plan.date } : {}),
-  }));
+  const todayStr = todayISO();
+  const session_plans = (db.session_plans ?? []).map((plan) => {
+    const recurrence = migrateRecurrence((plan as { recurrence?: unknown }).recurrence);
+    const next = {
+      ...plan,
+      recurrence,
+      ...(plan.starts_on ? {} : plan.date ? { starts_on: plan.date } : {}),
+    };
+    // An endless daily plan is due every day. `date` only advances on finish
+    // (one step at a time), so a missed day — or a seeded plan anchored at
+    // SEED_EPOCH — leaves it in the past and it drops off Home (which shows
+    // `date === today`). Roll an overdue endless-daily plan up to today.
+    // Bounded series (count/until) and other frequencies are left untouched.
+    if (
+      recurrence.freq === "daily" &&
+      recurrence.interval === 1 &&
+      recurrence.count == null &&
+      recurrence.until == null &&
+      next.date != null &&
+      next.date < todayStr
+    ) {
+      next.date = todayStr;
+    }
+    return next;
+  });
 
   // Knowledge library: migrate the store onto the three-level model
   // (Voice → Channel → Content). Legacy `person`/`resource` knowledge_items
