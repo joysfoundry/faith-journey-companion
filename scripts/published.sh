@@ -126,10 +126,30 @@ stage_of() {
   echo unknown
 }
 
-# Commits whose subject names $id as a whole token. Trailing class rejects a
-# following digit (ACTS-10 ≠ ACTS-108) and a following . or - (so a range like
-# "ACTS-108..116" is not miscounted against ACTS-108).
-commits_for() { grep -E "${1}([^0-9.-]|$)" "$LOG_FILE" || true; }
+# Attribute commits to a story (hybrid rule):
+#   • A commit that LEADS with an "ACTS-…:" prefix belongs to the id(s) IN that
+#     prefix — including co-delivered ones ("ACTS-129 ACTS-130: …" counts for
+#     both) — but NOT to ids merely mentioned after the colon ("ACTS-104: file
+#     ACTS-108..116" counts for 104, not 108).
+#   • A commit that does NOT lead with an ACTS- prefix (docs:, chore:, …) counts
+#     for any ACTS-N token it mentions (so "docs: close ACTS-108" counts for 108).
+# Boundary guards: ACTS-10 ≠ ACTS-108, and a following . or - (ranges) doesn't match.
+commits_for() {
+  awk -F'\t' -v id="$1" '
+    {
+      subj = $2
+      if (subj ~ /^ACTS-[0-9]/) {                       # leads with an ACTS- prefix
+        # prefix = the id(s) before the first ":" (e.g. "ACTS-129 ACTS-130"),
+        # or the leading run of ACTS-ids when there is no colon.
+        ci = index(subj, ":")
+        if (ci > 0) { pre = substr(subj, 1, ci - 1) }
+        else { match(subj, /^(ACTS-[0-9]+ ?)+/); pre = substr(subj, 1, RLENGTH) }
+        if (pre ~ (id "([^0-9]|$)")) print $0           # count if id is IN the prefix
+      } else if (subj ~ (id "([^0-9.-]|$)")) {          # docs/chore: a mention counts
+        print $0
+      }
+    }' "$LOG_FILE" || true
+}
 
 # Read a frontmatter field; strip key, inline "# comment", and whitespace.
 field() {
