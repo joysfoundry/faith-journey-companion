@@ -180,3 +180,25 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-xl);
 }
+
+/*
+ * App-load splash (ACTS-175): the compass bezel circling a fixed cross. Pure CSS so
+ * it turns on the SSR'd paint before hydration; held still under reduced motion.
+ * A whole-element rotation about its own centre — see `OraviaSplash.tsx`.
+ */
+@keyframes oravia-splash-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.oravia-splash-spin {
+  transform-origin: 50% 50%;
+  animation: oravia-splash-spin 2.4s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .oravia-splash-spin {
+    animation: none;
+  }
+}

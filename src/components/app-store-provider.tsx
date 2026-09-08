@@ -2,10 +2,20 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { AppStoreContext, loadDatabase, mutations, saveDatabase } from "@/lib/prayer/store";
 import { createSeedDatabase } from "@/lib/prayer/seed";
 import type { Database, PrayerSession } from "@/lib/prayer/types";
+import { OraviaSplash } from "@/components/layout/OraviaSplash";
+
+/** How long the splash holds at minimum so the bezel reads as circling, and how long
+ *  it takes to cross-fade out (must match `duration-500` in `OraviaSplash`). */
+const SPLASH_MIN_MS = 650;
+const SPLASH_FADE_MS = 500;
 
 export function AppStoreProvider({ children }: { children: ReactNode }) {
   const [db, setDb] = useState<Database>(() => createSeedDatabase());
   const [ready, setReady] = useState(false);
+  // Splash lifecycle (ACTS-175): "show" while the db loads, "fading" during the
+  // cross-fade, then unmounted. Starts "show" on both server and client so there's
+  // no hydration mismatch — the compass is in the very first paint.
+  const [splash, setSplash] = useState<"show" | "fading" | "gone">("show");
   const dbRef = useRef(db);
   dbRef.current = db;
 
@@ -15,6 +25,19 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     setDb(mutations.pruneEmptyLectioSessions(loadDatabase()));
     setReady(true);
   }, []);
+
+  // Once loaded, hold the splash for a beat (so the bezel visibly circles) then fade.
+  useEffect(() => {
+    if (!ready || splash !== "show") return;
+    const t = setTimeout(() => setSplash("fading"), SPLASH_MIN_MS);
+    return () => clearTimeout(t);
+  }, [ready, splash]);
+
+  useEffect(() => {
+    if (splash !== "fading") return;
+    const t = setTimeout(() => setSplash("gone"), SPLASH_FADE_MS);
+    return () => clearTimeout(t);
+  }, [splash]);
 
   useEffect(() => {
     if (ready) saveDatabase(db);
@@ -188,5 +211,10 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     ],
   );
 
-  return <AppStoreContext.Provider value={value}>{children}</AppStoreContext.Provider>;
+  return (
+    <AppStoreContext.Provider value={value}>
+      {children}
+      {splash !== "gone" && <OraviaSplash fading={splash === "fading"} />}
+    </AppStoreContext.Provider>
+  );
 }
