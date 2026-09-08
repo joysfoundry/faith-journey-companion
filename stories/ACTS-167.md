@@ -10,6 +10,8 @@ started_at: 2026-09-06T01:12:53-0700
 updated:    2026-09-06T01:51:38-0700
 latest_handoff: ACTS-167/session-01.md
 sessions: 1
+visibility: flagged        # in production, gated behind a feature flag (ACTS-170)
+flag: app-icon-mark
 ---
 
 ## Goal
