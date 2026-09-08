@@ -34,7 +34,13 @@ export const fetchSourceText = createServerFn({ method: "POST" })
 export const fetchLinkPreview = createServerFn({ method: "POST" })
   .inputValidator((data) => z.object({ url: z.string().url() }).parse(data))
   .handler(async ({ data }) => {
-    const empty = { title: "", description: "", siteName: "", imageUrl: "" };
+    const empty = {
+      title: "",
+      description: "",
+      siteName: "",
+      imageUrl: "",
+      author: { name: "", handle: "", profileUrl: "" },
+    };
     const guard = guardPreviewUrl(data.url);
     if (!guard.ok) return { ok: false as const, error: guard.error, ...empty };
     try {
@@ -57,11 +63,84 @@ export const fetchLinkPreview = createServerFn({ method: "POST" })
         description: metaContent(html, "og:description", "twitter:description"),
         siteName: metaContent(html, "og:site_name", "application-name"),
         imageUrl: metaContent(html, "og:image", "twitter:image", "twitter:image:src"),
+        author: extractAuthor(html, data.url),
       };
     } catch {
       return { ok: false as const, error: "Could not reach that link.", ...empty };
     }
   });
+
+/**
+ * Best-effort author behind a link — the person/channel/site to name a Vessel
+ * after, so a saved item is attributed to "@handle" or a channel/site, never the
+ * bare domain. A social **post** URL often omits the handle (an Instagram reel
+ * link is just `/reel/<id>/`), so the author comes from the page's metadata, not
+ * the path. `profileUrl` is the account's home — used to match future posts from
+ * the same account back to the Vessel this one creates.
+ */
+function extractAuthor(
+  html: string,
+  url: string,
+): { name: string; handle: string; profileUrl: string } {
+  const host = safeHost(url);
+
+  // Instagram: handle from "(@handle)" in twitter:title, else "- handle on …" in
+  // the description; display name from "<Name> on Instagram" in og:title.
+  if (host.includes("instagram.com")) {
+    const tw = metaContent(html, "twitter:title");
+    const desc = metaContent(html, "og:description");
+    const title = metaContent(html, "og:title");
+    const handle =
+      tw.match(/\(@([A-Za-z0-9_.]+)\)/)?.[1] ||
+      desc.match(/-\s*([A-Za-z0-9_.]+)\s+on\b/i)?.[1] ||
+      "";
+    const name =
+      tw.match(/^(.*?)\s*\(@/)?.[1]?.trim() ||
+      title.match(/^(.+?)\s+on Instagram/i)?.[1]?.trim() ||
+      "";
+    return { name, handle, profileUrl: handle ? `https://www.instagram.com/${handle}/` : "" };
+  }
+
+  // YouTube: the channel comes from the embedded player JSON, not OG tags.
+  if (host.includes("youtube.com") || host.includes("youtu.be")) {
+    const owner = html.match(/"ownerProfileUrl":"([^"]+)"/)?.[1]?.replace(/\\\//g, "/") ?? "";
+    const canonical = html.match(/"canonicalBaseUrl":"(\/@[^"]+)"/)?.[1] ?? "";
+    const handle = owner.match(/@([\w.-]+)/)?.[1] || canonical.match(/@([\w.-]+)/)?.[1] || "";
+    const name = unescapeJson(html.match(/"author":"([^"]+)"/)?.[1] ?? "");
+    return { name, handle, profileUrl: owner || (handle ? `https://www.youtube.com/@${handle}` : "") };
+  }
+
+  // Generic web: the site is the "author"; its home page is the profile.
+  return {
+    name: metaContent(html, "og:site_name", "application-name"),
+    handle: "",
+    profileUrl: safeOrigin(url),
+  };
+}
+
+/** Un-escape the \uXXXX and \-escapes inside a JSON string value. */
+function unescapeJson(s: string): string {
+  return s
+    .replace(/\\u([0-9a-fA-F]{4})/g, (_m, h: string) => String.fromCharCode(parseInt(h, 16)))
+    .replace(/\\(.)/g, "$1")
+    .trim();
+}
+
+function safeHost(url: string): string {
+  try {
+    return new URL(url).hostname.toLowerCase();
+  } catch {
+    return "";
+  }
+}
+
+function safeOrigin(url: string): string {
+  try {
+    return new URL(url).origin;
+  } catch {
+    return "";
+  }
+}
 
 /**
  * Reject URLs the server should not fetch on the user's behalf: non-http(s)
