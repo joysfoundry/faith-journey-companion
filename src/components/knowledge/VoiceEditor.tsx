@@ -18,6 +18,7 @@ import {
   channelOf,
   contentTitle,
   detectPlatform,
+  isHandlePlatform,
 } from "@/lib/prayer/knowledge";
 import { newId } from "@/lib/prayer/compiler";
 import { useApp } from "@/lib/prayer/store";
@@ -40,6 +41,7 @@ export function VoiceEditor({ voiceId }: { voiceId: string }) {
   } = useApp();
 
   const [chanPlatform, setChanPlatform] = useState<LinkPlatform>("instagram");
+  const [chanLabel, setChanLabel] = useState("");
   const [chanUrl, setChanUrl] = useState("");
   const [addTitle, setAddTitle] = useState("");
   const [addCategory, setAddCategory] = useState<KnowledgeCategory>("post");
@@ -58,11 +60,23 @@ export function VoiceEditor({ voiceId }: { voiceId: string }) {
   function addChannel() {
     if (!chanUrl.trim()) return;
     save({
-      channels: [...channels, { id: newId("chan"), platform: chanPlatform, url: chanUrl.trim() }],
+      channels: [
+        ...channels,
+        {
+          id: newId("chan"),
+          platform: chanPlatform,
+          url: chanUrl.trim(),
+          label: chanLabel.trim() || undefined,
+        },
+      ],
     });
     setChanUrl("");
+    setChanLabel("");
     setChanPlatform("instagram");
   }
+  /** YouTube stores a channel name; Instagram/TikTok/X/podcast an @username. */
+  const chanNamePlaceholder = (p: LinkPlatform) =>
+    isHandlePlatform(p) ? "@username" : "Channel name";
   const updateChannel = (id: string, patch: Partial<Channel>) =>
     save({ channels: channels.map((c) => (c.id === id ? { ...c, ...patch } : c)) });
 
@@ -129,81 +143,101 @@ export function VoiceEditor({ voiceId }: { voiceId: string }) {
           ) : (
             <ul className="divide-y divide-border/60">
               {channels.map((c) => (
-                <li key={c.id} className="flex items-center gap-2 px-3 py-2">
-                  <select
-                    value={c.platform}
-                    onChange={(e) =>
-                      updateChannel(c.id, { platform: e.target.value as LinkPlatform })
-                    }
-                    aria-label="Platform"
-                    className="h-9 shrink-0 rounded-md border border-input bg-background px-2 text-sm"
-                  >
-                    {LINK_PLATFORM_OPTIONS.map((p) => (
-                      <option key={p} value={p}>
-                        {LINK_PLATFORM_LABELS[p]}
-                      </option>
-                    ))}
-                  </select>
+                <li key={c.id} className="space-y-2 px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={c.platform}
+                      onChange={(e) =>
+                        updateChannel(c.id, { platform: e.target.value as LinkPlatform })
+                      }
+                      aria-label="Platform"
+                      className="h-9 shrink-0 rounded-md border border-input bg-background px-2 text-sm"
+                    >
+                      {LINK_PLATFORM_OPTIONS.map((p) => (
+                        <option key={p} value={p}>
+                          {LINK_PLATFORM_LABELS[p]}
+                        </option>
+                      ))}
+                    </select>
+                    <Input
+                      value={c.label ?? ""}
+                      onChange={(e) => updateChannel(c.id, { label: e.target.value })}
+                      placeholder={chanNamePlaceholder(c.platform)}
+                      aria-label="Channel name"
+                      className="h-9"
+                    />
+                    <button
+                      onClick={() => toggleChannelFavorite(voice.id, c.id)}
+                      aria-label={c.favorite ? "Unpin from Home" : "Pin to Home"}
+                      className="shrink-0 p-1"
+                    >
+                      <Star
+                        className={`size-4 ${c.favorite ? "fill-primary text-primary" : "text-muted-foreground"}`}
+                        aria-hidden
+                      />
+                    </button>
+                    <button
+                      onClick={() => save({ channels: channels.filter((x) => x.id !== c.id) })}
+                      aria-label="Remove channel"
+                      className="shrink-0 p-1 text-muted-foreground hover:text-destructive"
+                    >
+                      <Trash2 className="size-4" aria-hidden />
+                    </button>
+                  </div>
                   <Input
                     value={c.url}
                     onChange={(e) => updateChannel(c.id, { url: e.target.value })}
                     placeholder="https://…"
                     className="h-9"
                   />
-                  <button
-                    onClick={() => toggleChannelFavorite(voice.id, c.id)}
-                    aria-label={c.favorite ? "Unpin from Home" : "Pin to Home"}
-                    className="shrink-0 p-1"
-                  >
-                    <Star
-                      className={`size-4 ${c.favorite ? "fill-primary text-primary" : "text-muted-foreground"}`}
-                      aria-hidden
-                    />
-                  </button>
-                  <button
-                    onClick={() => save({ channels: channels.filter((x) => x.id !== c.id) })}
-                    aria-label="Remove channel"
-                    className="shrink-0 p-1 text-muted-foreground hover:text-destructive"
-                  >
-                    <Trash2 className="size-4" aria-hidden />
-                  </button>
                 </li>
               ))}
             </ul>
           )}
-          <div className="flex items-center gap-2 border-t border-border/60 bg-muted/30 px-3 py-2">
-            <select
-              value={chanPlatform}
-              onChange={(e) => setChanPlatform(e.target.value as LinkPlatform)}
-              aria-label="New channel platform"
-              className="h-9 shrink-0 rounded-md border border-input bg-background px-2 text-sm"
-            >
-              {LINK_PLATFORM_OPTIONS.map((p) => (
-                <option key={p} value={p}>
-                  {LINK_PLATFORM_LABELS[p]}
-                </option>
-              ))}
-            </select>
-            <Input
-              value={chanUrl}
-              onChange={(e) => {
-                const u = e.target.value;
-                setChanUrl(u);
-                if (u.trim() && !chanUrl.trim()) setChanPlatform(detectPlatform(u));
-              }}
-              placeholder="https://…"
-              className="h-9"
-            />
-            <Button
-              size="icon"
-              variant="secondary"
-              className="size-9 shrink-0"
-              aria-label="Add channel"
-              onClick={addChannel}
-              disabled={!chanUrl.trim()}
-            >
-              <Plus className="size-4" aria-hidden />
-            </Button>
+          <div className="space-y-2 border-t border-border/60 bg-muted/30 px-3 py-2">
+            <div className="flex items-center gap-2">
+              <select
+                value={chanPlatform}
+                onChange={(e) => setChanPlatform(e.target.value as LinkPlatform)}
+                aria-label="New channel platform"
+                className="h-9 shrink-0 rounded-md border border-input bg-background px-2 text-sm"
+              >
+                {LINK_PLATFORM_OPTIONS.map((p) => (
+                  <option key={p} value={p}>
+                    {LINK_PLATFORM_LABELS[p]}
+                  </option>
+                ))}
+              </select>
+              <Input
+                value={chanLabel}
+                onChange={(e) => setChanLabel(e.target.value)}
+                placeholder={chanNamePlaceholder(chanPlatform)}
+                aria-label="New channel name"
+                className="h-9"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Input
+                value={chanUrl}
+                onChange={(e) => {
+                  const u = e.target.value;
+                  setChanUrl(u);
+                  if (u.trim() && !chanUrl.trim()) setChanPlatform(detectPlatform(u));
+                }}
+                placeholder="https://…"
+                className="h-9"
+              />
+              <Button
+                size="icon"
+                variant="secondary"
+                className="size-9 shrink-0"
+                aria-label="Add channel"
+                onClick={addChannel}
+                disabled={!chanUrl.trim()}
+              >
+                <Plus className="size-4" aria-hidden />
+              </Button>
+            </div>
           </div>
         </div>
       </section>

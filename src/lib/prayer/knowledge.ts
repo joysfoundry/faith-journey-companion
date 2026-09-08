@@ -181,6 +181,15 @@ export function detectPlatform(url?: string): LinkPlatform {
   return "website";
 }
 
+/**
+ * Platforms whose channel is identified by an @username (Instagram, TikTok, X,
+ * podcast) rather than a channel/show/site *name* (YouTube, website, …). Drives
+ * the channel-name field's style and placeholder ("@username" vs "Channel name").
+ */
+export function isHandlePlatform(p: LinkPlatform): boolean {
+  return p === "instagram" || p === "tiktok" || p === "x" || p === "podcast";
+}
+
 /** A "/p/", "/reel/", "/status/"… segment anywhere in the path = a single post. */
 const POST_PATH = /\/(p|reel|reels|tv|status|watch|video|shorts|posts?)\//;
 

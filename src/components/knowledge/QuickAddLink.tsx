@@ -13,6 +13,7 @@ import {
   detectPlatform,
   detectVoiceKind,
   identityFromUrl,
+  isHandlePlatform,
   matchVoice,
   voiceFromLink,
 } from "@/lib/prayer/knowledge";
@@ -39,6 +40,8 @@ type Staged = {
   siteName: string;
   /** The account's home page — the Vessel's channel URL (so future posts match). */
   channelUrl: string;
+  /** The channel's own name/username — kept on the Channel, not the Vessel. */
+  channelLabel: string;
   attribution: Attribution;
   pin: boolean;
 };
@@ -58,15 +61,23 @@ function fallbackTitle(url: string, siteName: string, author: Author): string {
 }
 
 /**
- * What to name a new Vessel for a link — the @handle for a social account, the
- * channel/site name otherwise, never the bare domain. Falls back to the URL-only
- * guess when the page gave no author (login wall / unreachable).
+ * Pre-fill for the Vessel's `name` — the *who*: the person/channel/site from the
+ * page. The user edits it to the actual person (e.g. "Ana Munley"); the channel's
+ * own name is kept separately (see `channelLabelFor`) so it isn't lost.
  */
-function newVesselName(platform: LinkPlatform, author: Author, url: string): string {
-  if (platform === "instagram") return author.handle ? `@${author.handle}` : author.name || voiceFromLink(url).name;
+function vesselNamePrefill(author: Author, url: string): string {
   if (author.name) return author.name;
   if (author.handle) return `@${author.handle}`;
   return voiceFromLink(url).name;
+}
+
+/**
+ * The channel's own name, kept on the Channel so renaming the Vessel doesn't lose
+ * it: the @username for handle platforms, the channel/show/site name otherwise.
+ */
+function channelLabelFor(platform: LinkPlatform, author: Author): string {
+  if (isHandlePlatform(platform)) return author.handle ? `@${author.handle}` : author.name;
+  return author.name;
 }
 
 /**
@@ -118,9 +129,10 @@ export function QuickAddLink() {
       platform,
       siteName,
       channelUrl: author.profileUrl || raw,
+      channelLabel: channelLabelFor(platform, author),
       attribution: match
         ? { mode: "match", voice: match.voice, channelId: match.channel.id }
-        : { mode: "new", name: newVesselName(platform, author, raw) },
+        : { mode: "new", name: vesselNamePrefill(author, raw) },
       pin: false,
     });
   }
@@ -143,7 +155,14 @@ export function QuickAddLink() {
         id: voiceId,
         name: staged.attribution.name.trim() || voiceFromLink(staged.url).name,
         kind: detectVoiceKind(chanUrl),
-        channels: [{ id: channelId, platform: detectPlatform(chanUrl), url: chanUrl }],
+        channels: [
+          {
+            id: channelId,
+            platform: detectPlatform(chanUrl),
+            url: chanUrl,
+            label: staged.channelLabel.trim() || undefined,
+          },
+        ],
         created_at: new Date().toISOString(),
       });
     }
@@ -264,13 +283,30 @@ export function QuickAddLink() {
                   <Input
                     value={staged.attribution.name}
                     onChange={(e) => patch({ attribution: { mode: "new", name: e.target.value } })}
-                    placeholder="Vessel name"
+                    placeholder="Name (the person)"
                     className="h-9 flex-1"
                   />
                 ) : null}
               </div>
             )}
           </div>
+
+          {/* Channel — the account's own name (@username or channel name), kept on
+              the Channel so it survives renaming the Vessel to the person. */}
+          {staged.attribution.mode === "new" ? (
+            <div className="space-y-1">
+              <label className="text-xs uppercase tracking-wide text-muted-foreground">
+                Channel
+              </label>
+              <Input
+                value={staged.channelLabel}
+                onChange={(e) => patch({ channelLabel: e.target.value })}
+                placeholder={isHandlePlatform(staged.platform) ? "@username" : "Channel name"}
+                className="h-9"
+              />
+              <p className="truncate text-[11px] text-muted-foreground">{staged.channelUrl}</p>
+            </div>
+          ) : null}
 
           <label className="flex items-center gap-2 text-sm text-muted-foreground">
             <input
