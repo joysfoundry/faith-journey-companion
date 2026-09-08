@@ -45,8 +45,15 @@ Two independent axes — standard engineering vocabulary, where **deploy ≠ rel
   is **ACTS-168** (the wordmark-as-O): Published to production, then switched **off**
   behind a flag — `visibility: flagged`, `flag: wordmark-as-o`.
 
-Stories are matched to commits by the `ACTS-NN` token in the commit subject (the existing
-convention), with a boundary guard so `ACTS-10` never swallows `ACTS-108`.
+**Commit→story attribution (hybrid, `commits_for`).** A commit that leads with an
+`ACTS-…:` prefix belongs to the id(s) in that prefix — including co-delivered ones
+(`ACTS-129 ACTS-130: …` → both) — but NOT to ids merely mentioned after the colon
+(`ACTS-104: file ACTS-108..116` → 104 only). A commit with no `ACTS-` prefix
+(`docs:`, `chore:`) counts for any `ACTS-N` it mentions, so handoff/close/file commits
+still attach to their story. Boundary guards: `ACTS-10` ≠ `ACTS-108`, and a following
+`.`/`-` (ranges) doesn't match. Known-correct edge: a story closed as a *recorded
+decision* with no code (e.g. ACTS-90, `ACTS-75: collapse ACTS-90 …`) shows "no commits
+yet" — accurate, since nothing was built.
 
 ## What shipped this session
 - [`scripts/published.sh`](../scripts/published.sh) — the command. Sections: unreleased
