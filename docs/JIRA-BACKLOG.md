@@ -333,7 +333,7 @@ How the ACTS backlog is numbered and kept current — so this doesn't drift:
 3. **EPIC column.** Left blank on purpose — JC fills it in to group rows into epics.
    The section headers above are a suggested grouping, not the epic assignment.
 4. **The counter.** [`stories/.counter`](../stories/.counter) holds the last-used
-   number (currently **168**). The next brand-new story is ACTS-169.
+   number (currently **170**). The next brand-new story is ACTS-171.
 5. **One chat = one story.** Each working session is tied to a single ACTS story;
    its handoff lives at `stories/ACTS-NN/session-NN.md` (see
    [`stories/_TEMPLATE.md`](../stories/_TEMPLATE.md)). The compact active board is
