@@ -2,15 +2,15 @@
 id: ACTS-171
 title: "Quick-add a link to Vessels — paste an Instagram/web URL and auto-fill the item"
 spine: ACTS-171
-status: To Do
+status: In Progress
 origin: human-directed
 approved_by: JC
 depends_on: []
 relates_to: [ACTS-137]
 started_at: 2026-09-07T18:20:22-0700
-updated:    2026-09-07T18:41:00-0700
-latest_handoff: null
-sessions: 0
+updated:    2026-09-07T19:05:00-0700
+latest_handoff: ACTS-171/session-01.md
+sessions: 1
 ---
 
 ## Goal
@@ -65,16 +65,29 @@ Vessel. So "save this IG link" is a multi-field chore.
   here. Revisit if wanted later.
 
 ## Acceptance criteria
-- [ ] Pasting `https://www.instagram.com/reel/…` into the quick-add and confirming saves a
-      `KnowledgeItem` (`category: "post"`, `links:[{platform:"instagram", url}]`) with **no
-      hand-typed title required** (title pre-filled, still editable).
-- [ ] When the handle matches a Vessel already followed, the item is auto-attributed
-      (`voice_id`/`channel_id` set) via `matchVoice`.
-- [ ] When no match, the user can make a new Vessel from the link or save it unattributed.
-- [ ] A web article URL (non-social) saves as `article` with the OG title/site pre-filled.
-- [ ] `fetchLinkPreview` degrades gracefully (raw link kept) when the fetch fails/blocks, and
-      rejects non-http(s) and private/loopback hosts.
-- [ ] `tsc --noEmit` clean.
+- [x] Pasting an Instagram URL into the quick-add and confirming saves a `KnowledgeItem`
+      (`category: "post"`, `links:[{platform:"instagram", url}]`) with **no hand-typed title
+      required** (title pre-filled, still editable). _Verified in browser._
+- [x] When the handle matches a Vessel already followed, the item is auto-attributed
+      (`voice_id`/`channel_id` set) via `matchVoice`. _Verified: a post + the profile both
+      matched the existing `@ascensionpress` Vessel._
+- [x] When no match, the user can make a new Vessel from the link or save it unattributed.
+      _Verified: new Vessel created with its channel; "No vessel (General)" option present._
+- [~] A web article URL (non-social) saves as `article` with the OG title/site pre-filled.
+      _Code path is identical (detectCategory → "article", same enrichment); not yet saved
+      end-to-end in the browser — quick follow-up check._
+- [~] `fetchLinkPreview` degrades gracefully (raw link kept) when the fetch fails/blocks, and
+      rejects non-http(s)/private hosts. _Degrade path coded + title falls back; SSRF guard
+      coded but not runtime-tested against a private host._
+- [x] `tsc --noEmit` clean.
+
+## Still open (next session)
+- Save a non-social article URL end-to-end; runtime-check the SSRF guard rejects a
+  `http://localhost` / `169.254.169.254` link.
+- Write the documented tests (Vitest for `fetchLinkPreview` parsing + guard; Testing Library
+  for the quick-add attribution paths).
+- Consider a `?url=` entry so the quick-add can also be deep-linked (cheap groundwork toward
+  the deferred iOS Shortcut, without committing to share-target).
 
 ## Tests
 _Convention ACTS-91._
