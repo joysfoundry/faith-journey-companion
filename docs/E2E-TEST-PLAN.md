@@ -56,6 +56,40 @@ Priority: **P1** = core prayer loop, **P2** = authoring, **P3** = supporting.
 | E13 | **Bible deep-link out** | `/settings`, session scripture items | Bible app settings, external link | `buildPassageUrl`, `effectiveBibleAppId`, `bibleAppById` | P3 | — |
 | E14 | **Reflections capture** | `/reflections` | Reflection form/list | store reflection actions | P3 | — |
 | E15 | **Settings & persistence** — change settings, reload, state survives | `/settings`, all | Settings, app store provider | `loadDatabase`, `saveDatabase`, `STORAGE_KEY` migration | P3 | ACTS-82 |
+| E16 | **Paste-a-link import matrix** — YouTube / Instagram content, individual & organization, with & without an existing Vessel (see scenario table below) | `/formation` (Add) | `QuickAddLink` staged card, Vessel/Channel/kind fields, "Pin to Home" | `matchVoice`, `detectPlatform`, `detectCategory`, `detectVoiceKind`, `voiceFromLink`, `vesselNamePrefill`, `channelLabelFor`, `identityFromUrl`, `upsertVoice`, `addKnowledgeItem` | P2 | **ACTS-178**, ACTS-171 |
+| E17 | **Unified Pin to Home** — one control pins a channel, a content item, and a content link; all reach Home; unpin removes them; legacy `favorite` migrates on load | `/formation`, `/voice/$voiceId`, `/` (index) | `ChannelChips`/`ContentRow` pin control, Home Vessels card | `pinnedLinks`, `toggleChannelPin`, `toggleContentLinkPin`, item `pinned`, `loadDatabase` (`favorite`→`pinned` migration) | P2 | **ACTS-177**, ACTS-137 |
+
+## E16 — Paste-a-link import matrix (ACTS-178)
+
+The scenarios JC asked to cover. Each pastes a **content** URL (a specific video/post,
+not a channel home) and asserts what lands in the library: the **content item**, its
+**attribution** (Vessel + channel), the Vessel's **kind**, and that no duplicate Vessel
+is created when one already exists.
+
+**Domain rule to encode (JC):** attribution follows **who published it**, not who is
+on screen. A video *about* an individual can be published by an organization, so it
+becomes a piece of content under **that organization's** Vessel. And an individual
+(e.g. Fr. Mike Schmitz) can carry content that came **from an organization's page**
+(e.g. Ascension) under **his** record when he is the publisher/host. So "individual vs
+organization" is decided by the **publishing account** of the pasted link, and a video
+can legitimately sit under either depending on whose channel posted it.
+
+| # | Link platform | Attribution target | Existing Vessel? | Expected result |
+|---|---------------|--------------------|------------------|-----------------|
+| E16a | YouTube (video) | Individual | **No** | New **individual** Vessel; a YouTube **channel** on it (the publisher's account, not the video URL); the video saved as content under it |
+| E16b | Instagram (post) | Individual | **No** | New **individual** Vessel; Instagram **channel**; the post saved as content under it |
+| E16c | YouTube (video) | Individual | **Yes** | `matchVoice` finds the existing individual → **no new Vessel**; video added under the matched Vessel/channel |
+| E16d | Instagram (post) | Individual | **Yes** | Matches existing individual → **no duplicate**; post added under it |
+| E16e | YouTube (video) | Organization (e.g. Ascension) | **No** | New **organization** Vessel (kind = organization, not silently "individual"); YouTube channel; video as content under the org |
+| E16f | Instagram (post) | Organization | **No** | New **organization** Vessel; Instagram channel; post as content |
+| E16g | YouTube (video) | Organization | **Yes** | Matches existing org → **no duplicate**; video added under the org's record |
+| E16h | Instagram (post) | Organization | **Yes** | Matches existing org → **no duplicate**; post added under it |
+
+Cross-checks for every row: the **person's name** is distinct from the **channel/show
+name** (not both set to the show title); **kind** is correct and, if wrong, editable and
+persisted (E16 pairs with ACTS-178's individual↔organization fix); the channel URL is the
+**account**, not the pasted content URL; and one paste creates exactly **one** content item
+(no accidental duplicate — the double "9 Things…" JC saw).
 
 ## Cross-cutting things every E2E flow should assert
 - **Persistence:** reload mid-flow; localStorage (`STORAGE_KEY`) restores state (hydration — see ACTS-83).
