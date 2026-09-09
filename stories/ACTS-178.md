@@ -2,15 +2,15 @@
 id: ACTS-178
 title: Paste-a-link — keep the person distinct from their channel; make kind correctable
 spine:
-status: In Progress
+status: Done
 origin: human-directed
 approved_by: JC
 depends_on: []
-relates_to: [ACTS-171, ACTS-137, ACTS-177, ACTS-179]
+relates_to: [ACTS-171, ACTS-137, ACTS-177, ACTS-179, ACTS-180]
 started_at: 2026-09-09T12:42:04-0700
-updated:    2026-09-09T12:42:04-0700
-latest_handoff: null
-sessions: 0
+updated:    2026-09-09T16:45:32-0700
+latest_handoff: ACTS-178/session-01.md
+sessions: 1
 ---
 
 ## Goal

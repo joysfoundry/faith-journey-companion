@@ -2,15 +2,15 @@
 id: ACTS-177
 title: Unify "Pin to Home" — one verb, one icon, for content and channels
 spine:
-status: In Progress
+status: Done
 origin: human-directed
 approved_by: JC
 depends_on: []
 relates_to: [ACTS-137, ACTS-171, ACTS-178, ACTS-179]
 started_at: 2026-09-09T12:42:04-0700
-updated:    2026-09-09T12:42:04-0700
-latest_handoff: null
-sessions: 0
+updated:    2026-09-09T16:45:32-0700
+latest_handoff: ACTS-177/session-01.md
+sessions: 1
 ---
 
 ## Goal
