@@ -28,6 +28,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VoiceEditor } from "@/components/knowledge/VoiceEditor";
 import { QuickAddLink } from "@/components/knowledge/QuickAddLink";
+import { PLATFORM_ICON } from "@/components/knowledge/platform-icon";
 import { newId } from "@/lib/prayer/compiler";
 import {
   GROUP_LABELS,
@@ -459,7 +460,9 @@ function KnowledgePage() {
   );
 }
 
-/** A Voice's channel chips (favoritable), shared by the flat list and grouped header. */
+/** A Voice's channel chips (pinnable), shared by the flat list and grouped header.
+ *  A chip reads as the channel — its platform icon + name — not a free-text label
+ *  (ACTS-178); the channel's own name still lives on its detail page. */
 function ChannelChips({
   voiceId,
   channels,
@@ -471,13 +474,16 @@ function ChannelChips({
 }) {
   return (
     <div className="mt-1.5 flex flex-wrap gap-1">
-      {channels.map((c) => (
+      {channels.map((c) => {
+        const Icon = PLATFORM_ICON[c.platform];
+        return (
         <span key={c.id} className="inline-flex items-center">
           <ExtLink
             href={c.url}
             className="inline-flex items-center gap-1 rounded-l-full bg-secondary py-0.5 pl-2 pr-1 text-[11px] font-medium text-muted-foreground hover:text-primary"
           >
-            {c.label || LINK_PLATFORM_LABELS[c.platform]}
+            <Icon className="size-3" aria-hidden />
+            {LINK_PLATFORM_LABELS[c.platform]}
             <ExternalLink className="size-3" aria-hidden />
           </ExtLink>
           <button
@@ -491,7 +497,8 @@ function ChannelChips({
             />
           </button>
         </span>
-      ))}
+        );
+      })}
     </div>
   );
 }

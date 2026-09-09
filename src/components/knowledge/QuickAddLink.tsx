@@ -61,13 +61,17 @@ function fallbackTitle(url: string, siteName: string, author: Author): string {
 }
 
 /**
- * Pre-fill for the Vessel's `name` — the *who*: the person/channel/site from the
- * page. The user edits it to the actual person (e.g. "Ana Munley"); the channel's
- * own name is kept separately (see `channelLabelFor`) so it isn't lost.
+ * Pre-fill for the Vessel's `name` — the *who*. Prefer the account's **@handle**
+ * (from the channel-home URL, else the pasted URL) so a YouTube import defaults to
+ * `@username` rather than the channel/show title — the page's `author.name` is the
+ * channel *title* ("AfterMass with Ana Munley"), which belongs on the Channel, not
+ * the Vessel. The user edits this to the actual person if they want.
  */
-function vesselNamePrefill(author: Author, url: string): string {
-  if (author.name) return author.name;
+function vesselNamePrefill(author: Author, channelUrl: string, url: string): string {
+  const id = identityFromUrl(channelUrl) ?? identityFromUrl(url);
+  if (id?.handle) return `@${id.handle}`;
   if (author.handle) return `@${author.handle}`;
+  if (author.name) return author.name;
   return voiceFromLink(url).name;
 }
 
@@ -139,7 +143,7 @@ export function QuickAddLink() {
         ? { mode: "match", voice: match.voice, channelId: match.channel.id }
         : {
             mode: "new",
-            name: vesselNamePrefill(author, raw),
+            name: vesselNamePrefill(author, channelUrl, raw),
             kind: detectVoiceKind(channelUrl || raw),
           },
       pin: false,
@@ -328,12 +332,9 @@ export function QuickAddLink() {
                     patch({
                       attribution: {
                         mode: "new",
-                        // Prefer the account name we already resolved (channel
-                        // label / handle) over re-deriving from the video URL,
-                        // which has no handle and lands on the bare host.
-                        name:
-                          staged.channelLabel.trim() ||
-                          voiceFromLink(staged.channelUrl || staged.url).name,
+                        // Same @handle-first default as the initial lookup, so
+                        // re-attributing lands on `@username`, not the bare host.
+                        name: vesselNamePrefill(NO_AUTHOR, staged.channelUrl, staged.url),
                         kind: detectVoiceKind(staged.channelUrl || staged.url),
                       },
                     })

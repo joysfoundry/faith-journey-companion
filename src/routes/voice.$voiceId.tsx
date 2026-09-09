@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { VoiceEditor } from "@/components/knowledge/VoiceEditor";
+import { PLATFORM_ICON } from "@/components/knowledge/platform-icon";
 import {
   CATEGORY_LABELS,
   CATEGORY_OPTIONS,
@@ -162,18 +163,21 @@ function VoiceHubPage() {
             <h2 className="eyebrow">Channels</h2>
             <div className="overflow-hidden rounded-lg border border-border/60">
               <ul className="divide-y divide-border/60">
-                {voice!.channels.map((c) => (
+                {voice!.channels.map((c) => {
+                  const Icon = PLATFORM_ICON[c.platform];
+                  return (
                   <li key={c.id} className="flex items-center gap-2 px-4 py-3">
                     <ExtLink
                       href={c.url}
-                      className="flex min-w-0 flex-1 items-center justify-between gap-2 transition-colors hover:text-primary"
+                      className="flex min-w-0 flex-1 items-center gap-2 transition-colors hover:text-primary"
                     >
-                      <span className="min-w-0">
+                      <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                      <span className="min-w-0 flex-1">
                         <span className="block text-sm font-medium">
-                          {c.label || LINK_PLATFORM_LABELS[c.platform]}
+                          {LINK_PLATFORM_LABELS[c.platform]}
                         </span>
                         <span className="block truncate text-xs text-muted-foreground">
-                          {c.url}
+                          {c.label ? `${c.label} · ${c.url}` : c.url}
                         </span>
                       </span>
                       <ExternalLink className="size-4 shrink-0 text-muted-foreground" aria-hidden />
@@ -189,7 +193,8 @@ function VoiceHubPage() {
                       />
                     </button>
                   </li>
-                ))}
+                  );
+                })}
               </ul>
             </div>
           </section>

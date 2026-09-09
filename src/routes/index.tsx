@@ -40,6 +40,7 @@ import { type LinkableItem } from "@/domain/placeholderData";
 import { getLiturgicalDay, type LiturgicalDay } from "@/lib/liturgical/calendar";
 import { buildReflectionLinkables } from "@/lib/prayer/linkables";
 import {
+  CATEGORY_LABELS,
   LINK_PLATFORM_LABELS,
   SECTION_LABEL,
   hasStatus,
@@ -49,6 +50,7 @@ import {
   type PinnedLink,
 } from "@/lib/prayer/knowledge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { PLATFORM_ICON } from "@/components/knowledge/platform-icon";
 import {
   activeDailyRosaryFulfiller,
   defaultContext,
@@ -89,8 +91,68 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
+/** A row on the Home Vessels card: either a single content pin, or a Vessel with
+ *  its pinned channels grouped onto one row (ACTS-178). */
+type HomePinRow =
+  | { kind: "content"; pin: PinnedLink }
+  | { kind: "voice"; voiceId: string; voiceName: string; channels: PinnedLink[] };
+
 /**
- * One pinned link on Home — a favorited Voice channel or Content link. Opens the
+ * A pinned Vessel on Home — the person/org named once, its pinned channels shown
+ * as platform chips on the same row (like the library's By-Vessel view). Each chip
+ * opens its channel; the name + chevron lead to the Vessel page.
+ */
+function PinnedVoiceRow({
+  voiceId,
+  voiceName,
+  channels,
+}: {
+  voiceId: string;
+  voiceName: string;
+  channels: PinnedLink[];
+}) {
+  return (
+    <SectionRow className="border-t border-border/60 pl-6">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <Link
+            to="/voice/$voiceId"
+            params={{ voiceId }}
+            className="block truncate text-sm font-medium text-foreground hover:text-primary"
+          >
+            {voiceName}
+          </Link>
+          <div className="mt-1 flex flex-wrap gap-1">
+            {channels.map((c) => {
+              const Icon = c.platform ? PLATFORM_ICON[c.platform] : ExternalLink;
+              return (
+                <ExtLink
+                  key={c.url ?? c.platform}
+                  href={c.url ?? "#"}
+                  className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium text-muted-foreground hover:text-primary"
+                >
+                  <Icon className="size-3" aria-hidden />
+                  {c.platform ? LINK_PLATFORM_LABELS[c.platform] : (c.label ?? "Link")}
+                </ExtLink>
+              );
+            })}
+          </div>
+        </div>
+        <Link
+          to="/voice/$voiceId"
+          params={{ voiceId }}
+          aria-label={`Open ${voiceName}`}
+          className="p-1 text-muted-foreground hover:text-foreground"
+        >
+          <ChevronRight className="size-4" aria-hidden />
+        </Link>
+      </div>
+    </SectionRow>
+  );
+}
+
+/**
+ * One pinned link on Home — a pinned Voice channel or Content link. Opens the
  * link out; a chevron leads to the owning record (a Voice or a Content page).
  */
 function PinnedLinkRow({
@@ -102,18 +164,30 @@ function PinnedLinkRow({
   onReflect: (ownerId: string) => void;
   onSetStatus: (ownerId: string, status: KnowledgeStatus) => void;
 }) {
+  // Describe a content pin by what it *is* (its category — "Book") rather than the
+  // link's label ("Amazon"), which is only where to get it. The link is conveyed by
+  // the platform icon + the row opening it.
   const subtitle =
-    pin.subtitle || pin.label || (pin.platform ? LINK_PLATFORM_LABELS[pin.platform] : "");
+    pin.subtitle ||
+    (pin.ownerType === "content" && pin.category ? CATEGORY_LABELS[pin.category] : "") ||
+    pin.label ||
+    (pin.platform ? LINK_PLATFORM_LABELS[pin.platform] : "");
   // ACTS-145: content pins in a status-bearing category (book/program/video/podcast)
   // carry a progress status. Show it as a compact, tappable eyebrow on the same line
   // as the link so the row height doesn't grow; tapping cycles Not started → In
   // progress → Finished → back around, in sync with Formation's ContentRow.
   const showStatus = pin.category != null && hasStatus(pin.category);
+  // The platform icon sits by the channel/source line (not the title), matching
+  // the library chips (ACTS-178).
+  const PlatformIconEl = pin.platform ? PLATFORM_ICON[pin.platform] : null;
   const body = (
     <span className="min-w-0">
       <span className="block truncate text-sm font-medium text-foreground">{pin.ownerName}</span>
       {subtitle ? (
-        <span className="block truncate text-xs text-muted-foreground">{subtitle}</span>
+        <span className="flex items-center gap-1 text-xs text-muted-foreground">
+          {PlatformIconEl ? <PlatformIconEl className="size-3 shrink-0" aria-hidden /> : null}
+          <span className="truncate">{subtitle}</span>
+        </span>
       ) : null}
     </span>
   );
@@ -521,9 +595,31 @@ function Index() {
     dailyReadingLabel: litDay?.title,
   });
 
-  // Home Knowledge card: the links you've pinned — favorited Voice channels and
-  // Content links. Curated by the star, not auto-surfaced.
+  // Home Vessels card: the links you've pinned — Voice channels and Content links.
+  // Curated by the pin, not auto-surfaced.
   const homePins = pinnedLinks(db.voices, db.knowledge_items);
+  // Group a Vessel's pinned channels onto one row (its channels shown as chips),
+  // like the library's By-Vessel view; content pins stay as their own rows.
+  const homeRows: HomePinRow[] = [];
+  const voiceRowIndex = new Map<string, number>();
+  for (const pin of homePins) {
+    if (pin.ownerType === "voice") {
+      const at = voiceRowIndex.get(pin.ownerId);
+      if (at != null) {
+        (homeRows[at] as { channels: PinnedLink[] }).channels.push(pin);
+      } else {
+        voiceRowIndex.set(pin.ownerId, homeRows.length);
+        homeRows.push({
+          kind: "voice",
+          voiceId: pin.ownerId,
+          voiceName: pin.ownerName,
+          channels: [pin],
+        });
+      }
+    } else {
+      homeRows.push({ kind: "content", pin });
+    }
+  }
 
   return (
     <AppShell>
@@ -784,21 +880,30 @@ function Index() {
             </IconAction>
           }
         >
-          {homePins.length === 0 ? (
+          {homeRows.length === 0 ? (
             <SectionRow className="border-t border-border/60">
               <p className="text-sm text-muted-foreground">
-                Star a channel or link in your library to pin it here.
+                Pin a channel or link in your library to show it here.
               </p>
             </SectionRow>
           ) : (
-            homePins.map((pin) => (
-              <PinnedLinkRow
-                key={`${pin.ownerId}-${pin.url ?? "pin"}`}
-                pin={pin}
-                onReflect={openJournal}
-                onSetStatus={setKnowledgeStatus}
-              />
-            ))
+            homeRows.map((row) =>
+              row.kind === "voice" ? (
+                <PinnedVoiceRow
+                  key={`voice-${row.voiceId}`}
+                  voiceId={row.voiceId}
+                  voiceName={row.voiceName}
+                  channels={row.channels}
+                />
+              ) : (
+                <PinnedLinkRow
+                  key={`${row.pin.ownerId}-${row.pin.url ?? "pin"}`}
+                  pin={row.pin}
+                  onReflect={openJournal}
+                  onSetStatus={setKnowledgeStatus}
+                />
+              ),
+            )
           )}
         </SectionCard>
 
