@@ -20,12 +20,12 @@ import {
 import { fetchLinkPreview } from "@/lib/prayer/fetchSource.functions";
 import { newId } from "@/lib/prayer/compiler";
 import { useApp } from "@/lib/prayer/store";
-import type { KnowledgeCategory, LinkPlatform, Voice } from "@/lib/prayer/types";
+import type { Channel, KnowledgeCategory, LinkPlatform, Voice, VoiceKind } from "@/lib/prayer/types";
 
 /** How a staged link will be attributed once saved. */
 type Attribution =
   | { mode: "match"; voice: Voice; channelId: string } // matches a Vessel you follow
-  | { mode: "new"; name: string } // make a new Vessel from the link
+  | { mode: "new"; name: string; kind: VoiceKind } // make a new Vessel (person or org)
   | { mode: "none" }; // save unattributed (General)
 
 /** The person/channel/site behind a link, from the page metadata. */
@@ -122,17 +122,26 @@ export function QuickAddLink() {
     const match =
       matchVoice(raw, db.voices) ||
       (author.profileUrl ? matchVoice(author.profileUrl, db.voices) : undefined);
+    // The channel is the account's HOME page, never the pasted content URL — a
+    // video/post link is the Content's link, not a channel (ACTS-178). If the
+    // preview couldn't read the account's profile, we create the Vessel with no
+    // channel rather than misfiling the video URL as one.
+    const channelUrl = author.profileUrl || "";
     setStaged({
       url: raw,
       title: title || fallbackTitle(raw, siteName, author),
       category,
       platform,
       siteName,
-      channelUrl: author.profileUrl || raw,
+      channelUrl,
       channelLabel: channelLabelFor(platform, author),
       attribution: match
         ? { mode: "match", voice: match.voice, channelId: match.channel.id }
-        : { mode: "new", name: vesselNamePrefill(author, raw) },
+        : {
+            mode: "new",
+            name: vesselNamePrefill(author, raw),
+            kind: detectVoiceKind(channelUrl || raw),
+          },
       pin: false,
     });
   }
@@ -146,23 +155,27 @@ export function QuickAddLink() {
       voiceId = staged.attribution.voice.id;
       channelId = staged.attribution.channelId;
     } else if (staged.attribution.mode === "new") {
-      // Channel = the account's home page, so a later post from the same account
+      // Channel = the account's HOME page, so a later post from the same account
       // matches this Vessel; the item's own link stays the specific post below.
-      const chanUrl = staged.channelUrl;
+      // Only attach a channel when we actually have that home URL — never the
+      // pasted content URL (ACTS-178).
+      const chanUrl = staged.channelUrl.trim();
       voiceId = newId("voice");
-      channelId = newId("chan");
+      const channels: Channel[] = [];
+      if (chanUrl) {
+        channelId = newId("chan");
+        channels.push({
+          id: channelId,
+          platform: detectPlatform(chanUrl),
+          url: chanUrl,
+          label: staged.channelLabel.trim() || undefined,
+        });
+      }
       upsertVoice({
         id: voiceId,
         name: staged.attribution.name.trim() || voiceFromLink(staged.url).name,
-        kind: detectVoiceKind(chanUrl),
-        channels: [
-          {
-            id: channelId,
-            platform: detectPlatform(chanUrl),
-            url: chanUrl,
-            label: staged.channelLabel.trim() || undefined,
-          },
-        ],
+        kind: staged.attribution.kind,
+        channels: channels.length ? channels : undefined,
         created_at: new Date().toISOString(),
       });
     }
@@ -247,9 +260,10 @@ export function QuickAddLink() {
             </span>
           </div>
 
-          {/* Attribution — where this lands in the library */}
-          <div className="space-y-1">
-            <label className="text-xs uppercase tracking-wide text-muted-foreground">Vessel</label>
+          {/* From — the person or organization this content is by. Names the
+              Vessel (kept separate from the content title and the channel). */}
+          <div className="space-y-1.5">
+            <label className="text-xs uppercase tracking-wide text-muted-foreground">From</label>
             {staged.attribution.mode === "match" ? (
               <p className="text-sm">
                 Saving to <span className="font-medium">{staged.attribution.voice.name}</span>{" "}
@@ -261,39 +275,82 @@ export function QuickAddLink() {
                   change
                 </button>
               </p>
+            ) : staged.attribution.mode === "new" ? (
+              (() => {
+                // Destructure the narrowed variant into primitives so the
+                // callbacks below close over stable values (TS re-widens
+                // `staged.attribution` across closures otherwise).
+                const { name, kind } = staged.attribution;
+                return (
+                  <>
+                    <Input
+                      value={name}
+                      onChange={(e) =>
+                        patch({ attribution: { mode: "new", name: e.target.value, kind } })
+                      }
+                      placeholder="Name (person or organization)"
+                      className="h-9"
+                    />
+                    <div className="flex gap-1">
+                      {(["individual", "organization"] as const).map((k) => (
+                        <button
+                          key={k}
+                          type="button"
+                          aria-pressed={kind === k}
+                          onClick={() => patch({ attribution: { mode: "new", name, kind: k } })}
+                          className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium capitalize transition-colors ${
+                            kind === k
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-secondary text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          {k}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => patch({ attribution: { mode: "none" } })}
+                      className="block text-xs text-muted-foreground underline hover:text-foreground"
+                    >
+                      Save to General instead
+                    </button>
+                  </>
+                );
+              })()
             ) : (
-              <div className="flex flex-wrap items-center gap-2">
-                <select
-                  value={staged.attribution.mode}
-                  onChange={(e) =>
+              <p className="text-sm text-muted-foreground">
+                Saving to <span className="font-medium text-foreground">General</span> — not
+                attributed.{" "}
+                <button
+                  type="button"
+                  onClick={() =>
                     patch({
-                      attribution:
-                        e.target.value === "new"
-                          ? { mode: "new", name: voiceFromLink(staged.url).name }
-                          : { mode: "none" },
+                      attribution: {
+                        mode: "new",
+                        // Prefer the account name we already resolved (channel
+                        // label / handle) over re-deriving from the video URL,
+                        // which has no handle and lands on the bare host.
+                        name:
+                          staged.channelLabel.trim() ||
+                          voiceFromLink(staged.channelUrl || staged.url).name,
+                        kind: detectVoiceKind(staged.channelUrl || staged.url),
+                      },
                     })
                   }
-                  aria-label="Vessel"
-                  className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+                  className="text-xs underline hover:text-foreground"
                 >
-                  <option value="new">New vessel</option>
-                  <option value="none">No vessel (General)</option>
-                </select>
-                {staged.attribution.mode === "new" ? (
-                  <Input
-                    value={staged.attribution.name}
-                    onChange={(e) => patch({ attribution: { mode: "new", name: e.target.value } })}
-                    placeholder="Name (the person)"
-                    className="h-9 flex-1"
-                  />
-                ) : null}
-              </div>
+                  Attribute to someone
+                </button>
+              </p>
             )}
           </div>
 
-          {/* Channel — the account's own name (@username or channel name), kept on
-              the Channel so it survives renaming the Vessel to the person. */}
-          {staged.attribution.mode === "new" ? (
+          {/* Channel — the account's home (its @username / channel name + home
+              URL), kept on the Channel so renaming the Vessel to the person
+              doesn't lose it. Only shown when we actually have the account's home
+              URL — never the pasted video/post link. */}
+          {staged.attribution.mode === "new" && staged.channelUrl ? (
             <div className="space-y-1">
               <label className="text-xs uppercase tracking-wide text-muted-foreground">
                 Channel
