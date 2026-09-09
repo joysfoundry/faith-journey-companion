@@ -8,7 +8,6 @@ import {
   Pencil,
   Pin,
   Plus,
-  Star,
   Trash2,
   UserPlus,
   X,
@@ -72,7 +71,7 @@ function KnowledgeRecordPage() {
     ready,
     updateKnowledgeItem,
     setKnowledgeStatus,
-    toggleContentLinkFavorite,
+    toggleContentLinkPin,
     toggleItemPinned,
     deleteKnowledgeItem,
     upsertVoice,
@@ -256,12 +255,12 @@ function KnowledgeRecordPage() {
                       className="h-9"
                     />
                     <button
-                      onClick={() => toggleContentLinkFavorite(item.id, i)}
-                      aria-label={l.favorite ? "Unpin from Home" : "Pin to Home"}
+                      onClick={() => toggleContentLinkPin(item.id, i)}
+                      aria-label={l.pinned ? "Unpin from Home" : "Pin to Home"}
                       className="shrink-0 p-1"
                     >
-                      <Star
-                        className={`size-4 ${l.favorite ? "fill-primary text-primary" : "text-muted-foreground"}`}
+                      <Pin
+                        className={`size-4 ${l.pinned ? "fill-primary text-primary" : "text-muted-foreground"}`}
                         aria-hidden
                       />
                     </button>
@@ -478,11 +477,11 @@ function KnowledgeRecordPage() {
                         size="icon"
                         variant="ghost"
                         className="size-9 shrink-0"
-                        aria-label={link.favorite ? "Unpin from Home" : "Pin to Home"}
-                        onClick={() => toggleContentLinkFavorite(item.id, i)}
+                        aria-label={link.pinned ? "Unpin from Home" : "Pin to Home"}
+                        onClick={() => toggleContentLinkPin(item.id, i)}
                       >
-                        <Star
-                          className={`size-4 ${link.favorite ? "fill-primary text-primary" : "text-muted-foreground"}`}
+                        <Pin
+                          className={`size-4 ${link.pinned ? "fill-primary text-primary" : "text-muted-foreground"}`}
                           aria-hidden
                         />
                       </Button>

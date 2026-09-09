@@ -393,7 +393,7 @@ export function detectCategory(url?: string, _title?: string): KnowledgeCategory
 /** The platform of a content item's primary link, as a byline — "Instagram". */
 function primaryLinkPlatformLabel(item: KnowledgeItem): string | undefined {
   const links = item.links ?? [];
-  const link = links.find((l) => l.favorite) ?? links[0];
+  const link = links.find((l) => l.pinned) ?? links[0];
   // "other" ("Link") is meaningless as a byline; skip it.
   return link && link.platform !== "other" ? LINK_PLATFORM_LABELS[link.platform] : undefined;
 }
@@ -420,10 +420,10 @@ export function knowledgeSubtitle(
   return [CATEGORY_LABELS[item.category], who, item.source].filter(Boolean).join(" · ");
 }
 
-/** The best single URL to open for a content item (favorited link first). */
+/** The best single URL to open for a content item (pinned link first). */
 export function primaryUrl(item: KnowledgeItem): string | undefined {
   const links = item.links ?? [];
-  return (links.find((l) => l.favorite) ?? links[0])?.url;
+  return (links.find((l) => l.pinned) ?? links[0])?.url;
 }
 
 /** Pretty one-line detail for a Voice row. */
@@ -436,8 +436,8 @@ export function voiceSubtitle(voice: Voice): string {
 /* -------------------------------- Home ----------------------------------- */
 
 /**
- * A row surfaced on the Home Vessels card. Three sources feed it: a favorited
- * Voice channel, a favorited Content link, and an item-level pin (ACTS-137).
+ * A row surfaced on the Home Vessels card. Three sources feed it: a pinned
+ * Voice channel, a pinned Content link, and an item-level pin (ACTS-137/177).
  * `url` is absent for a URL-less item pin — the row then opens the owner's
  * detail page instead of an external link.
  */
@@ -459,7 +459,7 @@ export interface PinnedLink {
 }
 
 /**
- * Every favorited channel + content link, for the Home Vessels section. Ordered
+ * Every pinned channel + content link, for the Home Vessels section. Ordered
  * to match the /formation library and voice pages (ACTS-134): status-bearing
  * owners (a book/program/video/podcast you're working through) first, then
  * status-less references (voice websites, articles/posts/quotes), A–Z by owner
@@ -470,7 +470,7 @@ export function pinnedLinks(voices: Voice[], items: KnowledgeItem[]): PinnedLink
   const out: PinnedLink[] = [];
   for (const v of voices) {
     for (const c of v.channels ?? []) {
-      if (c.favorite)
+      if (c.pinned)
         out.push({
           ownerId: v.id,
           ownerName: v.name,
@@ -483,7 +483,7 @@ export function pinnedLinks(voices: Voice[], items: KnowledgeItem[]): PinnedLink
   }
   for (const it of items) {
     for (const l of it.links ?? []) {
-      if (l.favorite)
+      if (l.pinned)
         out.push({
           ownerId: it.id,
           ownerName: it.title,
@@ -497,14 +497,14 @@ export function pinnedLinks(voices: Voice[], items: KnowledgeItem[]): PinnedLink
     }
   }
   // Item-level pins (ACTS-137): a pinned item surfaces itself even with no
-  // favorited link. If it already contributed a favorited-link row above, it's
-  // on Home already — skip it here so a pinned + link-favorited item shows once.
-  const favoritedItemIds = new Set(
-    items.filter((it) => (it.links ?? []).some((l) => l.favorite)).map((it) => it.id),
+  // pinned link. If it already contributed a pinned-link row above, it's
+  // on Home already — skip it here so an item with a pinned link shows once.
+  const pinnedLinkItemIds = new Set(
+    items.filter((it) => (it.links ?? []).some((l) => l.pinned)).map((it) => it.id),
   );
   for (const it of items) {
-    if (!it.pinned || favoritedItemIds.has(it.id)) continue;
-    // No favorited link here (those were excluded), so primaryUrl falls back to
+    if (!it.pinned || pinnedLinkItemIds.has(it.id)) continue;
+    // No pinned link here (those were excluded), so primaryUrl falls back to
     // the first link — or is absent, meaning the row opens the item detail page.
     const url = primaryUrl(it);
     out.push({

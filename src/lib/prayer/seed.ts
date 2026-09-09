@@ -2450,7 +2450,7 @@ export function createSeedDatabase(): Database {
     reflections: [],
     mass_experiences: [],
     // Voices = the who behind content (individual/org/ministry), each with its
-    // channels. Favorited channels surface on Home.
+    // channels. Pinned channels surface on Home.
     voices: [
       {
         id: "voice-usccb",
@@ -2461,7 +2461,7 @@ export function createSeedDatabase(): Database {
             id: "chan-usccb-web",
             platform: "website",
             url: "https://www.usccb.org",
-            favorite: true,
+            pinned: true,
           },
         ],
         created_at: now,
@@ -2471,7 +2471,7 @@ export function createSeedDatabase(): Database {
         name: "Hallow",
         kind: "organization",
         channels: [
-          { id: "chan-hallow-web", platform: "website", url: "https://hallow.com", favorite: true },
+          { id: "chan-hallow-web", platform: "website", url: "https://hallow.com", pinned: true },
         ],
         created_at: now,
       },
@@ -2527,7 +2527,7 @@ export function createSeedDatabase(): Database {
         voice_id: "voice-trent-horn",
         source: "Catholic Answers Press",
         links: [
-          { platform: "store", url: "https://a.co/d/0iRtwemk", label: "Amazon", favorite: true },
+          { platform: "store", url: "https://a.co/d/0iRtwemk", label: "Amazon", pinned: true },
         ],
         status: "not_started",
         created_at: now,

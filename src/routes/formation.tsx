@@ -11,7 +11,6 @@ import {
   Pencil,
   Pin,
   Search,
-  Star,
   Trash2,
 } from "lucide-react";
 
@@ -109,10 +108,10 @@ function KnowledgePage() {
     ready,
     setKnowledgeStatus,
     deleteKnowledgeItem,
-    toggleContentLinkFavorite,
+    toggleContentLinkPin,
     toggleItemPinned,
     deleteVoice,
-    toggleChannelFavorite,
+    toggleChannelPin,
     upsertVoice,
   } = useApp();
   const { add } = Route.useSearch();
@@ -227,7 +226,7 @@ function KnowledgePage() {
   const contentHandlers = {
     voices,
     setKnowledgeStatus,
-    toggleContentLinkFavorite,
+    toggleContentLinkPin,
     toggleItemPinned,
     onEdit: editItem,
     onDelete: deleteKnowledgeItem,
@@ -365,7 +364,7 @@ function KnowledgePage() {
                             <ChannelChips
                               voiceId={g.voice.id}
                               channels={g.voice.channels}
-                              toggle={toggleChannelFavorite}
+                              toggle={toggleChannelPin}
                             />
                           ) : null}
                         </div>
@@ -441,7 +440,7 @@ function KnowledgePage() {
                       <ChannelChips
                         voiceId={v.id}
                         channels={v.channels}
-                        toggle={toggleChannelFavorite}
+                        toggle={toggleChannelPin}
                       />
                     ) : null}
                   </div>
@@ -483,11 +482,11 @@ function ChannelChips({
           </ExtLink>
           <button
             onClick={() => toggle(voiceId, c.id)}
-            aria-label={c.favorite ? "Unpin from Home" : "Pin to Home"}
+            aria-label={c.pinned ? "Unpin from Home" : "Pin to Home"}
             className="rounded-r-full bg-secondary py-0.5 pl-1 pr-2"
           >
-            <Star
-              className={`size-3 ${c.favorite ? "fill-primary text-primary" : "text-muted-foreground"}`}
+            <Pin
+              className={`size-3 ${c.pinned ? "fill-primary text-primary" : "text-muted-foreground"}`}
               aria-hidden
             />
           </button>
@@ -503,7 +502,7 @@ function ContentRow({
   voices,
   hideVoice,
   setKnowledgeStatus,
-  toggleContentLinkFavorite,
+  toggleContentLinkPin,
   toggleItemPinned,
   onEdit,
   onDelete,
@@ -512,7 +511,7 @@ function ContentRow({
   voices: Voice[];
   hideVoice?: boolean;
   setKnowledgeStatus: (id: string, status: KnowledgeItem["status"]) => void;
-  toggleContentLinkFavorite: (itemId: string, index: number) => void;
+  toggleContentLinkPin: (itemId: string, index: number) => void;
   toggleItemPinned: (id: string) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
@@ -585,12 +584,12 @@ function ContentRow({
                   <ExternalLink className="size-3" aria-hidden />
                 </ExtLink>
                 <button
-                  onClick={() => toggleContentLinkFavorite(item.id, i)}
-                  aria-label={l.favorite ? "Unpin from Home" : "Pin to Home"}
+                  onClick={() => toggleContentLinkPin(item.id, i)}
+                  aria-label={l.pinned ? "Unpin from Home" : "Pin to Home"}
                   className="rounded-r-full bg-secondary py-0.5 pl-1 pr-2"
                 >
-                  <Star
-                    className={`size-3 ${l.favorite ? "fill-primary text-primary" : "text-muted-foreground"}`}
+                  <Pin
+                    className={`size-3 ${l.pinned ? "fill-primary text-primary" : "text-muted-foreground"}`}
                     aria-hidden
                   />
                 </button>
@@ -637,7 +636,7 @@ function ContentRow({
 
 /**
  * Item-level "Pin to Home" (ACTS-137) — surfaces the whole item on Home's
- * Vessels card, no favorited link required. Separate from the per-link stars.
+ * Vessels card, no pinned link required. Separate from the per-link pins.
  */
 function PinItemIcon({ pinned, onToggle }: { pinned: boolean; onToggle: () => void }) {
   return (

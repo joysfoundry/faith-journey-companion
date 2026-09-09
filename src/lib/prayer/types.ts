@@ -666,8 +666,9 @@ export type LinkPlatform =
 
 /**
  * A Channel — the middle level. A Voice's account/presence on one platform
- * (its Instagram, its podcast, its website). A Voice has many. `favorite` pins
- * this one channel to Home ("show me their podcast").
+ * (its Instagram, its podcast, its website). A Voice has many. `pinned` pins
+ * this one channel to Home ("show me their podcast") — the same "Pin to Home"
+ * concept as `KnowledgeItem.pinned` and `KnowledgeLink.pinned` (ACTS-177).
  */
 export interface Channel {
   id: ID;
@@ -675,19 +676,36 @@ export interface Channel {
   url: string;
   /** Optional human note ("main channel", "Spanish account"). */
   label?: string | undefined;
-  /** Pinned to Home. Favoriting is per-channel, not per-Voice. */
+  /** Pinned to Home. Pinning is per-channel, not per-Voice. */
+  pinned?: boolean | undefined;
+  /**
+   * Favorite — marks this for sorting/filtering to the top of a library list
+   * (distinct from `pinned`, which puts it on Home). Reserved for the
+   * favorite/sort-to-top feature (follow-up). NOTE: before ACTS-177 `favorite`
+   * *was* the Home pin, so `loadDatabase` migrates any legacy `favorite` into
+   * `pinned` and clears it here — this field starts fresh for the new meaning.
+   */
   favorite?: boolean | undefined;
 }
 
 /**
  * Where a specific piece of Content lives — an Amazon / Audible page, a YouTube
  * video, an episode link. Distinct from a Channel (a Voice's ongoing account):
- * this points at the one work. `favorite` pins the link to Home.
+ * this points at the one work. `pinned` pins the link to Home — the same
+ * "Pin to Home" concept as `Channel.pinned` and `KnowledgeItem.pinned` (ACTS-177).
  */
 export interface KnowledgeLink {
   platform: LinkPlatform;
   url: string;
   label?: string | undefined;
+  /** Pinned to Home. */
+  pinned?: boolean | undefined;
+  /**
+   * Favorite — for sorting/filtering to the top of a library list (distinct
+   * from `pinned` = Home). Reserved for the favorite/sort-to-top feature
+   * (follow-up). Legacy `favorite` (pre-ACTS-177, which meant Home) is migrated
+   * into `pinned` at load and cleared here, so this starts fresh.
+   */
   favorite?: boolean | undefined;
 }
 
@@ -719,7 +737,7 @@ export interface Voice {
  * an Amazon page, a video), or be linkless.
  * - `status` (not_started → in_progress → finished) tracks progress;
  * - `start_date`/`target_date` apply to programs (absent = open-ended plan);
- * - `links[].favorite` pins a specific link to Home.
+ * - `links[].pinned` pins a specific link to Home.
  */
 export interface KnowledgeItem {
   id: ID;
@@ -751,9 +769,9 @@ export interface KnowledgeItem {
   links?: KnowledgeLink[] | undefined;
   /**
    * Item-level "Pin to Home" (ACTS-137). Pins the whole item to the Home Vessels
-   * card regardless of whether any of its links are favorited — so a book with no
-   * link (or no starred link) can still reach Home. Independent of `links[].favorite`:
-   * pinning the item and starring a link are separate toggles; Home merges both,
+   * card regardless of whether any of its links are pinned — so a book with no
+   * link (or no pinned link) can still reach Home. Independent of `links[].pinned`:
+   * pinning the item and pinning a link are separate toggles; Home merges both,
    * de-duped. A URL-less pin's Home row opens the item detail page.
    */
   pinned?: boolean | undefined;

@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { ExternalLink, Plus, Star, Trash2 } from "lucide-react";
+import { ExternalLink, Pin, Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ExternalLink as ExtLink } from "@/components/ui/external-link";
@@ -33,11 +33,11 @@ export function VoiceEditor({ voiceId }: { voiceId: string }) {
   const {
     db,
     upsertVoice,
-    toggleChannelFavorite,
+    toggleChannelPin,
     addKnowledgeItem,
     setKnowledgeStatus,
     deleteKnowledgeItem,
-    toggleContentLinkFavorite,
+    toggleContentLinkPin,
   } = useApp();
 
   const [chanPlatform, setChanPlatform] = useState<LinkPlatform>("instagram");
@@ -167,12 +167,12 @@ export function VoiceEditor({ voiceId }: { voiceId: string }) {
                       className="h-9"
                     />
                     <button
-                      onClick={() => toggleChannelFavorite(voice.id, c.id)}
-                      aria-label={c.favorite ? "Unpin from Home" : "Pin to Home"}
+                      onClick={() => toggleChannelPin(voice.id, c.id)}
+                      aria-label={c.pinned ? "Unpin from Home" : "Pin to Home"}
                       className="shrink-0 p-1"
                     >
-                      <Star
-                        className={`size-4 ${c.favorite ? "fill-primary text-primary" : "text-muted-foreground"}`}
+                      <Pin
+                        className={`size-4 ${c.pinned ? "fill-primary text-primary" : "text-muted-foreground"}`}
                         aria-hidden
                       />
                     </button>
@@ -281,12 +281,12 @@ export function VoiceEditor({ voiceId }: { voiceId: string }) {
                                 <ExternalLink className="size-3" aria-hidden />
                               </ExtLink>
                               <button
-                                onClick={() => toggleContentLinkFavorite(item.id, i)}
-                                aria-label={l.favorite ? "Unpin from Home" : "Pin to Home"}
+                                onClick={() => toggleContentLinkPin(item.id, i)}
+                                aria-label={l.pinned ? "Unpin from Home" : "Pin to Home"}
                                 className="rounded-r-full bg-secondary py-0.5 pl-1 pr-2"
                               >
-                                <Star
-                                  className={`size-3 ${l.favorite ? "fill-primary text-primary" : "text-muted-foreground"}`}
+                                <Pin
+                                  className={`size-3 ${l.pinned ? "fill-primary text-primary" : "text-muted-foreground"}`}
                                   aria-hidden
                                 />
                               </button>

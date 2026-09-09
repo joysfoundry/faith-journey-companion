@@ -246,7 +246,9 @@ const genId = (prefix: string): string => `${prefix}-${Math.random().toString(36
 const strOf = (raw: Record<string, unknown>, k: string): string | undefined =>
   typeof raw[k] === "string" && raw[k] ? (raw[k] as string) : undefined;
 
-/** Normalize a raw links array into Content links (platform/url/label/favorite). */
+/** Normalize a raw links array into Content links (platform/url/label/pinned).
+ *  ACTS-177: `favorite` → `pinned`. Prefer the new field, fall back to legacy
+ *  `favorite` so pins set before the rename survive (no reset). */
 function normalizeLinks(raw: unknown): KnowledgeLink[] {
   if (!Array.isArray(raw)) return [];
   return raw
@@ -258,7 +260,7 @@ function normalizeLinks(raw: unknown): KnowledgeLink[] {
       platform: coercePlatform(l["platform"]),
       url: l["url"] as string,
       label: typeof l["label"] === "string" && l["label"] ? (l["label"] as string) : undefined,
-      favorite: Boolean(l["favorite"]) || undefined,
+      pinned: Boolean(l["pinned"] ?? l["favorite"]) || undefined,
     }));
 }
 
@@ -281,7 +283,7 @@ function normalizeVoice(raw: Record<string, unknown>): Voice {
           platform: coercePlatform(rec["platform"]),
           url,
           label: strOf(rec, "label"),
-          favorite: Boolean(rec["favorite"]) || undefined,
+          pinned: Boolean(rec["pinned"] ?? rec["favorite"]) || undefined,
         };
       })
     : [];
@@ -304,15 +306,15 @@ function normalizeVoice(raw: Record<string, unknown>): Voice {
 /** Convert a legacy `person`/`resource` knowledge_item into a Voice. */
 function voiceFromLegacyItem(raw: Record<string, unknown>): Voice {
   const isOrg = Boolean(raw["is_organization"]) || strOf(raw, "category") === "resource";
-  const favorite = Boolean(raw["favorite"]) || undefined;
+  const pinned = Boolean(raw["pinned"] ?? raw["favorite"]) || undefined;
   // person: accounts came in `links`; resource: a single `url`.
   const channels: Channel[] = normalizeChannels(raw["links"]);
   const url = strOf(raw, "url");
   if (url) {
-    channels.push({ id: genId("chan"), platform: detectPlatformSimple(url), url, favorite });
-  } else if (favorite && channels[0]) {
-    // A favorited person had no scalar url — keep it on Home via its first channel.
-    channels[0] = { ...channels[0], favorite: true };
+    channels.push({ id: genId("chan"), platform: detectPlatformSimple(url), url, pinned });
+  } else if (pinned && channels[0]) {
+    // A pinned person had no scalar url — keep it on Home via its first channel.
+    channels[0] = { ...channels[0], pinned: true };
   }
   return {
     id: strOf(raw, "id") ?? genId("voice"),
@@ -341,14 +343,14 @@ function normalizeContent(raw: Record<string, unknown>): KnowledgeItem {
   const status = ["not_started", "in_progress", "finished"].includes(strOf(raw, "status") ?? "")
     ? (raw["status"] as KnowledgeStatus)
     : "not_started";
-  // Fold a legacy scalar `url` into links (carrying its favorite state).
+  // Fold a legacy scalar `url` into links (carrying its pinned state).
   const links = normalizeLinks(raw["links"]);
   const url = strOf(raw, "url");
   if (url && !links.some((l) => l.url === url)) {
     links.unshift({
       platform: detectPlatformSimple(url),
       url,
-      favorite: Boolean(raw["favorite"]) || undefined,
+      pinned: Boolean(raw["pinned"] ?? raw["favorite"]) || undefined,
     });
   }
   const tags = Array.isArray(raw["tags"])
@@ -370,6 +372,9 @@ function normalizeContent(raw: Record<string, unknown>): KnowledgeItem {
     target_date: strOf(raw, "target_date"),
     reads_scripture: Boolean(raw["reads_scripture"]) || undefined,
     links: links.length ? links : undefined,
+    // Item-level "Pin to Home" (ACTS-137/177). Was dropped on load before — now
+    // preserved so an item pinned with no/unpinned link survives a reload.
+    pinned: Boolean(raw["pinned"] ?? raw["favorite"]) || undefined,
     tags: tags && tags.length ? tags : undefined,
     created_at: strOf(raw, "created_at") ?? new Date().toISOString(),
   };
@@ -478,10 +483,10 @@ export interface AppStore {
   setKnowledgeStatus: (id: ID, status: KnowledgeStatus) => void;
   deleteKnowledgeItem: (id: ID) => void;
   toggleItemPinned: (id: ID) => void;
-  toggleContentLinkFavorite: (itemId: ID, linkIndex: number) => void;
+  toggleContentLinkPin: (itemId: ID, linkIndex: number) => void;
   upsertVoice: (voice: Voice) => void;
   deleteVoice: (id: ID) => void;
-  toggleChannelFavorite: (voiceId: ID, channelId: ID) => void;
+  toggleChannelPin: (voiceId: ID, channelId: ID) => void;
   addMassExperience: (mass: MassExperience) => void;
   /** Pin the devotion the Home "daily" prayer card starts; undefined = the default Rosary. */
   setDailyTemplate: (templateId: ID | undefined) => void;
@@ -1517,8 +1522,8 @@ export const mutations = {
       ),
     };
   },
-  /** Toggle a Home pin on one Content link (by item + link index). */
-  toggleContentLinkFavorite(db: Database, itemId: ID, linkIndex: number): Database {
+  /** Toggle a Home pin on one Content link (by item + link index). ACTS-177. */
+  toggleContentLinkPin(db: Database, itemId: ID, linkIndex: number): Database {
     return {
       ...db,
       knowledge_items: db.knowledge_items.map((i) =>
@@ -1526,7 +1531,7 @@ export const mutations = {
           ? {
               ...i,
               links: (i.links ?? []).map((l, idx) =>
-                idx === linkIndex ? { ...l, favorite: !l.favorite } : l,
+                idx === linkIndex ? { ...l, pinned: !l.pinned } : l,
               ),
             }
           : i,
@@ -1552,8 +1557,8 @@ export const mutations = {
       ),
     };
   },
-  /** Toggle a Home pin on one Voice channel (by voice + channel id). */
-  toggleChannelFavorite(db: Database, voiceId: ID, channelId: ID): Database {
+  /** Toggle a Home pin on one Voice channel (by voice + channel id). ACTS-177. */
+  toggleChannelPin(db: Database, voiceId: ID, channelId: ID): Database {
     return {
       ...db,
       voices: db.voices.map((v) =>
@@ -1561,7 +1566,7 @@ export const mutations = {
           ? {
               ...v,
               channels: (v.channels ?? []).map((c) =>
-                c.id === channelId ? { ...c, favorite: !c.favorite } : c,
+                c.id === channelId ? { ...c, pinned: !c.pinned } : c,
               ),
             }
           : v,

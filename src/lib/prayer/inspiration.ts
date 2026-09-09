@@ -66,7 +66,7 @@ export function resolveInspiration(link: ReflectionLink, db: Database): Resolved
       if (!item) return { link, label: fallbackLabel(link) };
       const voice = item.voice_id ? db.voices.find((v) => v.id === item.voice_id)?.name : undefined;
       const detail = voice ?? item.creator ?? item.source;
-      const href = (item.links ?? []).find((l) => l.favorite)?.url ?? item.links?.[0]?.url;
+      const href = (item.links ?? []).find((l) => l.pinned)?.url ?? item.links?.[0]?.url;
       return {
         link,
         label: item.title || fallbackLabel(link),

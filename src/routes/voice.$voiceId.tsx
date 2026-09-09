@@ -1,6 +1,6 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { Check, ExternalLink, MoreVertical, Pencil, Plus, Star, Trash2 } from "lucide-react";
+import { Check, ExternalLink, MoreVertical, Pencil, Pin, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/layout/PageShell";
@@ -52,11 +52,11 @@ function VoiceHubPage() {
     db,
     ready,
     deleteVoice,
-    toggleChannelFavorite,
+    toggleChannelPin,
     addKnowledgeItem,
     setKnowledgeStatus,
     deleteKnowledgeItem,
-    toggleContentLinkFavorite,
+    toggleContentLinkPin,
   } = useApp();
   const navigate = useNavigate();
 
@@ -179,12 +179,12 @@ function VoiceHubPage() {
                       <ExternalLink className="size-4 shrink-0 text-muted-foreground" aria-hidden />
                     </ExtLink>
                     <button
-                      onClick={() => toggleChannelFavorite(voice!.id, c.id)}
-                      aria-label={c.favorite ? "Unpin from Home" : "Pin to Home"}
+                      onClick={() => toggleChannelPin(voice!.id, c.id)}
+                      aria-label={c.pinned ? "Unpin from Home" : "Pin to Home"}
                       className="shrink-0 p-1"
                     >
-                      <Star
-                        className={`size-4 ${c.favorite ? "fill-primary text-primary" : "text-muted-foreground"}`}
+                      <Pin
+                        className={`size-4 ${c.pinned ? "fill-primary text-primary" : "text-muted-foreground"}`}
                         aria-hidden
                       />
                     </button>
@@ -229,12 +229,12 @@ function VoiceHubPage() {
                                   <ExternalLink className="size-3" aria-hidden />
                                 </ExtLink>
                                 <button
-                                  onClick={() => toggleContentLinkFavorite(item.id, i)}
-                                  aria-label={l.favorite ? "Unpin from Home" : "Pin to Home"}
+                                  onClick={() => toggleContentLinkPin(item.id, i)}
+                                  aria-label={l.pinned ? "Unpin from Home" : "Pin to Home"}
                                   className="rounded-r-full bg-secondary py-0.5 pl-1 pr-2"
                                 >
-                                  <Star
-                                    className={`size-3 ${l.favorite ? "fill-primary text-primary" : "text-muted-foreground"}`}
+                                  <Pin
+                                    className={`size-3 ${l.pinned ? "fill-primary text-primary" : "text-muted-foreground"}`}
                                     aria-hidden
                                   />
                                 </button>
