@@ -324,7 +324,11 @@ export function mysteryVersions(
     }
     const source = c.source_id ? db.sources.find((s) => s.id === c.source_id) : undefined;
     acc.set(key, {
-      name: source?.name ?? c.label ?? "Reflection",
+      // A version's name is its own label (consistent across all its bodies),
+      // not the source of whichever mystery happens to be encountered first —
+      // a body can borrow Scripture from a differently-attributed source (e.g.
+      // Mater Dei reusing USCCB Scripture as a placeholder). Match allMysteryBodies.
+      name: c.label ?? source?.name ?? "Reflection",
       sourceId: c.source_id,
       ids: new Set([c.mystery_id]),
     });
