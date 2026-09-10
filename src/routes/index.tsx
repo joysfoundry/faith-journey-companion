@@ -658,6 +658,11 @@ function Index() {
                   >
                     <Plus className="size-4" aria-hidden /> New session
                   </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => navigate({ to: "/import", search: { mode: "single" } })}
+                  >
+                    <Plus className="size-4" aria-hidden /> New prayer
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
