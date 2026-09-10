@@ -2,7 +2,7 @@
 id: ACTS-190
 title: Home Prayer & Devotion ⋯ menu — add "New prayer" item
 spine:
-status: To Do
+status: In Progress
 origin: human-directed
 approved_by: JC
 depends_on: []
@@ -33,11 +33,11 @@ from the `/prayers` ⋯ menu: `navigate({ to: "/import", search: { mode: "single
 (`src/routes/prayers.tsx:582`). No new form to build.
 
 ## Acceptance criteria
-- [ ] The Prayer & Devotion ⋯ menu shows a **"New prayer"** item (`Plus` icon), alongside the
+- [x] The Prayer & Devotion ⋯ menu shows a **"New prayer"** item (`Plus` icon), alongside the
       existing "New session".
-- [ ] Choosing it navigates to **`/import?mode=single`** (the Devotion Builder, single-prayer
+- [x] Choosing it navigates to **`/import?mode=single`** (the Devotion Builder, single-prayer
       mode) — same destination as the `/prayers` page's "New prayer".
-- [ ] "New session" is unchanged; labels read clearly (distinguish *session* vs *prayer*).
+- [x] "New session" is unchanged; labels read clearly (distinguish *session* vs *prayer*).
 
 ## Tests
 No runner yet (ACTS-92). **Integration:** the ⋯ menu renders "New prayer"; clicking it routes
