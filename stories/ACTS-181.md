@@ -31,30 +31,58 @@ a **book/chapter/verse citation**. JC wants a chooser at add-time:
 
 "These are the ones we want to keep" — quotes are the keepsakes of the library.
 
+## Scope (decided 2026-09-09 w/ JC)
+A keepable quote is a **typed passage**, and quotes ↔ reflections point at each other.
+
+**A. Typed passage kinds** (`quote_kind`), each surfacing its own fields:
+- **open** — text + *from* (who/where you heard it); the current person/free-text quote.
+- **scripture** — text + structured ref (book + chapter/verse); byline "— Lk 1:26–38"
+  **and deep-links** to the reader's Bible via `buildPassageUrl` (like the Word card).
+- **book** — text + title + author (later: OCR a photo → text).
+- **article / media** — text + media name **or** website link.
+- (room for more later.)
+
+**B. Reflection ↔ quote linkage** (reuses `ReflectionLink target_type:"learning"`):
+- **Save → keep:** turn a reflection's inspiring `passage`/`link` (incl. the Scripture
+  from a Lectio Divina session) into a saved `quote` KnowledgeItem in the library.
+- **Keep → reflect:** "Reflect from this quote" opens a new reflection with that quote as
+  the inspiration panel on the writing page.
+
 ## Acceptance criteria
-- [ ] Adding/editing a quote offers a **Person vs Scripture** chooser.
-- [ ] **Person quote**: body text + who (Voice or free-text creator) — current behavior,
-      unchanged.
-- [ ] **Scripture quote**: passage text + a **citation** chosen with a book picker +
-      chapter/verse fields (not just free text — confirm exact control with JC).
-- [ ] Quotes display the right attribution byline: "— St. Padre Pio" (person) vs
-      "— Lk 1:26–38" (Scripture).
-- [ ] A Scripture quote's citation can deep-link to the reader's Bible app — reuse
-      `buildPassageUrl(settings, ref)` from `src/lib/bible/apps.ts` (confirm w/ JC).
+- [ ] Adding/editing a quote offers a **kind chooser** (open / scripture / book / article).
+- [ ] Each kind shows only its relevant fields; **existing quotes default to `open`**,
+      behavior unchanged.
+- [ ] **Scripture quote**: passage text + a **citation** (book + chapter/verse); byline
+      renders "— Lk 1:26–38".
+- [ ] A Scripture quote **deep-links** to the reader's Bible — reuse
+      `buildPassageUrl(settings, ref)` from `src/lib/bible/apps.ts`.
+- [ ] From a Reflection's inspiring passage, **Save as quote** creates the KnowledgeItem
+      (Lectio Divina Scripture included).
+- [ ] From a saved quote, **Reflect from this quote** opens the writing page with that
+      quote in the inspiration panel.
 - [ ] Composes with the library (search, By Vessel / By Channel, category chips).
 
-## Open questions for JC
-- Citation control: a **book dropdown + chapter/verse inputs**, or a single free-text
-  field we parse ("Lk 1:26-38")? Which books list — the app already has one for the
-  liturgical/Bible features?
-- Should a Scripture quote **deep-link** to the reader's Bible (like the Word card), or
-  stay plain text?
-- Is "quotes we keep" just the existing quote category, or a **separate keep/collection**
-  flag distinct from other saved content?
-- **Data-shape** (flag before building): new fields on `KnowledgeItem` — e.g.
-  `quote_kind: "person" | "scripture"` + a scripture ref (book/chapter/verse or a
-  `scripture_ref` string). Migrate with **no `STORAGE_KEY` bump / no reset** (ACTS-177
-  pattern) — existing quotes default to `person`.
+## Attribution model (decided 2026-09-09, mid-build)
+- On the **Vessels** add/edit surfaces the *who* is always the **Vessel** (the Name
+  field / picker), never a free-text "From" — a quote added by hand attaches to the
+  Vessel only when it's been named (no ghost unnamed Vessel; unnamed → standalone).
+- What a quote adds beyond the Vessel is the **work**, not the person: a **book title**
+  or a **publication/show** name → `source` (shown only for book/article, as helper
+  placeholder). Scripture uses its **citation**; "heard/read" needs neither.
+- The free-text **"From"** field belongs on the **future "Save from Reflections"**
+  flow (step 4), which has **no Vessel picker** — carry it there, not here.
+
+## Decisions (resolves the earlier open questions)
+- **Kind control** → typed chooser with per-kind fields (above), not a single parsed
+  free-text field. Scripture ref stored as a parseable string (`"Lk 1:26-38"`), same
+  shape as the mystery-body `scripture_ref`.
+- **Deep-link** → YES, like the Word card (`buildPassageUrl`).
+- **Keep model** → NO separate flag; every saved quote *is* a keeper, lives in the
+  existing `quote` category, findable via search / By Vessel / By Channel.
+- **Data-shape** (🚩 flagged, approved): add to `KnowledgeItem` —
+  `quote_kind: "open" | "scripture" | "book" | "article"` (default `"open"`) and
+  `scripture_ref?: string`. Reuse existing `body` / `creator` / `voice_id` / `source` /
+  `links`. Migrate with **no `STORAGE_KEY` bump / no reset** (ACTS-177 pattern).
 
 ## Tests
 - **Unit**: quote-kind predicate + citation format/parse helpers (person vs scripture
