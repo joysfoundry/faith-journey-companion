@@ -56,11 +56,46 @@ A keepable quote is a **typed passage**, and quotes ↔ reflections point at eac
       renders "— Lk 1:26–38".
 - [ ] A Scripture quote **deep-links** to the reader's Bible — reuse
       `buildPassageUrl(settings, ref)` from `src/lib/bible/apps.ts`.
-- [ ] From a Reflection's inspiring passage, **Save as quote** creates the KnowledgeItem
-      (Lectio Divina Scripture included).
-- [ ] From a saved quote, **Reflect from this quote** opens the writing page with that
-      quote in the inspiration panel.
+- [x] From a Reflection's inspiring passage, **Save as quote** creates the KnowledgeItem.
+      (Pasted `passage` inspirations → an `open` library quote, via `InspirationPanel`.
+      **Follow-on:** saving the Scripture *read inside a Lectio session* lives on the
+      session surface, not the reflection panel — filed as a note below.)
+- [x] From a saved quote, **Reflect from this quote** opens the writing page with that
+      quote in the inspiration panel. (Reflect icon → `?link=<id>`; fixed the latent
+      `Knowledge`→`learning` mapping + empty-quote-label bug so the body actually shows.)
 - [ ] Composes with the library (search, By Vessel / By Channel, category chips).
+
+## Build log — steps 4–5 (2026-09-09)
+- **Save → keep:** `InspirationPanel` passage cards now offer **"Save as quote"** →
+  mints an `open` quote (`body` = excerpt, `source` = the passage's Source label). Only
+  `passage` cards (which carry their own text); `learning`/entity cards don't.
+- **Reflect → keep (bug fix):** the reflect-from-quote path was silently broken —
+  `linkables` grouped the library as `"Knowledge"` but `GROUP_TARGET` only knew `"Learn"`,
+  so a reflected-from quote resolved as a generic `intention` (no body). Mapped
+  `Knowledge`→`learning`, gave quotes a `contentTitle` label, and made a scripture quote's
+  `scripture_ref` its inspiration detail.
+- **Lectio Scripture follow-on:** "save the passage I read in a Lectio session as a quote"
+  belongs on `session.$sessionId` (the scripture lives on the session, not a reflection
+  link) — not built here.
+- **"Add a passage" → "Add a quote"** (JC, same session): the composer's book-icon
+  passage popover is replaced by a `MessageSquareQuote` **"Add a quote"** popover that
+  **mirrors the library quote-add** (kind chooser + fields + the free-text **From**) and
+  **saves a real library quote**, linking the reflection via a `learning` link — no
+  throwaway `passage`. Closes on save. (The `passage` link type + the InspirationPanel
+  "Save as quote" button stay for any legacy passage links, but are no longer the path.)
+- **"Open dialogue" mode removed:** the toggle only tagged the entry with a badge and its
+  name clashed with the separate **Open Prayer** devotion (ACTS-108) — JC couldn't recall
+  what it did, so it's dropped from the composer (new reflections are always `"written"`).
+  The `ReflectionMode` type + the badge render stay for any legacy entries.
+- **Composer layout reorder (JC):** now **title → text box → add-icons → "What inspired
+  this" cards → themes → save/discard**. The add-icons group with the cards they produce
+  (right under the text box); Themes moved down to just above Save.
+- **"What inspired this" chips removed (JC):** the redundant badge chips are gone — the
+  inspiration **cards** are the single view, each carrying its own **✕ remove**
+  (`InspirationPanel` gained an `onRemove`; the composer maps it to
+  `toggleLink`/`removeManualLink`). Dead `Badge`/`labelFor`/`BookOpen`/`X` pruned.
+- **ThemeEditor order:** applied theme chips moved below the add-input, beside the
+  Suggested row (JC).
 
 ## Attribution model (decided 2026-09-09, mid-build)
 - On the **Vessels** add/edit surfaces the *who* is always the **Vessel** (the Name
