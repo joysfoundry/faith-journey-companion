@@ -2,14 +2,14 @@
 id: ACTS-189
 title: Vessels — Books filter groups quotes under each book
 spine:
-status: In Progress
+status: Done
 origin: human-directed
 approved_by: JC
 depends_on: [ACTS-183]
 relates_to: [ACTS-188, ACTS-181]
 started_at: 2026-09-10T14:18:28-0700
-updated:    2026-09-10T14:18:28-0700
-latest_handoff: null
+updated:    2026-09-10T14:21:54-0700
+latest_handoff: stories/ACTS-189/session-01.md
 sessions: 1
 ---
 
