@@ -51,7 +51,7 @@ import {
   type KnowledgeGroup,
 } from "@/lib/prayer/knowledge";
 import { useApp } from "@/lib/prayer/store";
-import type { Channel, KnowledgeItem, Voice } from "@/lib/prayer/types";
+import type { Channel, KnowledgeItem, LinkPlatform, Voice } from "@/lib/prayer/types";
 
 export const Route = createFileRoute("/formation")({
   validateSearch: (search: Record<string, unknown>): { add?: boolean } =>
@@ -68,12 +68,13 @@ export const Route = createFileRoute("/formation")({
   component: KnowledgePage,
 });
 
-type FilterKey = "all" | KnowledgeGroup | "voice";
+type FilterKey = "all" | KnowledgeGroup | "voice" | "channel";
 
 const FILTERS: { key: FilterKey; label: string }[] = [
-  { key: "all", label: "All" },
-  ...GROUP_ORDER.map((g) => ({ key: g, label: GROUP_LABELS[g] })),
   { key: "voice", label: `By ${VOICE_LABEL_SINGULAR}` },
+  { key: "channel", label: "By Channel" },
+  ...GROUP_ORDER.map((g) => ({ key: g, label: GROUP_LABELS[g] })),
+  { key: "all", label: "All" },
 ];
 
 /** The virtual bucket id for content with no Voice. */
@@ -103,6 +104,31 @@ interface VoiceGroup {
   items: KnowledgeItem[];
 }
 
+/** The virtual bucket id for content on no resolvable channel. */
+const NO_CHANNEL_ID = "no-channel";
+
+/**
+ * The platform a content item lives on, for the By-Channel view: the specific
+ * channel it came from (`channel_id`), else its pinned/first link's platform,
+ * else none (→ the No-channel bucket). Quotes and linkless items have none.
+ */
+function itemPlatform(item: KnowledgeItem, voiceById: Map<string, Voice>): LinkPlatform | undefined {
+  if (item.channel_id && item.voice_id) {
+    const channel = voiceById.get(item.voice_id)?.channels?.find((c) => c.id === item.channel_id);
+    if (channel) return channel.platform;
+  }
+  const links = item.links ?? [];
+  return (links.find((l) => l.pinned) ?? links[0])?.platform;
+}
+
+/** A platform (or the virtual No-channel bucket) with its content, for the By-Channel view. */
+interface ChannelGroup {
+  id: string;
+  name: string;
+  platform?: LinkPlatform; // absent = the No-channel bucket
+  items: KnowledgeItem[];
+}
+
 function KnowledgePage() {
   const {
     db,
@@ -129,6 +155,7 @@ function KnowledgePage() {
   const voices = db.voices;
   const q = query.trim().toLowerCase();
   const voiceNameById = useMemo(() => new Map(voices.map((v) => [v.id, v.name])), [voices]);
+  const voiceById = useMemo(() => new Map(voices.map((v) => [v.id, v])), [voices]);
 
   // Prune empty draft Voices once on landing — abandoned drafts (left via nav
   // rather than the Done button) and legacy "Untitled" ghosts. Skipped when
@@ -223,6 +250,32 @@ function KnowledgePage() {
     if (orphans.length) groups.push({ id: GENERAL_ID, name: "General", items: orphans });
     return groups;
   }, [voices, items, draftVoiceId, q]);
+
+  // Grouped view (By Channel): content bucketed by the platform it lives on,
+  // sections alphabetical by platform label (all Instagrams together, all
+  // YouTubes together), with a trailing "No channel" bucket for content on no
+  // resolvable platform (quotes, linkless items). Search filters within.
+  const channelGroups = useMemo<ChannelGroup[]>(() => {
+    const byPlatform = new Map<LinkPlatform, KnowledgeItem[]>();
+    const noChannel: KnowledgeItem[] = [];
+    for (const i of items) {
+      if (!contentMatches(i, voiceNameById.get(i.voice_id ?? ""), q)) continue;
+      const p = itemPlatform(i, voiceById);
+      if (p) (byPlatform.get(p) ?? byPlatform.set(p, []).get(p)!).push(i);
+      else noChannel.push(i);
+    }
+    const groups: ChannelGroup[] = [...byPlatform.entries()]
+      .map(([platform, its]) => ({
+        id: platform,
+        name: LINK_PLATFORM_LABELS[platform],
+        platform,
+        items: its.sort(byStatusThenTitle),
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+    if (noChannel.length)
+      groups.push({ id: NO_CHANNEL_ID, name: "No channel", items: noChannel.sort(byStatusThenTitle) });
+    return groups;
+  }, [items, q, voiceNameById, voiceById]);
 
   const contentHandlers = {
     voices,
@@ -394,6 +447,80 @@ function KnowledgePage() {
                             No saved content yet.
                           </p>
                         )
+                      ) : null}
+                    </section>
+                  );
+                })}
+              </div>
+            )
+          ) : filter === "channel" ? (
+            /* GROUPED BY CHANNEL (platform) ----------------------------- */
+            channelGroups.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                {q ? "Nothing matches that search." : "Nothing here yet — add content from the Add tab."}
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {(() => {
+                  const anyCollapsed = channelGroups.some((g) => collapsed.has(g.id));
+                  return (
+                    <div className="flex justify-end">
+                      <button
+                        onClick={() =>
+                          setCollapsed(
+                            anyCollapsed ? new Set() : new Set(channelGroups.map((g) => g.id)),
+                          )
+                        }
+                        className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+                      >
+                        {anyCollapsed ? (
+                          <ChevronsUpDown className="size-3.5" aria-hidden />
+                        ) : (
+                          <ChevronsDownUp className="size-3.5" aria-hidden />
+                        )}
+                        {anyCollapsed ? "Expand all" : "Collapse all"}
+                      </button>
+                    </div>
+                  );
+                })()}
+                {channelGroups.map((g) => {
+                  const isCollapsed = collapsed.has(g.id);
+                  const Icon = g.platform ? PLATFORM_ICON[g.platform] : undefined;
+                  return (
+                    <section
+                      key={g.id}
+                      className="overflow-hidden rounded-lg border border-border/60"
+                    >
+                      <div className="flex items-start gap-2 bg-muted/30 px-3 py-2.5">
+                        <button
+                          onClick={() => toggleCollapsed(g.id)}
+                          aria-label={isCollapsed ? "Expand" : "Collapse"}
+                          aria-expanded={!isCollapsed}
+                          className="mt-0.5 shrink-0 text-muted-foreground hover:text-foreground"
+                        >
+                          {isCollapsed ? (
+                            <ChevronRight className="size-4" aria-hidden />
+                          ) : (
+                            <ChevronDown className="size-4" aria-hidden />
+                          )}
+                        </button>
+                        <div className="min-w-0 flex-1">
+                          <span className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+                            {Icon ? <Icon className="size-3.5 shrink-0" aria-hidden /> : null}
+                            {g.name}
+                          </span>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {contentCountLabel(g.items.length)}
+                          </p>
+                        </div>
+                      </div>
+
+                      {!isCollapsed ? (
+                        <ul className="divide-y divide-border/60 border-t border-border/60">
+                          {g.items.map((item) => (
+                            <ContentRow key={item.id} item={item} {...contentHandlers} />
+                          ))}
+                        </ul>
                       ) : null}
                     </section>
                   );
