@@ -54,9 +54,9 @@ import {
   voiceFromLink,
 } from "@/lib/prayer/knowledge";
 import { QuoteSourcePicker } from "@/components/knowledge/QuoteSourcePicker";
-import { buildPassageUrl } from "@/lib/bible/apps";
+import { buildPassageUrl, BIBLE_TRANSLATIONS, DEFAULT_TRANSLATION } from "@/lib/bible/apps";
 import { newId } from "@/lib/prayer/compiler";
-import { useApp } from "@/lib/prayer/store";
+import { BIBLE_BOOK_ID, bibleVersionBookId, useApp } from "@/lib/prayer/store";
 import type { KnowledgeCategory, KnowledgeItem, LinkPlatform } from "@/lib/prayer/types";
 
 export const Route = createFileRoute("/knowledge/$knowledgeId")({
@@ -275,16 +275,45 @@ function KnowledgeRecordPage() {
                 />
                 {/* Scripture citation → byline + Bible deep-link. */}
                 {quoteKind(item) === "scripture" ? (
-                  <div className="space-y-1">
-                    <label className="text-xs uppercase tracking-wide text-muted-foreground">
-                      Citation
-                    </label>
-                    <Input
-                      value={item.scripture_ref ?? ""}
-                      onChange={(e) => save({ scripture_ref: e.target.value || undefined })}
-                      placeholder="Book chapter:verse — e.g. Lk 1:26-38"
-                      className="h-10"
-                    />
+                  <div className="space-y-2">
+                    <div className="space-y-1">
+                      <label className="text-xs uppercase tracking-wide text-muted-foreground">
+                        Citation
+                      </label>
+                      <Input
+                        value={item.scripture_ref ?? ""}
+                        onChange={(e) => save({ scripture_ref: e.target.value || undefined })}
+                        placeholder="Book chapter:verse — e.g. Lk 1:26-38"
+                        className="h-10"
+                      />
+                    </div>
+                    {/* Version — which "Bible — <translation>" book this verse is
+                        from (the linked book IS the version). Defaults to the
+                        reader's Settings translation; "Unknown" = the plain Bible. */}
+                    <div className="space-y-1">
+                      <label className="text-xs uppercase tracking-wide text-muted-foreground">
+                        Version
+                      </label>
+                      <select
+                        value={
+                          item.source_item_id?.startsWith(BIBLE_BOOK_ID)
+                            ? item.source_item_id
+                            : BIBLE_TRANSLATIONS.some((t) => t.id === db.settings.bible_translation)
+                              ? bibleVersionBookId(db.settings.bible_translation!)
+                              : bibleVersionBookId(DEFAULT_TRANSLATION)
+                        }
+                        onChange={(e) => save({ source_item_id: e.target.value, source: "Bible" })}
+                        aria-label="Bible version"
+                        className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                      >
+                        {BIBLE_TRANSLATIONS.map((t) => (
+                          <option key={t.id} value={bibleVersionBookId(t.id)}>
+                            {t.label}
+                          </option>
+                        ))}
+                        <option value={BIBLE_BOOK_ID}>Unknown</option>
+                      </select>
+                    </div>
                   </div>
                 ) : null}
               </div>
@@ -463,8 +492,11 @@ function KnowledgeRecordPage() {
             />
 
             {/* Tie this quote to the content it came from — a book, podcast,
-                video, article, or post (ACTS-183). Orthogonal to the kind. */}
-            {isQuote(item) ? <QuoteSourcePicker item={item} /> : null}
+                video, article, or post (ACTS-183). Scripture quotes use the Version
+                picker above (their source is the Bible), so skip it for those. */}
+            {isQuote(item) && quoteKind(item) !== "scripture" ? (
+              <QuoteSourcePicker item={item} />
+            ) : null}
 
             <Input
               value={tagsDraft ?? (item.tags ?? []).join(", ")}
@@ -529,16 +561,29 @@ function KnowledgeRecordPage() {
 
             {/* Scripture citation → byline + "open in your Bible" deep-link (ACTS-181). */}
             {isQuote(item) && quoteKind(item) === "scripture" && item.scripture_ref?.trim() ? (
-              <p className="flex flex-wrap items-baseline gap-2 text-sm text-muted-foreground">
-                <span>— {item.scripture_ref.trim()}</span>
-                <ExtLink
-                  href={buildPassageUrl(db.settings, item.scripture_ref.trim())}
-                  className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                >
-                  Open in your Bible
-                  <ExternalLink className="size-3" aria-hidden />
-                </ExtLink>
-              </p>
+              (() => {
+                // The version is the linked "Bible — <translation>" book; the plain
+                // "Bible" (unknown) shows no version tag.
+                const ver =
+                  sourceItem && sourceItem.id !== BIBLE_BOOK_ID
+                    ? sourceItem.title.replace(/^Bible\s*[—-]\s*/, "")
+                    : undefined;
+                return (
+                  <p className="flex flex-wrap items-baseline gap-2 text-sm text-muted-foreground">
+                    <span>
+                      — {item.scripture_ref.trim()}
+                      {ver ? <span className="text-xs"> · {ver}</span> : null}
+                    </span>
+                    <ExtLink
+                      href={buildPassageUrl(db.settings, item.scripture_ref.trim())}
+                      className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                    >
+                      Open in your Bible
+                      <ExternalLink className="size-3" aria-hidden />
+                    </ExtLink>
+                  </p>
+                );
+              })()
             ) : null}
 
             {voice ? (

@@ -33,6 +33,7 @@ import type {
   VoiceKind,
 } from "./types";
 import { RECURRENCE_ONCE, type Recurrence } from "./types";
+import { BIBLE_TRANSLATIONS, DEFAULT_TRANSLATION, type BibleTranslation } from "@/lib/bible/apps";
 import { createSeedDatabase, LECTIO_TEMPLATE_ID } from "./seed";
 import { detectRepetitionCount, stripRepetition } from "./importer";
 import {
@@ -193,6 +194,42 @@ export function normalizeVariants(db: Database): Database {
     }
   }
 
+  // ACTS-183: the Bible is a book in the library, modeled one-per-translation
+  // ("Bible — NABRE", …) plus a version-less "Bible" for Unknown. Ensure all exist
+  // (idempotent — no STORAGE_KEY bump, no reset), then link any scripture quote not
+  // yet tied to a source to the reader's Settings translation (default), so each
+  // version's page lists its saved verses ("Quotes from this"). Per-book grouping
+  // (by citation, in the Voices view) is independent and unaffected.
+  const ensureBook = (id: string, title: string, links?: KnowledgeLink[]) => {
+    if (!knowledge_items.some((i) => i.id === id)) {
+      knowledge_items.push({
+        id,
+        title,
+        category: "book",
+        source: "Sacred Scripture",
+        status: "not_started",
+        ...(links ? { links } : {}),
+        created_at: "2020-01-01T00:00:00.000Z",
+      });
+    }
+  };
+  ensureBook(BIBLE_BOOK_ID, "Bible"); // Unknown / unspecified version
+  for (const t of BIBLE_TRANSLATIONS)
+    ensureBook(bibleVersionBookId(t.id), `Bible — ${t.id}`, [bibleVersionLink(t)]);
+
+  const settingsTranslation =
+    (db as { settings?: { bible_translation?: string } }).settings?.bible_translation ??
+    DEFAULT_TRANSLATION;
+  const defaultVersionBook = BIBLE_TRANSLATIONS.some((t) => t.id === settingsTranslation)
+    ? bibleVersionBookId(settingsTranslation)
+    : BIBLE_BOOK_ID;
+  for (let i = 0; i < knowledge_items.length; i++) {
+    const it = knowledge_items[i]!;
+    if (it.category === "quote" && it.quote_kind === "scripture" && !it.source_item_id) {
+      knowledge_items[i] = { ...it, source_item_id: defaultVersionBook, source: "Bible" };
+    }
+  }
+
   return {
     ...db,
     prayers: withDefaults,
@@ -201,6 +238,36 @@ export function normalizeVariants(db: Database): Database {
     voices,
     knowledge_items,
   };
+}
+
+/**
+ * The Bible in the library is modeled as one book *per translation* — "Bible —
+ * NABRE", "Bible — NIV", … — each with its own reader link (ACTS-183/JC: "put the
+ * version of the bible as the bible"). A scripture quote's `source_item_id` names
+ * which, so the linked book **is** the version. `BIBLE_BOOK_ID` is the version-less
+ * "Bible" for **Unknown**.
+ */
+export const BIBLE_BOOK_ID = "know-bible";
+
+/** Stable id for a translation's Bible book, e.g. "NABRE" → "know-bible-nabre". */
+export const bibleVersionBookId = (translationId: string): string =>
+  `know-bible-${translationId.toLowerCase()}`;
+
+const BIBLE_BOOK_ID_SET = new Set<string>([
+  BIBLE_BOOK_ID,
+  ...BIBLE_TRANSLATIONS.map((t) => bibleVersionBookId(t.id)),
+]);
+
+/** Whether an id is one of the seeded Bible books (the plain "Bible" or a version). */
+export const isBibleBookId = (id: string): boolean => BIBLE_BOOK_ID_SET.has(id);
+
+/** A "where to read it" link for a translation — USCCB for NABRE, else Bible Gateway. */
+function bibleVersionLink(t: BibleTranslation): KnowledgeLink {
+  const url =
+    t.id === "NABRE"
+      ? "https://bible.usccb.org/bible"
+      : `https://www.biblegateway.com/passage/?search=Genesis+1&version=${t.gateway}`;
+  return { platform: "website", url, label: t.label };
 }
 
 const LINK_PLATFORMS: LinkPlatform[] = [

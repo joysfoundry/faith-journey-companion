@@ -53,7 +53,7 @@ import {
   type KnowledgeGroup,
 } from "@/lib/prayer/knowledge";
 import { bibleBookName } from "@/lib/bible/apps";
-import { useApp } from "@/lib/prayer/store";
+import { isBibleBookId, useApp } from "@/lib/prayer/store";
 import type { Channel, KnowledgeItem, LinkPlatform, Voice } from "@/lib/prayer/types";
 
 export const Route = createFileRoute("/formation")({
@@ -109,9 +109,6 @@ interface VoiceGroup {
   voice?: Voice; // absent = the General bucket
   items: KnowledgeItem[];
 }
-
-/** The virtual bucket id for content on no resolvable channel. */
-const NO_CHANNEL_ID = "no-channel";
 
 /**
  * The platform a content item lives on, for the By-Channel view: the specific
@@ -237,51 +234,66 @@ function KnowledgePage() {
   // voices first, then the General bucket for unattributed content. Search keeps a
   // Voice whose name matches (with all its content) or that has matching content.
   const voiceGroups = useMemo<VoiceGroup[]>(() => {
+    const isScriptureQuote = (i: KnowledgeItem) => isQuote(i) && quoteKind(i) === "scripture";
+    // A Voice only counts as attribution when it exists and has a name. An
+    // empty-name "Untitled" (or dangling) voice_id is treated as unattributed —
+    // so its content falls to General, or, for a scripture quote, its book bucket.
+    // Content WITH a real Voice always stays under that Voice (a quote never leaves
+    // its Vessel — ACTS-183/JC).
+    const namedVoiceIds = new Set(
+      voices.filter((v) => v.id !== draftVoiceId && (v.name || "").trim()).map((v) => v.id),
+    );
+    const attributedTo = (i: KnowledgeItem) =>
+      i.voice_id && namedVoiceIds.has(i.voice_id) ? i.voice_id : undefined;
+
     const groups: VoiceGroup[] = [];
     for (const v of voices) {
-      if (v.id === draftVoiceId) continue;
-      const all = items.filter((i) => i.voice_id === v.id).sort(byStatusThenTitle);
-      const voiceHit = !q || (v.name || "").toLowerCase().includes(q);
+      // Skip drafts and empty-name Voices (never render an "Untitled" group).
+      if (v.id === draftVoiceId || !(v.name || "").trim()) continue;
+      const all = items.filter((i) => attributedTo(i) === v.id).sort(byStatusThenTitle);
+      const voiceHit = !q || v.name.toLowerCase().includes(q);
       const shown = voiceHit ? all : all.filter((i) => contentMatches(i, v.name, q));
       if (voiceHit || shown.length)
-        groups.push({ id: v.id, name: v.name || "Untitled", voice: v, items: shown });
+        groups.push({ id: v.id, name: v.name, voice: v, items: shown });
     }
     groups.sort((a, b) => {
       const byHas = Number(b.items.length > 0) - Number(a.items.length > 0);
       return byHas !== 0 ? byHas : a.name.localeCompare(b.name);
     });
-    // Unattributed content. Scripture quotes group by their cited book (a book of
-    // the Bible isn't a Voice, so these are virtual buckets like General, not real
-    // Vessels — ACTS-183); everything else falls to General.
-    const orphans = items
-      .filter((i) => !i.voice_id && contentMatches(i, undefined, q))
-      .sort(byStatusThenTitle);
+    // Unattributed content: scripture quotes → virtual per-book buckets (a Bible
+    // book isn't a Voice, so no real Vessel is minted); everything else → General.
+    const unattributed = items.filter((i) => !attributedTo(i) && contentMatches(i, undefined, q));
     const byBook = new Map<string, KnowledgeItem[]>();
-    const general: KnowledgeItem[] = [];
-    for (const i of orphans) {
-      const book =
-        isQuote(i) && quoteKind(i) === "scripture" ? bibleBookName(i.scripture_ref) : undefined;
-      if (book) (byBook.get(book) ?? byBook.set(book, []).get(book)!).push(i);
-      else general.push(i);
+    for (const i of unattributed.filter(isScriptureQuote).sort(byStatusThenTitle)) {
+      const book = bibleBookName(i.scripture_ref) ?? "Scripture";
+      (byBook.get(book) ?? byBook.set(book, []).get(book)!).push(i);
     }
     for (const [book, its] of [...byBook.entries()].sort((a, b) => a[0].localeCompare(b[0])))
       groups.push({ id: `book:${book}`, name: book, items: its });
+    // The Bible books have no author by design (many/anonymous authors), but they're
+    // reference works, not stray unattributed content — keep them out of General.
+    // They still list under the Books filter, and their verses live in the book
+    // buckets (by citation).
+    const general = unattributed
+      .filter((i) => !isScriptureQuote(i) && !isBibleBookId(i.id))
+      .sort(byStatusThenTitle);
     if (general.length) groups.push({ id: GENERAL_ID, name: "General", items: general });
     return groups;
   }, [voices, items, draftVoiceId, q]);
 
   // Grouped view (By Channel): content bucketed by the platform it lives on,
   // sections alphabetical by platform label (all Instagrams together, all
-  // YouTubes together), with a trailing "No channel" bucket for content on no
-  // resolvable platform (quotes, linkless items). Search filters within.
+  // YouTubes together). Content on no resolvable platform is omitted (JC).
+  // Search filters within.
   const channelGroups = useMemo<ChannelGroup[]>(() => {
+    // By-Channel only shows content that actually lives on a channel — items with
+    // none (quotes, linkless saves) are simply omitted, the way the Books filter
+    // shows only books (JC). No "No channel" catch-all bucket.
     const byPlatform = new Map<LinkPlatform, KnowledgeItem[]>();
-    const noChannel: KnowledgeItem[] = [];
     for (const i of items) {
       if (!contentMatches(i, voiceNameById.get(i.voice_id ?? ""), q)) continue;
       const p = itemPlatform(i, voiceById);
       if (p) (byPlatform.get(p) ?? byPlatform.set(p, []).get(p)!).push(i);
-      else noChannel.push(i);
     }
     const groups: ChannelGroup[] = [...byPlatform.entries()]
       .map(([platform, its]) => ({
@@ -291,8 +303,6 @@ function KnowledgePage() {
         items: its.sort(byStatusThenTitle),
       }))
       .sort((a, b) => a.name.localeCompare(b.name));
-    if (noChannel.length)
-      groups.push({ id: NO_CHANNEL_ID, name: "No channel", items: noChannel.sort(byStatusThenTitle) });
     return groups;
   }, [items, q, voiceNameById, voiceById]);
 
@@ -435,7 +445,11 @@ function KnowledgePage() {
                           )}
                           <p className="truncate text-xs text-muted-foreground">
                             {[
-                              g.voice ? voiceSubtitle(g.voice) : "Unattributed",
+                              g.voice
+                                ? voiceSubtitle(g.voice)
+                                : g.id.startsWith("book:")
+                                  ? "Book of the Bible"
+                                  : "Unattributed",
                               g.items.length ? contentCountLabel(g.items.length) : undefined,
                             ]
                               .filter(Boolean)
