@@ -44,18 +44,15 @@ work on the **earlier** story):
       exact placement). Card contents (pinned rows) and empty state unchanged.
 - [ ] **(b)** The card's title reads **"Vessels of Knowledge"** (decide with JC: rename the
       shared `SECTION_LABEL` app-wide — Home card + `/formation` + nav — or only the Home card).
-- [ ] **(c)** **Vessels** appears on the primary nav bar and **Word is removed from it** — Word
-      stays reachable via Home blocks (the Word card) and `/word`, not a nav slot. **Settings**
-      becomes more reachable from the bar. Exact 5-slot arrangement TBD (see Qs).
+- [ ] **(c)** **Swap Word ↔ Vessels** in the nav (JC 2026-09-10): **Vessels** moves into the
+      primary bottom bar (Word's slot → **Today · Plan · Prayers · Vessels · Reflect**), and
+      **Word** moves into the secondary drawer (where Vessels was). **Settings stays** in the
+      drawer — no change. Word remains reachable via the drawer, the Home Word card, and `/word`.
 - [ ] Collapse/expand persists across sessions (localStorage) — confirm with JC.
 - [ ] No functionality lost: everything previously reached via the Word nav entry is still
       reachable (Home Word card, `/word` route).
 
 ## Open questions for JC
-- **(c) exact bar:** 5 slots today (Today · Plan · Prayers · Word · Reflect). Desired end
-  state? e.g. **Today · Plan · Prayers · Vessels · Reflect** with Word dropped — and where does
-  **Settings** land ("switch out Word to settings" = Word's slot becomes Settings, and Vessels
-  takes a different slot)? Confirm the final five.
 - **(b) rename scope:** "Vessels of Knowledge" everywhere (`SECTION_LABEL`) or just the Home
   card title? (Nav space is tight for the longer label.)
 - **(a) placement:** strictly last (below the Reflection composer), or last among the content
