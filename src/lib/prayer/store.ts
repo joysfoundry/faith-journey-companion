@@ -207,12 +207,13 @@ export function normalizeVariants(db: Database): Database {
   // (by citation, in the Voices view) is independent and unaffected.
   const ensureBook = (id: string, title: string, links?: KnowledgeLink[]) => {
     if (!knowledge_items.some((i) => i.id === id)) {
+      // No default reading status (ACTS-189): a Bible is dipped into, not read
+      // start-to-finish, so the stepper shows with nothing selected until chosen.
       knowledge_items.push({
         id,
         title,
         category: "book",
         source: "Sacred Scripture",
-        status: "not_started",
         ...(links ? { links } : {}),
         created_at: "2020-01-01T00:00:00.000Z",
       });
@@ -229,7 +230,25 @@ export function normalizeVariants(db: Database): Database {
     ? bibleVersionBookId(settingsTranslation)
     : BIBLE_BOOK_ID;
   for (let i = 0; i < knowledge_items.length; i++) {
-    const it = knowledge_items[i]!;
+    let it = knowledge_items[i]!;
+    // ACTS-189 data repair: the seeded St. Padre Pio saying was once mis-typed as
+    // the scripture Lk 1:26-38 (linked to NABRE). It's his words, not Scripture —
+    // strip the scripture shape wherever that stale record persisted.
+    if (it.id === "know-pio-quote" && it.quote_kind === "scripture") {
+      const fixed = { ...it, quote_kind: "open" as const };
+      delete fixed.scripture_ref;
+      delete fixed.source_item_id;
+      delete fixed.source;
+      it = knowledge_items[i] = fixed;
+    }
+    // ACTS-189: clear the legacy default "not_started" on Bible books so a
+    // reference starts unset (a status the reader deliberately set is left alone).
+    if (isBibleBookId(it.id) && it.status === "not_started") {
+      const fixed = { ...it };
+      delete fixed.status;
+      it = knowledge_items[i] = fixed;
+    }
+    // ACTS-183: link an unlinked scripture quote to the reader's version book.
     if (it.category === "quote" && it.quote_kind === "scripture" && !it.source_item_id) {
       knowledge_items[i] = { ...it, source_item_id: defaultVersionBook, source: "Bible" };
     }

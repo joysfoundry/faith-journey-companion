@@ -49,12 +49,19 @@ import {
   quoteBody,
   quoteByline,
   quoteKind,
+  quotesFromItem,
   voiceSubtitle,
   type KnowledgeGroup,
 } from "@/lib/prayer/knowledge";
 import { bibleBookName } from "@/lib/bible/apps";
 import { isBibleBookId, isBibleBookVisible, useApp } from "@/lib/prayer/store";
-import type { Channel, KnowledgeItem, LinkPlatform, Voice } from "@/lib/prayer/types";
+import type {
+  Channel,
+  KnowledgeItem,
+  KnowledgeStatus,
+  LinkPlatform,
+  Voice,
+} from "@/lib/prayer/types";
 
 export const Route = createFileRoute("/formation")({
   validateSearch: (search: Record<string, unknown>): { add?: boolean } =>
@@ -132,6 +139,12 @@ interface ChannelGroup {
   items: KnowledgeItem[];
 }
 
+/** A book with the quotes drawn from it (`source_item_id`), for the Books filter. */
+interface BookGroup {
+  book: KnowledgeItem;
+  quotes: KnowledgeItem[];
+}
+
 function KnowledgePage() {
   const {
     db,
@@ -199,6 +212,17 @@ function KnowledgePage() {
   }
   function toggleCollapsed(id: string) {
     setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+  // Books filter nests the quotes drawn from each book, collapsed by default —
+  // this tracks the books the reader has expanded (empty = all folded).
+  const [expandedBooks, setExpandedBooks] = useState<Set<string>>(() => new Set());
+  function toggleBookQuotes(id: string) {
+    setExpandedBooks((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -311,6 +335,23 @@ function KnowledgePage() {
       .sort((a, b) => a.name.localeCompare(b.name));
     return groups;
   }, [items, q, voiceNameById, voiceById]);
+
+  // Books filter (grouped): every book with the quotes drawn from it nested
+  // beneath (a quote's `source_item_id` names its book — ACTS-183). The quotes
+  // fold under each book, collapsed by default. Search keeps a book whose own
+  // fields match (with all its quotes) or that has a matching quote.
+  const bookGroups = useMemo<BookGroup[]>(() => {
+    if (filter !== "book") return [];
+    const books = items.filter((i) => groupOf(i.category) === "book");
+    const groups: BookGroup[] = [];
+    for (const book of books) {
+      const bookHit = contentMatches(book, voiceNameById.get(book.voice_id ?? ""), q);
+      const all = quotesFromItem(book.id, db.knowledge_items);
+      const quotes = bookHit ? all : all.filter((qi) => contentMatches(qi, undefined, q));
+      if (bookHit || quotes.length) groups.push({ book, quotes });
+    }
+    return groups.sort((a, b) => byStatusThenTitle(a.book, b.book));
+  }, [filter, items, q, voiceNameById, db.knowledge_items]);
 
   const contentHandlers = {
     voices,
@@ -574,6 +615,54 @@ function KnowledgePage() {
                 })}
               </div>
             )
+          ) : filter === "book" ? (
+            /* BOOKS — each book with its quotes nested (collapsed) ------- */
+            bookGroups.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                {q ? "Nothing matches that search." : "No books yet — add one from the Add tab."}
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {bookGroups.map(({ book, quotes }) => {
+                  // Open when the reader expanded it, or force-open during a
+                  // search so a matching quote isn't hidden behind a fold.
+                  const isOpen = q.length > 0 || expandedBooks.has(book.id);
+                  return (
+                    <section
+                      key={book.id}
+                      className="overflow-hidden rounded-lg border border-border/60"
+                    >
+                      <ul>
+                        <ContentRow item={book} {...contentHandlers} />
+                      </ul>
+                      {quotes.length ? (
+                        <>
+                          <button
+                            onClick={() => toggleBookQuotes(book.id)}
+                            aria-expanded={isOpen}
+                            className="flex w-full items-center gap-1.5 border-t border-border/60 bg-muted/20 px-4 py-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+                          >
+                            {isOpen ? (
+                              <ChevronDown className="size-3.5 shrink-0" aria-hidden />
+                            ) : (
+                              <ChevronRight className="size-3.5 shrink-0" aria-hidden />
+                            )}
+                            {quotes.length} {quotes.length === 1 ? "quote" : "quotes"} from this
+                          </button>
+                          {isOpen ? (
+                            <ul className="divide-y divide-border/60 border-t border-border/60">
+                              {quotes.map((quote) => (
+                                <ContentRow key={quote.id} item={quote} {...contentHandlers} />
+                              ))}
+                            </ul>
+                          ) : null}
+                        </>
+                      ) : null}
+                    </section>
+                  );
+                })}
+              </div>
+            )
           ) : flatEmpty ? (
             <p className="text-sm text-muted-foreground">
               {q
@@ -691,7 +780,7 @@ function ContentRow({
   item: KnowledgeItem;
   voices: Voice[];
   hideVoice?: boolean;
-  setKnowledgeStatus: (id: string, status: KnowledgeItem["status"]) => void;
+  setKnowledgeStatus: (id: string, status: KnowledgeStatus) => void;
   toggleContentLinkPin: (itemId: string, index: number) => void;
   toggleItemPinned: (id: string) => void;
   onEdit: (id: string) => void;

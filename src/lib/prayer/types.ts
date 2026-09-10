@@ -789,7 +789,13 @@ export interface KnowledgeItem {
    */
   source_item_id?: ID | undefined;
   notes?: string | undefined;
-  status: KnowledgeStatus;
+  /**
+   * Reading / progress status. **Optional** (ACTS-189): a reference you dip into
+   * rather than read start-to-finish — a Bible, say — carries no status until the
+   * reader sets one, so the stepper shows with nothing highlighted. Legacy items
+   * and anything read cover-to-cover still carry a value; `undefined` = unset.
+   */
+  status?: KnowledgeStatus | undefined;
   start_date?: string | undefined; // programs
   target_date?: string | undefined; // programs
   /**
