@@ -24,6 +24,13 @@ export const VOICE_LABEL_SINGULAR = "Vessel";
  */
 export const SECTION_LABEL = "Vessels";
 
+/**
+ * The fuller name for the section, used where there's room to say what it holds
+ * (the Home card header, the `/formation` page title). Tight spots — nav, back
+ * buttons, meta titles — keep the short {@link SECTION_LABEL}.
+ */
+export const SECTION_LABEL_LONG = "Vessels of Knowledge";
+
 /* -------------------------------- Content -------------------------------- */
 
 /** Human labels for a content item's category (used in rows, the Add picker). */

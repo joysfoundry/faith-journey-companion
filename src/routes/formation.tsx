@@ -35,6 +35,7 @@ import {
   GROUP_ORDER,
   LINK_PLATFORM_LABELS,
   SECTION_LABEL,
+  SECTION_LABEL_LONG,
   STATUS_STEPS,
   VOICE_LABEL,
   VOICE_LABEL_SINGULAR,
@@ -161,7 +162,9 @@ function KnowledgePage() {
   const navigate = useNavigate();
 
   const [tab, setTab] = useState<"add" | "library">(add ? "add" : "library");
-  const [filter, setFilter] = useState<FilterKey>("all");
+  // Land on the Voices (by-Vessel) grouping — the library's most useful default —
+  // rather than the flat "All" list (ACTS-182).
+  const [filter, setFilter] = useState<FilterKey>("voice");
   const [draftVoiceId, setDraftVoiceId] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
   const [query, setQuery] = useState("");
@@ -366,7 +369,7 @@ function KnowledgePage() {
 
   return (
     <AppShell
-      title={SECTION_LABEL}
+      title={SECTION_LABEL_LONG}
       subtitle={`The ${VOICE_LABEL.toLowerCase()} you follow and the content that forms you`}
       back={{ to: "/", label: "Today" }}
     >

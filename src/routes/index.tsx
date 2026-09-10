@@ -42,7 +42,7 @@ import { buildReflectionLinkables } from "@/lib/prayer/linkables";
 import {
   CATEGORY_LABELS,
   LINK_PLATFORM_LABELS,
-  SECTION_LABEL,
+  SECTION_LABEL_LONG,
   hasStatus,
   nextStatus,
   pinnedLinks,
@@ -90,6 +90,9 @@ export const Route = createFileRoute("/")({
   }),
   component: Index,
 });
+
+/** Per-browser memory of whether the Home Vessels card is expanded (ACTS-182). */
+const VESSELS_OPEN_KEY = "oravia:home:vessels-open";
 
 /** A row on the Home Vessels card: either a single content pin, or a Vessel with
  *  its pinned channels grouped onto one row (ACTS-178). */
@@ -422,6 +425,27 @@ function Index() {
   // reflection tagged from the readings snapshots the specific day, not the label.
   const [litDay, setLitDay] = useState<LiturgicalDay | null>(null);
   useEffect(() => setLitDay(getLiturgicalDay(todayISO())), []);
+
+  // The Vessels card is a quiet library that sits last on Home — collapsed by
+  // default, its open/closed state remembered per browser. Start closed (matches
+  // SSR) and only open post-mount if the stored preference says so, so there's no
+  // hydration flash.
+  const [vesselsOpen, setVesselsOpen] = useState(false);
+  useEffect(() => {
+    try {
+      setVesselsOpen(window.localStorage.getItem(VESSELS_OPEN_KEY) === "1");
+    } catch {
+      /* storage blocked — stay collapsed */
+    }
+  }, []);
+  const toggleVessels = (open: boolean) => {
+    setVesselsOpen(open);
+    try {
+      window.localStorage.setItem(VESSELS_OPEN_KEY, open ? "1" : "0");
+    } catch {
+      /* storage blocked — remember for this session only */
+    }
+  };
 
   const setId = resolveMysterySet(db, defaultContext({ date: today }));
   const setName = db.mystery_sets.find((s) => s.id === setId)?.name ?? "Mysteries";
@@ -874,9 +898,29 @@ function Index() {
           <WordSection onReflect={openJournal} />
         </SectionCard>
 
-        {/* D — Vessels: pinned channels & links from the vessels you follow */}
+        {/* Reflection / Journal — composer only; saved entries live on /reflections */}
+        <div id="reflection">
+          <SectionCard
+            title="Reflection"
+            actions={
+              <IconAction label="Open your journal" asChild>
+                <Link to="/reflections">
+                  <Notebook className="size-4" aria-hidden />
+                </Link>
+              </IconAction>
+            }
+          >
+            <ReflectionComposer linkables={linkables} prefillLinkId={journalLinkId} />
+          </SectionCard>
+        </div>
+
+        {/* Vessels — the library of pinned channels & links, kept last and collapsed
+            so it stays available without crowding the daily surfaces (ACTS-182). */}
         <SectionCard
-          title={SECTION_LABEL}
+          title={SECTION_LABEL_LONG}
+          collapsible
+          open={vesselsOpen}
+          onOpenChange={toggleVessels}
           actions={
             <IconAction label="Add & browse your library" asChild>
               <Link to="/formation" search={{ add: true }}>
@@ -911,22 +955,6 @@ function Index() {
             )
           )}
         </SectionCard>
-
-        {/* Reflection / Journal — composer only; saved entries live on /reflections */}
-        <div id="reflection">
-          <SectionCard
-            title="Reflection"
-            actions={
-              <IconAction label="Open your journal" asChild>
-                <Link to="/reflections">
-                  <Notebook className="size-4" aria-hidden />
-                </Link>
-              </IconAction>
-            }
-          >
-            <ReflectionComposer linkables={linkables} prefillLinkId={journalLinkId} />
-          </SectionCard>
-        </div>
       </div>
 
       <ChangeDevotionDialog
