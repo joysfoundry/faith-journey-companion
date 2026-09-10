@@ -2,16 +2,22 @@
 id: ACTS-181
 title: Keepable quotes — person quote vs Scripture (with citation chooser)
 spine:
-status: In Progress
+status: Done
 origin: human-directed
 approved_by: JC
 depends_on: []
-relates_to: [ACTS-108, ACTS-156, ACTS-176, ACTS-179]
+relates_to: [ACTS-108, ACTS-156, ACTS-176, ACTS-179, ACTS-183, ACTS-184]
 started_at: 2026-09-09T17:13:36-0700
-updated:    2026-09-09T17:19:00-0700
+updated:    2026-09-09T22:40:05-0700
 latest_handoff: null
-sessions: 0
+sessions: 1
 ---
+
+> **Done 2026-09-09.** Core = typed keepable quotes (kind chooser, Scripture citation +
+> Bible deep-link) across add + edit + display, migrated with no `STORAGE_KEY` bump. The
+> **reflection-composer** side of the arc (Add-a-quote, reflect-from-quote, layout
+> reshape) was split to **[[ACTS-184]]**; the book-quote↔book linking to **[[ACTS-183]]**.
+> Commits `8bf79ff`, `89ed4c4`, `415250f`, `ee23eab` (unpushed at close — see wrap).
 
 ## Goal
 As someone saving a quote worth keeping, I want to say whether it's a **person quote**
