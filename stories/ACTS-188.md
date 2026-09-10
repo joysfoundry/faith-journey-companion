@@ -2,13 +2,13 @@
 id: ACTS-188
 title: Settings — choose which Bible versions appear in book resources
 spine:
-status: To Do
+status: In Progress
 origin: human-directed
 approved_by: JC
 depends_on: [ACTS-183]
 relates_to: [ACTS-185, ACTS-187]
 started_at: 2026-09-10T13:03:55-0700
-updated:    2026-09-10T13:03:55-0700
+updated:    2026-09-10T14:00:00-0700
 latest_handoff: null
 sessions: 0
 ---
@@ -30,28 +30,43 @@ filter — ~10 Bible entries. This story adds a Settings control so only the cho
 not broken).
 
 ## Acceptance criteria
-- [ ] Settings has a **"Bible versions"** section listing every seeded version with a
-      **checkbox**, plus a one-line note that all are seeded and these toggles pick which
-      appear in book resources.
-- [ ] Only checked versions' **"Bible — X"** books appear in the Library / **Books** filter
-      (and, sensibly, as options in the scripture **Version picker**); unchecked are hidden,
-      not deleted.
-- [ ] The reader's **Settings default translation** (`bible_translation`) stays available /
-      checked (can't hide the one you deep-link to); at least one version remains shown.
-- [ ] A scripture quote linked to a now-hidden version keeps its link (no data loss); its
-      version book is still reachable from the quote.
-- [ ] **Data-shape** (flag): new `settings.bible_versions_shown?: string[]` (translation
-      ids); absent = a sensible default (all, or the Catholic core — decide with JC). No
-      `STORAGE_KEY` bump.
+- [x] Settings has a **"Bible versions in your library"** section listing every seeded
+      version with a **checkbox**, plus a one-line note that all are seeded and these toggles
+      pick which appear in book resources.
+- [x] Only checked versions' **"Bible — X"** books appear in the Library / **Books** filter
+      (and as options in the scripture **Version picker**); unchecked are hidden, not deleted.
+- [x] The reader's **Settings default translation** (`bible_translation`) stays available /
+      checked (disabled checkbox, "always shown"); it's always added back, so at least one
+      version remains shown.
+- [x] A scripture quote linked to a now-hidden version keeps its link (no data loss); its
+      version stays selectable in the picker (appended when hidden) — verified with a NIV
+      quote while NIV was off.
+- [x] **Data-shape** (flag): new `settings.bible_versions_shown?: string[]` (translation
+      ids); **absent = all shown** (JC). No `STORAGE_KEY` bump.
 
-## Open questions for JC
-- Default when unset: show **all** seeded, or just the **Catholic core** (NABRE/RSVCE/DRA)?
-- Should the toggles also filter the scripture **Version picker** options, or only the
-  Library display?
-- Show the version-less "Bible" (Unknown) as a togglable row, or always keep it?
+## Decisions (JC, 2026-09-10)
+- **Default when unset:** show **all** seeded versions.
+- **Scope:** toggles filter **both** the Library display **and** the scripture **Version
+  picker** options.
+- **Unknown ("Bible", version-less):** **always shown** — not a togglable row.
+
+## Implementation (2026-09-10)
+Two shared helpers in `src/lib/bible/apps.ts`: `shownBibleVersionIds(settings)` (unset =
+all; default translation always added) and `shownTranslations(settings)` (filtered list in
+seed order). `src/lib/prayer/store.ts` adds `isBibleBookVisible(id, settings)` (non-version
+ids + the version-less "Bible" always true). Consumers: Settings checkbox section
+(`settings.tsx`), Library `items` filter (`formation.tsx`), both scripture Version pickers
+(`ReflectionComposer.tsx`, `knowledge.$knowledgeId.tsx` — each appends an already-chosen but
+now-hidden version so a link is never dropped). Field added to `AppSettings` in `types.ts`.
+
+**Bug caught in verify:** wrapping the Radix `Checkbox` in a `<label>` double-fired the
+toggle (label forwards a click to the button, which is a labelable control) → store/DOM
+desync. Fixed to Checkbox + sibling `<Label htmlFor>`.
 
 ## Tests
 No runner yet (ACTS-92). Unit: the filter that maps `bible_versions_shown` → visible Bible
 books (default handling; default translation always included). Integration: toggling a
 version hides/shows its book in the library without deleting it or breaking a linked quote.
-E2E: extends flow **E12** + a Settings flow. Planned.
+E2E: extends flow **E12** + a Settings flow. Planned. Manual verify (dev server) done: default
+all-checked with NABRE disabled; unchecking NIV materializes the list and hides "Bible — NIV"
+in the Library (Unknown "Bible" stays); picker filters yet keeps a hidden linked version.
