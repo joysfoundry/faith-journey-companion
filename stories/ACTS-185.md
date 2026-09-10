@@ -2,16 +2,21 @@
 id: ACTS-185
 title: Connected entity inputs in quote capture (autocomplete + auto-Vessel + version picker)
 spine:
-status: In Progress
+status: Done
 origin: human-directed
 approved_by: JC
 depends_on: [ACTS-183]
-relates_to: [ACTS-181, ACTS-186]
+relates_to: [ACTS-181, ACTS-186, ACTS-187]
 started_at: 2026-09-10T12:42:51-0700
-updated:    2026-09-10T12:42:51-0700
+updated:    2026-09-10T13:00:20-0700
 latest_handoff: null
 sessions: 0
 ---
+
+> **Done 2026-09-10** (verified by JC). Works, but JC judged the *approach* wrong — it's
+> add-then-edit friction. The forward direction is a **unified content-add form** used
+> everywhere (add-first; edit mirrors add): filed as **ACTS-187**, which supersedes this
+> pattern. The entity-matching/auto-Vessel + typeahead pieces here carry into ACTS-187/186.
 
 ## Goal
 As someone capturing a quote, I want the boxes where I name a person or a work to
