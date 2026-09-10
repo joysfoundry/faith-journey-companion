@@ -2,13 +2,13 @@
 id: ACTS-181
 title: Keepable quotes — person quote vs Scripture (with citation chooser)
 spine:
-status: To Do
+status: In Progress
 origin: human-directed
 approved_by: JC
 depends_on: []
 relates_to: [ACTS-108, ACTS-156, ACTS-176, ACTS-179]
 started_at: 2026-09-09T17:13:36-0700
-updated:    2026-09-09T17:13:36-0700
+updated:    2026-09-09T17:19:00-0700
 latest_handoff: null
 sessions: 0
 ---
