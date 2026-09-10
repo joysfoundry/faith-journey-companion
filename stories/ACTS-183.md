@@ -78,13 +78,39 @@ composer's `linked` set, which lit the Link2 affordance regardless of kind.
       or mints one, sets `voice_id`, clears the now-redundant `creator`. Verified live: the
       Vessel appeared under the grouped view. (Seed note: "YOUCAT, Benedict XVI" conflates a
       book + a person — worth fixing the author to "Benedict XVI" before promoting for real.)
-- [x] **Scripture quotes group by book of the Bible.** Unattributed `scripture` quotes now
-      form **virtual per-book buckets** (e.g. "Luke") in the grouped view — a Bible book is
-      not a Voice, so no real Vessel is minted (mirrors the General bucket, plain non-link
-      header). New `bibleBookName()` in `bible/apps.ts` resolves full names **and common
-      abbreviations** ("Lk 1:31" → "Luke"); the abbreviation map also improves the Bible
-      deep-link. Verified live (Luke bucket held the "Lk 1:31" quote; General held the
-      non-scripture one).
+- [x] **Scripture quotes group by book of the Bible.** *Unattributed* `scripture` quotes
+      form **virtual per-book buckets** (e.g. "Luke", subtitle "Book of the Bible") in the
+      grouped view — JC's model: *"each book's author is the book's name itself"* (don't
+      claim human authors — Psalms/Gospels/Hebrews are multiple/anonymous). New
+      `bibleBookName()` in `bible/apps.ts` resolves full names **and common abbreviations**
+      ("Lk 2:10" → "Luke") and improves the Bible deep-link too. A quote with a **real**
+      Voice keeps it (a quote never leaves its Vessel); only a quote with no real Voice (incl.
+      one tied to an empty "Untitled" Voice) buckets by book. Verified live.
+- [x] **The Bible is a book in the library — modeled one book per translation** (JC:
+      *"put the version of the bible as the bible … an entry for NAB, one for NIV"*). Seeded
+      in `normalizeVariants` (idempotent, no reset): **"Bible — NABRE / NIV / ESV / NLT /
+      NKJV / KJV / NASB / RSVCE / DRA"**, each with its reader link (NABRE→USCCB, else Bible
+      Gateway), plus a version-less **"Bible"** (`BIBLE_BOOK_ID`) for **Unknown**. `store`
+      helpers: `bibleVersionBookId`, `isBibleBookId`. **The book a scripture quote links to
+      IS its version** (`source_item_id`) — no separate field. Every unlinked scripture quote
+      auto-links to the reader's **Settings translation** (default). Each version's page lists
+      its verses ("Quotes from this"). Verified live (Bible — NABRE page showed Lk 2:10).
+- [x] **Version picker on scripture quotes** (JC) — the editor shows a **Version** dropdown
+      for `scripture` kind: the 9 translations + **Unknown**, defaulting to the Settings
+      translation; picking one sets `source_item_id` to that "Bible — X" book. The generic
+      source picker is hidden for scripture (their source is always the Bible). The view
+      byline shows the version ("— Lk 2:10 · NABRE"). Verified live (10 options; changing to
+      NABRE re-linked the quote and the NABRE page listed it).
+- [x] **Bible books kept out of the General bucket** (JC: *"why is bible under general?"*) —
+      reference works, not stray unattributed content, so all Bible books are excluded from
+      the Voices-view General bucket (`isBibleBookId`). They still list under **Books**; their
+      verses live in the per-book buckets. Verified (General back to the 8 pre-Bible items).
+- [x] **Empty-name Voices no longer render as groups** — an "Untitled" Voice with nothing
+      under it (e.g. after its only scripture quote moved to a book bucket) is now hidden
+      from the grouped view.
+- [x] **By Channel drops the "No channel" bucket** (JC): the channel view shows only content
+      that lives on a channel, the way the Books filter shows only books. Content with no
+      channel (quotes, linkless saves) is simply omitted there.
 - [x] **Filter pills relabeled** (JC): dropped the "By" prefix — **By Vessel → "Voices"**,
       **By Channel → "Channel"**. Section umbrella "Vessels" left unchanged.
 
