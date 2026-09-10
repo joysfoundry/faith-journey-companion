@@ -7,6 +7,7 @@ origin: human-directed
 approved_by: JC
 depends_on: []
 relates_to: [ACTS-137, ACTS-177, ACTS-179]
+superseded_by: ACTS-190
 started_at: 2026-09-09T17:13:36-0700
 updated:    2026-09-09T17:13:36-0700
 latest_handoff: null
