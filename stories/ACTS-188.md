@@ -2,15 +2,15 @@
 id: ACTS-188
 title: Settings — choose which Bible versions appear in book resources
 spine:
-status: In Progress
+status: Done
 origin: human-directed
 approved_by: JC
 depends_on: [ACTS-183]
 relates_to: [ACTS-185, ACTS-187]
 started_at: 2026-09-10T13:03:55-0700
 updated:    2026-09-10T14:00:00-0700
-latest_handoff: null
-sessions: 0
+latest_handoff: stories/ACTS-188/session-01.md
+sessions: 1
 ---
 
 ## Goal
