@@ -14,6 +14,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ExternalLink as ExtLink } from "@/components/ui/external-link";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,6 +34,7 @@ import {
   buildPassageUrl,
   effectiveBibleAppId,
   resolveBibleHomeUrl,
+  shownBibleVersionIds,
   translationById,
 } from "@/lib/bible/apps";
 import {
@@ -80,6 +82,21 @@ function SettingsPage() {
   const showRecommendations = appId === "none" || (isOther && !hasCustomUrl);
   const showPassagePreview = Boolean(chosenApp) && appId !== "none" && (!isOther || hasCustomUrl);
   const previewUrl = buildPassageUrl(settings, PREVIEW_REF);
+
+  // Which Bible versions show as book resources (ACTS-188). Unset = all shown; the
+  // preferred translation is always kept checked (you can't hide the one you read).
+  const shownVersionIds = shownBibleVersionIds(settings);
+  const preferredTranslationId = settings.bible_translation || DEFAULT_TRANSLATION;
+  const toggleBibleVersion = (id: string, show: boolean) => {
+    if (id === preferredTranslationId) return; // always shown — can't be turned off
+    const next = new Set(shownVersionIds);
+    if (show) next.add(id);
+    else next.delete(id);
+    next.add(preferredTranslationId); // guarantee at least one remains
+    updateSettings({
+      bible_versions_shown: BIBLE_TRANSLATIONS.filter((t) => next.has(t.id)).map((t) => t.id),
+    });
+  };
 
   const dailyId = settings.daily_template_id;
 
@@ -223,6 +240,43 @@ function SettingsPage() {
               </ul>
             </div>
           ) : null}
+
+          {/* ------ Which Bible versions appear in book resources (ACTS-188) ------ */}
+          <div className="mt-6 border-t border-border pt-5">
+            <Label className="text-sm font-medium">Bible versions in your library</Label>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Every translation is seeded. Choose which appear as book resources and as
+              scripture version options — unchecking one only hides it, nothing is deleted.
+            </p>
+            <ul className="mt-3 space-y-1">
+              {BIBLE_TRANSLATIONS.map((t) => {
+                const isPreferred = t.id === preferredTranslationId;
+                const inputId = `bible-version-${t.id}`;
+                return (
+                  <li
+                    key={t.id}
+                    className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-muted/50"
+                  >
+                    <Checkbox
+                      id={inputId}
+                      checked={shownVersionIds.has(t.id)}
+                      disabled={isPreferred}
+                      onCheckedChange={(v) => toggleBibleVersion(t.id, v === true)}
+                      aria-label={`Show ${t.label}`}
+                    />
+                    <Label htmlFor={inputId} className="min-w-0 cursor-pointer text-sm font-normal">
+                      {t.label}
+                      {isPreferred ? (
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          (your translation — always shown)
+                        </span>
+                      ) : null}
+                    </Label>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
         </section>
 
         {/* --------------------------- Daily prayer --------------------------- */}

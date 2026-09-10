@@ -21,7 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { LinkableItem } from "@/domain/placeholderData";
 import { newId, todayISO } from "@/lib/prayer/compiler";
 import { QUOTE_KIND_LABELS, QUOTE_KIND_OPTIONS, detectPlatform } from "@/lib/prayer/knowledge";
-import { BIBLE_TRANSLATIONS, DEFAULT_TRANSLATION } from "@/lib/bible/apps";
+import { BIBLE_TRANSLATIONS, DEFAULT_TRANSLATION, shownTranslations } from "@/lib/bible/apps";
 import { BIBLE_BOOK_ID, bibleVersionBookId } from "@/lib/prayer/store";
 import { LECTIO_TEMPLATE_ID } from "@/lib/prayer/seed";
 import {
@@ -306,6 +306,20 @@ export function ReflectionComposer({ linkables, prefillLinkId, showDraftStatus }
   const defaultVersionBook = BIBLE_TRANSLATIONS.some((t) => t.id === db.settings.bible_translation)
     ? bibleVersionBookId(db.settings.bible_translation!)
     : bibleVersionBookId(DEFAULT_TRANSLATION);
+  // Only the versions the reader shows appear as options (ACTS-188) — but keep an
+  // already-chosen version visible even if now hidden, so editing never drops it.
+  const currentVersionBook = quoteVersion || defaultVersionBook;
+  const versionOptions = (() => {
+    const list = shownTranslations(db.settings);
+    if (
+      currentVersionBook !== BIBLE_BOOK_ID &&
+      !list.some((t) => bibleVersionBookId(t.id) === currentVersionBook)
+    ) {
+      const extra = BIBLE_TRANSLATIONS.find((t) => bibleVersionBookId(t.id) === currentVersionBook);
+      if (extra) return [...list, extra];
+    }
+    return list;
+  })();
 
   // Quote inspirations belong under the quote affordance, never the generic
   // "Link an item" icon (ACTS-183). A quote reaches a reflection two ways — minted
@@ -519,12 +533,12 @@ export function ReflectionComposer({ linkables, prefillLinkId, showDraftStatus }
                   {/* Version — which "Bible — <translation>" this verse is from;
                       defaults to the reader's Settings translation. */}
                   <select
-                    value={quoteVersion || defaultVersionBook}
+                    value={currentVersionBook}
                     onChange={(e) => setQuoteVersion(e.target.value)}
                     aria-label="Bible version"
                     className="h-8 w-full rounded-md border border-input bg-background px-2 text-sm"
                   >
-                    {BIBLE_TRANSLATIONS.map((t) => (
+                    {versionOptions.map((t) => (
                       <option key={t.id} value={bibleVersionBookId(t.id)}>
                         {t.label}
                       </option>

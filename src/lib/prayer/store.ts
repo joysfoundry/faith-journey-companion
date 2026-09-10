@@ -33,7 +33,12 @@ import type {
   VoiceKind,
 } from "./types";
 import { RECURRENCE_ONCE, type Recurrence } from "./types";
-import { BIBLE_TRANSLATIONS, DEFAULT_TRANSLATION, type BibleTranslation } from "@/lib/bible/apps";
+import {
+  BIBLE_TRANSLATIONS,
+  DEFAULT_TRANSLATION,
+  shownBibleVersionIds,
+  type BibleTranslation,
+} from "@/lib/bible/apps";
 import { createSeedDatabase, LECTIO_TEMPLATE_ID } from "./seed";
 import { detectRepetitionCount, stripRepetition } from "./importer";
 import {
@@ -260,6 +265,29 @@ const BIBLE_BOOK_ID_SET = new Set<string>([
 
 /** Whether an id is one of the seeded Bible books (the plain "Bible" or a version). */
 export const isBibleBookId = (id: string): boolean => BIBLE_BOOK_ID_SET.has(id);
+
+/** Book id → its translation id, or undefined for the version-less "Bible". */
+const BIBLE_BOOK_ID_TO_TRANSLATION = new Map<string, string>(
+  BIBLE_TRANSLATIONS.map((t) => [bibleVersionBookId(t.id), t.id]),
+);
+
+/**
+ * Whether a Bible book should appear given the reader's chosen versions (ACTS-188).
+ * Non-Bible ids and the version-less "Bible" (Unknown) always return true; a version
+ * book shows only when its translation is in `shownBibleVersionIds(settings)`. Hiding
+ * only affects display — the book (and any quote linked to it) is never deleted.
+ */
+export const isBibleBookVisible = (
+  id: string,
+  settings: {
+    bible_versions_shown?: string[] | undefined;
+    bible_translation?: string | undefined;
+  },
+): boolean => {
+  const translationId = BIBLE_BOOK_ID_TO_TRANSLATION.get(id);
+  if (translationId === undefined) return true; // not a version book (incl. Unknown)
+  return shownBibleVersionIds(settings).has(translationId);
+};
 
 /** A "where to read it" link for a translation — USCCB for NABRE, else Bible Gateway. */
 function bibleVersionLink(t: BibleTranslation): KnowledgeLink {

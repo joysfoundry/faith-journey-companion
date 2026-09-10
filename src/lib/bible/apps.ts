@@ -146,6 +146,34 @@ export function translationById(id: string | undefined): BibleTranslation {
 }
 
 /**
+ * Which translation versions the reader has chosen to show (ACTS-188). The
+ * version-less "Bible" (Unknown) is not represented here — it is always shown.
+ * Rules:
+ *  - `bible_versions_shown` **unset** → all seeded versions show (existing users
+ *    see no change).
+ *  - the reader's default translation is **always** included — you can't hide the
+ *    one you deep-link to, so at least one version always remains shown.
+ */
+export function shownBibleVersionIds(settings: {
+  bible_versions_shown?: string[] | undefined;
+  bible_translation?: string | undefined;
+}): Set<string> {
+  const chosen = settings.bible_versions_shown;
+  const ids = new Set<string>(chosen === undefined ? BIBLE_TRANSLATIONS.map((t) => t.id) : chosen);
+  ids.add(settings.bible_translation || DEFAULT_TRANSLATION);
+  return ids;
+}
+
+/** The seeded translations the reader has chosen to show, in seed order (ACTS-188). */
+export function shownTranslations(settings: {
+  bible_versions_shown?: string[] | undefined;
+  bible_translation?: string | undefined;
+}): BibleTranslation[] {
+  const ids = shownBibleVersionIds(settings);
+  return BIBLE_TRANSLATIONS.filter((t) => ids.has(t.id));
+}
+
+/**
  * USFM book codes — only YouVersion needs these (Bible Gateway takes the raw
  * reference string). Missing books simply fall back to Bible Gateway.
  */

@@ -855,6 +855,15 @@ export interface AppSettings {
   /** Preferred translation id (from `BIBLE_TRANSLATIONS`, e.g. "NIV"). */
   bible_translation?: string | undefined;
   /**
+   * Which translation versions appear as book resources / scripture Version-picker
+   * options (ACTS-188) — an allow-list of `BIBLE_TRANSLATIONS` ids. All versions
+   * are seeded regardless; this only picks which **display**. **Unset = show all**
+   * (existing readers see no change). The default translation is always shown even
+   * if absent here, so at least one version always remains. The version-less
+   * "Bible" (Unknown) is never affected — it always shows. Hiding never deletes.
+   */
+  bible_versions_shown?: string[] | undefined;
+  /**
    * Web address of the reader's Bible when `bible_app_id === "other"` — the app
    * isn't in our catalog, so this is where "open my Bible" links point. Specific
    * passages still open via Bible Gateway (we can't template an unknown app).

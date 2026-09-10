@@ -53,7 +53,7 @@ import {
   type KnowledgeGroup,
 } from "@/lib/prayer/knowledge";
 import { bibleBookName } from "@/lib/bible/apps";
-import { isBibleBookId, useApp } from "@/lib/prayer/store";
+import { isBibleBookId, isBibleBookVisible, useApp } from "@/lib/prayer/store";
 import type { Channel, KnowledgeItem, LinkPlatform, Voice } from "@/lib/prayer/types";
 
 export const Route = createFileRoute("/formation")({
@@ -154,7 +154,13 @@ function KnowledgePage() {
   const [query, setQuery] = useState("");
   const prunedRef = useRef(false);
 
-  const items = db.knowledge_items;
+  // Hide Bible version books the reader has turned off in Settings (ACTS-188).
+  // Display-only: db.knowledge_items is untouched, so the books (and any quotes
+  // linked to them) are never deleted — they just don't list here.
+  const items = useMemo(
+    () => db.knowledge_items.filter((i) => isBibleBookVisible(i.id, db.settings)),
+    [db.knowledge_items, db.settings],
+  );
   const voices = db.voices;
   const q = query.trim().toLowerCase();
   const voiceNameById = useMemo(() => new Map(voices.map((v) => [v.id, v.name])), [voices]);

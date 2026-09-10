@@ -54,7 +54,12 @@ import {
   voiceFromLink,
 } from "@/lib/prayer/knowledge";
 import { QuoteSourcePicker } from "@/components/knowledge/QuoteSourcePicker";
-import { buildPassageUrl, BIBLE_TRANSLATIONS, DEFAULT_TRANSLATION } from "@/lib/bible/apps";
+import {
+  buildPassageUrl,
+  BIBLE_TRANSLATIONS,
+  DEFAULT_TRANSLATION,
+  shownTranslations,
+} from "@/lib/bible/apps";
 import { newId } from "@/lib/prayer/compiler";
 import { BIBLE_BOOK_ID, bibleVersionBookId, useApp } from "@/lib/prayer/store";
 import type { KnowledgeCategory, KnowledgeItem, LinkPlatform } from "@/lib/prayer/types";
@@ -117,6 +122,26 @@ function KnowledgeRecordPage() {
     ? db.knowledge_items.find((i) => i.id === item.source_item_id)
     : undefined;
   const quotesHere = isQuote(item) ? [] : quotesFromItem(item.id, db.knowledge_items);
+
+  // Version picker (ACTS-183): the "Bible — X" book this verse is from. Only the
+  // versions the reader shows appear (ACTS-188), defaulting to their Settings
+  // translation — but an already-chosen version stays visible even if now hidden.
+  const currentVersionBook = item.source_item_id?.startsWith(BIBLE_BOOK_ID)
+    ? item.source_item_id
+    : BIBLE_TRANSLATIONS.some((t) => t.id === db.settings.bible_translation)
+      ? bibleVersionBookId(db.settings.bible_translation!)
+      : bibleVersionBookId(DEFAULT_TRANSLATION);
+  const versionOptions = (() => {
+    const list = shownTranslations(db.settings);
+    if (
+      currentVersionBook !== BIBLE_BOOK_ID &&
+      !list.some((t) => bibleVersionBookId(t.id) === currentVersionBook)
+    ) {
+      const extra = BIBLE_TRANSLATIONS.find((t) => bibleVersionBookId(t.id) === currentVersionBook);
+      if (extra) return [...list, extra];
+    }
+    return list;
+  })();
 
   function save(patch: Partial<KnowledgeItem>) {
     if (item) updateKnowledgeItem({ ...item, ...patch });
@@ -276,18 +301,12 @@ function KnowledgeRecordPage() {
                         Version
                       </label>
                       <select
-                        value={
-                          item.source_item_id?.startsWith(BIBLE_BOOK_ID)
-                            ? item.source_item_id
-                            : BIBLE_TRANSLATIONS.some((t) => t.id === db.settings.bible_translation)
-                              ? bibleVersionBookId(db.settings.bible_translation!)
-                              : bibleVersionBookId(DEFAULT_TRANSLATION)
-                        }
+                        value={currentVersionBook}
                         onChange={(e) => save({ source_item_id: e.target.value, source: "Bible" })}
                         aria-label="Bible version"
                         className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                       >
-                        {BIBLE_TRANSLATIONS.map((t) => (
+                        {versionOptions.map((t) => (
                           <option key={t.id} value={bibleVersionBookId(t.id)}>
                             {t.label}
                           </option>
