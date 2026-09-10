@@ -70,6 +70,31 @@ composer's `linked` set, which lit the Link2 affordance regardless of kind.
       non-quote entities. Verified live (`aria-pressed`: Add-a-quote `true`, Link-an-item
       `false`).
 
+## Folded in (JC, this session) — attribution surfacing
+- [x] **Promote a free-text author to a Vessel.** A quote attributed only by free-text
+      `creator` sat in the **General** (unattributed) bucket, invisible to By-Vessel. The
+      editor now shows **"Make '<name>' a Vessel"** (`promoteCreatorToVoice` in
+      `knowledge.$knowledgeId.tsx`) — reuses an existing Vessel of the same name (no dupes)
+      or mints one, sets `voice_id`, clears the now-redundant `creator`. Verified live: the
+      Vessel appeared under the grouped view. (Seed note: "YOUCAT, Benedict XVI" conflates a
+      book + a person — worth fixing the author to "Benedict XVI" before promoting for real.)
+- [x] **Scripture quotes group by book of the Bible.** Unattributed `scripture` quotes now
+      form **virtual per-book buckets** (e.g. "Luke") in the grouped view — a Bible book is
+      not a Voice, so no real Vessel is minted (mirrors the General bucket, plain non-link
+      header). New `bibleBookName()` in `bible/apps.ts` resolves full names **and common
+      abbreviations** ("Lk 1:31" → "Luke"); the abbreviation map also improves the Bible
+      deep-link. Verified live (Luke bucket held the "Lk 1:31" quote; General held the
+      non-scripture one).
+- [x] **Filter pills relabeled** (JC): dropped the "By" prefix — **By Vessel → "Voices"**,
+      **By Channel → "Channel"**. Section umbrella "Vessels" left unchanged.
+
+## Open (JC is thinking about it) — Vessel vs Voice concept
+JC: *"vessels and voices are mixed up. Voices are people and organizations. Vessels… more
+general — a book is a vessel, programs… vessels of God's messages."* The umbrella term and
+model are **still being worked out** — deferred. Live tension to resolve then: the
+scripture **book** buckets and the promoted authors both surface under the **Voices** pill,
+which now reads as people/orgs; a book-as-vessel may want a different home.
+
 ## Decisions (were open questions)
 - **Picker scope:** one searchable picker across all content. ✅
 - **Author inheritance:** fill-if-empty, never clobber — *"empty"* means **neither**
