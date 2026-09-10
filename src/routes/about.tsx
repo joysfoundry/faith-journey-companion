@@ -112,7 +112,8 @@ function AboutPage() {
           <h2 className="font-display text-lg text-foreground">Everything stays with you</h2>
           <p className="text-sm leading-relaxed text-muted-foreground">
             Your prayers, reflections, and settings live on this device, in this browser —
-            there&rsquo;s no account, no email, and nothing is sent to a server. That also
+            there&rsquo;s no account and no email, and nothing leaves this device unless you
+            send it: a share link, an export, or feedback. That also
             means they don&rsquo;t sync across devices yet, and clearing your browser data (or{" "}
             <Link to="/settings" className="text-primary hover:underline">
               Settings → Start over
