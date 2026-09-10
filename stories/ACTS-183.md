@@ -2,7 +2,7 @@
 id: ACTS-183
 title: Tie a quote to its source content (any content — book, podcast, article…)
 spine:
-status: To Do
+status: In Progress
 origin: human-directed
 approved_by: JC
 depends_on: [ACTS-181]
@@ -42,37 +42,62 @@ regardless of kind. A podcast quote is kind `open` ("heard/read") **plus** a lin
 podcast item — no new quote kind needed.
 
 ## Acceptance criteria
-- [ ] A quote can be linked to **any content `KnowledgeItem`** (new generic
-      `source_item_id?: ID`, flagged data-shape below) — book, article, video, podcast,
-      post.
-- [ ] Add/edit a quote offers a **content picker** (the person's existing items, sensibly
-      scoped/searchable); choosing one links it and fills title (`source`) + author
-      (Vessel).
-- [ ] When no matching item exists, **"Add as content"** creates the item in the right
-      category from what was typed and links the quote to it.
-- [ ] **Any** content's detail page shows **"Quotes from this"** — every quote whose
-      `source_item_id` is that item — each linking to the quote.
-- [ ] Unlinking / deleting the source item leaves the quote intact (link optional; the
-      quote keeps its `source` text).
-- [ ] Composes with the library (search, By Vessel / By Channel, category chips) and the
-      ACTS-181 kinds (the link is orthogonal to `quote_kind`).
+- [x] A quote can be linked to **any content `KnowledgeItem`** (new generic
+      `source_item_id?: ID`) — book, article, video, podcast, post. Added to the type,
+      normalized in `store.ts`, migrated with **no `STORAGE_KEY` bump** (existing quotes
+      simply have none).
+- [x] Add/edit a quote offers a **content picker** (`QuoteSourcePicker`, on the quote's
+      detail/edit page) — one searchable list across all non-quote content; choosing one
+      links it and **fills** title (`source`) + author (Vessel/`creator`) **only if empty**.
+- [x] When no matching item exists, **"Add as content"** mints the item in the right
+      category (defaulted from `quote_kind`, editable), carries the quote's author, and
+      links the quote to it.
+- [x] **Any** content's detail page shows **"Quotes from this"** — every quote whose
+      `source_item_id` is that item — each linking to the quote. (The quote's own page also
+      shows a forward "From …" link to its source.)
+- [x] Unlinking / deleting the source item leaves the quote intact — `deleteKnowledgeItem`
+      clears any dangling `source_item_id`; the quote keeps its free-text `source`.
+- [x] Composes with the ACTS-181 kinds (link is orthogonal to `quote_kind` — a book quote
+      stayed kind `book` through link/unlink/mint/delete in the live check).
 
-## Open questions for JC
-- **Picker scope:** offer *all* content in the picker, or scope by a chosen category
-  first (pick "podcast" → list podcasts)? Lean: one searchable picker across all content.
-- **Author inheritance:** overwrite the quote's Vessel with the source item's, or only
-  fill if empty? (Lean: fill if empty, never clobber.)
-- **Two-way create:** should a content item's page also have "Add a quote from this"
-  (the reverse of "Add as content")? Nice-to-have; can be a follow-on.
-- **Data-shape** (flag before building): new generic `source_item_id?: ID` on
-  `KnowledgeItem`. Migrate with **no `STORAGE_KEY` bump / no reset** (ACTS-177 pattern) —
-  existing quotes simply have none.
+## Folded in (JC, this session) — reflection ↔ content connection
+JC: launching a reflection from a **quote** attached it under the generic **Link an item**
+icon, not the **quote** icon. Root cause: a `?link=<id>` prefill drops the id into the
+composer's `linked` set, which lit the Link2 affordance regardless of kind.
+- [x] `ReflectionComposer` icon states are now **kind-aware**: a quote inspiration (minted
+      inline *or* reflected-from an existing quote record — any `learning` link whose target
+      is a `quote` item) lights the **Add a quote** icon; **Link an item** lights only for
+      non-quote entities. Verified live (`aria-pressed`: Add-a-quote `true`, Link-an-item
+      `false`).
+
+## Decisions (were open questions)
+- **Picker scope:** one searchable picker across all content. ✅
+- **Author inheritance:** fill-if-empty, never clobber — *"empty"* means **neither**
+  `voice_id` **nor** `creator` set (the live check caught a first cut that only looked at
+  `voice_id` and so overrode a free-text author). ✅
+- **Data-shape:** generic `source_item_id?: ID`, no `STORAGE_KEY` bump. ✅
+
+## Deferred → spinoff (JC)
+"Add a link to a post that operates like the Add-Vessels **paste-a-link** flow, launched
+from a quote's source" — JC: *"was planning that next … probably an icon next to the
+others."* Not built here; file as its own story (enrich a minted/linked source via the
+`QuickAddLink` paste-a-link path, surfaced as an extra affordance in `QuoteSourcePicker`).
 
 ## Tests
-- **Unit**: resolver for "quotes of an item" (filter by `source_item_id`, any category);
-  the create-from-quote builder (typed title/author → a valid item of the right category
-  + linked quote). Planned.
-- **Integration**: add a quote, link it to an existing item (test a book AND a podcast),
-  assert inherited title/author + the reverse "Quotes from this" listing on each; add a
-  quote with no item, "Add as content", assert both exist and are linked. Planned.
-- **E2E**: extends **flow E12** (Formation / Knowledge). Planned.
+No automated runner yet (ACTS-92 deferred) — verified live in the running app instead
+(port 8081; used the seeded "The world offers you comfort…" book quote + "Why We're
+Catholic", restored to seed state after):
+- **Link existing** → `source` filled (was empty), `source_item_id` set, author **not**
+  overridden (kept `creator` "YOUCAT, Benedict XVI"; `voice_id` stayed unset). ✓
+- **Reverse** → "Why We're Catholic" page showed **Quotes from this** with the quote,
+  linking back. ✓
+- **Add as content** → minted a `book` (category defaulted from kind), carried the author,
+  linked the quote. ✓
+- **Delete source** → minted item deleted; quote's `source_item_id` auto-cleared, `source`
+  text survived. ✓
+- **Reflection icon** → reflect-from-quote: `aria-pressed` Add-a-quote `true`, Link-an-item
+  `false`. ✓
+- No console errors throughout.
+- **Planned (when ACTS-92 lands):** unit `quotesFromItem` / `sourceItemOf` /
+  `defaultSourceCategory`; the fill-if-empty guard; `deleteKnowledgeItem` dangling-clear.
+  E2E extends **flow E12** (Formation / Knowledge).
