@@ -2,16 +2,24 @@
 id: ACTS-183
 title: Tie a quote to its source content (any content — book, podcast, article…)
 spine:
-status: In Progress
+status: Done
 origin: human-directed
 approved_by: JC
 depends_on: [ACTS-181]
-relates_to: [ACTS-176, ACTS-180, ACTS-179, ACTS-171, ACTS-178]
+relates_to: [ACTS-176, ACTS-180, ACTS-179, ACTS-171, ACTS-178, ACTS-185, ACTS-186, ACTS-187, ACTS-188]
 started_at: 2026-09-09T18:24:28-0700
-updated:    2026-09-10T12:01:15-0700
+updated:    2026-09-10T13:03:55-0700
 latest_handoff: ACTS-183/session-01.md
 sessions: 1
 ---
+
+> **Done 2026-09-10.** All acceptance criteria met and verified live (session-01). Core
+> shipped: `source_item_id` linking + `QuoteSourcePicker` + reverse "Quotes from this";
+> Bible modeled as one book per translation (linked book = version) + scripture-by-book
+> grouping. Follow-on UX/redesign split out: **ACTS-185** (Done), **ACTS-186** (sweep, open),
+> **ACTS-187** (unified add form), **ACTS-188** (Settings version toggles). Deferred and not
+> yet filed: paste-a-link from a quote's source ("icon next to the others"). Committed,
+> unpushed — JC to `git push`.
 
 ## Goal
 As someone saving a quote **from something I've saved** — a book, a podcast, a video, an
