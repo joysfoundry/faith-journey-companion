@@ -2,15 +2,15 @@
 id: ACTS-179
 title: Vessels library — add Voice and Channel as filters
 spine:
-status: In Progress
+status: Done
 origin: human-directed
 approved_by: JC
 depends_on: []
 relates_to: [ACTS-137, ACTS-171, ACTS-177, ACTS-178]
 started_at: 2026-09-09T12:42:04-0700
-updated:    2026-09-09T16:52:58-0700
-latest_handoff: null
-sessions: 0
+updated:    2026-09-09T17:05:00-0700
+latest_handoff: ACTS-179/session-01.md
+sessions: 1
 ---
 
 ## Goal
