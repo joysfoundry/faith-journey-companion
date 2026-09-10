@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { forwardRef, useEffect, useMemo, useState } from "react";
 
+import { EntitySuggestInput } from "@/components/knowledge/EntitySuggestInput";
 import { InspirationPanel } from "@/components/reflections/InspirationPanel";
 import { RichTextArea } from "@/components/reflections/RichTextArea";
 import { ThemeEditor } from "@/components/reflections/ThemeEditor";
@@ -20,6 +21,8 @@ import { Textarea } from "@/components/ui/textarea";
 import type { LinkableItem } from "@/domain/placeholderData";
 import { newId, todayISO } from "@/lib/prayer/compiler";
 import { QUOTE_KIND_LABELS, QUOTE_KIND_OPTIONS, detectPlatform } from "@/lib/prayer/knowledge";
+import { BIBLE_TRANSLATIONS, DEFAULT_TRANSLATION } from "@/lib/bible/apps";
+import { BIBLE_BOOK_ID, bibleVersionBookId } from "@/lib/prayer/store";
 import { LECTIO_TEMPLATE_ID } from "@/lib/prayer/seed";
 import {
   clearReflectionDraft,
@@ -97,7 +100,7 @@ const IconBtn = forwardRef<
  * to sit inside the Home "Reflection" SectionCard.
  */
 export function ReflectionComposer({ linkables, prefillLinkId, showDraftStatus }: Props) {
-  const { db, addReflection, addKnowledgeItem, startSession } = useApp();
+  const { db, addReflection, addKnowledgeItem, upsertVoice, startSession } = useApp();
   const navigate = useNavigate();
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
@@ -115,6 +118,8 @@ export function ReflectionComposer({ linkables, prefillLinkId, showDraftStatus }
   const [quoteFrom, setQuoteFrom] = useState("");
   const [quoteSource, setQuoteSource] = useState("");
   const [quoteRef, setQuoteRef] = useState("");
+  // The Bible-version book a scripture quote links to ("" = the Settings default).
+  const [quoteVersion, setQuoteVersion] = useState("");
   const [quoteUrl, setQuoteUrl] = useState("");
   const [linkUrl, setLinkUrl] = useState("");
   const [linkLabel, setLinkLabel] = useState("");
@@ -200,6 +205,28 @@ export function ReflectionComposer({ linkables, prefillLinkId, showDraftStatus }
     const isScripture = quoteKind === "scripture";
     const takesSource = quoteKind === "book" || quoteKind === "article";
     const url = normalizeUrl(quoteUrl);
+    // Attribution always yields a Vessel (ACTS-183/JC): the "From" name find-or-creates
+    // a Vessel (reuse an existing one, mint otherwise), rather than a free-text author.
+    // Scripture has no personal author (its source is the Bible), so it carries none.
+    const fromName = quoteFrom.trim();
+    let voiceId: string | undefined;
+    if (!isScripture && fromName) {
+      const existing = db.voices.find((v) => v.name.trim().toLowerCase() === fromName.toLowerCase());
+      if (existing) voiceId = existing.id;
+      else {
+        voiceId = newId("voice");
+        upsertVoice({ id: voiceId, name: fromName, kind: "individual", created_at: new Date().toISOString() });
+      }
+    }
+    // Link the quote to an existing content item when the "source" work names one
+    // ("Bible" → the Bible book) — connected, not a free-text copy.
+    const sourceName = quoteSource.trim();
+    const sourceItem =
+      takesSource && sourceName
+        ? db.knowledge_items.find(
+            (i) => i.category !== "quote" && i.title.trim().toLowerCase() === sourceName.toLowerCase(),
+          )
+        : undefined;
     addKnowledgeItem({
       id,
       title: "", // a quote's payload is its body, not a title
@@ -207,10 +234,12 @@ export function ReflectionComposer({ linkables, prefillLinkId, showDraftStatus }
       quote_kind: quoteKind,
       body,
       scripture_ref: isScripture ? quoteRef.trim() || undefined : undefined,
-      // The free-text "From" (who/where, or the author) — this surface has no Vessel.
-      creator: !isScripture ? quoteFrom.trim() || undefined : undefined,
-      // The work: a book title or a publication/show.
-      source: takesSource ? quoteSource.trim() || undefined : undefined,
+      voice_id: voiceId,
+      // Scripture links to its chosen Bible-version book; other kinds link a matched
+      // source work when the "source" names one.
+      source_item_id: isScripture ? quoteVersion || defaultVersionBook : sourceItem?.id,
+      // The work: "Bible" for scripture, else the book title / publication.
+      source: isScripture ? "Bible" : takesSource ? quoteSource.trim() || undefined : undefined,
       links: !isScripture && url ? [{ platform: detectPlatform(url), url }] : undefined,
       status: "not_started",
       created_at: new Date().toISOString(),
@@ -225,6 +254,7 @@ export function ReflectionComposer({ linkables, prefillLinkId, showDraftStatus }
     setQuoteFrom("");
     setQuoteSource("");
     setQuoteRef("");
+    setQuoteVersion("");
     setQuoteUrl("");
     setQuoteOpen(false);
   }
@@ -261,6 +291,21 @@ export function ReflectionComposer({ linkables, prefillLinkId, showDraftStatus }
   function removeManualLink(id: string) {
     setManualLinks((prev) => prev.filter((p) => p.target_id !== id));
   }
+
+  // Suggestion lists for the quote's entity boxes (connected-entity-inputs): the
+  // "From" author matches existing Vessels; the book/article "source" matches
+  // content already in the library ("bi" → Bible). Accepting reuses/links the
+  // existing entity instead of storing a duplicate string.
+  const voiceSuggestions = db.voices
+    .filter((v) => (v.name || "").trim())
+    .map((v) => ({ id: v.id, name: v.name }));
+  const contentSuggestions = db.knowledge_items
+    .filter((i) => i.category !== "quote" && i.title.trim())
+    .map((i) => ({ id: i.id, name: i.title }));
+  // A scripture quote defaults to the reader's Settings translation's Bible book.
+  const defaultVersionBook = BIBLE_TRANSLATIONS.some((t) => t.id === db.settings.bible_translation)
+    ? bibleVersionBookId(db.settings.bible_translation!)
+    : bibleVersionBookId(DEFAULT_TRANSLATION);
 
   // Quote inspirations belong under the quote affordance, never the generic
   // "Link an item" icon (ACTS-183). A quote reaches a reflection two ways — minted
@@ -464,31 +509,52 @@ export function ReflectionComposer({ linkables, prefillLinkId, showDraftStatus }
                 rows={4}
               />
               {quoteKind === "scripture" ? (
-                <Input
-                  value={quoteRef}
-                  onChange={(e) => setQuoteRef(e.target.value)}
-                  placeholder="Citation — e.g. Lk 1:26-38"
-                  className="h-8 text-sm"
-                />
+                <>
+                  <Input
+                    value={quoteRef}
+                    onChange={(e) => setQuoteRef(e.target.value)}
+                    placeholder="Citation — e.g. Luke 1:26-38"
+                    className="h-8 text-sm"
+                  />
+                  {/* Version — which "Bible — <translation>" this verse is from;
+                      defaults to the reader's Settings translation. */}
+                  <select
+                    value={quoteVersion || defaultVersionBook}
+                    onChange={(e) => setQuoteVersion(e.target.value)}
+                    aria-label="Bible version"
+                    className="h-8 w-full rounded-md border border-input bg-background px-2 text-sm"
+                  >
+                    {BIBLE_TRANSLATIONS.map((t) => (
+                      <option key={t.id} value={bibleVersionBookId(t.id)}>
+                        {t.label}
+                      </option>
+                    ))}
+                    <option value={BIBLE_BOOK_ID}>Unknown</option>
+                  </select>
+                </>
               ) : (
                 <>
                   {quoteKind === "book" || quoteKind === "article" ? (
-                    <Input
+                    <EntitySuggestInput
                       value={quoteSource}
-                      onChange={(e) => setQuoteSource(e.target.value)}
+                      onChange={setQuoteSource}
+                      entities={contentSuggestions}
                       placeholder={quoteKind === "book" ? "Book title (optional)" : "Publication or show (optional)"}
                       className="h-8 text-sm"
+                      ariaLabel="Source work"
                     />
                   ) : null}
-                  <Input
+                  <EntitySuggestInput
                     value={quoteFrom}
-                    onChange={(e) => setQuoteFrom(e.target.value)}
+                    onChange={setQuoteFrom}
+                    entities={voiceSuggestions}
                     placeholder={
                       quoteKind === "open"
                         ? "From — who or where you heard it"
                         : "From — author (optional)"
                     }
                     className="h-8 text-sm"
+                    ariaLabel="From"
                   />
                   <Input
                     value={quoteUrl}

@@ -35,7 +35,13 @@ function InspirationCard({
   return (
     <div className="rounded-lg border border-border/70 bg-secondary/40 px-3 py-2.5">
       <div className="flex items-baseline justify-between gap-2">
-        <p className="min-w-0 truncate font-medium text-foreground">{resolved.label}</p>
+        {/* A quote card leads with its Vessel (or nothing) — the bold title is just
+            the truncated body, redundant with the quote text below (JC). */}
+        {resolved.isQuote ? (
+          <p className="min-w-0 truncate text-xs text-muted-foreground">{resolved.detail ?? ""}</p>
+        ) : (
+          <p className="min-w-0 truncate font-medium text-foreground">{resolved.label}</p>
+        )}
         <div className="flex shrink-0 items-center gap-2">
           {href ? (
             <a
@@ -59,7 +65,9 @@ function InspirationCard({
           ) : null}
         </div>
       </div>
-      {resolved.detail ? <p className="text-xs text-muted-foreground">{resolved.detail}</p> : null}
+      {!resolved.isQuote && resolved.detail ? (
+        <p className="text-xs text-muted-foreground">{resolved.detail}</p>
+      ) : null}
       {resolved.text ? (
         <p className="mt-1.5 whitespace-pre-line border-l-2 border-border pl-3 text-sm italic text-muted-foreground">
           {resolved.text}

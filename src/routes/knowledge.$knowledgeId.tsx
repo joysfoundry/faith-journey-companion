@@ -166,25 +166,6 @@ function KnowledgeRecordPage() {
     setNewVoiceName("");
   }
 
-  /**
-   * Promote a free-text `creator` (ACTS-183) to a real Vessel so the item surfaces
-   * in "By Vessel" instead of sitting in the unattributed General bucket. Reuses an
-   * existing Vessel of the same name (case-insensitive) rather than duplicating it,
-   * and clears `creator` once the attribution lives on the Vessel.
-   */
-  function promoteCreatorToVoice() {
-    const name = item!.creator?.trim();
-    if (!name) return;
-    const existing = voices.find((v) => v.name.trim().toLowerCase() === name.toLowerCase());
-    if (existing) {
-      save({ voice_id: existing.id, channel_id: undefined, creator: undefined });
-      return;
-    }
-    const id = newId("voice");
-    upsertVoice({ id, name, kind: "individual", created_at: new Date().toISOString() });
-    save({ voice_id: id, channel_id: undefined, creator: undefined });
-  }
-
   const firstUrl = links[0]?.url ?? "";
   const voiceMatch = !item.voice_id ? matchVoice(firstUrl, voices) : undefined;
 
@@ -283,7 +264,7 @@ function KnowledgeRecordPage() {
                       <Input
                         value={item.scripture_ref ?? ""}
                         onChange={(e) => save({ scripture_ref: e.target.value || undefined })}
-                        placeholder="Book chapter:verse — e.g. Lk 1:26-38"
+                        placeholder="Book chapter:verse — e.g. Luke 1:26-38"
                         className="h-10"
                       />
                     </div>
@@ -443,19 +424,6 @@ function KnowledgeRecordPage() {
                 >
                   <UserPlus className="size-4" aria-hidden /> Create a{" "}
                   {VOICE_LABEL_SINGULAR.toLowerCase()} from this link
-                </Button>
-              ) : null}
-              {/* Promote a free-text author to a real Vessel so it shows in
-                  "By Vessel" instead of General (ACTS-183). */}
-              {!item.voice_id && item.creator?.trim() ? (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={promoteCreatorToVoice}
-                  className="gap-1.5"
-                >
-                  <UserPlus className="size-4" aria-hidden /> Make “{item.creator.trim()}” a{" "}
-                  {VOICE_LABEL_SINGULAR.toLowerCase()}
                 </Button>
               ) : null}
               <div className="flex items-center gap-2 pt-1">

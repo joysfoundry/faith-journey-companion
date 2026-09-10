@@ -21,6 +21,8 @@ export interface ResolvedInspiration {
   text?: string;
   /** Open-out URL where the source lives elsewhere (a knowledge link). */
   href?: string;
+  /** True when the source is a library quote — its card shows voice + body, no title. */
+  isQuote?: boolean;
 }
 
 /** Best label we can fall back to when nothing better resolves. */
@@ -78,6 +80,7 @@ export function resolveInspiration(link: ReflectionLink, db: Database): Resolved
         ...(detail ? { detail } : {}),
         ...(item.body?.trim() ? { text: item.body.trim() } : {}),
         ...(href ? { href } : {}),
+        ...(item.category === "quote" ? { isQuote: true } : {}),
       };
     }
 
