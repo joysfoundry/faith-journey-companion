@@ -1,52 +1,68 @@
 ---
 id: ACTS-182
-title: Collapse the Home Vessels card and move it last
+title: Home page redesign — collapsible "Vessels of Knowledge" + nav-bar reshuffle
 spine:
 status: To Do
 origin: human-directed
 approved_by: JC
 depends_on: []
-relates_to: [ACTS-137, ACTS-177, ACTS-179]
-superseded_by: ACTS-190
+relates_to: [ACTS-137, ACTS-177, ACTS-179, ACTS-189]
 started_at: 2026-09-09T17:13:36-0700
-updated:    2026-09-09T17:13:36-0700
+updated:    2026-09-10T14:29:48-0700
 latest_handoff: null
 sessions: 0
 ---
 
 ## Goal
-As someone on the Home page, I want the **Vessels** card collapsed by default and moved
-to the **bottom** of the Home stack, so Home leads with prayer / Word / reflection and
-Vessels stays available but out of the way.
+As someone on the Home page, I want Home to lead with prayer / Word / reflection and keep
+the Vessels library **available but out of the way** — collapsed, renamed to make its
+purpose obvious, and reachable straight from the main navigation.
 
-## Context (why)
-Home (`src/routes/index.tsx`) stacks its cards Prayer/Devotion → **Word** (C) →
-**Vessels** (D, ~L872, the `SectionCard title={SECTION_LABEL}`) → **Reflection**. The
-Vessels card is always expanded and sits above Reflection. JC wants it (a) **collapsible,
-collapsed by default**, and (b) rendered **last**. `SectionCard`
-(`src/components/home/SectionCard.tsx`) has **no collapse support today** — a
-`Collapsible` primitive is already imported/available in `index.tsx` (L52).
+Originally just the collapse/move (filed 2026-09-09); JC expanded it 2026-09-10 into the
+full Home redesign (the later "ACTS-190 Home redesign" was folded back here — always keep the
+work on the **earlier** story):
+> a. make vessels collapsible, move block under reflections.
+> b. title of Vessels is "Vessels of Knowledge".
+> c. Move Vessels onto main bar and switch out Word to settings. All of its functionality
+> can be accessed on other blocks.
+
+## Context
+- **Home** (`src/routes/index.tsx`) stacks cards Prayer/Devotion → **Word** (C) →
+  **Vessels** (D, ~L872, `SectionCard title={SECTION_LABEL}`) → **Reflection**. The Vessels
+  card is always expanded and sits above Reflection. `SectionCard`
+  (`src/components/home/SectionCard.tsx`) has **no collapse** today; a `Collapsible` primitive
+  is already available in `index.tsx`.
+- **Nav** (`src/components/layout/nav-links.ts`): primary bottom bar = Today · Plan · Prayers ·
+  **Word** · Reflect. Secondary drawer = **Vessels** (`/formation`, `SECTION_LABEL`) · Add
+  prayers · Export · **Settings** · About.
+- **Section label**: `SECTION_LABEL = "Vessels"` in `src/lib/prayer/knowledge.ts` (used by the
+  Home card, the `/formation` page, and nav).
 
 ## Acceptance criteria
-- [ ] The Home Vessels card is **collapsible** via a header affordance (chevron) and is
-      **collapsed by default**.
-- [ ] The Vessels card renders **last** in the Home stack (below Reflection — confirm
-      exact placement with JC).
-- [ ] The card's contents (pinned Vessel/channel/link rows) are unchanged; the empty
-      state still reads clearly.
+- [ ] **(a)** The Home Vessels card is **collapsible** (header chevron) and **collapsed by
+      default**, rendered **last** in the Home stack — below the Reflection composer (confirm
+      exact placement). Card contents (pinned rows) and empty state unchanged.
+- [ ] **(b)** The card's title reads **"Vessels of Knowledge"** (decide with JC: rename the
+      shared `SECTION_LABEL` app-wide — Home card + `/formation` + nav — or only the Home card).
+- [ ] **(c)** **Vessels** appears on the primary nav bar and **Word is removed from it** — Word
+      stays reachable via Home blocks (the Word card) and `/word`, not a nav slot. **Settings**
+      becomes more reachable from the bar. Exact 5-slot arrangement TBD (see Qs).
 - [ ] Collapse/expand persists across sessions (localStorage) — confirm with JC.
+- [ ] No functionality lost: everything previously reached via the Word nav entry is still
+      reachable (Home Word card, `/word` route).
 
 ## Open questions for JC
-- **Persist** the collapsed/expanded state across sessions, or always start collapsed?
-- **Last** = below the Reflection composer, or last among the "content" cards but above
-  Reflection?
-- Add collapse as a **`SectionCard` option** (reusable) or one-off around the Vessels
-  card only? (Prefer the reusable option if other cards will want it.)
+- **(c) exact bar:** 5 slots today (Today · Plan · Prayers · Word · Reflect). Desired end
+  state? e.g. **Today · Plan · Prayers · Vessels · Reflect** with Word dropped — and where does
+  **Settings** land ("switch out Word to settings" = Word's slot becomes Settings, and Vessels
+  takes a different slot)? Confirm the final five.
+- **(b) rename scope:** "Vessels of Knowledge" everywhere (`SECTION_LABEL`) or just the Home
+  card title? (Nav space is tight for the longer label.)
+- **(a) placement:** strictly last (below the Reflection composer), or last among the content
+  cards but above Reflection? Add collapse as a reusable `SectionCard` option, or one-off?
+- Persist collapse state, or always start collapsed each visit?
 
 ## Tests
-- **Unit**: N/A — presentational (no `src/lib/**` logic).
-- **Integration**: render Home, assert the Vessels card is **last** and **collapsed** by
-  default; toggle expands it and reveals the pinned rows; (if persisted) a remount keeps
-  the chosen state. Planned (ACTS-92).
-- **E2E**: extend the Home flow — Vessels appears last, collapsed; expanding shows pins.
-  Planned.
+No runner yet (ACTS-92). **Integration:** Home renders the Vessels card collapsed + last;
+nav bar shows Vessels, not Word; card title reads "Vessels of Knowledge". **Unit:** nav-links
+composition. **E2E:** Home layout + nav flow. Planned.
