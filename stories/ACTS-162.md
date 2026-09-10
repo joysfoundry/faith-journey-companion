@@ -2,13 +2,13 @@
 id: ACTS-162
 title: Send feedback from the menu
 spine:
-status: To Do
+status: In Progress
 origin: human-typed
 approved_by: JC
 depends_on: []
 relates_to: [ACTS-94, ACTS-161, ACTS-157, ACTS-82]
 started_at: 2026-09-05T13:15:11-0700
-updated:    2026-09-05T13:15:11-0700
+updated:    2026-09-05T15:56:40-0700
 latest_handoff: null
 sessions: 0
 ---
@@ -43,10 +43,19 @@ A table is the only option that keeps the credential server-side.
 - `src/lib/prayer/feedback.functions.ts` — a `createServerFn({ method: "POST" })` with a
   zod validator and a hard length cap, mirroring `share.functions.ts`.
 - Columns: `id` (uuid pk), `created_at`, `message` (required, capped), `kind`
-  (`bug | idea | other`), and context the tester shouldn't have to type — `display_name`
-  (from settings, if set), `route` (where they were), `user_agent`. Nothing else: **no
-  journey content, no reflections, no session data.** The Markdown export (ACTS-157) is
-  the deliberate path for those, and it stays separate.
+  (`bug | idea | other`), plus optional context — `display_name`, `route`, `device`.
+  Nothing else: **no journey content, no reflections, no session data.** The Markdown
+  export (ACTS-157) is the deliberate path for those, and it stays separate.
+- **The visible-fields rule (decided 2026-09-05):** nothing goes in the row that the
+  person cannot see on screen before they press send. Context is *prefilled and shown*,
+  not silently attached — `route` renders as a removable line, `display_name` prefills
+  from settings and can be cleared (anonymous must stay possible), and `device` is plain
+  words ("iPhone · Safari") the person can read, **not a raw `user_agent` string**.
+  A hidden fingerprint is the ambient collection that "no account, no email" repudiates;
+  a field they can see is just a prefilled form. This is the line that keeps feedback
+  consistent with the promise — the database was never the problem.
+- `user_id uuid references auth.users(id) on delete set null`, null today. Lets auth
+  (ACTS-87/88) start populating rows without reshaping the table or its access model.
 - Insert-only. No client read path, so no one can enumerate other people's feedback.
 
 **"Combo" is a follow-on, not this story.** Once rows exist, a Supabase DB webhook or
@@ -79,6 +88,12 @@ linked to directly from the invitation or a nudge later.
       select/insert with the publishable key and getting denied.
 - [ ] Works with no name set (i.e. after ACTS-161, `display_name` may be absent).
 - [ ] Length cap enforced server-side, not only in the textarea.
+- [ ] **Every field that lands in the row is visible in the form before sending** —
+      `route`, `display_name` and `device` are shown, and each can be removed/cleared.
+- [ ] No raw `user_agent`, no IP, no silent identifier is stored.
+- [ ] Feedback can be sent anonymously (name cleared) and still succeeds.
+- [ ] The About copy naming feedback as a thing that leaves the device is accurate —
+      i.e. this ships, or the word comes back out of `about.tsx` **and** `invite.html`.
 
 ## Tests
 - **Unit** (Vitest — pure `src/lib/**`): the zod input validator — empty message rejected,
