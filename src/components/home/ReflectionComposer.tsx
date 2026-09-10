@@ -1,27 +1,25 @@
 import { useNavigate } from "@tanstack/react-router";
 import {
-  BookOpen,
   Camera,
   Check,
   Flame,
   Globe,
   Link2,
-  MessagesSquare,
+  MessageSquareQuote,
   Trash2,
-  X,
 } from "lucide-react";
 import { forwardRef, useEffect, useMemo, useState } from "react";
 
 import { InspirationPanel } from "@/components/reflections/InspirationPanel";
 import { RichTextArea } from "@/components/reflections/RichTextArea";
 import { ThemeEditor } from "@/components/reflections/ThemeEditor";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
 import type { LinkableItem } from "@/domain/placeholderData";
 import { newId, todayISO } from "@/lib/prayer/compiler";
+import { QUOTE_KIND_LABELS, QUOTE_KIND_OPTIONS, detectPlatform } from "@/lib/prayer/knowledge";
 import { LECTIO_TEMPLATE_ID } from "@/lib/prayer/seed";
 import {
   clearReflectionDraft,
@@ -31,7 +29,7 @@ import {
 } from "@/lib/prayer/reflectionDraft";
 import { useApp } from "@/lib/prayer/store";
 import { suggestThemes, themeHistory } from "@/lib/prayer/themes";
-import type { ReflectionLink, ReflectionLinkTarget } from "@/lib/prayer/types";
+import type { QuoteKind, ReflectionLink, ReflectionLinkTarget } from "@/lib/prayer/types";
 
 interface Props {
   linkables: LinkableItem[];
@@ -48,6 +46,10 @@ interface Props {
 const GROUP_TARGET: Record<string, ReflectionLinkTarget> = {
   "Prayer & devotion": "prayer_session",
   Word: "daily_reading",
+  // The linkables builder names the library group "Knowledge"; both keys map to
+  // the `learning` target so a reflected-from item (incl. a quote) resolves its
+  // body in the inspiration panel rather than degrading to a generic intention.
+  Knowledge: "learning",
   Learn: "learning",
   Mass: "mass",
 };
@@ -95,18 +97,25 @@ const IconBtn = forwardRef<
  * to sit inside the Home "Reflection" SectionCard.
  */
 export function ReflectionComposer({ linkables, prefillLinkId, showDraftStatus }: Props) {
-  const { db, addReflection, startSession } = useApp();
+  const { db, addReflection, addKnowledgeItem, startSession } = useApp();
   const navigate = useNavigate();
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
-  const [mode, setMode] = useState<"written" | "open_dialogue">("written");
   const [themes, setThemes] = useState<string[]>([]);
   const [linked, setLinked] = useState<string[]>([]);
-  // Non-entity sources the user attaches directly: pasted `passage`s and web `link`s.
+  // Non-entity sources the user attaches directly: saved quotes (a `learning` link
+  // to a minted quote, ACTS-181) and web `link`s.
   const [manualLinks, setManualLinks] = useState<ReflectionLink[]>([]);
-  const [passageText, setPassageText] = useState("");
-  const [passageLabel, setPassageLabel] = useState("");
-  const [passageOpen, setPassageOpen] = useState(false);
+  // "Quote that inspired this" — mirrors the library's quote-add (kind + fields) and
+  // saves a real quote, rather than a throwaway passage. `From` is the free-text who,
+  // since this surface has no Vessel picker.
+  const [quoteOpen, setQuoteOpen] = useState(false);
+  const [quoteKind, setQuoteKind] = useState<QuoteKind>("open");
+  const [quoteText, setQuoteText] = useState("");
+  const [quoteFrom, setQuoteFrom] = useState("");
+  const [quoteSource, setQuoteSource] = useState("");
+  const [quoteRef, setQuoteRef] = useState("");
+  const [quoteUrl, setQuoteUrl] = useState("");
   const [linkUrl, setLinkUrl] = useState("");
   const [linkLabel, setLinkLabel] = useState("");
   const [linkOpen, setLinkOpen] = useState(false);
@@ -122,7 +131,6 @@ export function ReflectionComposer({ linkables, prefillLinkId, showDraftStatus }
     if (draft) {
       setTitle(draft.title);
       setBody(draft.body);
-      setMode(draft.mode);
       setThemes(draft.themes);
       setLinked(draft.linked);
       setManualLinks(draft.manualLinks);
@@ -140,11 +148,10 @@ export function ReflectionComposer({ linkables, prefillLinkId, showDraftStatus }
   // Reflect. Skips the pre-hydration window; clears the buffer once it decays to empty.
   useEffect(() => {
     if (!hydrated) return;
-    saveReflectionDraft({ title, body, mode, themes, linked, manualLinks });
-  }, [hydrated, title, body, mode, themes, linked, manualLinks]);
+    saveReflectionDraft({ title, body, mode: "written", themes, linked, manualLinks });
+  }, [hydrated, title, body, themes, linked, manualLinks]);
 
   const groups = Array.from(new Set(linkables.map((l) => l.group)));
-  const labelFor = (id: string) => linkables.find((l) => l.id === id)?.label ?? id;
 
   function toggleLink(id: string) {
     setLinked((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -180,20 +187,46 @@ export function ReflectionComposer({ linkables, prefillLinkId, showDraftStatus }
     [title, body, themes, history],
   );
 
-  function addPassage() {
-    if (!passageText.trim()) return;
+  /**
+   * Save the quote that inspired this reflection (ACTS-181, "Save → keep"). Mints a
+   * real library quote — typed like the library's add form — and links the reflection
+   * to it via a `learning` link, so it lives on in the library and can be reflected
+   * from again. No throwaway `passage` link.
+   */
+  function addQuote() {
+    const body = quoteText.trim();
+    if (!body) return;
+    const id = newId("know");
+    const isScripture = quoteKind === "scripture";
+    const takesSource = quoteKind === "book" || quoteKind === "article";
+    const url = normalizeUrl(quoteUrl);
+    addKnowledgeItem({
+      id,
+      title: "", // a quote's payload is its body, not a title
+      category: "quote",
+      quote_kind: quoteKind,
+      body,
+      scripture_ref: isScripture ? quoteRef.trim() || undefined : undefined,
+      // The free-text "From" (who/where, or the author) — this surface has no Vessel.
+      creator: !isScripture ? quoteFrom.trim() || undefined : undefined,
+      // The work: a book title or a publication/show.
+      source: takesSource ? quoteSource.trim() || undefined : undefined,
+      links: !isScripture && url ? [{ platform: detectPlatform(url), url }] : undefined,
+      status: "not_started",
+      created_at: new Date().toISOString(),
+    });
+    const label = body.length > 60 ? `${body.slice(0, 57).trimEnd()}…` : body;
     setManualLinks((prev) => [
       ...prev,
-      {
-        target_type: "passage",
-        target_id: newId("passage"),
-        label: passageLabel.trim() || "Passage",
-        excerpt: passageText.trim(),
-      },
+      { target_type: "learning", target_id: id, label },
     ]);
-    setPassageText("");
-    setPassageLabel("");
-    setPassageOpen(false);
+    setQuoteKind("open");
+    setQuoteText("");
+    setQuoteFrom("");
+    setQuoteSource("");
+    setQuoteRef("");
+    setQuoteUrl("");
+    setQuoteOpen(false);
   }
 
   /** Prepend https:// when the user omits a scheme, so the URL opens out correctly. */
@@ -229,7 +262,7 @@ export function ReflectionComposer({ linkables, prefillLinkId, showDraftStatus }
     setManualLinks((prev) => prev.filter((p) => p.target_id !== id));
   }
 
-  const hasPassage = manualLinks.some((l) => l.target_type === "passage");
+  const hasQuote = manualLinks.some((l) => l.target_type === "learning");
   const hasWebLink = manualLinks.some((l) => l.target_type === "link");
 
   /** Wipe every composer field back to blank. Callers also clear the draft. */
@@ -239,7 +272,6 @@ export function ReflectionComposer({ linkables, prefillLinkId, showDraftStatus }
     setThemes([]);
     setLinked([]);
     setManualLinks([]);
-    setMode("written");
   }
 
   function save() {
@@ -248,7 +280,7 @@ export function ReflectionComposer({ linkables, prefillLinkId, showDraftStatus }
       id: newId("reflection"),
       title: title.trim() || undefined,
       body: body.trim(),
-      mode,
+      mode: "written",
       links: allLinks,
       ...(themes.length > 0 ? { themes } : {}),
       photo_count: 0,
@@ -339,57 +371,9 @@ export function ReflectionComposer({ linkables, prefillLinkId, showDraftStatus }
           ariaLabel="Your reflection"
         />
 
-        <ThemeEditor
-          value={themes}
-          onChange={setThemes}
-          suggestions={suggestions}
-          historyThemes={history.map((h) => h.theme)}
-        />
-
-        {(linked.length > 0 || manualLinks.length > 0) && (
-          <div className="flex flex-wrap gap-1.5">
-            {linked.map((id) => (
-              <Badge key={id} variant="secondary" className="gap-1 pr-1.5 font-normal">
-                {labelFor(id)}
-                <button
-                  type="button"
-                  onClick={() => toggleLink(id)}
-                  className="ml-0.5 rounded-full p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-                  aria-label={`Remove ${labelFor(id)}`}
-                >
-                  <X className="size-3" aria-hidden />
-                </button>
-              </Badge>
-            ))}
-            {manualLinks.map((l) => (
-              <Badge
-                key={l.target_id}
-                variant="outline"
-                className="gap-1 pr-1.5 font-normal"
-                title={l.target_type === "passage" ? l.excerpt : l.url}
-              >
-                {l.target_type === "passage" ? (
-                  <BookOpen className="size-3" aria-hidden />
-                ) : (
-                  <Globe className="size-3" aria-hidden />
-                )}
-                {l.label ?? (l.target_type === "passage" ? "Passage" : "Link")}
-                <button
-                  type="button"
-                  onClick={() => removeManualLink(l.target_id)}
-                  className="ml-0.5 rounded-full p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-                  aria-label={`Remove ${l.label ?? l.target_type}`}
-                >
-                  <X className="size-3" aria-hidden />
-                </button>
-              </Badge>
-            ))}
-          </div>
-        )}
-
-        <InspirationPanel links={allLinks} db={db} className="pt-1" />
-
-        <div className="flex items-center gap-1">
+        {/* What inspired this — the add-icons sit right above the chips/blocks they
+            produce, directly under the text box (ACTS-181 layout). */}
+        <div className="flex flex-wrap items-center gap-1">
           <IconBtn label="Add photo" disabled title="Photos land with the Cloud phase">
             <Camera className="size-4" aria-hidden />
           </IconBtn>
@@ -428,35 +412,83 @@ export function ReflectionComposer({ linkables, prefillLinkId, showDraftStatus }
             </PopoverContent>
           </Popover>
 
-          <Popover open={passageOpen} onOpenChange={setPassageOpen}>
+          <Popover open={quoteOpen} onOpenChange={setQuoteOpen}>
             <PopoverTrigger asChild>
               <IconBtn
-                label="Add a passage"
-                active={hasPassage}
-                title="Paste a book or quote passage"
+                label="Add a quote"
+                active={hasQuote}
+                title="Save the quote that inspired this"
               >
-                <BookOpen className="size-4" aria-hidden />
+                <MessageSquareQuote className="size-4" aria-hidden />
               </IconBtn>
             </PopoverTrigger>
             <PopoverContent align="start" className="w-80 space-y-2 p-3">
               <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-                Passage that inspired this
+                Quote that inspired this
               </p>
-              <Input
-                value={passageLabel}
-                onChange={(e) => setPassageLabel(e.target.value)}
-                placeholder="Source (optional) — e.g. Story of a Soul"
-                className="h-8 text-sm"
-              />
+              {/* Kind chooser — mirrors the library's quote-add (ACTS-181). */}
+              <div className="flex flex-wrap gap-1">
+                {QUOTE_KIND_OPTIONS.map((k) => (
+                  <button
+                    key={k}
+                    type="button"
+                    aria-pressed={quoteKind === k}
+                    onClick={() => setQuoteKind(k)}
+                    className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                      quoteKind === k
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-secondary text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {QUOTE_KIND_LABELS[k]}
+                  </button>
+                ))}
+              </div>
               <Textarea
-                value={passageText}
-                onChange={(e) => setPassageText(e.target.value)}
-                placeholder="Paste or type the passage…"
+                value={quoteText}
+                onChange={(e) => setQuoteText(e.target.value)}
+                placeholder={quoteKind === "scripture" ? "Paste or type the passage…" : "Paste or type the quote…"}
                 rows={4}
               />
+              {quoteKind === "scripture" ? (
+                <Input
+                  value={quoteRef}
+                  onChange={(e) => setQuoteRef(e.target.value)}
+                  placeholder="Citation — e.g. Lk 1:26-38"
+                  className="h-8 text-sm"
+                />
+              ) : (
+                <>
+                  {quoteKind === "book" || quoteKind === "article" ? (
+                    <Input
+                      value={quoteSource}
+                      onChange={(e) => setQuoteSource(e.target.value)}
+                      placeholder={quoteKind === "book" ? "Book title (optional)" : "Publication or show (optional)"}
+                      className="h-8 text-sm"
+                    />
+                  ) : null}
+                  <Input
+                    value={quoteFrom}
+                    onChange={(e) => setQuoteFrom(e.target.value)}
+                    placeholder={
+                      quoteKind === "open"
+                        ? "From — who or where you heard it"
+                        : "From — author (optional)"
+                    }
+                    className="h-8 text-sm"
+                  />
+                  <Input
+                    value={quoteUrl}
+                    onChange={(e) => setQuoteUrl(e.target.value)}
+                    placeholder="Link (optional)"
+                    className="h-8 text-sm"
+                    inputMode="url"
+                  />
+                </>
+              )}
               <div className="flex justify-end">
-                <Button type="button" size="sm" onClick={addPassage} disabled={!passageText.trim()}>
-                  Add passage
+                <Button type="button" size="sm" onClick={addQuote} disabled={!quoteText.trim()}>
+                  Save quote
                 </Button>
               </div>
             </PopoverContent>
@@ -504,36 +536,49 @@ export function ReflectionComposer({ linkables, prefillLinkId, showDraftStatus }
             </PopoverContent>
           </Popover>
 
-          <IconBtn
-            label="Open dialogue — speak or write freely, captured as your own words"
-            active={mode === "open_dialogue"}
-            onClick={() => setMode((m) => (m === "open_dialogue" ? "written" : "open_dialogue"))}
-          >
-            <MessagesSquare className="size-4" aria-hidden />
-          </IconBtn>
+        </div>
 
-          <div className="ml-auto flex items-center gap-1">
-            {draftHasContent ? (
-              <IconBtn
-                label="Discard draft"
-                onClick={discard}
-                title="Discard this in-progress draft"
-              >
-                <Trash2 className="size-4" aria-hidden />
-              </IconBtn>
-            ) : null}
-            <Button
-              type="button"
-              size="icon"
-              className="size-9"
-              onClick={save}
-              disabled={!body.trim()}
-              aria-label="Save entry"
-              title="Save entry"
+        {/* No chips — the "What inspired this" cards below are the single view, each
+            with its own remove (JC). */}
+        <InspirationPanel
+          links={allLinks}
+          db={db}
+          className="pt-1"
+          onRemove={(r) =>
+            linked.includes(r.link.target_id)
+              ? toggleLink(r.link.target_id)
+              : removeManualLink(r.link.target_id)
+          }
+        />
+
+        <ThemeEditor
+          value={themes}
+          onChange={setThemes}
+          suggestions={suggestions}
+          historyThemes={history.map((h) => h.theme)}
+        />
+
+        <div className="flex items-center justify-end gap-1">
+          {draftHasContent ? (
+            <IconBtn
+              label="Discard draft"
+              onClick={discard}
+              title="Discard this in-progress draft"
             >
-              <Check className="size-4" aria-hidden />
-            </Button>
-          </div>
+              <Trash2 className="size-4" aria-hidden />
+            </IconBtn>
+          ) : null}
+          <Button
+            type="button"
+            size="icon"
+            className="size-9"
+            onClick={save}
+            disabled={!body.trim()}
+            aria-label="Save entry"
+            title="Save entry"
+          >
+            <Check className="size-4" aria-hidden />
+          </Button>
         </div>
       </div>
     </div>

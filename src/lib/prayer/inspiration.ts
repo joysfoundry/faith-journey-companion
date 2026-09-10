@@ -65,7 +65,12 @@ export function resolveInspiration(link: ReflectionLink, db: Database): Resolved
       const item = db.knowledge_items.find((k) => k.id === link.target_id);
       if (!item) return { link, label: fallbackLabel(link) };
       const voice = item.voice_id ? db.voices.find((v) => v.id === item.voice_id)?.name : undefined;
-      const detail = voice ?? item.creator ?? item.source;
+      // A Scripture quote is attributed by its citation ("Lk 1:26-38"); other
+      // quotes/content by their Vessel, creator, or source (ACTS-181).
+      const detail =
+        item.quote_kind === "scripture"
+          ? item.scripture_ref?.trim() || undefined
+          : (voice ?? item.creator ?? item.source);
       const href = (item.links ?? []).find((l) => l.pinned)?.url ?? item.links?.[0]?.url;
       return {
         link,

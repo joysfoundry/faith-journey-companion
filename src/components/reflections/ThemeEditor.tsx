@@ -54,20 +54,6 @@ export function ThemeEditor({
         ) : null}
       </div>
       <div className="flex flex-wrap items-center gap-1.5">
-        {value.map((theme) => (
-          <Badge key={theme} variant="secondary" className="gap-1 pr-1.5 font-normal">
-            <Tag className="size-3" aria-hidden />
-            {displayTheme(theme)}
-            <button
-              type="button"
-              onClick={() => remove(theme)}
-              className="ml-0.5 rounded-full p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-              aria-label={`Remove ${displayTheme(theme)}`}
-            >
-              <X className="size-3" aria-hidden />
-            </button>
-          </Badge>
-        ))}
         <Input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
@@ -91,6 +77,26 @@ export function ThemeEditor({
           ))}
         </datalist>
       </div>
+
+      {/* Applied theme chips sit at the bottom, beside the suggestions (JC layout). */}
+      {value.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-1.5">
+          {value.map((theme) => (
+            <Badge key={theme} variant="secondary" className="gap-1 pr-1.5 font-normal">
+              <Tag className="size-3" aria-hidden />
+              {displayTheme(theme)}
+              <button
+                type="button"
+                onClick={() => remove(theme)}
+                className="ml-0.5 rounded-full p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                aria-label={`Remove ${displayTheme(theme)}`}
+              >
+                <X className="size-3" aria-hidden />
+              </button>
+            </Badge>
+          ))}
+        </div>
+      ) : null}
 
       {suggestions.length > 0 ? (
         <div className="flex flex-wrap items-center gap-1.5">

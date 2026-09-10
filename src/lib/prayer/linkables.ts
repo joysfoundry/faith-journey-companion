@@ -1,5 +1,6 @@
 import { todaysWord, type LinkableItem } from "@/domain/placeholderData";
 import { defaultContext, planTitle, resolveMysterySet, todayISO } from "@/lib/prayer/compiler";
+import { contentTitle } from "@/lib/prayer/knowledge";
 import { LECTIO_TEMPLATE_ID } from "@/lib/prayer/seed";
 import type { Database } from "@/lib/prayer/types";
 
@@ -89,9 +90,10 @@ export function buildReflectionLinkables(
     group: "Word",
   });
 
-  // Knowledge — the whole library.
+  // Knowledge — the whole library. `contentTitle` gives a quote (which has no
+  // title) a readable snippet label instead of an empty string.
   for (const k of db.knowledge_items) {
-    push({ id: k.id, label: k.title, group: "Knowledge" });
+    push({ id: k.id, label: contentTitle(k), group: "Knowledge" });
   }
 
   // Mass — Masses/homilies captured on Home, newest first.
