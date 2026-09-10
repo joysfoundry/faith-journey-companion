@@ -1,6 +1,7 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import {
+  BookMarked,
   Check,
   ExternalLink,
   MoreVertical,
@@ -49,8 +50,10 @@ import {
   quoteBody,
   quoteByline,
   quoteKind,
+  quotesFromItem,
   voiceFromLink,
 } from "@/lib/prayer/knowledge";
+import { QuoteSourcePicker } from "@/components/knowledge/QuoteSourcePicker";
 import { buildPassageUrl } from "@/lib/bible/apps";
 import { newId } from "@/lib/prayer/compiler";
 import { useApp } from "@/lib/prayer/store";
@@ -108,6 +111,12 @@ function KnowledgeRecordPage() {
   const voice = item.voice_id ? voices.find((v) => v.id === item.voice_id) : undefined;
   const channel = channelOf(item, voice);
   const links = item.links ?? [];
+  // ACTS-183: the content this quote was saved from (forward), and — for a
+  // content item — the quotes saved from it (reverse).
+  const sourceItem = item.source_item_id
+    ? db.knowledge_items.find((i) => i.id === item.source_item_id)
+    : undefined;
+  const quotesHere = isQuote(item) ? [] : quotesFromItem(item.id, db.knowledge_items);
 
   function save(patch: Partial<KnowledgeItem>) {
     if (item) updateKnowledgeItem({ ...item, ...patch });
@@ -420,6 +429,11 @@ function KnowledgeRecordPage() {
               }
               className="h-10"
             />
+
+            {/* Tie this quote to the content it came from — a book, podcast,
+                video, article, or post (ACTS-183). Orthogonal to the kind. */}
+            {isQuote(item) ? <QuoteSourcePicker item={item} /> : null}
+
             <Input
               value={tagsDraft ?? (item.tags ?? []).join(", ")}
               onChange={(e) => setTagsDraft(e.target.value)}
@@ -571,6 +585,48 @@ function KnowledgeRecordPage() {
                 <p className="eyebrow">Notes</p>
                 <p className="mt-1 whitespace-pre-line text-sm">{item.notes}</p>
               </article>
+            ) : null}
+
+            {/* Forward link: a quote saved from something shows its source (ACTS-183). */}
+            {isQuote(item) && sourceItem ? (
+              <Link
+                to="/knowledge/$knowledgeId"
+                params={{ knowledgeId: sourceItem.id }}
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+              >
+                <BookMarked className="size-4 shrink-0 text-primary" aria-hidden />
+                <span>
+                  From <span className="font-medium text-foreground">{contentTitle(sourceItem)}</span>
+                  <span className="text-xs"> · {CATEGORY_LABELS[sourceItem.category]}</span>
+                </span>
+              </Link>
+            ) : null}
+
+            {/* Reverse view: any content lists the quotes saved from it (ACTS-183). */}
+            {!isQuote(item) && quotesHere.length ? (
+              <section className="soft-card p-4">
+                <p className="eyebrow">Quotes from this</p>
+                <ul className="mt-2 space-y-2">
+                  {quotesHere.map((q) => (
+                    <li key={q.id}>
+                      <Link
+                        to="/knowledge/$knowledgeId"
+                        params={{ knowledgeId: q.id }}
+                        className="block rounded-lg border border-border/70 p-3 transition-colors hover:border-primary/50"
+                      >
+                        <span className="line-clamp-2 text-sm italic text-foreground">
+                          &ldquo;{quoteBody(q)}&rdquo;
+                        </span>
+                        {quoteByline(q, voices) ? (
+                          <span className="mt-1 block text-xs text-muted-foreground">
+                            — {quoteByline(q, voices)}
+                          </span>
+                        ) : null}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </section>
             ) : null}
           </>
         )}

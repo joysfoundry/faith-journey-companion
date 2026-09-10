@@ -778,6 +778,16 @@ export interface KnowledgeItem {
    */
   scripture_ref?: string | undefined;
   source?: string | undefined; // publisher / platform ("YouVersion", "Ascension")
+  /**
+   * The content item this one came *from* (ACTS-183) — a generic reference that
+   * ties a `quote` to the book / podcast / video / article / post it was saved
+   * from, so the two are linked in both directions (the source's detail page can
+   * list "Quotes from this"). Orthogonal to `quote_kind`: a podcast quote is kind
+   * `open` **plus** a `source_item_id`. Optional and non-destructive — a quote
+   * keeps its free-text `source` whether or not it's linked, and deleting the
+   * source item just clears this back to undefined (the quote survives).
+   */
+  source_item_id?: ID | undefined;
   notes?: string | undefined;
   status: KnowledgeStatus;
   start_date?: string | undefined; // programs

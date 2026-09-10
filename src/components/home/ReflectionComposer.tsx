@@ -262,8 +262,21 @@ export function ReflectionComposer({ linkables, prefillLinkId, showDraftStatus }
     setManualLinks((prev) => prev.filter((p) => p.target_id !== id));
   }
 
-  const hasQuote = manualLinks.some((l) => l.target_type === "learning");
+  // Quote inspirations belong under the quote affordance, never the generic
+  // "Link an item" icon (ACTS-183). A quote reaches a reflection two ways — minted
+  // inline via "Add a quote", or by reflecting *from* an existing quote record
+  // (a `learning` entity link whose target is a `quote` item). Both should light
+  // the quote icon; only non-quote entities (sessions, readings, books, Mass…)
+  // count as a linked item.
+  const quoteItemIds = useMemo(
+    () => new Set(db.knowledge_items.filter((i) => i.category === "quote").map((i) => i.id)),
+    [db.knowledge_items],
+  );
+  const hasQuote = allLinks.some(
+    (l) => l.target_type === "learning" && quoteItemIds.has(l.target_id),
+  );
   const hasWebLink = manualLinks.some((l) => l.target_type === "link");
+  const hasLinkedItem = linked.some((id) => !quoteItemIds.has(id));
 
   /** Wipe every composer field back to blank. Callers also clear the draft. */
   function resetComposer() {
@@ -380,7 +393,7 @@ export function ReflectionComposer({ linkables, prefillLinkId, showDraftStatus }
 
           <Popover>
             <PopoverTrigger asChild>
-              <IconBtn label="Link an item" active={linked.length > 0}>
+              <IconBtn label="Link an item" active={hasLinkedItem}>
                 <Link2 className="size-4" aria-hidden />
               </IconBtn>
             </PopoverTrigger>

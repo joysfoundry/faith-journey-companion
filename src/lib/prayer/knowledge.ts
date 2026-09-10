@@ -81,6 +81,45 @@ export function quoteBody(item: KnowledgeItem): string {
   return (item.body ?? item.title ?? "").trim();
 }
 
+/* ------------------- Quote ↔ source content (ACTS-183) ------------------- */
+
+/**
+ * The content item a quote was saved *from*, resolved via `source_item_id`.
+ * Undefined when the quote is unlinked or the source no longer exists.
+ */
+export function sourceItemOf(
+  item: KnowledgeItem,
+  items: KnowledgeItem[],
+): KnowledgeItem | undefined {
+  if (!item.source_item_id) return undefined;
+  return items.find((i) => i.id === item.source_item_id);
+}
+
+/**
+ * Every quote saved from a given content item — the reverse of `source_item_id`,
+ * powering the "Quotes from this" listing on any content's detail page. Works for
+ * any category (book, podcast, video, article, post), newest first.
+ */
+export function quotesFromItem(sourceId: ID, items: KnowledgeItem[]): KnowledgeItem[] {
+  return items
+    .filter((i) => i.category === "quote" && i.source_item_id === sourceId)
+    .sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+}
+
+/**
+ * The content category to mint when turning a quote into a new source item via
+ * "Add as content" — a book quote makes a `book`, an article quote an `article`,
+ * and an open/scripture quote defaults to `book` (the user can change it). The
+ * link (`source_item_id`) is orthogonal to `quote_kind`, so this is only a
+ * sensible starting category, not a constraint.
+ */
+export function defaultSourceCategory(quote: KnowledgeItem): KnowledgeCategory {
+  const k = quoteKind(quote);
+  if (k === "book") return "book";
+  if (k === "article") return "article";
+  return "book";
+}
+
 /* --------------------------- Quote kinds (ACTS-181) ---------------------- */
 
 /** Human labels for the kind chooser when adding/editing a quote. */

@@ -377,6 +377,9 @@ function normalizeContent(raw: Record<string, unknown>): KnowledgeItem {
     quote_kind,
     scripture_ref: strOf(raw, "scripture_ref"),
     source: strOf(raw, "source"),
+    // ACTS-183: the content item this quote was saved from. Pre-183 items have
+    // none → undefined, so no STORAGE_KEY bump / reset is needed.
+    source_item_id: strOf(raw, "source_item_id"),
     notes: strOf(raw, "notes"),
     status,
     start_date: strOf(raw, "start_date"),
@@ -1522,7 +1525,15 @@ export const mutations = {
     };
   },
   deleteKnowledgeItem(db: Database, id: ID): Database {
-    return { ...db, knowledge_items: db.knowledge_items.filter((i) => i.id !== id) };
+    // Drop the item, and clear any quote's `source_item_id` that pointed at it so
+    // no dangling reference is left behind (ACTS-183). The quote itself survives —
+    // it keeps its free-text `source`; only the link is removed.
+    return {
+      ...db,
+      knowledge_items: db.knowledge_items
+        .filter((i) => i.id !== id)
+        .map((i) => (i.source_item_id === id ? { ...i, source_item_id: undefined } : i)),
+    };
   },
   /** Toggle the item-level "Pin to Home" flag (ACTS-137). Independent of link favorites. */
   toggleItemPinned(db: Database, id: ID): Database {
