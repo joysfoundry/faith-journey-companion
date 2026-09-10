@@ -48,9 +48,11 @@ import {
   knowledgeSubtitle,
   quoteBody,
   quoteByline,
+  quoteKind,
   voiceSubtitle,
   type KnowledgeGroup,
 } from "@/lib/prayer/knowledge";
+import { bibleBookName } from "@/lib/bible/apps";
 import { useApp } from "@/lib/prayer/store";
 import type { Channel, KnowledgeItem, LinkPlatform, Voice } from "@/lib/prayer/types";
 
@@ -72,8 +74,11 @@ export const Route = createFileRoute("/formation")({
 type FilterKey = "all" | KnowledgeGroup | "voice" | "channel";
 
 const FILTERS: { key: FilterKey; label: string }[] = [
-  { key: "voice", label: `By ${VOICE_LABEL_SINGULAR}` },
-  { key: "channel", label: "By Channel" },
+  // Grouped-view pills, no "By" prefix (JC): the person/org grouping is a Voice,
+  // the platform grouping a Channel. (The section umbrella "Vessels" is unchanged
+  // — the Vessel-vs-Voice concept is still being worked out.)
+  { key: "voice", label: "Voices" },
+  { key: "channel", label: "Channel" },
   ...GROUP_ORDER.map((g) => ({ key: g, label: GROUP_LABELS[g] })),
   { key: "all", label: "All" },
 ];
@@ -245,10 +250,23 @@ function KnowledgePage() {
       const byHas = Number(b.items.length > 0) - Number(a.items.length > 0);
       return byHas !== 0 ? byHas : a.name.localeCompare(b.name);
     });
+    // Unattributed content. Scripture quotes group by their cited book (a book of
+    // the Bible isn't a Voice, so these are virtual buckets like General, not real
+    // Vessels — ACTS-183); everything else falls to General.
     const orphans = items
       .filter((i) => !i.voice_id && contentMatches(i, undefined, q))
       .sort(byStatusThenTitle);
-    if (orphans.length) groups.push({ id: GENERAL_ID, name: "General", items: orphans });
+    const byBook = new Map<string, KnowledgeItem[]>();
+    const general: KnowledgeItem[] = [];
+    for (const i of orphans) {
+      const book =
+        isQuote(i) && quoteKind(i) === "scripture" ? bibleBookName(i.scripture_ref) : undefined;
+      if (book) (byBook.get(book) ?? byBook.set(book, []).get(book)!).push(i);
+      else general.push(i);
+    }
+    for (const [book, its] of [...byBook.entries()].sort((a, b) => a[0].localeCompare(b[0])))
+      groups.push({ id: `book:${book}`, name: book, items: its });
+    if (general.length) groups.push({ id: GENERAL_ID, name: "General", items: general });
     return groups;
   }, [voices, items, draftVoiceId, q]);
 
@@ -400,13 +418,21 @@ function KnowledgePage() {
                           )}
                         </button>
                         <div className="min-w-0 flex-1">
-                          <Link
-                            to="/voice/$voiceId"
-                            params={{ voiceId: g.id }}
-                            className="truncate text-sm font-medium text-foreground hover:text-primary"
-                          >
-                            {g.name}
-                          </Link>
+                          {/* Real Vessels link to their page; virtual buckets
+                              (General, a Bible book) are plain labels. */}
+                          {g.voice ? (
+                            <Link
+                              to="/voice/$voiceId"
+                              params={{ voiceId: g.id }}
+                              className="truncate text-sm font-medium text-foreground hover:text-primary"
+                            >
+                              {g.name}
+                            </Link>
+                          ) : (
+                            <span className="block truncate text-sm font-medium text-foreground">
+                              {g.name}
+                            </span>
+                          )}
                           <p className="truncate text-xs text-muted-foreground">
                             {[
                               g.voice ? voiceSubtitle(g.voice) : "Unattributed",

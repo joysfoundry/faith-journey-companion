@@ -227,7 +227,68 @@ const USFM: Record<string, string> = {
   baruch: "BAR",
   "1 maccabees": "1MA",
   "2 maccabees": "2MA",
+  // Common abbreviations (Catholic / lectionary style, dots stripped before
+  // lookup) — so an abbreviated citation like "Lk 1:26-38" both deep-links and
+  // resolves its book name. Full names above; these are alternate keys → code.
+  gn: "GEN", gen: "GEN", ex: "EXO", exod: "EXO", lv: "LEV", lev: "LEV",
+  nm: "NUM", num: "NUM", dt: "DEU", deut: "DEU", jos: "JOS", jgs: "JDG",
+  jdg: "JDG", ru: "RUT", rt: "RUT", "1 sm": "1SA", "2 sm": "2SA",
+  "1 sam": "1SA", "2 sam": "2SA", "1 kgs": "1KI", "2 kgs": "2KI",
+  "1 chr": "1CH", "2 chr": "2CH", ezr: "EZR", neh: "NEH", est: "EST",
+  jb: "JOB", ps: "PSA", pss: "PSA", prv: "PRO", prov: "PRO", eccl: "ECC",
+  qoh: "ECC", sg: "SNG", song: "SNG", is: "ISA", isa: "ISA", jer: "JER",
+  lam: "LAM", ez: "EZK", ezek: "EZK", dn: "DAN", dan: "DAN", hos: "HOS",
+  jl: "JOL", am: "AMO", ob: "OBA", obad: "OBA", jon: "JON", mi: "MIC",
+  na: "NAM", hb: "HAB", hab: "HAB", zep: "ZEP", hg: "HAG", zec: "ZEC",
+  mal: "MAL", mt: "MAT", matt: "MAT", mk: "MRK", mar: "MRK", lk: "LUK",
+  jn: "JHN", rom: "ROM", "1 cor": "1CO", "2 cor": "2CO", gal: "GAL",
+  eph: "EPH", phil: "PHP", php: "PHP", col: "COL", "1 thes": "1TH",
+  "2 thes": "2TH", "1 tm": "1TI", "2 tm": "2TI", "1 tim": "1TI",
+  "2 tim": "2TI", ti: "TIT", tit: "TIT", phlm: "PHM", heb: "HEB",
+  jas: "JAS", "1 pt": "1PE", "2 pt": "2PE", "1 pet": "1PE", "2 pet": "2PE",
+  "1 jn": "1JN", "2 jn": "2JN", "3 jn": "3JN", rev: "REV", rv: "REV",
+  tb: "TOB", jdt: "JDT", wis: "WIS", sir: "SIR", bar: "BAR",
+  "1 mc": "1MA", "2 mc": "2MA", "1 mac": "1MA", "2 mac": "2MA",
 };
+
+/** Canonical display name for each USFM book code — the reverse of `USFM`. */
+const BOOK_NAME_BY_USFM: Record<string, string> = {
+  GEN: "Genesis", EXO: "Exodus", LEV: "Leviticus", NUM: "Numbers",
+  DEU: "Deuteronomy", JOS: "Joshua", JDG: "Judges", RUT: "Ruth",
+  "1SA": "1 Samuel", "2SA": "2 Samuel", "1KI": "1 Kings", "2KI": "2 Kings",
+  "1CH": "1 Chronicles", "2CH": "2 Chronicles", EZR: "Ezra", NEH: "Nehemiah",
+  EST: "Esther", JOB: "Job", PSA: "Psalms", PRO: "Proverbs",
+  ECC: "Ecclesiastes", SNG: "Song of Songs", ISA: "Isaiah", JER: "Jeremiah",
+  LAM: "Lamentations", EZK: "Ezekiel", DAN: "Daniel", HOS: "Hosea",
+  JOL: "Joel", AMO: "Amos", OBA: "Obadiah", JON: "Jonah", MIC: "Micah",
+  NAM: "Nahum", HAB: "Habakkuk", ZEP: "Zephaniah", HAG: "Haggai",
+  ZEC: "Zechariah", MAL: "Malachi", MAT: "Matthew", MRK: "Mark",
+  LUK: "Luke", JHN: "John", ACT: "Acts", ROM: "Romans",
+  "1CO": "1 Corinthians", "2CO": "2 Corinthians", GAL: "Galatians",
+  EPH: "Ephesians", PHP: "Philippians", COL: "Colossians",
+  "1TH": "1 Thessalonians", "2TH": "2 Thessalonians", "1TI": "1 Timothy",
+  "2TI": "2 Timothy", TIT: "Titus", PHM: "Philemon", HEB: "Hebrews",
+  JAS: "James", "1PE": "1 Peter", "2PE": "2 Peter", "1JN": "1 John",
+  "2JN": "2 John", "3JN": "3 John", JUD: "Jude", REV: "Revelation",
+  TOB: "Tobit", JDT: "Judith", WIS: "Wisdom", SIR: "Sirach",
+  BAR: "Baruch", "1MA": "1 Maccabees", "2MA": "2 Maccabees",
+};
+
+/**
+ * The display name of the book a citation refers to ("Lk 1:26-38" → "Luke"),
+ * resolving full names and common abbreviations. Falls back to the citation's
+ * leading token, title-cased, so an unrecognized book still yields a stable
+ * label to group by. Returns undefined only for an empty/bookless string.
+ */
+export function bibleBookName(ref: string | undefined): string | undefined {
+  if (!ref?.trim()) return undefined;
+  const parsed = parseReference(ref);
+  if (parsed && BOOK_NAME_BY_USFM[parsed.usfm]) return BOOK_NAME_BY_USFM[parsed.usfm];
+  const match = ref.trim().replace(/\s+/g, " ").match(/^((?:[123]\s)?[A-Za-z][A-Za-z ]*?)(?=\s*\d|$)/);
+  const token = match?.[1]?.trim();
+  if (!token) return undefined;
+  return token.replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
 interface ParsedRef {
   usfm: string;
