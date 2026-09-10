@@ -2,15 +2,15 @@
 id: ACTS-182
 title: Home page redesign — collapsible "Vessels of Knowledge" + nav-bar reshuffle
 spine:
-status: In Progress
+status: Done
 origin: human-directed
 approved_by: JC
 depends_on: []
 relates_to: [ACTS-137, ACTS-177, ACTS-179, ACTS-189]
 started_at: 2026-09-09T17:13:36-0700
-updated:    2026-09-10T15:00:00-0700
-latest_handoff: null
-sessions: 0
+updated:    2026-09-10T15:54:24-0700
+latest_handoff: stories/ACTS-182/session-01.md
+sessions: 1
 ---
 
 ## Goal
