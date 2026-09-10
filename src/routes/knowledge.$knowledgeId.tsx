@@ -41,12 +41,17 @@ import {
   detectCategory,
   detectPlatform,
   hasStatus,
+  QUOTE_KIND_LABELS,
+  QUOTE_KIND_OPTIONS,
   isQuote,
   isScriptureProgram,
   matchVoice,
   quoteBody,
+  quoteByline,
+  quoteKind,
   voiceFromLink,
 } from "@/lib/prayer/knowledge";
+import { buildPassageUrl } from "@/lib/bible/apps";
 import { newId } from "@/lib/prayer/compiler";
 import { useApp } from "@/lib/prayer/store";
 import type { KnowledgeCategory, KnowledgeItem, LinkPlatform } from "@/lib/prayer/types";
@@ -213,12 +218,48 @@ function KnowledgeRecordPage() {
               </select>
             </div>
             {isQuote(item) ? (
-              <Textarea
-                value={item.body ?? ""}
-                onChange={(e) => save({ body: e.target.value || undefined })}
-                placeholder="The quote"
-                rows={4}
-              />
+              <div className="space-y-2">
+                {/* Kind chooser (ACTS-181): what sort of passage this is. */}
+                <div className="flex flex-wrap gap-1">
+                  {QUOTE_KIND_OPTIONS.map((k) => (
+                    <button
+                      key={k}
+                      type="button"
+                      aria-pressed={quoteKind(item) === k}
+                      onClick={() => save({ quote_kind: k })}
+                      className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                        quoteKind(item) === k
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-secondary text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {QUOTE_KIND_LABELS[k]}
+                    </button>
+                  ))}
+                </div>
+                <Textarea
+                  value={item.body ?? ""}
+                  onChange={(e) => save({ body: e.target.value || undefined })}
+                  placeholder={
+                    quoteKind(item) === "scripture" ? "The passage" : "The quote"
+                  }
+                  rows={4}
+                />
+                {/* Scripture citation → byline + Bible deep-link. */}
+                {quoteKind(item) === "scripture" ? (
+                  <div className="space-y-1">
+                    <label className="text-xs uppercase tracking-wide text-muted-foreground">
+                      Citation
+                    </label>
+                    <Input
+                      value={item.scripture_ref ?? ""}
+                      onChange={(e) => save({ scripture_ref: e.target.value || undefined })}
+                      placeholder="Book chapter:verse — e.g. Lk 1:26-38"
+                      className="h-10"
+                    />
+                  </div>
+                ) : null}
+              </div>
             ) : (
               <Input
                 value={item.title}
@@ -228,8 +269,9 @@ function KnowledgeRecordPage() {
               />
             )}
 
-            {/* Links */}
-            {!isQuote(item) ? (
+            {/* Links — for real links, and for book/article quotes (a store or
+                website URL). Scripture and "heard" quotes carry no link. */}
+            {!isQuote(item) || quoteKind(item) === "book" || quoteKind(item) === "article" ? (
               <div className="space-y-2">
                 <label className="text-xs uppercase tracking-wide text-muted-foreground">
                   Links — where to find it
@@ -369,7 +411,13 @@ function KnowledgeRecordPage() {
             <Input
               value={item.source ?? ""}
               onChange={(e) => save({ source: e.target.value || undefined })}
-              placeholder="Publisher / platform (optional)"
+              placeholder={
+                isQuote(item) && quoteKind(item) === "book"
+                  ? "Book title (optional)"
+                  : isQuote(item) && quoteKind(item) === "article"
+                    ? "Publication or show (optional)"
+                    : "Publisher / platform (optional)"
+              }
               className="h-10"
             />
             <Input
@@ -431,6 +479,20 @@ function KnowledgeRecordPage() {
               <blockquote className="border-l-2 border-primary/40 pl-4 text-lg italic leading-relaxed text-foreground">
                 &ldquo;{quoteBody(item)}&rdquo;
               </blockquote>
+            ) : null}
+
+            {/* Scripture citation → byline + "open in your Bible" deep-link (ACTS-181). */}
+            {isQuote(item) && quoteKind(item) === "scripture" && item.scripture_ref?.trim() ? (
+              <p className="flex flex-wrap items-baseline gap-2 text-sm text-muted-foreground">
+                <span>— {item.scripture_ref.trim()}</span>
+                <ExtLink
+                  href={buildPassageUrl(db.settings, item.scripture_ref.trim())}
+                  className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                >
+                  Open in your Bible
+                  <ExternalLink className="size-3" aria-hidden />
+                </ExtLink>
+              </p>
             ) : null}
 
             {voice ? (

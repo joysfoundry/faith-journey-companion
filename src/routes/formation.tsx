@@ -47,6 +47,7 @@ import {
   isScriptureProgram,
   knowledgeSubtitle,
   quoteBody,
+  quoteByline,
   voiceSubtitle,
   type KnowledgeGroup,
 } from "@/lib/prayer/knowledge";
@@ -651,10 +652,7 @@ function ContentRow({
   onDelete: (id: string) => void;
 }) {
   if (isQuote(item)) {
-    const who = hideVoice
-      ? item.creator
-      : ((item.voice_id ? voices.find((v) => v.id === item.voice_id)?.name : undefined) ??
-        item.creator);
+    const who = quoteByline(item, voices, { hideVoice });
     return (
       <li className="flex items-start gap-3 px-4 py-3">
         <div className="min-w-0 flex-1">

@@ -658,6 +658,18 @@ export type KnowledgeCategory =
   "book" | "article" | "video" | "podcast" | "post" | "quote" | "program";
 
 /**
+ * The kind of a keepable `quote` (ACTS-181) — a typed passage. Drives which
+ * fields the editor shows and how the attribution byline renders:
+ * - `open` — words you heard/read, attributed to a Vessel or free-text `creator`
+ *   (the legacy quote; every pre-181 quote defaults to this on load).
+ * - `scripture` — a passage with a `scripture_ref` citation ("Lk 1:26-38"),
+ *   which becomes the byline and deep-links to the reader's Bible.
+ * - `book` — a passage from a book (title in `source`, author as the Vessel/creator).
+ * - `article` — a passage from an article/media (name in `source`, URL in `links`).
+ */
+export type QuoteKind = "open" | "scripture" | "book" | "article";
+
+/**
  * The platform a Channel or a Content link points at. Drives the icon/label and
  * the auto-detect that matches a pasted URL back to a Voice's channel.
  */
@@ -754,6 +766,17 @@ export interface KnowledgeItem {
   body?: string | undefined;
   /** Free-text author/creator, used when no `voice_id` is set (or as a quick label). */
   creator?: string | undefined;
+  /**
+   * For a `quote` (ACTS-181): the kind of passage it is. Drives the editor fields
+   * and the byline. Absent = `"open"` (the legacy quote); normalized on load.
+   */
+  quote_kind?: QuoteKind | undefined;
+  /**
+   * A `scripture` quote's citation, e.g. "Lk 1:26-38". Rendered as the byline and
+   * passed to `buildPassageUrl` for the "open in your Bible" deep-link — the same
+   * parseable string shape used by a mystery body's `scripture_ref`.
+   */
+  scripture_ref?: string | undefined;
   source?: string | undefined; // publisher / platform ("YouVersion", "Ascension")
   notes?: string | undefined;
   status: KnowledgeStatus;

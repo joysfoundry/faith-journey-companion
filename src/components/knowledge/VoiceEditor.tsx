@@ -10,6 +10,8 @@ import {
   CATEGORY_OPTIONS,
   LINK_PLATFORM_LABELS,
   LINK_PLATFORM_OPTIONS,
+  QUOTE_KIND_LABELS,
+  QUOTE_KIND_OPTIONS,
   STATUS_STEPS,
   VOICE_KIND_LABELS,
   VOICE_KIND_OPTIONS,
@@ -22,7 +24,13 @@ import {
 } from "@/lib/prayer/knowledge";
 import { newId } from "@/lib/prayer/compiler";
 import { useApp } from "@/lib/prayer/store";
-import type { Channel, KnowledgeCategory, LinkPlatform, Voice } from "@/lib/prayer/types";
+import type {
+  Channel,
+  KnowledgeCategory,
+  LinkPlatform,
+  QuoteKind,
+  Voice,
+} from "@/lib/prayer/types";
 
 /**
  * The editable body of a Voice — its name/kind, a Channels table, and a Content
@@ -46,6 +54,9 @@ export function VoiceEditor({ voiceId }: { voiceId: string }) {
   const [addTitle, setAddTitle] = useState("");
   const [addCategory, setAddCategory] = useState<KnowledgeCategory>("post");
   const [addUrl, setAddUrl] = useState("");
+  const [addQuoteKind, setAddQuoteKind] = useState<QuoteKind>("open");
+  const [addScriptureRef, setAddScriptureRef] = useState("");
+  const [addSource, setAddSource] = useState("");
 
   const voice = db.voices.find((v) => v.id === voiceId);
   if (!voice) return null;
@@ -83,15 +94,27 @@ export function VoiceEditor({ voiceId }: { voiceId: string }) {
   function addContent() {
     if (!addTitle.trim()) return;
     const isQ = addCategory === "quote";
+    // The *who* is the Vessel (named above). A book/article quote also names the
+    // *work* — the book title or publication/show — in `source`. A link is
+    // optional on every kind except scripture (ACTS-181).
+    const quoteTakesLink = isQ && addQuoteKind !== "scripture";
+    const quoteTakesSource = isQ && (addQuoteKind === "book" || addQuoteKind === "article");
+    // Only attach the draft Vessel this form spins up when it has actually been
+    // named — otherwise a hand-added quote would be pinned to an unnamed ghost
+    // Vessel. Non-quote content keeps the Vessel-centric flow.
+    const voiceId = isQ ? (voice!.name.trim() ? voice!.id : undefined) : voice!.id;
     addKnowledgeItem({
       id: newId("know"),
       // A quote's text lives in `body`, not a title, and carries no link.
       title: isQ ? "" : addTitle.trim(),
       body: isQ ? addTitle.trim() : undefined,
       category: addCategory,
-      voice_id: voice!.id,
+      quote_kind: isQ ? addQuoteKind : undefined,
+      scripture_ref: isQ && addQuoteKind === "scripture" ? addScriptureRef.trim() || undefined : undefined,
+      source: quoteTakesSource ? addSource.trim() || undefined : undefined,
+      voice_id: voiceId,
       links:
-        !isQ && addUrl.trim()
+        (!isQ || quoteTakesLink) && addUrl.trim()
           ? [{ platform: detectPlatform(addUrl), url: addUrl.trim() }]
           : undefined,
       status: "not_started",
@@ -100,6 +123,9 @@ export function VoiceEditor({ voiceId }: { voiceId: string }) {
     setAddTitle("");
     setAddUrl("");
     setAddCategory("post");
+    setAddQuoteKind("open");
+    setAddScriptureRef("");
+    setAddSource("");
   }
 
   return (
@@ -339,15 +365,59 @@ export function VoiceEditor({ voiceId }: { voiceId: string }) {
               <Input
                 value={addTitle}
                 onChange={(e) => setAddTitle(e.target.value)}
-                placeholder={addCategory === "quote" ? "Quote" : "Title"}
+                placeholder={
+                  addCategory === "quote"
+                    ? addQuoteKind === "scripture"
+                      ? "The passage"
+                      : "Quote"
+                    : "Title"
+                }
                 className="h-9"
               />
             </div>
+            {/* Quote kind chooser (ACTS-181) — what sort of passage this is. */}
+            {addCategory === "quote" ? (
+              <div className="flex flex-wrap gap-1">
+                {QUOTE_KIND_OPTIONS.map((k) => (
+                  <button
+                    key={k}
+                    type="button"
+                    aria-pressed={addQuoteKind === k}
+                    onClick={() => setAddQuoteKind(k)}
+                    className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                      addQuoteKind === k
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-secondary text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {QUOTE_KIND_LABELS[k]}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+            {/* The *work* — a book title or a publication/show. The *who* (author)
+                is the Vessel named above. Scripture uses its citation instead;
+                a "heard/read" quote needs neither (ACTS-181). */}
+            {addCategory === "quote" && (addQuoteKind === "book" || addQuoteKind === "article") ? (
+              <Input
+                value={addSource}
+                onChange={(e) => setAddSource(e.target.value)}
+                placeholder={
+                  addQuoteKind === "book"
+                    ? "Book title (optional)"
+                    : "Publication or show (optional)"
+                }
+                className="h-9"
+              />
+            ) : null}
             <div className="flex items-center gap-2">
-              {addCategory === "quote" ? (
-                <span className="flex-1 text-[11px] text-muted-foreground">
-                  A quote needs no link — add the wording above.
-                </span>
+              {addCategory === "quote" && addQuoteKind === "scripture" ? (
+                <Input
+                  value={addScriptureRef}
+                  onChange={(e) => setAddScriptureRef(e.target.value)}
+                  placeholder="Citation — e.g. Lk 1:26-38"
+                  className="h-9"
+                />
               ) : (
                 <Input
                   value={addUrl}

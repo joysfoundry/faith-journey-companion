@@ -22,6 +22,7 @@ import type {
   PrayerSession,
   PrayerTemplate,
   PrayerVersion,
+  QuoteKind,
   Reflection,
   SessionContext,
   SessionItem,
@@ -356,6 +357,14 @@ function normalizeContent(raw: Record<string, unknown>): KnowledgeItem {
   const tags = Array.isArray(raw["tags"])
     ? (raw["tags"] as unknown[]).filter((t): t is string => typeof t === "string" && !!t)
     : undefined;
+  // A quote's kind (ACTS-181). Pre-181 quotes have none → default "open", so no
+  // STORAGE_KEY bump / reset is needed: every existing quote reads as it did.
+  const quote_kind =
+    category === "quote"
+      ? ((["open", "scripture", "book", "article"].includes(strOf(raw, "quote_kind") ?? "")
+          ? (raw["quote_kind"] as QuoteKind)
+          : "open") satisfies QuoteKind)
+      : undefined;
   return {
     id: strOf(raw, "id") ?? genId("know"),
     // A quote has no title (its text lives in `body`); don't fabricate one.
@@ -365,6 +374,8 @@ function normalizeContent(raw: Record<string, unknown>): KnowledgeItem {
     channel_id: strOf(raw, "channel_id"),
     body: strOf(raw, "body"),
     creator: strOf(raw, "creator"),
+    quote_kind,
+    scripture_ref: strOf(raw, "scripture_ref"),
     source: strOf(raw, "source"),
     notes: strOf(raw, "notes"),
     status,

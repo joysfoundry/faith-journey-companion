@@ -5,6 +5,7 @@ import type {
   KnowledgeItem,
   KnowledgeStatus,
   LinkPlatform,
+  QuoteKind,
   Voice,
   VoiceKind,
 } from "./types";
@@ -78,6 +79,44 @@ export function isQuote(item: KnowledgeItem): boolean {
 /** The quotation text, from `body` (falls back to `title` for legacy safety). */
 export function quoteBody(item: KnowledgeItem): string {
   return (item.body ?? item.title ?? "").trim();
+}
+
+/* --------------------------- Quote kinds (ACTS-181) ---------------------- */
+
+/** Human labels for the kind chooser when adding/editing a quote. */
+export const QUOTE_KIND_LABELS: Record<QuoteKind, string> = {
+  open: "Heard / read",
+  scripture: "Scripture",
+  book: "Book",
+  article: "Article",
+};
+
+/** Quote kinds offered in the chooser, in menu order. */
+export const QUOTE_KIND_OPTIONS: QuoteKind[] = ["open", "scripture", "book", "article"];
+
+/** The effective kind of a quote — legacy quotes with none read as "open". */
+export function quoteKind(item: KnowledgeItem): QuoteKind {
+  return item.quote_kind ?? "open";
+}
+
+/**
+ * The attribution byline for a quote — the words after the em dash. Scripture
+ * shows its citation ("Lk 1:26–38"); everything else shows the Vessel (author),
+ * else a free-text `creator`, with the book/media name (`source`) appended when
+ * present. `hideVoice` drops the Vessel name under its own group header.
+ */
+export function quoteByline(
+  item: KnowledgeItem,
+  voices?: Voice[],
+  opts?: { hideVoice?: boolean | undefined },
+): string | undefined {
+  if (quoteKind(item) === "scripture") return item.scripture_ref?.trim() || undefined;
+  const voiceName =
+    !opts?.hideVoice && item.voice_id
+      ? voices?.find((v) => v.id === item.voice_id)?.name
+      : undefined;
+  const who = voiceName ?? item.creator?.trim();
+  return [who, item.source?.trim()].filter(Boolean).join(", ") || undefined;
 }
 
 /**
