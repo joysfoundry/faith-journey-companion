@@ -2,15 +2,15 @@
 id: ACTS-190
 title: Home Prayer & Devotion ⋯ menu — add "New prayer" item
 spine:
-status: In Progress
+status: Done
 origin: human-directed
 approved_by: JC
 depends_on: []
 relates_to: [ACTS-182, ACTS-173]
 started_at: 2026-09-10T14:29:48-0700
 updated:    2026-09-10T14:29:48-0700
-latest_handoff: null
-sessions: 0
+latest_handoff: ACTS-190/session-01.md
+sessions: 1
 ---
 
 ## Goal
