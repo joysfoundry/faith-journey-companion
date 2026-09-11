@@ -22,7 +22,7 @@ import type { LinkableItem } from "@/domain/placeholderData";
 import { newId, todayISO } from "@/lib/prayer/compiler";
 import { QUOTE_KIND_LABELS, QUOTE_KIND_OPTIONS, detectPlatform } from "@/lib/prayer/knowledge";
 import { BIBLE_TRANSLATIONS, DEFAULT_TRANSLATION, shownTranslations } from "@/lib/bible/apps";
-import { BIBLE_BOOK_ID, bibleVersionBookId } from "@/lib/prayer/store";
+import { BIBLE_BOOK_ID, bibleVersionBookId, scriptureQuoteKey } from "@/lib/prayer/store";
 import { LECTIO_TEMPLATE_ID } from "@/lib/prayer/seed";
 import {
   clearReflectionDraft,
@@ -201,9 +201,25 @@ export function ReflectionComposer({ linkables, prefillLinkId, showDraftStatus }
   function addQuote() {
     const body = quoteText.trim();
     if (!body) return;
-    const id = newId("know");
     const isScripture = quoteKind === "scripture";
     const takesSource = quoteKind === "book" || quoteKind === "article";
+    // Scripture is a connected passage, not a fresh copy (ACTS-191): if this citation
+    // (in this version) is already kept — pasted before, or minted from a Lectio — link
+    // the reflection to that existing quote instead of duplicating it. The same identity
+    // key the Lectio dedup uses; different verse ranges/translations stay distinct.
+    const scriptureVersionBook = quoteVersion || defaultVersionBook;
+    const existingScripture =
+      isScripture && quoteRef.trim()
+        ? db.knowledge_items.find(
+            (i) =>
+              i.category === "quote" &&
+              i.quote_kind === "scripture" &&
+              !!i.scripture_ref?.trim() &&
+              scriptureQuoteKey(i.scripture_ref, i.source_item_id ?? "") ===
+                scriptureQuoteKey(quoteRef.trim(), scriptureVersionBook),
+          )
+        : undefined;
+    const id = existingScripture ? existingScripture.id : newId("know");
     const url = normalizeUrl(quoteUrl);
     // Attribution always yields a Vessel (ACTS-183/JC): the "From" name find-or-creates
     // a Vessel (reuse an existing one, mint otherwise), rather than a free-text author.
@@ -227,28 +243,36 @@ export function ReflectionComposer({ linkables, prefillLinkId, showDraftStatus }
             (i) => i.category !== "quote" && i.title.trim().toLowerCase() === sourceName.toLowerCase(),
           )
         : undefined;
-    addKnowledgeItem({
-      id,
-      title: "", // a quote's payload is its body, not a title
-      category: "quote",
-      quote_kind: quoteKind,
-      body,
-      scripture_ref: isScripture ? quoteRef.trim() || undefined : undefined,
-      voice_id: voiceId,
-      // Scripture links to its chosen Bible-version book; other kinds link a matched
-      // source work when the "source" names one.
-      source_item_id: isScripture ? quoteVersion || defaultVersionBook : sourceItem?.id,
-      // The work: "Bible" for scripture, else the book title / publication.
-      source: isScripture ? "Bible" : takesSource ? quoteSource.trim() || undefined : undefined,
-      links: !isScripture && url ? [{ platform: detectPlatform(url), url }] : undefined,
-      status: "not_started",
-      created_at: new Date().toISOString(),
-    });
-    const label = body.length > 60 ? `${body.slice(0, 57).trimEnd()}…` : body;
-    setManualLinks((prev) => [
-      ...prev,
-      { target_type: "learning", target_id: id, label },
-    ]);
+    // Mint only when it's not an already-kept scripture passage (else we reuse `id`
+    // above and just link the reflection to the existing quote).
+    if (!existingScripture) {
+      addKnowledgeItem({
+        id,
+        title: "", // a quote's payload is its body, not a title
+        category: "quote",
+        quote_kind: quoteKind,
+        body,
+        scripture_ref: isScripture ? quoteRef.trim() || undefined : undefined,
+        voice_id: voiceId,
+        // Scripture links to its chosen Bible-version book; other kinds link a matched
+        // source work when the "source" names one.
+        source_item_id: isScripture ? scriptureVersionBook : sourceItem?.id,
+        // The work: "Bible" for scripture, else the book title / publication.
+        source: isScripture ? "Bible" : takesSource ? quoteSource.trim() || undefined : undefined,
+        links: !isScripture && url ? [{ platform: detectPlatform(url), url }] : undefined,
+        status: "not_started",
+        created_at: new Date().toISOString(),
+      });
+    }
+    const labelText = existingScripture?.body?.trim() || body;
+    const label = labelText.length > 60 ? `${labelText.slice(0, 57).trimEnd()}…` : labelText;
+    // Link once — if this quote is already an inspiration on this reflection (reused
+    // scripture, or added twice), don't add a second identical card (ACTS-191).
+    setManualLinks((prev) =>
+      prev.some((l) => l.target_type === "learning" && l.target_id === id)
+        ? prev
+        : [...prev, { target_type: "learning", target_id: id, label }],
+    );
     setQuoteKind("open");
     setQuoteText("");
     setQuoteFrom("");

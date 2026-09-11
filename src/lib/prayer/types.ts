@@ -751,6 +751,19 @@ export interface Voice {
  * - `start_date`/`target_date` apply to programs (absent = open-ended plan);
  * - `links[].pinned` pins a specific link to Home.
  */
+/**
+ * One engagement touch on a kept quote (ACTS-191) — a record of it being prayed
+ * (a Lectio sitting), so the library can show the quote once yet the backend knows
+ * how many times it was prayed. `kind` is a string union so shares / other impact
+ * events can be added later without a data-shape break; today only `"prayed"` is
+ * recorded, carrying the `session_id` of the Lectio/prayer session.
+ */
+export interface QuoteTouch {
+  kind: "prayed";
+  session_id?: ID | undefined;
+  at: string; // ISO timestamp
+}
+
 export interface KnowledgeItem {
   id: ID;
   title: string;
@@ -789,14 +802,14 @@ export interface KnowledgeItem {
    */
   source_item_id?: ID | undefined;
   /**
-   * The devotional origin a `quote` was born from (ACTS-191) — the `PrayerSession`
-   * (a Lectio Divina sitting, or any session with a chosen passage) whose reflection
-   * minted this scripture quote. Orthogonal to `source_item_id` (which names the
-   * Bible *version* book): this names the *Lectio* it came out of, so the quote can
-   * link back to "the Lectio you read it in". Optional and non-destructive — deleting
-   * the session leaves the quote, just without a provenance link.
+   * Engagement log for a kept `quote` (ACTS-191). A scripture quote is shown **once**
+   * in the library (deduped by passage + Bible version); every Lectio sitting that
+   * prays it appends a `"prayed"` touch here instead of minting a duplicate. Linked,
+   * not displayed — it powers "how many times prayed" / impact, and lets the quote
+   * link back to the Lectio it was last read in. Extensible to `"shared"` etc. later.
+   * Optional; pre-191 quotes have none.
    */
-  source_session_id?: ID | undefined;
+  touches?: QuoteTouch[] | undefined;
   notes?: string | undefined;
   /**
    * Reading / progress status. **Optional** (ACTS-189): a reference you dip into

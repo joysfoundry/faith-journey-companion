@@ -23,6 +23,7 @@ import type {
   PrayerTemplate,
   PrayerVersion,
   QuoteKind,
+  QuoteTouch,
   Reflection,
   SessionContext,
   SessionItem,
@@ -254,13 +255,33 @@ export function normalizeVariants(db: Database): Database {
     }
   }
 
+  // ACTS-191: collapse duplicate scripture quotes — same passage + Bible version —
+  // into one, merging their touch logs so each Lectio sitting stays a "prayed" touch
+  // behind the single quote. Different verse ranges (13:4 vs 13:4-13) and different
+  // translations keep their own quote. Repairs dupes minted before dedup-on-finish.
+  const scriptureSlot = new Map<string, number>();
+  const dedupedKnowledge: KnowledgeItem[] = [];
+  for (const it of knowledge_items) {
+    if (it.category === "quote" && it.quote_kind === "scripture" && it.scripture_ref?.trim()) {
+      const key = scriptureQuoteKey(it.scripture_ref, it.source_item_id ?? "");
+      const slot = scriptureSlot.get(key);
+      if (slot != null) {
+        const keep = dedupedKnowledge[slot]!;
+        dedupedKnowledge[slot] = { ...keep, touches: mergeTouches(keep.touches, it.touches) };
+        continue;
+      }
+      scriptureSlot.set(key, dedupedKnowledge.length);
+    }
+    dedupedKnowledge.push(it);
+  }
+
   return {
     ...db,
     prayers: withDefaults,
     prayer_versions: versions,
     session_plans,
     voices,
-    knowledge_items,
+    knowledge_items: dedupedKnowledge,
   };
 }
 
@@ -284,6 +305,46 @@ const BIBLE_BOOK_ID_SET = new Set<string>([
 
 /** Whether an id is one of the seeded Bible books (the plain "Bible" or a version). */
 export const isBibleBookId = (id: string): boolean => BIBLE_BOOK_ID_SET.has(id);
+
+/**
+ * Identity key for a scripture quote (ACTS-191): the citation (case- and
+ * whitespace-insensitive) paired with the Bible-version book. Two Lectios on the
+ * same passage in the same version collapse to one quote; a different translation
+ * stays its own quote. Used to dedup on finish and to merge legacy duplicates on load.
+ */
+export const scriptureQuoteKey = (ref: string, versionBook: string): string =>
+  `${ref.trim().toLowerCase().replace(/\s+/g, " ")}|${versionBook}`;
+
+/** Parse/validate a stored quote touch log (ACTS-191); undefined when absent/empty. */
+function normalizeTouches(raw: unknown): QuoteTouch[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const touches = raw
+    .filter((t): t is Record<string, unknown> => !!t && typeof t === "object")
+    .map((t) => ({
+      kind: "prayed" as const,
+      ...(typeof t["session_id"] === "string" ? { session_id: t["session_id"] } : {}),
+      at: typeof t["at"] === "string" ? t["at"] : new Date().toISOString(),
+    }));
+  return touches.length ? touches : undefined;
+}
+
+/** Concatenate two touch logs, dropping duplicate sessions (ACTS-191). */
+function mergeTouches(
+  a: QuoteTouch[] | undefined,
+  b: QuoteTouch[] | undefined,
+): QuoteTouch[] | undefined {
+  const all = [...(a ?? []), ...(b ?? [])];
+  if (!all.length) return undefined;
+  const seen = new Set<string>();
+  const out: QuoteTouch[] = [];
+  for (const t of all) {
+    const key = t.session_id ?? `${t.kind}:${t.at}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(t);
+  }
+  return out;
+}
 
 /** Book id → its translation id, or undefined for the version-less "Bible". */
 const BIBLE_BOOK_ID_TO_TRANSLATION = new Map<string, string>(
@@ -494,9 +555,20 @@ function normalizeContent(raw: Record<string, unknown>): KnowledgeItem {
     // ACTS-183: the content item this quote was saved from. Pre-183 items have
     // none → undefined, so no STORAGE_KEY bump / reset is needed.
     source_item_id: strOf(raw, "source_item_id"),
-    // ACTS-191: the Lectio/session this scripture quote was minted from. Pre-191
-    // quotes have none → undefined, so no STORAGE_KEY bump / reset is needed.
-    source_session_id: strOf(raw, "source_session_id"),
+    // ACTS-191: the quote's engagement log (Lectio prayings). Migrate the earlier
+    // single `source_session_id` shape into a first "prayed" touch. Pre-191 quotes
+    // have neither → undefined, so no STORAGE_KEY bump / reset is needed.
+    touches:
+      normalizeTouches(raw["touches"]) ??
+      (typeof raw["source_session_id"] === "string"
+        ? [
+            {
+              kind: "prayed" as const,
+              session_id: raw["source_session_id"] as string,
+              at: strOf(raw, "created_at") ?? new Date().toISOString(),
+            },
+          ]
+        : undefined),
     notes: strOf(raw, "notes"),
     status,
     start_date: strOf(raw, "start_date"),
@@ -707,27 +779,49 @@ function isEmptyLectioSession(db: Database, sessionId: ID): boolean {
 }
 
 /**
- * Build a keepable scripture quote from a finished session's chosen passage
- * (ACTS-191). A Lectio Divina sitting (or any session whose reader set a
- * `scripture` step's passage) "is a scripture quote, viewed and reflected upon" —
- * so finishing it mints a typed `scripture` quote that surfaces in the quote
- * library and links back to its origin via `source_session_id`. Mirrors the
- * composer's "Add a quote" for scripture: `source: "Bible"`, `source_item_id` = the
- * reader's Bible-version book, no personal Vessel. Returns null when no passage was
- * chosen (nothing to keep) — the caller also skips when one already exists for the
- * session, so finishing twice never duplicates.
+ * Record a finished session's chosen scripture as a kept quote (ACTS-191). A Lectio
+ * sitting (or any session whose reader set a `scripture` step's passage) "is a
+ * scripture quote, viewed and reflected upon". One quote per passage + Bible version:
+ * if it already exists, append a `"prayed"` touch (the library shows the quote once;
+ * the touch log counts the sittings); otherwise mint it — `source: "Bible"`,
+ * `source_item_id` = the reader's version book, no personal Vessel. Returns the
+ * (possibly updated) knowledge_items; unchanged when no passage was chosen. Different
+ * verse ranges and translations keep their own quote (distinct key); re-finishing the
+ * same session never double-counts.
  */
-function scriptureQuoteFromSession(db: Database, session: PrayerSession): KnowledgeItem | null {
+function recordScripturePrayed(db: Database, session: PrayerSession): KnowledgeItem[] {
   const scripture = db.session_items.find(
     (i) => i.session_id === session.id && i.kind === "scripture" && (i.reference || i.body),
   );
   const ref = scripture?.reference?.trim() ?? "";
   const text = scripture?.body?.trim() ?? "";
-  if (!ref && !text) return null;
+  if (!ref && !text) return db.knowledge_items;
   const versionBook = BIBLE_TRANSLATIONS.some((t) => t.id === db.settings.bible_translation)
     ? bibleVersionBookId(db.settings.bible_translation!)
     : bibleVersionBookId(DEFAULT_TRANSLATION);
-  return {
+  const touch: QuoteTouch = {
+    kind: "prayed",
+    session_id: session.id,
+    at: new Date().toISOString(),
+  };
+  const key = scriptureQuoteKey(ref, versionBook);
+  const idx = db.knowledge_items.findIndex(
+    (i) =>
+      i.category === "quote" &&
+      i.quote_kind === "scripture" &&
+      !!i.scripture_ref?.trim() &&
+      scriptureQuoteKey(i.scripture_ref, i.source_item_id ?? "") === key,
+  );
+  if (idx >= 0) {
+    const existing = db.knowledge_items[idx]!;
+    if ((existing.touches ?? []).some((t) => t.session_id === session.id)) {
+      return db.knowledge_items; // already counted this sitting
+    }
+    return db.knowledge_items.map((it, i) =>
+      i === idx ? { ...it, touches: [...(it.touches ?? []), touch] } : it,
+    );
+  }
+  const quote: KnowledgeItem = {
     id: newId("know"),
     title: "", // a quote's payload is its body, not a title
     category: "quote",
@@ -737,9 +831,10 @@ function scriptureQuoteFromSession(db: Database, session: PrayerSession): Knowle
     scripture_ref: ref || undefined,
     source: "Bible",
     source_item_id: versionBook,
-    source_session_id: session.id,
+    touches: [touch],
     created_at: new Date().toISOString(),
   };
+  return [quote, ...db.knowledge_items];
 }
 
 /* ---------------- pure reducers used by the provider ---------------- */
@@ -1354,16 +1449,14 @@ export const mutations = {
       }
     }
 
-    // Mint a keepable scripture quote from the passage the reader chose (ACTS-191),
-    // once per session — skip if this session already has one (finishing twice, or a
-    // re-finish after re-opening, must not duplicate).
-    const alreadyKept = db.knowledge_items.some((i) => i.source_session_id === sessionId);
-    const keptQuote = session && !alreadyKept ? scriptureQuoteFromSession(db, session) : null;
+    // ACTS-191: record the chosen scripture as a kept quote — one per passage, a
+    // "prayed" touch per sitting (deduped, so the library shows it once).
+    const knowledge_items = session ? recordScripturePrayed(db, session) : db.knowledge_items;
 
     return {
       ...db,
       session_plans,
-      ...(keptQuote ? { knowledge_items: [keptQuote, ...db.knowledge_items] } : {}),
+      knowledge_items,
       sessions: db.sessions.map((s) =>
         s.id === sessionId
           ? {

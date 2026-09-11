@@ -132,10 +132,12 @@ function KnowledgeRecordPage() {
     ? db.knowledge_items.find((i) => i.id === item.source_item_id)
     : undefined;
   const quotesHere = isQuote(item) ? [] : quotesFromItem(item.id, db.knowledge_items);
-  // ACTS-191: the Lectio (or session) this scripture quote was born from — its
-  // devotional provenance, distinct from `source_item_id` (the Bible version).
-  const originSession = item.source_session_id
-    ? db.sessions.find((s) => s.id === item.source_session_id)
+  // ACTS-191: the Lectio this scripture quote was most recently prayed in — its
+  // devotional provenance, from the quote's touch log (the library shows the quote
+  // once; the log counts every sitting). Distinct from `source_item_id` (the version).
+  const lastPrayed = [...(item.touches ?? [])].reverse().find((t) => t.session_id);
+  const originSession = lastPrayed?.session_id
+    ? db.sessions.find((s) => s.id === lastPrayed.session_id)
     : undefined;
 
   // Version picker (ACTS-183): the "Bible — X" book this verse is from. Only the
