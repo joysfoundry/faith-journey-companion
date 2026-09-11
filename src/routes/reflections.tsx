@@ -318,10 +318,14 @@ function SittingGroup({
           />
         </button>
         <div className="min-w-0 flex-1 py-3 pr-2">
+          {/* Date-first to match the single-entry rows (ACTS-191): in the date
+              list the date leads every row so the column scans chronologically;
+              the flame + label still marks this as a Lectio sitting. */}
           <div className="flex items-center gap-1.5">
+            <span className="text-muted-foreground">{formatDay(meta.date)}</span>
+            <span className="text-muted-foreground">·</span>
             <Flame className="size-3.5 shrink-0 text-primary" aria-hidden />
             <span className="font-medium text-foreground">Lectio Divina</span>
-            <span className="text-muted-foreground">· {formatDay(meta.date)}</span>
           </div>
           <p className="mt-0.5 text-xs text-muted-foreground">
             {meta.passage ? `${meta.passage} · ` : ""}

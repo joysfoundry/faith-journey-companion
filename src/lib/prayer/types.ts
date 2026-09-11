@@ -788,6 +788,15 @@ export interface KnowledgeItem {
    * source item just clears this back to undefined (the quote survives).
    */
   source_item_id?: ID | undefined;
+  /**
+   * The devotional origin a `quote` was born from (ACTS-191) — the `PrayerSession`
+   * (a Lectio Divina sitting, or any session with a chosen passage) whose reflection
+   * minted this scripture quote. Orthogonal to `source_item_id` (which names the
+   * Bible *version* book): this names the *Lectio* it came out of, so the quote can
+   * link back to "the Lectio you read it in". Optional and non-destructive — deleting
+   * the session leaves the quote, just without a provenance link.
+   */
+  source_session_id?: ID | undefined;
   notes?: string | undefined;
   /**
    * Reading / progress status. **Optional** (ACTS-189): a reference you dip into

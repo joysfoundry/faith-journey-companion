@@ -685,11 +685,30 @@ function PassageEditor({
       ) : (
         <div className="mt-1">
           <p className="font-display text-xl">{passageRef || "Passage set"}</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {passageText.trim()
-              ? "Passage text added — shown with each movement."
-              : "The first three movements re-read it."}
-          </p>
+          {/* Pin the chosen passage's text here at the top so it stays in view as a
+              reference while writing through the movements (ACTS-191). Falls back to
+              the "re-read it" hint when only a reference (no pasted text) was set. */}
+          {passageText.trim() ? (
+            <>
+              <p className="prayer-text mt-3 whitespace-pre-line text-foreground/90">
+                {passageText}
+              </p>
+              {passageRef.trim() ? (
+                <div className="mt-3">
+                  <ExtLink
+                    href={bibleUrl(passageRef.trim())}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition hover:border-primary hover:text-foreground"
+                  >
+                    <BookOpen className="size-3.5" /> Open in your Bible
+                  </ExtLink>
+                </div>
+              ) : null}
+            </>
+          ) : (
+            <p className="mt-1 text-xs text-muted-foreground">
+              The first three movements re-read it.
+            </p>
+          )}
         </div>
       )}
     </div>

@@ -64,6 +64,16 @@ import { newId } from "@/lib/prayer/compiler";
 import { BIBLE_BOOK_ID, bibleVersionBookId, useApp } from "@/lib/prayer/store";
 import type { KnowledgeCategory, KnowledgeItem, LinkPlatform } from "@/lib/prayer/types";
 
+/**
+ * Format a session's context date for display. A `yyyy-mm-dd` string parses as UTC
+ * midnight, which `toLocaleDateString` then shifts back a day in western timezones
+ * (the ACTS-157 UTC-day gotcha) — so pin it to local midnight before formatting.
+ */
+function formatDayLabel(date: string): string {
+  const d = /^\d{4}-\d{2}-\d{2}$/.test(date) ? new Date(`${date}T00:00:00`) : new Date(date);
+  return d.toLocaleDateString();
+}
+
 export const Route = createFileRoute("/knowledge/$knowledgeId")({
   validateSearch: (s: Record<string, unknown>): { edit?: boolean } =>
     s["edit"] === true || s["edit"] === "1" ? { edit: true } : {},
@@ -122,6 +132,11 @@ function KnowledgeRecordPage() {
     ? db.knowledge_items.find((i) => i.id === item.source_item_id)
     : undefined;
   const quotesHere = isQuote(item) ? [] : quotesFromItem(item.id, db.knowledge_items);
+  // ACTS-191: the Lectio (or session) this scripture quote was born from — its
+  // devotional provenance, distinct from `source_item_id` (the Bible version).
+  const originSession = item.source_session_id
+    ? db.sessions.find((s) => s.id === item.source_session_id)
+    : undefined;
 
   // Version picker (ACTS-183): the "Bible — X" book this verse is from. Only the
   // versions the reader shows appear (ACTS-188), defaulting to their Settings
@@ -662,6 +677,27 @@ function KnowledgeRecordPage() {
                 <span>
                   From <span className="font-medium text-foreground">{contentTitle(sourceItem)}</span>
                   <span className="text-xs"> · {CATEGORY_LABELS[sourceItem.category]}</span>
+                </span>
+              </Link>
+            ) : null}
+
+            {/* Provenance: a scripture quote minted from a Lectio links back to that
+                sitting (ACTS-191) — "the Lectio you read it in". */}
+            {isQuote(item) && originSession ? (
+              <Link
+                to="/session/$sessionId"
+                params={{ sessionId: originSession.id }}
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+              >
+                <NotebookPen className="size-4 shrink-0 text-primary" aria-hidden />
+                <span>
+                  From <span className="font-medium text-foreground">{originSession.title}</span>
+                  {originSession.context?.date ? (
+                    <span className="text-xs">
+                      {" "}
+                      · {formatDayLabel(originSession.context.date)}
+                    </span>
+                  ) : null}
                 </span>
               </Link>
             ) : null}

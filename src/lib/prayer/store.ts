@@ -494,6 +494,9 @@ function normalizeContent(raw: Record<string, unknown>): KnowledgeItem {
     // ACTS-183: the content item this quote was saved from. Pre-183 items have
     // none → undefined, so no STORAGE_KEY bump / reset is needed.
     source_item_id: strOf(raw, "source_item_id"),
+    // ACTS-191: the Lectio/session this scripture quote was minted from. Pre-191
+    // quotes have none → undefined, so no STORAGE_KEY bump / reset is needed.
+    source_session_id: strOf(raw, "source_session_id"),
     notes: strOf(raw, "notes"),
     status,
     start_date: strOf(raw, "start_date"),
@@ -701,6 +704,42 @@ function isEmptyLectioSession(db: Database, sessionId: ID): boolean {
   return !db.session_items.some(
     (i) => i.session_id === sessionId && i.completion_status === "complete",
   );
+}
+
+/**
+ * Build a keepable scripture quote from a finished session's chosen passage
+ * (ACTS-191). A Lectio Divina sitting (or any session whose reader set a
+ * `scripture` step's passage) "is a scripture quote, viewed and reflected upon" —
+ * so finishing it mints a typed `scripture` quote that surfaces in the quote
+ * library and links back to its origin via `source_session_id`. Mirrors the
+ * composer's "Add a quote" for scripture: `source: "Bible"`, `source_item_id` = the
+ * reader's Bible-version book, no personal Vessel. Returns null when no passage was
+ * chosen (nothing to keep) — the caller also skips when one already exists for the
+ * session, so finishing twice never duplicates.
+ */
+function scriptureQuoteFromSession(db: Database, session: PrayerSession): KnowledgeItem | null {
+  const scripture = db.session_items.find(
+    (i) => i.session_id === session.id && i.kind === "scripture" && (i.reference || i.body),
+  );
+  const ref = scripture?.reference?.trim() ?? "";
+  const text = scripture?.body?.trim() ?? "";
+  if (!ref && !text) return null;
+  const versionBook = BIBLE_TRANSLATIONS.some((t) => t.id === db.settings.bible_translation)
+    ? bibleVersionBookId(db.settings.bible_translation!)
+    : bibleVersionBookId(DEFAULT_TRANSLATION);
+  return {
+    id: newId("know"),
+    title: "", // a quote's payload is its body, not a title
+    category: "quote",
+    quote_kind: "scripture",
+    // The passage text is the quote; fall back to the reference so it's never empty.
+    body: text || ref,
+    scripture_ref: ref || undefined,
+    source: "Bible",
+    source_item_id: versionBook,
+    source_session_id: session.id,
+    created_at: new Date().toISOString(),
+  };
 }
 
 /* ---------------- pure reducers used by the provider ---------------- */
@@ -1315,9 +1354,16 @@ export const mutations = {
       }
     }
 
+    // Mint a keepable scripture quote from the passage the reader chose (ACTS-191),
+    // once per session — skip if this session already has one (finishing twice, or a
+    // re-finish after re-opening, must not duplicate).
+    const alreadyKept = db.knowledge_items.some((i) => i.source_session_id === sessionId);
+    const keptQuote = session && !alreadyKept ? scriptureQuoteFromSession(db, session) : null;
+
     return {
       ...db,
       session_plans,
+      ...(keptQuote ? { knowledge_items: [keptQuote, ...db.knowledge_items] } : {}),
       sessions: db.sessions.map((s) =>
         s.id === sessionId
           ? {
