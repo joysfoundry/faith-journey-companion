@@ -2,15 +2,15 @@
 id: ACTS-191
 title: Word expanded page redesign + Lectio Divina block
 spine:
-status: In Progress
+status: Done
 origin: human-directed
 approved_by: JC
 depends_on: []
 relates_to: [ACTS-138, ACTS-139, ACTS-140, ACTS-141, ACTS-142, ACTS-190]
 started_at: 2026-09-10T14:29:48-0700
 updated:    2026-09-10T14:29:48-0700
-latest_handoff: null
-sessions: 0
+latest_handoff: stories/ACTS-191/session-01.md
+sessions: 1
 ---
 
 ## Goal
