@@ -54,6 +54,44 @@ JC (2026-09-10):
       date list. Flipped the sitting to **date-first** (`<date> · 🔥 Lectio Divina`) to match.
       `src/routes/reflections.tsx` (`SittingGroup`). (Belongs to the ACTS-140 sitting card; folded
       into this review.)
+## Session 1 addendum — quote dedup + touch log (JC review)
+JC review surfaced a duplicate scripture quote for the same passage. Diagnosis: two separate
+Lectio sittings each minted a quote, and the older one had **lost its provenance** to the
+`normalizeContent` field-drop bug (fixed above) — so it looked "stray". Not from a reflection
+(nothing linked it), and **not** caused by the abandoned Lectio (minting is finish-only; empty
+Lectios are pruned).
+
+JC direction → **one visible quote per passage; the backend counts how many times it was prayed
+(linked, not displayed).** Implemented:
+- **`source_session_id` (single) → `KnowledgeItem.touches?: QuoteTouch[]`** — a `{kind:"prayed",
+  session_id, at}` log. Extensible to "shared" etc. (`src/lib/prayer/types.ts`).
+- **Dedup on finish** by `scriptureQuoteKey` = normalized citation (case/space-insensitive) **+
+  Bible version book**: same passage+version → append a "prayed" touch; **different verse range
+  (13:4 vs 13:4-13) or translation → its own quote** (JC: "keep both"). Re-finishing the same
+  session never double-counts. (`recordScripturePrayed` + `finishSession`.)
+- **Load-time merge** collapses pre-existing duplicate scripture quotes by the same key, merging
+  touch logs (repairs data minted before dedup). (`loadDatabase`.)
+- `normalizeContent` migrates the old `source_session_id` into a first "prayed" touch; provenance
+  link derives from the latest touch (`knowledge.$knowledgeId.tsx`).
+- **Verified in-app:** the dupe merged to 1; a 2nd Lectio on 1 Cor 13:4-13 kept **1 quote,
+  touchCount 2**; "From this Lectio" still resolves. The library Quotes filter was fine all along
+  — it was faithfully showing real (duplicate) data.
+
+## Session 1 addendum 2 — same dedup in the reflection composer (JC)
+JC: the "recognize it exists, link don't duplicate" rule must also cover a quote **pasted into a
+reflection** as inspiration. Implemented in `ReflectionComposer.addQuote`:
+- **Scripture dedup on add:** if the pasted citation (+ version) matches an existing scripture
+  quote (`scriptureQuoteKey`, now exported from `store.ts`), reuse that quote's id and link the
+  reflection to it instead of minting a duplicate. Converges with the Lectio path — a passage kept
+  by either route is one quote.
+- **Link-once guard:** a quote already an inspiration on the draft isn't added a second time (no
+  duplicate inspiration card).
+- **Scope:** scripture only (clean identity = citation + version). Non-scripture quotes have no
+  reliable identity key; reuse those via "reflect from" an existing quote. Possible follow-on.
+- **Verified in-app:** adding 1 Cor 13:4-13 via the composer created **no** new quote
+  (scriptureCount held at 3), linked to the existing `know-dpc0zr8t2twe`, and a second add produced
+  a single inspiration card.
+
 - **Deferred (as agreed):** backfill of past Lectios' scripture into quotes; the broader `/word`
   expanded-page redesign (readings/homilies/programs layout). Not committed yet (use `/save`).
 
