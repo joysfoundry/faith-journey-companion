@@ -1,7 +1,8 @@
 # Session summary — 2026-09-11 · ACTS-191 Lectio + the scripture-quote thread
 
-Primary story: **ACTS-191** (Word expanded page + Lectio Divina block). Also **filed** three
-follow-on stories (ACTS-192/193/194) from JC review. All work committed and **pushed** to `main`.
+Primary story: **ACTS-191** — now **Done** (Word expanded page + Lectio Divina block). Also
+**filed** three follow-on stories (ACTS-192/193/194) from JC review. All work committed; the
+close-out commit awaits a push from JC's client.
 
 ## What happened (in order)
 1. **Started ACTS-191** (local-only workflow; tracker: none). Refined scope with JC: reuse the
@@ -33,6 +34,9 @@ follow-on stories (ACTS-192/193/194) from JC review. All work committed and **pu
 7. **Filed ACTS-194** (`dc5be91`) — version-aware scripture **citation typeahead** (book
    suggestions from the chosen version's canon), a shared input across the 5 citation fields;
    reinforces the ACTS-191 dedup by keeping citations consistent.
+8. **Closed ACTS-191 → Done** (`d222c3f`) — JC confirmed the expanded `/word` page (Daily
+   Readings + Programs + Lectio block) satisfies the redesign AC. Final handoff written
+   (`stories/ACTS-191/session-01.md`, `final: true`); pointer + board flipped to Done.
 
 ## Verified (and how)
 - **In-app (dev server on :8081):** `/word` shows the Lectio entry; the chosen passage pins to the
@@ -44,25 +48,25 @@ follow-on stories (ACTS-192/193/194) from JC review. All work committed and **pu
 - `npx tsc --noEmit` clean after each change.
 
 ## Git state at handoff
-- **Committed & pushed** to `origin/main` (0 ahead / 0 behind, HEAD = `dc5be91`). This session's 7
-  commits: `360223a`, `0408702`, `d024aeb`, `0512aca`, `9fd54c7`, `1750d56`, `dc5be91`.
+- **Committed** through `d222c3f` (ACTS-191 close-out). The feature/doc commits `360223a`,
+  `0408702`, `d024aeb`, `0512aca`, `9fd54c7`, `1750d56`, `dc5be91`, `90d44cc` reached
+  `origin/main`; the final two docs commits (`d222c3f` close-out here) still need a push from JC's
+  client (env has no git creds).
 - Working tree **clean**.
-- Note: pushes fail from inside this environment (no git creds) — JC pushed from their git client.
 
 ## Parked / next
-- **ACTS-191 remaining/deferred:** backfill of past Lectios' scripture into quotes; the broader
-  `/word` expanded-page redesign (readings/homilies/programs layout). Story still **In Progress**;
-  not yet `/handoff`'d or `/done`.
+- **ACTS-191 is Done** (JC confirmed). Deferred and NOT part of Done: backfill of past Lectios'
+  scripture into quotes; any further `/word` layout expansion — pick up under a new story if wanted.
 - **ACTS-192, 193, 194:** filed **To Do**, each with open questions for JC (see pointers).
+- **Housekeeping:** push the two outstanding docs commits (`d222c3f` + the summary update).
 
 ## Next session — opener (paste to start)
-> Continue **ACTS-191**. Shipped + pushed this session: Lectio block reused on `/word`, user-chosen
-> scripture pinned atop the Lectio block, and the scripture-as-quote thread — **one quote per
-> passage** (dedup by `scriptureQuoteKey` = normalized citation + Bible version) with a
-> `KnowledgeItem.touches[]` "prayed" log counting sittings; same dedup wired into the reflection
-> composer. Verified in dev + store inspection; tree clean, `origin/main` = `dc5be91`.
-> **Deferred on 191:** backfill past Lectios into quotes; the broader `/word` expanded-page
-> redesign. **Decide:** `/handoff` or `/done` ACTS-191, or pick up a deferred piece.
-> **Queued follow-ons (To Do, have open Qs):** ACTS-192 (session "completed on" vs scheduled date),
-> ACTS-193 (Journal "Source" grouping keys on link text not source + text overflow), ACTS-194
-> (version-aware scripture citation typeahead across the 5 citation fields).
+> **ACTS-191 is Done** (Lectio block on `/word`, user-chosen scripture pinned atop, and the
+> scripture-as-quote thread — **one quote per passage** via `scriptureQuoteKey` + a
+> `KnowledgeItem.touches[]` "prayed" log; same dedup in the reflection composer). Verified; board
+> shows it Done.
+> **Pick the next story** — all To Do with open questions in their pointers:
+> **ACTS-194** version-aware scripture citation typeahead (5 citation fields; reinforces 191's
+> dedup — natural next); **ACTS-193** tighten the Journal (Group-by-Source keys on link text not
+> source; long text overflows the entry dialog); **ACTS-192** session "completed on" vs scheduled
+> date. Run `/start ACTS-19x`. First push the two outstanding docs commits (`d222c3f`).
