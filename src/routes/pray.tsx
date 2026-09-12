@@ -473,6 +473,12 @@ function PrayPage() {
   const externalDaily = isExternalDailyRosary(db.settings);
   const dailyLaunchUrl = externalDaily ? resolveDailyRosaryUrl(db.settings) : "";
   const dailyAppLabel = dailyRosaryAppLabel(db.settings);
+  // Whether the pinned Daily Rosary row shows (hidden while a novena stands in).
+  const showDailyRosaryRow = !dailyFulfiller && (externalDaily ? !!dailyLaunchUrl : !!dailyTemplate);
+  // The standing Daily Open Prayer is a seeded daily like the Daily Rosary, so it
+  // belongs in the "Daily" section too — not mixed into "Upcoming" below (ACTS-192).
+  const dailyOpenPlan = db.session_plans.find((p) => p.id === "plan-daily-open-prayer");
+  const upcomingPlans = plans.filter((p) => p.id !== dailyOpenPlan?.id);
   const beginDailyRosary = () => {
     if (!dailyTemplate) return;
     const existing = db.sessions.find(
@@ -941,51 +947,80 @@ function PrayPage() {
 
         <TabsContent value="sessions">
           <div className="space-y-4">
-            {!dailyFulfiller && (externalDaily ? !!dailyLaunchUrl : !!dailyTemplate) ? (
+            {showDailyRosaryRow || dailyOpenPlan ? (
               <section>
                 <p className="eyebrow mb-2">Daily</p>
                 <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border">
-                  <li className="flex items-center gap-3 px-3 py-2.5">
-                    <span className="w-12 shrink-0 text-xs font-semibold text-primary tabular-nums">
-                      Daily
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium leading-tight">
-                        <span className="mr-1.5 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
-                          Daily Rosary
-                        </span>
-                      </p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        {externalDaily ? `Opens in ${dailyAppLabel}` : dailyTemplate?.name}
-                      </p>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-0.5">
-                      {externalDaily ? (
-                        <ExtLink
-                          href={dailyLaunchUrl}
-                          aria-label={`Open Daily Rosary in ${dailyAppLabel}`}
-                          className="p-1.5 text-primary hover:opacity-80"
-                          onClick={() =>
-                            logExternalDailyRosary({
-                              appLabel: dailyAppLabel,
-                              url: dailyLaunchUrl,
-                            })
-                          }
-                        >
-                          <ExternalLink className="size-4" />
-                        </ExtLink>
-                      ) : (
+                  {showDailyRosaryRow ? (
+                    <li className="flex items-center gap-3 px-3 py-2.5">
+                      <span className="w-12 shrink-0 text-xs font-semibold text-primary tabular-nums">
+                        Daily
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium leading-tight">
+                          <span className="mr-1.5 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                            Daily Rosary
+                          </span>
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {externalDaily ? `Opens in ${dailyAppLabel}` : dailyTemplate?.name}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-0.5">
+                        {externalDaily ? (
+                          <ExtLink
+                            href={dailyLaunchUrl}
+                            aria-label={`Open Daily Rosary in ${dailyAppLabel}`}
+                            className="p-1.5 text-primary hover:opacity-80"
+                            onClick={() =>
+                              logExternalDailyRosary({
+                                appLabel: dailyAppLabel,
+                                url: dailyLaunchUrl,
+                              })
+                            }
+                          >
+                            <ExternalLink className="size-4" />
+                          </ExtLink>
+                        ) : (
+                          <button
+                            type="button"
+                            aria-label="Begin Daily Rosary"
+                            className="p-1.5 text-primary hover:opacity-80"
+                            onClick={beginDailyRosary}
+                          >
+                            <Play className="size-4" />
+                          </button>
+                        )}
+                      </div>
+                    </li>
+                  ) : null}
+                  {dailyOpenPlan ? (
+                    <li className="flex items-center gap-3 px-3 py-2.5">
+                      <span className="w-12 shrink-0 text-xs font-semibold text-primary tabular-nums">
+                        Daily
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium leading-tight">
+                          <span className="mr-1.5 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                            Daily Open Prayer
+                          </span>
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {planTitle(db, dailyOpenPlan)}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-0.5">
                         <button
                           type="button"
-                          aria-label="Begin Daily Rosary"
+                          aria-label="Begin Open Prayer"
                           className="p-1.5 text-primary hover:opacity-80"
-                          onClick={beginDailyRosary}
+                          onClick={() => beginPlan(dailyOpenPlan)}
                         >
                           <Play className="size-4" />
                         </button>
-                      )}
-                    </div>
-                  </li>
+                      </div>
+                    </li>
+                  ) : null}
                 </ul>
               </section>
             ) : null}
@@ -1020,11 +1055,11 @@ function PrayPage() {
               </section>
             ) : null}
 
-            {plans.length > 0 ? (
+            {upcomingPlans.length > 0 ? (
               <section>
                 <p className="eyebrow mb-2">Upcoming</p>
                 <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border">
-                  {plans.map((plan) => {
+                  {upcomingPlans.map((plan) => {
                     const tpl = db.templates.find((t) => t.id === plan.template_id);
                     const title = planTitle(db, plan);
                     // While this novena stands in for the Daily Rosary, its row wears
