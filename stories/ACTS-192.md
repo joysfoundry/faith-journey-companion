@@ -2,13 +2,13 @@
 id: ACTS-192
 title: Show a session's "completed on" date, distinct from its scheduled date
 spine:
-status: To Do
+status: In Progress
 origin: human-directed
 approved_by: JC
 depends_on: []
 relates_to: [ACTS-173, ACTS-191]
 started_at: 2026-09-11T00:13:06-0700
-updated:    2026-09-11T00:13:06-0700
+updated:    2026-09-12T18:15:33+0000
 latest_handoff: null
 sessions: 0
 ---
