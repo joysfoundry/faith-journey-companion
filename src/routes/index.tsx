@@ -54,6 +54,7 @@ import { PLATFORM_ICON } from "@/components/knowledge/platform-icon";
 import {
   activeDailyRosaryFulfiller,
   defaultContext,
+  nextOccurrence,
   occurrenceInfo,
   planTitle,
   resolveMysterySet,
@@ -67,7 +68,18 @@ import {
   resolveDailyRosaryUrl,
 } from "@/lib/prayer/apps";
 import { useApp } from "@/lib/prayer/store";
-import type { KnowledgeStatus, PrayerTemplate } from "@/lib/prayer/types";
+import { dayOf } from "@/lib/prayer/journeyExport";
+import type { KnowledgeStatus, PrayerTemplate, SessionPlan } from "@/lib/prayer/types";
+
+// A short "Tue, Sep 15" label. Parses a bare yyyy-mm-dd at local midnight so it
+// never shifts a day backward in negative-offset zones (ACTS-192).
+function dayShort(dateISO: string): string {
+  return new Date(`${dateISO}T00:00`).toLocaleDateString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+}
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -93,6 +105,9 @@ export const Route = createFileRoute("/")({
 
 /** Per-browser memory of whether the Home Vessels card is expanded (ACTS-182). */
 const VESSELS_OPEN_KEY = "oravia:home:vessels-open";
+
+/** Per-browser memory of whether the Home "Upcoming" list is expanded (ACTS-192). */
+const UPCOMING_OPEN_KEY = "oravia:home:upcoming-open";
 
 /** A row on the Home Vessels card: either a single content pin, or a Vessel with
  *  its pinned channels grouped onto one row (ACTS-178). */
@@ -447,6 +462,25 @@ function Index() {
     }
   };
 
+  // The "Upcoming" list (scheduled later this week) sits below today's sessions,
+  // collapsed by default so what's due today stays front-and-center (ACTS-192).
+  const [upcomingOpen, setUpcomingOpen] = useState(false);
+  useEffect(() => {
+    try {
+      setUpcomingOpen(window.localStorage.getItem(UPCOMING_OPEN_KEY) === "1");
+    } catch {
+      /* storage blocked — stay collapsed */
+    }
+  }, []);
+  const toggleUpcoming = (open: boolean) => {
+    setUpcomingOpen(open);
+    try {
+      window.localStorage.setItem(UPCOMING_OPEN_KEY, open ? "1" : "0");
+    } catch {
+      /* storage blocked — remember for this session only */
+    }
+  };
+
   const setId = resolveMysterySet(db, defaultContext({ date: today }));
   const setName = db.mystery_sets.find((s) => s.id === setId)?.name ?? "Mysteries";
 
@@ -459,11 +493,27 @@ function Index() {
 
   const openSessions = db.sessions.filter((s) => !s.completed_at);
   const completedSessions = db.sessions.filter((s) => s.completed_at);
-  const isToday = (iso?: string) => (iso ?? "").slice(0, 10) === today;
+  // `completed_at` is a full UTC timestamp; `today` is the local calendar day.
+  // Compare by local day (dayOf) so an evening prayer doesn't roll to "tomorrow"
+  // in a negative-offset zone and vanish from Done (ACTS-192, cf. todayISO).
+  const isToday = (iso?: string) => !!iso && dayOf(iso) === today;
   const latestDoneToday = (match: (s: (typeof completedSessions)[number]) => boolean) =>
     completedSessions
       .filter((s) => isToday(s.completed_at) && match(s))
       .sort((a, b) => (b.completed_at ?? "").localeCompare(a.completed_at ?? ""))[0];
+  // A plan's current occurrence (at plan.date) is fulfilled when a completed
+  // session records that scheduled day. A one-time plan has a single occurrence,
+  // so any completion finishes it. Lets a done session drop out of "upcoming"
+  // without relying on the plan having rolled forward — the fix for a finished
+  // future one-time session lingering as a start-able to-do (ACTS-192).
+  const occurrenceDone = (plan: SessionPlan) => {
+    if ((plan.recurrence?.freq ?? "none") === "none") {
+      return completedSessions.some((s) => s.plan_id === plan.id);
+    }
+    return completedSessions.some(
+      (s) => s.plan_id === plan.id && (s.scheduled_date ?? s.context?.date) === plan.date,
+    );
+  };
 
   // A scheduled novena can stand in for today's Daily Rosary. While it does, the
   // Daily Rosary row is fulfilled by that plan — keeps the label, shows "Day X of
@@ -519,8 +569,27 @@ function Index() {
   const doneSeen = new Set<string>(daily ? [daily.id] : []);
   const continueList: { id: string; title: string; sessionId: string }[] = [];
   const todayList: { id: string; title: string; planId: string; date: string }[] = [];
-  const doneList: { id: string; title: string; sessionId: string }[] = [];
-  const addDone = (key: string, row: { id: string; title: string; sessionId: string }) => {
+  // Scheduled later this week (after today) — shown under a collapsed "Upcoming"
+  // list, and not startable from here: just a look-ahead (ACTS-192). `count` is
+  // how many times a recurring plan lands within the week, so a daily reads "7"
+  // beside its next date rather than looking like a lone one-off.
+  const upcomingList: {
+    id: string;
+    title: string;
+    planId: string;
+    date: string;
+    count: number;
+  }[] = [];
+  const doneList: {
+    id: string;
+    title: string;
+    sessionId: string;
+    scheduled?: string;
+  }[] = [];
+  const addDone = (
+    key: string,
+    row: { id: string; title: string; sessionId: string; scheduled?: string },
+  ) => {
     if (doneSeen.has(key)) return;
     doneSeen.add(key);
     doneList.push(row);
@@ -538,6 +607,20 @@ function Index() {
     const day = String(d.getDate()).padStart(2, "0");
     return `${y}-${m}-${day}`;
   })();
+  // How many times a plan recurs within the look-ahead window [plan.date,
+  // weekHorizon] — so a daily can show "+N this week" beside its next date
+  // without listing every day (ACTS-192). A one-time plan lands once.
+  const occurrencesThisWeek = (plan: SessionPlan): number => {
+    if ((plan.recurrence?.freq ?? "none") === "none") return 1;
+    const startsOn = plan.starts_on ?? plan.date;
+    let count = 0;
+    let d: string | null = plan.date ?? null;
+    while (d && d <= weekHorizon) {
+      count += 1;
+      d = nextOccurrence(startsOn, plan.recurrence, d);
+    }
+    return count;
+  };
   const upcomingPlans = db.session_plans
     .filter((p) => p.date != null && p.date >= today && p.date <= weekHorizon)
     .sort((a, b) => (a.date ?? "").localeCompare(b.date ?? ""));
@@ -549,11 +632,23 @@ function Index() {
     if (openS) {
       representedIds.add(openS.id);
       continueList.push({ id: plan.id, title, sessionId: openS.id });
-    } else if (plan.date === today && latestDoneToday((s) => s.plan_id === plan.id)) {
-      // Completed today — surfaced as Done by the completed-sessions pass below.
-      // (Kept out of Today so a finished once-plan doesn't reappear as "start".)
+    } else if (occurrenceDone(plan)) {
+      // This occurrence is done — surfaced as Done by the completed-sessions pass
+      // below (when finished today). Kept out of Today/upcoming so a finished
+      // session — including a future one-time prayed early — doesn't reappear as
+      // a start-able to-do (ACTS-192).
+    } else if (plan.date === today) {
+      todayList.push({ id: plan.id, title, planId: plan.id, date: plan.date });
     } else {
-      todayList.push({ id: plan.id, title, planId: plan.id, date: plan.date ?? today });
+      // Scheduled a later day this week — the collapsed "Upcoming" look-ahead.
+      // Shown once at its next date, with a count if it recurs across the week.
+      upcomingList.push({
+        id: plan.id,
+        title,
+        planId: plan.id,
+        date: plan.date ?? today,
+        count: occurrencesThisWeek(plan),
+      });
     }
   }
   // Other in-progress sessions (not the daily, not a today-plan already listed).
@@ -571,7 +666,18 @@ function Index() {
     if (s.plan_id && s.plan_id === dailyFulfiller?.id) continue;
     const plan = s.plan_id ? db.session_plans.find((p) => p.id === s.plan_id) : undefined;
     const title = plan ? planTitle(db, plan) : s.title?.trim() || "Prayer session";
-    addDone(plan?.template_id || s.template_id || s.id, { id: s.id, title, sessionId: s.id });
+    // Prayed on a different day than scheduled? Note the scheduled day so a
+    // done-early session reads honestly (collapsed when they match) (ACTS-192).
+    const scheduled =
+      s.scheduled_date && s.scheduled_date !== dayOf(s.completed_at ?? "")
+        ? s.scheduled_date
+        : undefined;
+    addDone(plan?.template_id || s.template_id || s.id, {
+      id: s.id,
+      title,
+      sessionId: s.id,
+      ...(scheduled ? { scheduled } : {}),
+    });
   }
 
   function openJournal(linkId: string) {
@@ -809,15 +915,7 @@ function Index() {
                 className="flex items-center justify-between gap-3 border-t border-border/60 px-5 py-3"
               >
                 <span className="min-w-0">
-                  <span className="eyebrow block">
-                    {row.date && row.date !== today
-                      ? new Date(`${row.date}T00:00`).toLocaleDateString(undefined, {
-                          weekday: "short",
-                          month: "short",
-                          day: "numeric",
-                        })
-                      : "Today"}
-                  </span>
+                  <span className="eyebrow block">Today</span>
                   <span className="truncate font-display text-base">{row.title}</span>
                 </span>
                 <div className="flex shrink-0 items-center gap-0.5">
@@ -854,7 +952,9 @@ function Index() {
                   params={{ sessionId: row.sessionId }}
                   className="min-w-0 flex-1"
                 >
-                  <span className="eyebrow block text-muted-foreground">Done</span>
+                  <span className="eyebrow block text-muted-foreground">
+                    {row.scheduled ? `Done · scheduled ${dayShort(row.scheduled)}` : "Done"}
+                  </span>
                   <span className="block truncate font-display text-base text-muted-foreground">
                     {row.title}
                   </span>
@@ -878,6 +978,46 @@ function Index() {
                 </div>
               </div>
             ))}
+
+            {/* Upcoming — scheduled later this week. Collapsed by default and not
+                startable from here (a look-ahead, not a to-do), so today's
+                sessions stay front-and-center (ACTS-192). */}
+            {upcomingList.length > 0 ? (
+              <Collapsible open={upcomingOpen} onOpenChange={toggleUpcoming}>
+                <CollapsibleTrigger className="group flex w-full items-center justify-between gap-3 border-t border-border/60 bg-muted/50 px-5 py-2.5 text-left transition-colors hover:bg-muted">
+                  <span className="eyebrow font-medium text-foreground/70">Upcoming this week</span>
+                  <ChevronDown
+                    className="size-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180"
+                    aria-hidden
+                  />
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  {upcomingList.map((row) => (
+                    <div
+                      key={row.id}
+                      className="flex items-center justify-between gap-3 border-t border-border/60 px-5 py-3"
+                    >
+                      <span className="min-w-0">
+                        <span className="eyebrow block text-muted-foreground">
+                          {dayShort(row.date)}
+                        </span>
+                        <span className="block truncate font-display text-base text-muted-foreground">
+                          {row.title}
+                        </span>
+                      </span>
+                      {row.count > 1 ? (
+                        <span
+                          className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
+                          aria-label={`${row.count} times this week`}
+                        >
+                          {row.count}×
+                        </span>
+                      ) : null}
+                    </div>
+                  ))}
+                </CollapsibleContent>
+              </Collapsible>
+            ) : null}
           </div>
         </Card>
 

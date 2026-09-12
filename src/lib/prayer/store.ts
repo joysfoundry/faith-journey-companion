@@ -1128,10 +1128,15 @@ export const mutations = {
       ],
     };
     const { session, items } = generatePrayerSession(previewDb, template, ctx);
+    // Remember the scheduled day this session fulfilled (the plan's date), kept
+    // distinct from `completed_at` — so history can show "scheduled X · done Y"
+    // and Home can drop a finished occurrence from "upcoming" (ACTS-192).
+    const plan = planId ? db.session_plans.find((p) => p.id === planId) : undefined;
     const titled: PrayerSession = {
       ...session,
       ...(title?.trim() ? { title: title.trim() } : {}),
       ...(planId ? { plan_id: planId } : {}),
+      ...(plan?.date ? { scheduled_date: plan.date } : {}),
     };
     return {
       db: {

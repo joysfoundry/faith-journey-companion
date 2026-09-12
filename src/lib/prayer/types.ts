@@ -376,6 +376,14 @@ export interface PrayerSession {
   completed_at?: string | undefined;
   /** The SessionPlan this was started from; lets completion advance a recurrence. */
   plan_id?: ID | undefined;
+  /**
+   * The scheduled day this session fulfilled (the plan's `date` when it was
+   * started), kept distinct from when it was actually completed. Lets history
+   * read "scheduled X · done Y" and lets Home drop a finished occurrence from
+   * "upcoming" even when prayed early. Absent on ad-hoc/unscheduled sessions.
+   * (ACTS-192)
+   */
+  scheduled_date?: string | undefined;
   /** Index of the item the user is currently on. */
   cursor: number;
   /**

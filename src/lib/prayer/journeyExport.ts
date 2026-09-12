@@ -140,7 +140,7 @@ Start with the two or three things that struck you most, then work through the s
  * `KnowledgeItem.start_date`) is returned as written: parsing it would read it as
  * UTC midnight and shift it a day backwards in negative-offset zones.
  */
-function dayOf(value: string): string {
+export function dayOf(value: string): string {
   if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return value.slice(0, 10);
