@@ -2,15 +2,15 @@
 id: ACTS-195
 title: Vessels — tone down the active reading-status pill so it doesn't compete with the header controls
 spine:
-status: In Progress
+status: Done
 origin: human-directed
 approved_by: JC
 depends_on: []
 relates_to: [ACTS-189, ACTS-182, ACTS-179]
 started_at: 2026-09-11T19:48:27-0700
-updated:    2026-09-11T19:48:27-0700
-latest_handoff: null
-sessions: 0
+updated:    2026-09-11T19:55:00-0700
+latest_handoff: stories/ACTS-195/session-01.md
+sessions: 1
 ---
 
 ## Goal
