@@ -2,7 +2,7 @@
 id: ACTS-196
 title: Capture a scripture citation at save time — infer-and-recommend, else prompt to confirm (never block)
 spine:
-status: To Do
+status: In Progress
 origin: human-directed
 approved_by: JC
 depends_on: [ACTS-194]
@@ -46,7 +46,29 @@ scripture quote) **with an empty citation**:
    nudge should not nag on every keystroke.
 3. Anything captured flows through the ACTS-194 normalizer so it groups + dedups cleanly.
 
-## Open questions for JC
+## Decisions (JC, 2026-09-11) — resolved
+- **Confidence bar:** one distinct **book of the Bible** found (Luke, 1 Corinthians — not the
+  whole Bible, not the "Books" Vessel type) → **recommend**. **2+ books** (cross-reference) →
+  **prompt with the found candidates** as quick-pick chips; user picks one, types their own, or
+  dismisses (leaves it in the general Scripture bucket). **One citation per quote** — multiple
+  citations (comparing passages) is deferred to **ACTS-197** (advanced journaling).
+- **Placement:** inline, beneath the citation field.
+- **Retroactive:** deferred (no one-time sweep of existing blank-ref quotes in this story).
+- **Confident inference requires a `chapter:verse`** (a bare "Psalm 23" without a verse falls to
+  the prompt) — a colon is the strong signal that kills prose false-positives ("this is 3", time
+  strings, short book abbrevs like "is"/"am").
+
+## Progress (session-01, 2026-09-11)
+- **Built + verified in dev.** `inferReference(text)` in `src/lib/bible/apps.ts`
+  (confident / ambiguous / none, all normalized via ACTS-194). New inline wrapper
+  `ScriptureCitationField.tsx` composes `ScriptureCitationInput` + the nudge (recommend / candidate
+  chips / prompt / dismiss-sticky). Wired into all 3 blank-citation surfaces: ReflectionComposer,
+  VoiceEditor add-form, and the quote detail editor. No data-shape change, no `STORAGE_KEY` bump.
+- Verified all four states live (composer → Add a quote → Scripture): confident one-tap accept fills
+  the field; two-book cross-ref shows candidate chips; bookless passage shows the prompt; dismiss
+  clears and does not re-nag on a new inferable passage; Save never blocked. `tsc --noEmit` clean.
+
+## Open questions for JC (resolved above)
 - **"Confident" bar:** exactly one distinct book found in the text = confident? What if the text
   names two books (a cross-reference)? (Propose: recommend only when a single dominant book/citation
   is unambiguous; otherwise prompt.)
