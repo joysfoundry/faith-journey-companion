@@ -2,15 +2,15 @@
 id: ACTS-194
 title: Scripture citation typeahead — book suggestions (version-aware) for consistent references
 spine:
-status: In Progress
+status: Done
 origin: human-directed
 approved_by: JC
 depends_on: []
 relates_to: [ACTS-185, ACTS-191, ACTS-183, ACTS-188]
 started_at: 2026-09-11T11:14:41-0700
-updated:    2026-09-11T11:14:41-0700
-latest_handoff: null
-sessions: 0
+updated:    2026-09-11T19:50:21-0700
+latest_handoff: stories/ACTS-194/session-01.md
+sessions: 1
 ---
 
 ## Goal
