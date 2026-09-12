@@ -37,7 +37,18 @@ and seeds the editable draft from the chosen devotion's steps.
 3. Save as a **new** devotion (a distinct `PrayerTemplate`), not an alternate version of the
    original — unless we decide otherwise.
 
-## Open questions for JC
+## Decisions (JC, 2026-09-12) — resolved
+1. **New devotion** — "from existing" always mints a brand-new, independent devotion (not an
+   alternate version of the original).
+2. **Devotion only** — no "from an existing prayer" on the single-prayer side for now.
+3. **Reuse** — implementation detail (reuse a duplicate/clone helper if one already exists); no
+   product decision needed.
+4. **Land in the by-hand editor pre-filled** with a copy of the chosen devotion's steps.
+
+Related follow-ons raised alongside this (own stories): [[ACTS-199]] (make add-a-prayer prominent
+in the empty state) and [[ACTS-200]] (schedule out of devotion creation → session building only).
+
+## Open questions for JC (resolved above)
 - **Copy vs alternate version:** does "from existing" always mint a brand-new devotion, or offer
   "save as a new version of this one" too? (Mystery/version model exists — see ACTS-176.)
 - **Single prayers:** offer "from an existing prayer" as well, or devotion-only for now?
