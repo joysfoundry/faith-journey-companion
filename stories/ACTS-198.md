@@ -45,8 +45,8 @@ and seeds the editable draft from the chosen devotion's steps.
    product decision needed.
 4. **Land in the by-hand editor pre-filled** with a copy of the chosen devotion's steps.
 
-Related follow-ons raised alongside this (own stories): [[ACTS-199]] (make add-a-prayer prominent
-in the empty state) and [[ACTS-200]] (schedule out of devotion creation → session building only).
+Related follow-on raised alongside this (own story): [[ACTS-199]] (make add-a-prayer prominent
+in the empty state).
 
 ## Open questions for JC (resolved above)
 - **Copy vs alternate version:** does "from existing" always mint a brand-new devotion, or offer
