@@ -2,15 +2,15 @@
 id: ACTS-196
 title: Capture a scripture citation at save time — infer-and-recommend, else prompt to confirm (never block)
 spine:
-status: In Progress
+status: Done
 origin: human-directed
 approved_by: JC
 depends_on: [ACTS-194]
-relates_to: [ACTS-191, ACTS-193, ACTS-183, ACTS-185]
+relates_to: [ACTS-191, ACTS-193, ACTS-183, ACTS-185, ACTS-200]
 started_at: 2026-09-11T20:10:13-0700
-updated:    2026-09-11T20:10:13-0700
-latest_handoff: null
-sessions: 0
+updated:    2026-09-12T11:10:11-0700
+latest_handoff: stories/ACTS-196/session-01.md
+sessions: 1
 ---
 
 ## Goal
@@ -54,6 +54,9 @@ scripture quote) **with an empty citation**:
   citations (comparing passages) is deferred to **ACTS-197** (advanced journaling).
 - **Placement:** inline, beneath the citation field.
 - **Retroactive:** deferred (no one-time sweep of existing blank-ref quotes in this story).
+- **No verse-by-wording recognition** here — recommend only when the reference is present in the
+  text. Recognizing a verse from its wording needs a scripture corpus; **deferred to [[ACTS-200]]**
+  (a good future feature, especially if we obtain licensing).
 - **Confident inference requires a `chapter:verse`** (a bare "Psalm 23" without a verse falls to
   the prompt) — a colon is the strong signal that kills prose false-positives ("this is 3", time
   strings, short book abbrevs like "is"/"am").
