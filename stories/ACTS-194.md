@@ -2,7 +2,7 @@
 id: ACTS-194
 title: Scripture citation typeahead — book suggestions (version-aware) for consistent references
 spine:
-status: To Do
+status: In Progress
 origin: human-directed
 approved_by: JC
 depends_on: []
@@ -43,27 +43,34 @@ JC (2026-09-11):
     Settings translation).
 
 ## Acceptance criteria
-- [ ] Typing in a citation field suggests matching **books** (prefix/substring on name + alias);
+- [x] Typing in a citation field suggests matching **books** (prefix/substring on name + alias);
       choosing one inserts the **canonical full book name**, leaving the caret to add `chapter:verse`.
-- [ ] Suggestions are **version-aware**: the list reflects the chosen version's canon (Catholic
-      deuterocanon shown for NABRE; hidden for Protestant versions) — with the version resolved from
-      the field's context (picker / `source_item_id` / Settings default).
-- [ ] Free text is **never blocked** — a reference not matched still saves (typeahead assists, not
-      gates).
-- [ ] The input is a **shared component** used by all five citation fields, so entry is consistent
-      everywhere (and dedup-friendly).
-- [ ] Reference formatting stays consistent with ACTS-185 (full book name, not an abbreviation) so
-      it normalizes into the ACTS-191 `scriptureQuoteKey` cleanly.
+      → `ScriptureCitationInput` + `bookSuggestions()`; accept inserts "1 Corinthians " + trailing space.
+- [x] Suggestions are **version-aware**: deuterocanon shown for Catholic canon (NABRE/RSV-CE/DRA),
+      hidden for Protestant versions; version resolved from a translation id or `know-bible-*` id.
+- [x] Free text is **never blocked** — an unrecognized book (a real typo) saves exactly as typed.
+- [x] The input is a **shared component** used by all five citation fields.
+- [x] Reference formatting normalizes to the ACTS-185 canonical full name so it feeds the ACTS-191
+      `scriptureQuoteKey` cleanly. **Extended (JC-approved):** normalize **on save** at the store
+      chokepoints too (`addKnowledgeItem`/`updateKnowledgeItem` + `recordScripturePrayed`), so even a
+      value committed without going through the picker canonicalizes.
 
-## Open questions for JC
-- **Chapter/verse help:** book typeahead only (recommend first), or also validate/suggest chapter
-  numbers? (Chapter counts per book = extra data; propose deferring.)
-- **Abbreviation input:** accept "Lk" / "1 Cor" and expand to the full name? (Recommend yes — add a
-  small alias table over the existing `USFM` keys.)
-- **Deuterocanon for Protestant versions:** hide entirely, or show greyed with a note? (Recommend
-  hide — matches that version's canon.)
-- **Book list source of truth:** derive from `USFM`/`USFM_TO_NAME`, or introduce an explicit
-  ordered canon list (with per-version membership)? (Likely the latter for correct ordering/canon.)
+## Decisions (JC, 2026-09-11)
+- Book-name typeahead **only** (chapter-count validation deferred).
+- Abbreviations **expand** ("Lk"→"Luke", "1 Cor"→"1 Corinthians") — reuses `USFM` alias keys.
+- Deuterocanon **hidden** for Protestant versions.
+- Source of truth = explicit ordered **`BIBLE_CANON`** (73 books, Catholic order, `deutero` flag),
+  names derived from `BOOK_NAME_BY_USFM` (one source of truth for display names).
+- **Typeahead + normalize-on-save**, **new entries only** — no load-time migration of existing data.
+
+## Root-cause note (the repro that informed this)
+JC's observation ("pasted scripture with no verse: Books view knows 1 Corinthians but the journal
+entry has no label") reproduced against real data. A Lectio quote saved with a **blank reference**
+gets `scripture_ref: undefined` (→ `quoteByline` shows nothing) yet keeps `source_item_id` (→ still
+files under the Bible book). Compounded by free-typed refs fragmenting one passage three ways in the
+Voices view: **1 Corinthians** (3), **1 Corithians** (typo → own bogus book, 1), **Scripture**
+(blank ref, 1). The picker + normalize-on-save prevents new fragmentation. NOTE: existing split data
+is left as-is per the decision — JC can re-edit those quotes to canonicalize.
 
 ## Tests
 No runner yet (ACTS-92). **Unit:** `bookSuggestions(query, version)` (matching, alias expansion,
