@@ -106,9 +106,6 @@ export const Route = createFileRoute("/")({
 /** Per-browser memory of whether the Home Vessels card is expanded (ACTS-182). */
 const VESSELS_OPEN_KEY = "oravia:home:vessels-open";
 
-/** Per-browser memory of whether the Home "Upcoming" list is expanded (ACTS-192). */
-const UPCOMING_OPEN_KEY = "oravia:home:upcoming-open";
-
 /** A row on the Home Vessels card: either a single content pin, or a Vessel with
  *  its pinned channels grouped onto one row (ACTS-178). */
 type HomePinRow =
@@ -462,24 +459,11 @@ function Index() {
     }
   };
 
-  // The "Upcoming" list (scheduled later this week) sits below today's sessions,
-  // collapsed by default so what's due today stays front-and-center (ACTS-192).
+  // The "Upcoming" list (scheduled later this week) sits below today's sessions
+  // and is ALWAYS collapsed on load, so what's due today stays front-and-center
+  // (ACTS-192). Expansion is session-only — deliberately not remembered, so it
+  // never comes back expanded on a later visit.
   const [upcomingOpen, setUpcomingOpen] = useState(false);
-  useEffect(() => {
-    try {
-      setUpcomingOpen(window.localStorage.getItem(UPCOMING_OPEN_KEY) === "1");
-    } catch {
-      /* storage blocked — stay collapsed */
-    }
-  }, []);
-  const toggleUpcoming = (open: boolean) => {
-    setUpcomingOpen(open);
-    try {
-      window.localStorage.setItem(UPCOMING_OPEN_KEY, open ? "1" : "0");
-    } catch {
-      /* storage blocked — remember for this session only */
-    }
-  };
 
   const setId = resolveMysterySet(db, defaultContext({ date: today }));
   const setName = db.mystery_sets.find((s) => s.id === setId)?.name ?? "Mysteries";
@@ -1062,7 +1046,7 @@ function Index() {
                 startable from here (a look-ahead, not a to-do), so today's
                 sessions stay front-and-center (ACTS-192). */}
             {upcomingList.length > 0 ? (
-              <Collapsible open={upcomingOpen} onOpenChange={toggleUpcoming}>
+              <Collapsible open={upcomingOpen} onOpenChange={setUpcomingOpen}>
                 <CollapsibleTrigger className="group flex w-full items-center justify-between gap-3 border-t border-border/60 bg-muted/50 px-5 py-2.5 text-left transition-colors hover:bg-muted">
                   <span className="eyebrow font-medium text-foreground/70">Upcoming this week</span>
                   <ChevronDown
