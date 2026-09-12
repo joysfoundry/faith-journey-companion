@@ -12,6 +12,7 @@ import { forwardRef, useEffect, useMemo, useState } from "react";
 
 import { EntitySuggestInput } from "@/components/knowledge/EntitySuggestInput";
 import { ScriptureCitationField } from "@/components/knowledge/ScriptureCitationField";
+import { ScriptureCitationSaveDialog } from "@/components/knowledge/ScriptureCitationSaveDialog";
 import { InspirationPanel } from "@/components/reflections/InspirationPanel";
 import { RichTextArea } from "@/components/reflections/RichTextArea";
 import { ThemeEditor } from "@/components/reflections/ThemeEditor";
@@ -122,6 +123,8 @@ export function ReflectionComposer({ linkables, prefillLinkId, showDraftStatus }
   // The Bible-version book a scripture quote links to ("" = the Settings default).
   const [quoteVersion, setQuoteVersion] = useState("");
   const [quoteUrl, setQuoteUrl] = useState("");
+  // Save-time citation check for a scripture quote with no citation (ACTS-196).
+  const [citationGuardOpen, setCitationGuardOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
   const [linkLabel, setLinkLabel] = useState("");
   const [linkOpen, setLinkOpen] = useState(false);
@@ -199,10 +202,18 @@ export function ReflectionComposer({ linkables, prefillLinkId, showDraftStatus }
    * to it via a `learning` link, so it lives on in the library and can be reflected
    * from again. No throwaway `passage` link.
    */
-  function addQuote() {
+  function addQuote(opts?: { refOverride?: string; skipGuard?: boolean }) {
     const body = quoteText.trim();
     if (!body) return;
     const isScripture = quoteKind === "scripture";
+    // The citation being saved — an accepted recommendation can override the field.
+    const ref = (opts?.refOverride ?? quoteRef).trim();
+    // Save-time check (ACTS-196): a scripture passage with no citation would land
+    // uncited in the generic "Scripture" group — confirm before saving that way.
+    if (isScripture && !ref && !opts?.skipGuard) {
+      setCitationGuardOpen(true);
+      return;
+    }
     const takesSource = quoteKind === "book" || quoteKind === "article";
     // Scripture is a connected passage, not a fresh copy (ACTS-191): if this citation
     // (in this version) is already kept — pasted before, or minted from a Lectio — link
@@ -210,14 +221,14 @@ export function ReflectionComposer({ linkables, prefillLinkId, showDraftStatus }
     // key the Lectio dedup uses; different verse ranges/translations stay distinct.
     const scriptureVersionBook = quoteVersion || defaultVersionBook;
     const existingScripture =
-      isScripture && quoteRef.trim()
+      isScripture && ref
         ? db.knowledge_items.find(
             (i) =>
               i.category === "quote" &&
               i.quote_kind === "scripture" &&
               !!i.scripture_ref?.trim() &&
               scriptureQuoteKey(i.scripture_ref, i.source_item_id ?? "") ===
-                scriptureQuoteKey(quoteRef.trim(), scriptureVersionBook),
+                scriptureQuoteKey(ref, scriptureVersionBook),
           )
         : undefined;
     const id = existingScripture ? existingScripture.id : newId("know");
@@ -253,7 +264,7 @@ export function ReflectionComposer({ linkables, prefillLinkId, showDraftStatus }
         category: "quote",
         quote_kind: quoteKind,
         body,
-        scripture_ref: isScripture ? quoteRef.trim() || undefined : undefined,
+        scripture_ref: isScripture ? ref || undefined : undefined,
         voice_id: voiceId,
         // Scripture links to its chosen Bible-version book; other kinds link a matched
         // source work when the "source" names one.
@@ -281,6 +292,7 @@ export function ReflectionComposer({ linkables, prefillLinkId, showDraftStatus }
     setQuoteRef("");
     setQuoteVersion("");
     setQuoteUrl("");
+    setCitationGuardOpen(false);
     setQuoteOpen(false);
   }
 
@@ -607,7 +619,7 @@ export function ReflectionComposer({ linkables, prefillLinkId, showDraftStatus }
                 </>
               )}
               <div className="flex justify-end">
-                <Button type="button" size="sm" onClick={addQuote} disabled={!quoteText.trim()}>
+                <Button type="button" size="sm" onClick={() => addQuote()} disabled={!quoteText.trim()}>
                   Save quote
                 </Button>
               </div>
@@ -701,6 +713,23 @@ export function ReflectionComposer({ linkables, prefillLinkId, showDraftStatus }
           </Button>
         </div>
       </div>
+      <ScriptureCitationSaveDialog
+        open={citationGuardOpen}
+        onOpenChange={setCitationGuardOpen}
+        body={quoteText}
+        onChooseCitation={(ref) => {
+          setCitationGuardOpen(false);
+          addQuote({ refOverride: ref, skipGuard: true });
+        }}
+        onAddManually={() => {
+          setCitationGuardOpen(false);
+          setQuoteOpen(true);
+        }}
+        onSaveWithout={() => {
+          setCitationGuardOpen(false);
+          addQuote({ skipGuard: true });
+        }}
+      />
     </div>
   );
 }

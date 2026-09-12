@@ -87,7 +87,9 @@ export function ScriptureCitationField({
                 ))}
               </span>
             ) : (
-              <span>Add a citation so this files under its book — or save without one.</span>
+              <span className="text-amber-700 dark:text-amber-400">
+                Add a citation so this files under its book — or save without one.
+              </span>
             )}
           </div>
           <button

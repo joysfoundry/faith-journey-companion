@@ -53,6 +53,7 @@ import {
   quotesFromItem,
   voiceFromLink,
 } from "@/lib/prayer/knowledge";
+import { OpenInBibleLink } from "@/components/knowledge/OpenInBibleLink";
 import { QuoteSourcePicker } from "@/components/knowledge/QuoteSourcePicker";
 import { ScriptureCitationField } from "@/components/knowledge/ScriptureCitationField";
 import {
@@ -722,12 +723,15 @@ function KnowledgeRecordPage() {
                         <span className="line-clamp-2 text-sm italic text-foreground">
                           &ldquo;{quoteBody(q)}&rdquo;
                         </span>
-                        {quoteByline(q, voices) ? (
-                          <span className="mt-1 block text-xs text-muted-foreground">
-                            — {quoteByline(q, voices)}
-                          </span>
-                        ) : null}
                       </Link>
+                      {quoteByline(q, voices) ? (
+                        <p className="mt-1 flex items-center gap-1.5 px-3 text-xs text-muted-foreground">
+                          <span>— {quoteByline(q, voices)}</span>
+                          {quoteKind(q) === "scripture" && q.scripture_ref?.trim() ? (
+                            <OpenInBibleLink reference={q.scripture_ref} iconOnly />
+                          ) : null}
+                        </p>
+                      ) : null}
                     </li>
                   ))}
                 </ul>

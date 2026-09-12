@@ -23,6 +23,8 @@ export interface ResolvedInspiration {
   href?: string;
   /** True when the source is a library quote — its card shows voice + body, no title. */
   isQuote?: boolean;
+  /** A scripture quote's citation (ACTS-196) — powers the "Open in your Bible" deep-link. */
+  scriptureRef?: string;
 }
 
 /** Best label we can fall back to when nothing better resolves. */
@@ -81,6 +83,9 @@ export function resolveInspiration(link: ReflectionLink, db: Database): Resolved
         ...(item.body?.trim() ? { text: item.body.trim() } : {}),
         ...(href ? { href } : {}),
         ...(item.category === "quote" ? { isQuote: true } : {}),
+        ...(item.quote_kind === "scripture" && item.scripture_ref?.trim()
+          ? { scriptureRef: item.scripture_ref.trim() }
+          : {}),
       };
     }
 

@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VoiceEditor } from "@/components/knowledge/VoiceEditor";
+import { OpenInBibleLink } from "@/components/knowledge/OpenInBibleLink";
 import { QuickAddLink } from "@/components/knowledge/QuickAddLink";
 import { PLATFORM_ICON } from "@/components/knowledge/platform-icon";
 import { newId } from "@/lib/prayer/compiler";
@@ -801,7 +802,14 @@ function ContentRow({
           >
             &ldquo;{quoteBody(item)}&rdquo;
           </Link>
-          {who ? <p className="mt-1 pl-3 text-xs text-muted-foreground">— {who}</p> : null}
+          {who ? (
+            <p className="mt-1 flex items-center gap-1.5 pl-3 text-xs text-muted-foreground">
+              <span>— {who}</span>
+              {quoteKind(item) === "scripture" && item.scripture_ref?.trim() ? (
+                <OpenInBibleLink reference={item.scripture_ref} iconOnly />
+              ) : null}
+            </p>
+          ) : null}
           {item.tags?.length ? (
             <div className="mt-1.5 flex flex-wrap gap-1 pl-3">
               {item.tags.map((t) => (

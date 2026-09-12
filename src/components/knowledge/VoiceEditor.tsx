@@ -5,6 +5,7 @@ import { ExternalLink, Pin, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ExternalLink as ExtLink } from "@/components/ui/external-link";
 import { ScriptureCitationField } from "@/components/knowledge/ScriptureCitationField";
+import { ScriptureCitationSaveDialog } from "@/components/knowledge/ScriptureCitationSaveDialog";
 import { Input } from "@/components/ui/input";
 import {
   CATEGORY_LABELS,
@@ -58,6 +59,8 @@ export function VoiceEditor({ voiceId }: { voiceId: string }) {
   const [addQuoteKind, setAddQuoteKind] = useState<QuoteKind>("open");
   const [addScriptureRef, setAddScriptureRef] = useState("");
   const [addSource, setAddSource] = useState("");
+  // Save-time citation check for a scripture quote with no citation (ACTS-196).
+  const [citationGuardOpen, setCitationGuardOpen] = useState(false);
 
   const voice = db.voices.find((v) => v.id === voiceId);
   if (!voice) return null;
@@ -92,9 +95,18 @@ export function VoiceEditor({ voiceId }: { voiceId: string }) {
   const updateChannel = (id: string, patch: Partial<Channel>) =>
     save({ channels: channels.map((c) => (c.id === id ? { ...c, ...patch } : c)) });
 
-  function addContent() {
+  function addContent(opts?: { refOverride?: string; skipGuard?: boolean }) {
     if (!addTitle.trim()) return;
     const isQ = addCategory === "quote";
+    const isScripture = isQ && addQuoteKind === "scripture";
+    // The citation being saved — an accepted recommendation can override the field.
+    const ref = (opts?.refOverride ?? addScriptureRef).trim();
+    // Save-time check (ACTS-196): a scripture quote with no citation would land
+    // uncited in the generic "Scripture" group — confirm before saving that way.
+    if (isScripture && !ref && !opts?.skipGuard) {
+      setCitationGuardOpen(true);
+      return;
+    }
     // The *who* is the Vessel (named above). A book/article quote also names the
     // *work* — the book title or publication/show — in `source`. A link is
     // optional on every kind except scripture (ACTS-181).
@@ -111,7 +123,7 @@ export function VoiceEditor({ voiceId }: { voiceId: string }) {
       body: isQ ? addTitle.trim() : undefined,
       category: addCategory,
       quote_kind: isQ ? addQuoteKind : undefined,
-      scripture_ref: isQ && addQuoteKind === "scripture" ? addScriptureRef.trim() || undefined : undefined,
+      scripture_ref: isScripture ? ref || undefined : undefined,
       source: quoteTakesSource ? addSource.trim() || undefined : undefined,
       voice_id: voiceId,
       links:
@@ -127,6 +139,7 @@ export function VoiceEditor({ voiceId }: { voiceId: string }) {
     setAddQuoteKind("open");
     setAddScriptureRef("");
     setAddSource("");
+    setCitationGuardOpen(false);
   }
 
   return (
@@ -434,7 +447,7 @@ export function VoiceEditor({ voiceId }: { voiceId: string }) {
                 variant="secondary"
                 className="size-9 shrink-0"
                 aria-label="Add content"
-                onClick={addContent}
+                onClick={() => addContent()}
                 disabled={!addTitle.trim()}
               >
                 <Plus className="size-4" aria-hidden />
@@ -443,6 +456,20 @@ export function VoiceEditor({ voiceId }: { voiceId: string }) {
           </div>
         </div>
       </section>
+      <ScriptureCitationSaveDialog
+        open={citationGuardOpen}
+        onOpenChange={setCitationGuardOpen}
+        body={addTitle}
+        onChooseCitation={(ref) => {
+          setCitationGuardOpen(false);
+          addContent({ refOverride: ref, skipGuard: true });
+        }}
+        onAddManually={() => setCitationGuardOpen(false)}
+        onSaveWithout={() => {
+          setCitationGuardOpen(false);
+          addContent({ skipGuard: true });
+        }}
+      />
     </div>
   );
 }

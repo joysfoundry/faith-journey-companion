@@ -2,6 +2,7 @@ import { useState } from "react";
 import { BookmarkPlus, Check, ExternalLink, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
 
+import { OpenInBibleLink } from "@/components/knowledge/OpenInBibleLink";
 import { todaysWord } from "@/domain/placeholderData";
 import { newId } from "@/lib/prayer/compiler";
 import { resolveInspirations, type ResolvedInspiration } from "@/lib/prayer/inspiration";
@@ -43,6 +44,7 @@ function InspirationCard({
           <p className="min-w-0 truncate font-medium text-foreground">{resolved.label}</p>
         )}
         <div className="flex shrink-0 items-center gap-2">
+          {resolved.scriptureRef ? <OpenInBibleLink reference={resolved.scriptureRef} /> : null}
           {href ? (
             <a
               href={href}
