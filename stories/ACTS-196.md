@@ -1,0 +1,63 @@
+---
+id: ACTS-196
+title: Capture a scripture citation at save time — infer-and-recommend, else prompt to confirm (never block)
+spine:
+status: To Do
+origin: human-directed
+approved_by: JC
+depends_on: [ACTS-194]
+relates_to: [ACTS-191, ACTS-193, ACTS-183, ACTS-185]
+started_at: 2026-09-11T20:10:13-0700
+updated:    2026-09-11T20:10:13-0700
+latest_handoff: null
+sessions: 0
+---
+
+## Goal
+As someone pasting a scripture passage, I want the app to **capture the book/chapter at save
+time** — recommending a citation when it can confidently read one from the text, and otherwise
+**asking me to confirm/add one** — so my scripture lands labeled and correctly grouped without me
+having to notice a bad grouping and hand-fix it afterward. I can always **choose to update or
+not** — the nudge assists, it never blocks the save.
+
+JC (2026-09-11):
+> Save-time nudge if it includes what the app can confidently recommend, and if it can't they
+> should confirm — and they still can choose to update or not.
+
+## Why (the gap ACTS-194 leaves)
+ACTS-194 makes citations consistent **when the user types into the citation field**. But a passage
+**pasted with the reference left blank** saves with `scripture_ref: undefined`: no journal label
+(`quoteByline` shows only `scripture_ref`) and it falls into the generic **"Scripture"** bucket in
+Vessels → Voices (grouping keys on `bibleBookName(scripture_ref)`), while a passage that *did* get a
+reference groups correctly under its book. Today the only remedy is the user spotting it and editing
+the quote. The app also **cannot invent a book that isn't in the data** — so inference is
+best-effort, and the fallback must be a confirm prompt, not a guess.
+
+## Behavior (proposed)
+On saving/finishing a scripture passage (Lectio finish → `recordScripturePrayed`; composer/editor
+scripture quote) **with an empty citation**:
+1. **Try to infer** a reference from the pasted text — scan the body for a parseable citation
+   (reuse `parseReference` / `bibleBookName`), e.g. USCCB commentary pastes that carry "1 Cor 13:8".
+   - **Confident** (a single, unambiguous book/citation found) → **recommend** it, pre-filled in the
+     citation field (with the ACTS-194 typeahead), for a one-tap accept.
+   - **Not confident / nothing found** → **prompt** the user to add a citation (typeahead), rather
+     than silently saving blank.
+2. **Never block:** the user can accept, edit, or dismiss and save without a citation. A dismissed
+   nudge should not nag on every keystroke.
+3. Anything captured flows through the ACTS-194 normalizer so it groups + dedups cleanly.
+
+## Open questions for JC
+- **"Confident" bar:** exactly one distinct book found in the text = confident? What if the text
+  names two books (a cross-reference)? (Propose: recommend only when a single dominant book/citation
+  is unambiguous; otherwise prompt.)
+- **Where the nudge lives:** inline under the passage/quote field, or a small confirm step on
+  finish/save? (Propose inline, so the typeahead is right there.)
+- **Retroactive:** offer a one-time "these N scripture quotes have no citation — add one?" review of
+  existing blank-ref quotes? (Separate from the save-time nudge; propose deferring.)
+
+## Tests
+No runner yet (ACTS-92). **Unit:** an `inferReference(text)` helper (finds a confident citation;
+returns none on ambiguous/absent). **Integration:** saving a blank-citation scripture passage
+recommends when inferable, prompts when not, and never blocks. **E2E:** paste USCCB commentary with
+"1 Cor 13:8" → recommended "1 Corinthians 13:8" → accept → groups under 1 Corinthians; paste a
+bare-verse passage (no book) → prompt → user can save without one. Planned.
