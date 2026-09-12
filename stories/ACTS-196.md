@@ -68,6 +68,32 @@ scripture quote) **with an empty citation**:
   the field; two-book cross-ref shows candidate chips; bookless passage shows the prompt; dismiss
   clears and does not re-nag on a new inferable passage; Save never blocked. `tsc --noEmit` clean.
 
+## Progress (session-02, 2026-09-12) — save-time confirm added
+Root cause a tester hit: a scripture quote typed by hand then switched to Scripture saved with **no
+citation** because the inline hint was too easy to miss and nothing gated the save. Added a
+**save-time citation check** (JC decisions: **amber** warning; buttons **[Add citation]** ·
+**[Save without citation]**; confident case offers **[Add <ref> & save]**):
+- New `ScriptureCitationSaveDialog.tsx` (reads the passage via `inferReference`): confident →
+  one-tap **Add <ref> & save**; cross-reference → candidate buttons; none → amber warning + **Add
+  citation** (returns to form) / **Save without citation** (saves uncited). Never hard-blocks;
+  pasted text never changed.
+- Wired into the two explicit-save surfaces: `ReflectionComposer.addQuote` and
+  `VoiceEditor.addContent` (both gained a `refOverride`/`skipGuard` param + a guard). The detail
+  editor auto-saves (no button) so it keeps the inline hint, now **amber** for the none case.
+- Decision recorded (JC): "true version" handling = **always deep-link to official** (no embedded
+  scripture text — licensing); a cited quote already shows "Open in your Bible". Surfacing that link
+  on more screens (journal/inspiration/Vessels) is a separate optional story.
+- Verified live in the composer (type-by-hand→Scripture→Save): none-dialog, Add-citation-returns,
+  confident Add-&-save (saved `scripture_ref` "Matthew 5:9"), Save-without (saved uncited). `tsc` clean.
+- **"Open in your Bible" surfaced everywhere a cited scripture quote renders** (JC: precise quotes +
+  one-tap access beats accepting anything that sounds like scripture). New reusable
+  `OpenInBibleLink.tsx` (reads `db.settings` + `buildPassageUrl`); added to InspirationPanel (composer
+  cards + journal), Vessels quote rows (`formation.tsx`), and the "Quotes from this" sublist
+  (`knowledge.$knowledgeId.tsx`); resolver now carries `scriptureRef` (`inspiration.ts`). Detail +
+  session views already had it. Verified the link renders on the Home inspiration card and the Vessels
+  row (→ `Matthew 5:9 · NABRE`), and is absent on an uncited quote. This folds in the deep-link-reach
+  idea (the previously-mooted separate story); no scripture text embedded (licensing).
+
 ## Open questions for JC (resolved above)
 - **"Confident" bar:** exactly one distinct book found in the text = confident? What if the text
   names two books (a cross-reference)? (Propose: recommend only when a single dominant book/citation
