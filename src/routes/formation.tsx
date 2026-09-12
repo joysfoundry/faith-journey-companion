@@ -887,7 +887,7 @@ function ContentRow({
                 onClick={() => setKnowledgeStatus(item.id, s.key)}
                 className={`rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors ${
                   item.status === s.key
-                    ? "bg-primary text-primary-foreground"
+                    ? "bg-primary/15 text-primary"
                     : "bg-secondary text-muted-foreground hover:text-foreground"
                 }`}
               >
