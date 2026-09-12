@@ -639,6 +639,11 @@ function Index() {
       // a start-able to-do (ACTS-192).
     } else if (plan.date === today) {
       todayList.push({ id: plan.id, title, planId: plan.id, date: plan.date });
+    } else if (latestDoneToday((s) => s.plan_id === plan.id)) {
+      // Already prayed today (a recurring plan that rolled its date forward on
+      // finish): it's shown as Done, and — exactly like the Daily Rosary — its
+      // next occurrence is NOT also listed under Upcoming. A daily just returns
+      // to Today tomorrow, so the two daily prayers behave the same (ACTS-192).
     } else {
       // Scheduled a later day this week — the collapsed "Upcoming" look-ahead.
       // Shown once at its next date, with a count if it recurs across the week.
