@@ -10,6 +10,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ScriptureCitationInput } from "@/components/knowledge/ScriptureCitationInput";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useApp, variantsOf } from "@/lib/prayer/store";
@@ -401,10 +402,10 @@ export function DevotionItemsEditor({
 
                         {item.kind === "scripture" ? (
                           <div className="mt-2 space-y-2">
-                            <Input
+                            <ScriptureCitationInput
                               value={item.reference ?? ""}
                               placeholder="Citation (e.g. Lk 1:26-38)"
-                              onChange={(e) => update(index, { reference: e.target.value })}
+                              onChange={(ref) => update(index, { reference: ref })}
                               className="h-9 text-sm"
                             />
                             <Textarea

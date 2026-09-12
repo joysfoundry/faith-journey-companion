@@ -302,6 +302,98 @@ const BOOK_NAME_BY_USFM: Record<string, string> = {
   BAR: "Baruch", "1MA": "1 Maccabees", "2MA": "2 Maccabees",
 };
 
+/* ----------------------------- Book canon (ACTS-194) ---------------------- */
+
+export interface CanonBook {
+  usfm: string;
+  /** Canonical display name — what a picker inserts and what we group by. */
+  name: string;
+  /** Deuterocanon — shown only for Catholic-canon translations. */
+  deutero?: boolean;
+}
+
+/**
+ * The books of the Bible in canonical (Catholic) order, powering the scripture
+ * citation typeahead (ACTS-194). Names come from `BOOK_NAME_BY_USFM` so there is
+ * one source of truth for a book's display name; `deutero` marks the seven
+ * deuterocanonical books, hidden for Protestant translations. Order matters so a
+ * query's suggestions come back in a familiar sequence.
+ */
+export const BIBLE_CANON: CanonBook[] = (
+  [
+    "GEN", "EXO", "LEV", "NUM", "DEU", "JOS", "JDG", "RUT",
+    "1SA", "2SA", "1KI", "2KI", "1CH", "2CH", "EZR", "NEH",
+    ["TOB", true], ["JDT", true], "EST", ["1MA", true], ["2MA", true],
+    "JOB", "PSA", "PRO", "ECC", "SNG", ["WIS", true], ["SIR", true],
+    "ISA", "JER", "LAM", ["BAR", true], "EZK", "DAN",
+    "HOS", "JOL", "AMO", "OBA", "JON", "MIC", "NAM", "HAB", "ZEP", "HAG", "ZEC", "MAL",
+    "MAT", "MRK", "LUK", "JHN", "ACT", "ROM", "1CO", "2CO", "GAL", "EPH", "PHP", "COL",
+    "1TH", "2TH", "1TI", "2TI", "TIT", "PHM", "HEB", "JAS",
+    "1PE", "2PE", "1JN", "2JN", "3JN", "JUD", "REV",
+  ] as Array<string | [string, boolean]>
+).map((e) => {
+  const [usfm, deutero] = Array.isArray(e) ? e : [e, false];
+  return { usfm, name: BOOK_NAME_BY_USFM[usfm]!, ...(deutero ? { deutero: true } : {}) };
+});
+
+/** Every alias/name key in `USFM` that resolves to a given book code (for matching). */
+const ALIAS_KEYS_BY_USFM: Record<string, string[]> = (() => {
+  const map: Record<string, string[]> = {};
+  for (const [key, code] of Object.entries(USFM)) (map[code] ??= []).push(key);
+  return map;
+})();
+
+/**
+ * Book suggestions for a scripture citation as the reader types the book name
+ * (ACTS-194). Matches `query` against each book's canonical name and its
+ * abbreviations ("cor" → 1/2 Corinthians, "lk" → Luke), returning canonical
+ * **display names** in canon order. Prefix matches rank before interior ones.
+ * Version-aware: deuterocanon is offered only for a Catholic-canon translation
+ * (resolved from `version`, a translation id); an unknown/absent version shows
+ * the full Catholic canon. An empty query yields nothing (typeahead, not a menu).
+ */
+export function bookSuggestions(
+  query: string,
+  opts?: { version?: string | undefined; limit?: number | undefined },
+): string[] {
+  const q = query.trim().toLowerCase().replace(/\s+/g, " ");
+  if (!q) return [];
+  const catholic = opts?.version ? !!translationById(opts.version).catholic : true;
+  const prefix: string[] = [];
+  const infix: string[] = [];
+  for (const book of BIBLE_CANON) {
+    if (book.deutero && !catholic) continue;
+    const name = book.name.toLowerCase();
+    const keys = [name, ...(ALIAS_KEYS_BY_USFM[book.usfm] ?? [])];
+    if (name === q) continue; // full name already typed — nothing to suggest
+    if (keys.some((k) => k.startsWith(q))) prefix.push(book.name);
+    else if (name.includes(q)) infix.push(book.name);
+  }
+  return [...prefix, ...infix].slice(0, opts?.limit ?? 6);
+}
+
+/**
+ * Normalize a scripture citation to a canonical, consistent form (ACTS-194): the
+ * leading book token is resolved through the alias table and rewritten to its
+ * canonical name ("1 corinthians 13:8" and "1 Cor 13:8" → "1 Corinthians 13:8"),
+ * while the chapter/verse remainder is preserved verbatim. An unrecognized book
+ * (a genuine typo like "Corithians") is left exactly as typed — normalization
+ * assists, it never mangles. Keeps free-typed refs from fragmenting the ACTS-191
+ * dedup key and the by-book grouping.
+ */
+export function normalizeReference(ref: string): string {
+  const trimmed = ref.trim().replace(/\s+/g, " ");
+  if (!trimmed) return trimmed;
+  const match = trimmed.match(/^((?:[123]\s)?[A-Za-z][A-Za-z ]*?)(?=\s*\d|$)/);
+  const token = match?.[1]?.trim();
+  if (!token) return trimmed;
+  const usfm = USFM[token.toLowerCase().replace(/\.$/, "")];
+  const canonical = usfm ? BOOK_NAME_BY_USFM[usfm] : undefined;
+  if (!canonical) return trimmed;
+  const rest = trimmed.slice(match![0].length).trim();
+  return rest ? `${canonical} ${rest}` : canonical;
+}
+
 /**
  * The display name of the book a citation refers to ("Lk 1:26-38" → "Luke"),
  * resolving full names and common abbreviations. Falls back to the citation's

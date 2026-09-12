@@ -4,6 +4,7 @@ import { ExternalLink, Pin, Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ExternalLink as ExtLink } from "@/components/ui/external-link";
+import { ScriptureCitationInput } from "@/components/knowledge/ScriptureCitationInput";
 import { Input } from "@/components/ui/input";
 import {
   CATEGORY_LABELS,
@@ -412,11 +413,12 @@ export function VoiceEditor({ voiceId }: { voiceId: string }) {
             ) : null}
             <div className="flex items-center gap-2">
               {addCategory === "quote" && addQuoteKind === "scripture" ? (
-                <Input
+                <ScriptureCitationInput
                   value={addScriptureRef}
-                  onChange={(e) => setAddScriptureRef(e.target.value)}
+                  onChange={setAddScriptureRef}
                   placeholder="Citation — e.g. Lk 1:26-38"
                   className="h-9"
+                  wrapperClassName="flex-1"
                 />
               ) : (
                 <Input

@@ -37,6 +37,7 @@ import { RECURRENCE_ONCE, type Recurrence } from "./types";
 import {
   BIBLE_TRANSLATIONS,
   DEFAULT_TRANSLATION,
+  normalizeReference,
   shownBibleVersionIds,
   type BibleTranslation,
 } from "@/lib/bible/apps";
@@ -314,6 +315,19 @@ export const isBibleBookId = (id: string): boolean => BIBLE_BOOK_ID_SET.has(id);
  */
 export const scriptureQuoteKey = (ref: string, versionBook: string): string =>
   `${ref.trim().toLowerCase().replace(/\s+/g, " ")}|${versionBook}`;
+
+/**
+ * Canonicalize a scripture quote's citation on write (ACTS-194) so the same
+ * passage lands the same `scripture_ref` however it was typed — "1 cor 13:8" and
+ * "1 Corinthians 13:8" both become the canonical form. Non-scripture quotes and
+ * empty refs pass through untouched; an unrecognized book is left as typed.
+ */
+function normalizeScriptureRef(item: KnowledgeItem): KnowledgeItem {
+  if (item.category !== "quote" || item.quote_kind !== "scripture") return item;
+  if (!item.scripture_ref?.trim()) return item;
+  const normalized = normalizeReference(item.scripture_ref);
+  return normalized === item.scripture_ref ? item : { ...item, scripture_ref: normalized };
+}
 
 /** Parse/validate a stored quote touch log (ACTS-191); undefined when absent/empty. */
 function normalizeTouches(raw: unknown): QuoteTouch[] | undefined {
@@ -793,7 +807,7 @@ function recordScripturePrayed(db: Database, session: PrayerSession): KnowledgeI
   const scripture = db.session_items.find(
     (i) => i.session_id === session.id && i.kind === "scripture" && (i.reference || i.body),
   );
-  const ref = scripture?.reference?.trim() ?? "";
+  const ref = normalizeReference(scripture?.reference ?? "");
   const text = scripture?.body?.trim() ?? "";
   if (!ref && !text) return db.knowledge_items;
   const versionBook = BIBLE_TRANSLATIONS.some((t) => t.id === db.settings.bible_translation)
@@ -1763,12 +1777,13 @@ export const mutations = {
     return { ...db, reflections: db.reflections.filter((r) => r.id !== id) };
   },
   addKnowledgeItem(db: Database, item: KnowledgeItem): Database {
-    return { ...db, knowledge_items: [item, ...db.knowledge_items] };
+    return { ...db, knowledge_items: [normalizeScriptureRef(item), ...db.knowledge_items] };
   },
   updateKnowledgeItem(db: Database, item: KnowledgeItem): Database {
+    const next = normalizeScriptureRef(item);
     return {
       ...db,
-      knowledge_items: db.knowledge_items.map((i) => (i.id === item.id ? item : i)),
+      knowledge_items: db.knowledge_items.map((i) => (i.id === next.id ? next : i)),
     };
   },
   setKnowledgeStatus(db: Database, id: ID, status: KnowledgeStatus): Database {

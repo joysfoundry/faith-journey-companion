@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { AppShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
+import { ScriptureCitationInput } from "@/components/knowledge/ScriptureCitationInput";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ItemView } from "@/components/prayer/ItemView";
@@ -640,10 +641,11 @@ function PassageEditor({
             Bible to read and be inspired, then enter it here. The first three movements re-read it.
           </p>
           <div className="flex items-center gap-2">
-            <Input
+            <ScriptureCitationInput
               value={ref}
-              onChange={(e) => setRef(e.target.value)}
+              onChange={setRef}
               placeholder="Reference — e.g. Psalm 23 or John 15:1-8"
+              wrapperClassName="flex-1"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();

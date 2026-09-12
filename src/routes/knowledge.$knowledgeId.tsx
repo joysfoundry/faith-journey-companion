@@ -54,6 +54,7 @@ import {
   voiceFromLink,
 } from "@/lib/prayer/knowledge";
 import { QuoteSourcePicker } from "@/components/knowledge/QuoteSourcePicker";
+import { ScriptureCitationInput } from "@/components/knowledge/ScriptureCitationInput";
 import {
   buildPassageUrl,
   BIBLE_TRANSLATIONS,
@@ -303,9 +304,10 @@ function KnowledgeRecordPage() {
                       <label className="text-xs uppercase tracking-wide text-muted-foreground">
                         Citation
                       </label>
-                      <Input
+                      <ScriptureCitationInput
                         value={item.scripture_ref ?? ""}
-                        onChange={(e) => save({ scripture_ref: e.target.value || undefined })}
+                        onChange={(ref) => save({ scripture_ref: ref || undefined })}
+                        version={currentVersionBook}
                         placeholder="Book chapter:verse — e.g. Luke 1:26-38"
                         className="h-10"
                       />
