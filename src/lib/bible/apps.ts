@@ -434,6 +434,66 @@ export function parseReference(ref: string): ParsedRef | null {
   return verse !== undefined ? { usfm, chapter, verse } : { usfm, chapter };
 }
 
+/** The result of scanning pasted passage text for a citation (ACTS-196). */
+export type InferredReference =
+  | { kind: "confident"; ref: string }
+  | { kind: "ambiguous"; candidates: string[] }
+  | { kind: "none" };
+
+// Every book name/abbreviation, longest-first so the alternation prefers "1 John"
+// over "john" and "song of songs" over "song". Built once at module load.
+const INFER_BOOK_ALTERNATION = Object.keys(USFM)
+  .sort((a, b) => b.length - a.length)
+  .map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+  .join("|");
+
+// A citation embedded anywhere in prose: a book token (optionally trailing "."),
+// then "chapter:verse" (a verse or range). The colon is REQUIRED — a bare
+// "chapter" is far too easy to confuse with ordinary numbers in prose (and with
+// short book abbreviations like "is"/"am"), so we only infer from an unambiguous
+// chapter:verse shape; a bookless or verseless passage falls to the prompt.
+const INFER_INLINE_REF = new RegExp(
+  `(?:^|[^A-Za-z0-9])((?:${INFER_BOOK_ALTERNATION})\\.?)\\s+(\\d{1,3}):(\\d{1,3}(?:\\s*[-–]\\s*\\d{1,3})?)`,
+  "gi",
+);
+
+/**
+ * Scan free passage text for a scripture citation (ACTS-196), so a passage pasted
+ * with the reference field left blank can still land labeled. We find every
+ * `Book chapter:verse` occurrence, normalize each to canonical form, and judge by
+ * how many *distinct books* appear:
+ * - exactly one book → **confident**: recommend that citation for a one-tap accept;
+ * - two or more books (a cross-reference) → **ambiguous**: hand back the distinct
+ *   candidates so the caller can prompt "which passage is this?";
+ * - none parseable → **none**: the caller prompts for a citation from scratch.
+ *
+ * We never invent a book that isn't in the text — inference only reads what's
+ * there, and everything returned is already `normalizeReference`d so it groups and
+ * dedups consistently with the ACTS-194 typeahead.
+ */
+export function inferReference(text: string | undefined): InferredReference {
+  const haystack = (text ?? "").replace(/\s+/g, " ");
+  if (!haystack.trim()) return { kind: "none" };
+
+  const byBook = new Map<string, string>(); // usfm → first canonical ref seen
+  const orderedRefs: string[] = []; // distinct canonical refs, in order of appearance
+  for (const m of haystack.matchAll(INFER_INLINE_REF)) {
+    const book = m[1];
+    const chapter = m[2];
+    const verse = m[3]?.replace(/\s*–\s*/g, "-").replace(/\s+/g, "");
+    if (!book || !chapter) continue;
+    const canonical = normalizeReference(`${book} ${chapter}:${verse}`);
+    const parsed = parseReference(canonical);
+    if (!parsed) continue; // book token didn't resolve — ignore this match
+    if (!byBook.has(parsed.usfm)) byBook.set(parsed.usfm, canonical);
+    if (!orderedRefs.includes(canonical)) orderedRefs.push(canonical);
+  }
+
+  if (byBook.size === 0) return { kind: "none" };
+  if (byBook.size === 1) return { kind: "confident", ref: orderedRefs[0]! };
+  return { kind: "ambiguous", candidates: orderedRefs };
+}
+
 function gatewayUrl(ref: string, translation: BibleTranslation): string {
   const params = new URLSearchParams({ search: ref, version: translation.gateway });
   return `https://www.biblegateway.com/passage/?${params.toString()}`;

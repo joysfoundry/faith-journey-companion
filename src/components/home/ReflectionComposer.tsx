@@ -11,7 +11,7 @@ import {
 import { forwardRef, useEffect, useMemo, useState } from "react";
 
 import { EntitySuggestInput } from "@/components/knowledge/EntitySuggestInput";
-import { ScriptureCitationInput } from "@/components/knowledge/ScriptureCitationInput";
+import { ScriptureCitationField } from "@/components/knowledge/ScriptureCitationField";
 import { InspirationPanel } from "@/components/reflections/InspirationPanel";
 import { RichTextArea } from "@/components/reflections/RichTextArea";
 import { ThemeEditor } from "@/components/reflections/ThemeEditor";
@@ -549,9 +549,10 @@ export function ReflectionComposer({ linkables, prefillLinkId, showDraftStatus }
               />
               {quoteKind === "scripture" ? (
                 <>
-                  <ScriptureCitationInput
+                  <ScriptureCitationField
                     value={quoteRef}
                     onChange={setQuoteRef}
+                    body={quoteText}
                     version={currentVersionBook}
                     placeholder="Citation — e.g. Luke 1:26-38"
                     className="h-8 text-sm"
