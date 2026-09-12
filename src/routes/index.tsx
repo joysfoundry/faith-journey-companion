@@ -562,6 +562,20 @@ function Index() {
         ? latestDoneToday((s) => s.template_id === daily.id && !s.plan_id)
         : undefined;
 
+  // The standing Daily Open Prayer (ACTS-173) is a seeded daily like the Daily
+  // Rosary. It's pinned to the top of the card with the same blue "Daily …"
+  // header and is kept OUT of the Today/Upcoming/Done lists below — only
+  // user-scheduled sessions live there (ACTS-192).
+  const dailyOpenPlan = db.session_plans.find((p) => p.id === "plan-daily-open-prayer");
+  const dailyOpenOpen = dailyOpenPlan
+    ? openSessions.find((s) => s.plan_id === dailyOpenPlan.id)
+    : undefined;
+  const dailyOpenDone = dailyOpenOpen
+    ? undefined
+    : dailyOpenPlan
+      ? latestDoneToday((s) => s.plan_id === dailyOpenPlan.id)
+      : undefined;
+
   // Each today session resolves to ONE state — start (Today), continue, or done —
   // never doubled. Completed sessions stay visible as "Done" for the day, deduped
   // to one per devotion (the daily is shown on its own row).
@@ -627,6 +641,9 @@ function Index() {
   for (const plan of upcomingPlans) {
     // The novena standing in for the Daily Rosary is shown on the Daily row only.
     if (plan.id === dailyFulfiller?.id) continue;
+    // The Daily Open Prayer has its own pinned top row (a seeded daily), never
+    // Today/Upcoming below.
+    if (plan.id === dailyOpenPlan?.id) continue;
     const title = planTitle(db, plan);
     const openS = openSessions.find((s) => s.plan_id === plan.id);
     if (openS) {
@@ -639,11 +656,6 @@ function Index() {
       // a start-able to-do (ACTS-192).
     } else if (plan.date === today) {
       todayList.push({ id: plan.id, title, planId: plan.id, date: plan.date });
-    } else if (latestDoneToday((s) => s.plan_id === plan.id)) {
-      // Already prayed today (a recurring plan that rolled its date forward on
-      // finish): it's shown as Done, and — exactly like the Daily Rosary — its
-      // next occurrence is NOT also listed under Upcoming. A daily just returns
-      // to Today tomorrow, so the two daily prayers behave the same (ACTS-192).
     } else {
       // Scheduled a later day this week — the collapsed "Upcoming" look-ahead.
       // Shown once at its next date, with a count if it recurs across the week.
@@ -658,7 +670,7 @@ function Index() {
   }
   // Other in-progress sessions (not the daily, not a today-plan already listed).
   for (const s of openSessions) {
-    if (s.id === dailyOpen?.id || representedIds.has(s.id)) continue;
+    if (s.id === dailyOpen?.id || s.id === dailyOpenOpen?.id || representedIds.has(s.id)) continue;
     continueList.push({ id: s.id, title: s.title, sessionId: s.id });
   }
   // Everything completed today lands in Done — one per devotion. This includes
@@ -669,6 +681,8 @@ function Index() {
     if (!isToday(s.completed_at)) continue;
     // A completed novena that's fulfilling the Daily Rosary shows on the Daily row.
     if (s.plan_id && s.plan_id === dailyFulfiller?.id) continue;
+    // The Daily Open Prayer shows its Done state on its own pinned row.
+    if (s.plan_id && s.plan_id === dailyOpenPlan?.id) continue;
     const plan = s.plan_id ? db.session_plans.find((p) => p.id === s.plan_id) : undefined;
     const title = plan ? planTitle(db, plan) : s.title?.trim() || "Prayer session";
     // Prayed on a different day than scheduled? Note the scheduled day so a
@@ -704,6 +718,16 @@ function Index() {
     if (!daily) return;
     const session = startSession(daily.id, { date: today, progress_mode: "scroll" });
     if (session) navigate({ to: "/session/$sessionId", params: { sessionId: session.id } });
+  }
+
+  function beginDailyOpenPrayer() {
+    if (!dailyOpenPlan) return;
+    // Resume an in-progress session rather than starting a duplicate.
+    if (dailyOpenOpen) {
+      navigate({ to: "/session/$sessionId", params: { sessionId: dailyOpenOpen.id } });
+      return;
+    }
+    beginPlan(dailyOpenPlan.id);
   }
 
   function beginPlan(planId: string) {
@@ -878,6 +902,56 @@ function Index() {
                 )}
               </div>
             </div>
+
+            {/* Daily Open Prayer — the other seeded daily, pinned here beside the
+                Daily Rosary with the same blue header, never in Today/Upcoming
+                below (ACTS-192). */}
+            {dailyOpenPlan ? (
+              <div className="flex items-center justify-between gap-3 border-t border-border/60 px-5 py-3">
+                <span className="min-w-0">
+                  <span className="eyebrow block text-primary">
+                    {dailyOpenOpen
+                      ? "Daily Open Prayer · Continue"
+                      : dailyOpenDone
+                        ? "Daily Open Prayer · Done"
+                        : "Daily Open Prayer"}
+                  </span>
+                  <span className="block truncate font-display text-base">Open Prayer</span>
+                </span>
+                <div className="flex shrink-0 items-center gap-0.5">
+                  <IconAction
+                    label="Write a reflection about Open Prayer"
+                    onClick={() => openJournal(dailyOpenPlan.id)}
+                  >
+                    <span>
+                      <NotebookPen className="size-4" aria-hidden />
+                    </span>
+                  </IconAction>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="size-9 shrink-0 text-primary"
+                    onClick={beginDailyOpenPrayer}
+                    aria-label={
+                      dailyOpenOpen
+                        ? "Continue Open Prayer"
+                        : dailyOpenDone
+                          ? "Pray Open Prayer again"
+                          : "Begin Open Prayer"
+                    }
+                    title={
+                      dailyOpenOpen
+                        ? "Continue Open Prayer"
+                        : dailyOpenDone
+                          ? "Pray again"
+                          : "Begin Open Prayer"
+                    }
+                  >
+                    <Play className="size-4" aria-hidden />
+                  </Button>
+                </div>
+              </div>
+            ) : null}
 
             {/* In-progress sessions to continue (never doubled with a Today row) */}
             {continueList.map((row) => (
