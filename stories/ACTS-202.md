@@ -40,6 +40,13 @@ by different people over time — an encyclical may be credited to "the Pope" (t
 optionally a role/office the person holds. Capture as a nuance; don't let it block the core
 author/publisher decision.
 
+**A channel is not one-to-one with a Voice (JC, 2026-09-14).** On a **podcast**, a guest being
+interviewed is a **different Vessel** than the person the channel is attributed to — the episode
+lives on the host's/organization's channel but features (is partly authored by) the guest. So the
+relationship is genuinely **many-to-many**: a Voice has channels, but a piece of content on a
+channel can credit Voices other than the channel's owner. This is why the ACTS-186 sweep left the
+channel-name field alone — the fix isn't naming a channel, it's this model.
+
 ## The modeling question (to decide here)
 Options (not mutually exclusive):
 1. **Two links on content** — `author_voice_id` + `publisher_voice_id` (and let `channel_id`

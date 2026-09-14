@@ -78,17 +78,33 @@ link · could-be = related but a model gap or genuinely optional.
   **→ split to its own story [[ACTS-201]]** (model + whether a public parish dataset exists).
 - `pray.tsx:576` — **"Prayed for"** (person) — **leave as is** (JC: do not track as a Voice; often a
   departed loved one, not an app entity).
-- `VoiceEditor.tsx:205` / `QuickAddLink.tsx:359` — **channel name** (naming the channel sub-entity;
-  canonical, no cross-channel dedupe) — **deferred** (minor).
-- **Tags** — `knowledge.$knowledgeId.tsx:521`, `PrayerFields.tsx:145`, hour-tags `import.tsx:529` /
-  `pray.tsx:713` — free-typed, no suggestions → taxonomy fragments. **Deferred — separate "tag
-  entity" question** (own story later).
-- **Provenance "Source"** (USCCB, a booklet…) — `template.$templateId.tsx:344`, `import.tsx:688` —
-  provenance string; **deferred — low value to link.**
+- `VoiceEditor.tsx:205` / `QuickAddLink.tsx:359` — **channel name** — **left as is (JC).** A
+  channel name is a canonical sub-entity label with nothing to link to; and a channel is **not
+  one-to-one with a Voice** — a podcast guest is a different Vessel than the channel owner, so a
+  piece can live on one channel but be authored by another. That many-to-many is [[ACTS-202]].
+- **Tags** — `knowledge.$knowledgeId.tsx:525` (`TagSuggestInput`), `PrayerFields.tsx:146`
+  (`TagSuggestInput`) — **WIRED (soft autocomplete).** New `TagSuggestInput` suggests tags you've
+  already used (per comma-token) via `allTags(items, prayers)`; still stored as `string[]` (no
+  schema change). A **real Tag entity** (ids + rename-propagation) is split to [[ACTS-203]].
+  *Correction:* the "Hour (tag)" fields (`import.tsx:529`, `pray.tsx:713`) are `<select>`s over
+  the `PrayerHour` enum — a controlled vocabulary, already connected; no work needed.
+- **Provenance "Source"** (USCCB, a booklet…) — `template.$templateId.tsx`, `import.tsx` (single +
+  devotion) — **WIRED (Both).** New `SourceAttributionInput` autocompletes existing Source names
+  **and** links to a publisher Voice via `Source.attribution_voice_id` (reuses the ACTS-186
+  field); a linked chip shows/unlinks the Vessel; editing the text clears the link.
 
-**Tally:** 5 connected · 3 stray · ~7 could-be. This-session wiring = 3 boxes (2 Vessel-name +
-mystery attribution). Deferred: Celebrant, channel-name dedupe, tags, provenance Source. Split
-out: Church/parish → ACTS-201. Closed: Prayed-for (leave).
+**Tally:** 5 connected · 3 stray · ~7 could-be.
+**Session 01 wiring:** 2 Vessel-name boxes + mystery attribution.
+**Session 02 wiring (JC "set up the could-bes"):** tags (soft autocomplete) + provenance Source
+(name autocomplete **+** Voice link). Channel left as is. Hour-tags were already `<select>`s.
+**Session 02 fix (JC testing):** QuickAddLink Vessel-name prefill — an **organization** now
+prefills its brand/site name (og:site_name), never an `@handle` scraped from the URL path
+(`ascensionpress.com/products/…` was becoming `@product` / `@program`). `@handle` is reserved for
+individuals + true handle platforms. Verified live on both Ascension URLs → "Ascension" (org).
+**Split out:** Church/parish → ACTS-201; author-vs-publisher (Fr. Mike/Ascension, Pope/Vatican,
+channel↔Voice many-to-many) → ACTS-202; real Tag entity → ACTS-203.
+**Closed:** Prayed-for (leave). **Remaining under 186:** Celebrant → Voice (needs a homily→Voice
+call), then the sweep can be judged complete.
 
 ## Tests
 No runner yet (ACTS-92). Per-surface: verify autocomplete suggests existing entities, accept
