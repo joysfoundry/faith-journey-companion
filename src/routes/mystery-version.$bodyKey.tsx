@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { EntitySuggestInput } from "@/components/knowledge/EntitySuggestInput";
 import { useApp } from "@/lib/prayer/store";
 import { DEFAULT_MYSTERY_BODY, mysteriesForSet } from "@/lib/prayer/compiler";
 import type { MysteryContent, Source } from "@/lib/prayer/types";
@@ -93,6 +94,12 @@ function VersionForm() {
   const [name, setName] = useState(existingSource?.name ?? existingLabel);
   const [url, setUrl] = useState(existingSource?.url ?? "");
   const [attribution, setAttribution] = useState(existingSource?.attribution ?? "");
+  // The Vessel the attribution links to, when it matches one already in the app
+  // (ACTS-186). Cleared whenever the text is edited so the link can't drift from
+  // the shown name; re-set only by accepting a suggestion.
+  const [attributionVoiceId, setAttributionVoiceId] = useState(
+    existingSource?.attribution_voice_id ?? "",
+  );
 
   // Seed the per-mystery fields from any existing content in this body.
   const [entries, setEntries] = useState<Record<string, Entry>>(() => {
@@ -146,6 +153,10 @@ function VersionForm() {
       created_at: existingSource?.created_at ?? new Date().toISOString(),
       ...(url.trim() ? { url: url.trim() } : {}),
       ...(attribution.trim() ? { attribution: attribution.trim() } : {}),
+      // Keep the link only while the shown text still names the linked Vessel.
+      ...(attributionVoiceId && attribution.trim()
+        ? { attribution_voice_id: attributionVoiceId }
+        : {}),
     };
     upsertSource(source);
 
@@ -226,13 +237,23 @@ function VersionForm() {
             <Label htmlFor="vattr" className="text-xs text-muted-foreground">
               Attribution — author / publisher / book (optional)
             </Label>
-            <Input
-              id="vattr"
-              value={attribution}
-              onChange={(e) => setAttribution(e.target.value)}
-              placeholder="e.g. Ascension Press"
-              className="mt-1 h-11"
-            />
+            {/* Suggests Vessels you already have so accepting one LINKS the source
+                to that author/publisher (ACTS-186). Typing free text that matches
+                nothing stays a plain string (no link, no forced Vessel). */}
+            <div className="mt-1">
+              <EntitySuggestInput
+                value={attribution}
+                onChange={(v) => {
+                  setAttribution(v);
+                  setAttributionVoiceId("");
+                }}
+                entities={db.voices.map((vc) => ({ id: vc.id, name: vc.name }))}
+                onSelect={(e) => setAttributionVoiceId(e.id)}
+                placeholder="e.g. Ascension Press"
+                className="h-11"
+                ariaLabel="Attribution — link to a Vessel if it's one you follow"
+              />
+            </div>
           </div>
         </div>
 

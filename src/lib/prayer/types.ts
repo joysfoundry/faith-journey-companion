@@ -25,6 +25,13 @@ export interface Source {
   url?: string | undefined;
   /** Who published/printed it. Falls back to "self" when nothing is found. */
   attribution?: string | undefined;
+  /**
+   * When the attribution resolves to a Vessel already in the app, the linked
+   * `Voice.id` — so the source threads to that author/publisher rather than
+   * duplicating the name (ACTS-186 connected-entity sweep). `attribution` keeps
+   * the display text for back-compat and for un-linked free text.
+   */
+  attribution_voice_id?: string | undefined;
   file_reference?: string | undefined;
   metadata?: Record<string, string> | undefined;
   created_at: string;

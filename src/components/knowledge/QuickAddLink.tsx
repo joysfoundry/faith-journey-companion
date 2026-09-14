@@ -15,8 +15,10 @@ import {
   identityFromUrl,
   isHandlePlatform,
   matchVoice,
+  VOICE_KIND_LABELS,
   voiceFromLink,
 } from "@/lib/prayer/knowledge";
+import { EntitySuggestInput } from "@/components/knowledge/EntitySuggestInput";
 import { fetchLinkPreview } from "@/lib/prayer/fetchSource.functions";
 import { newId } from "@/lib/prayer/compiler";
 import { useApp } from "@/lib/prayer/store";
@@ -287,13 +289,31 @@ export function QuickAddLink() {
                 const { name, kind } = staged.attribution;
                 return (
                   <>
-                    <Input
+                    {/* Suggest Vessels you already have as the name is typed —
+                        accepting one switches to "match" so it LINKS instead of
+                        minting a duplicate (ACTS-186 connected-entity sweep). */}
+                    <EntitySuggestInput
                       value={name}
-                      onChange={(e) =>
-                        patch({ attribution: { mode: "new", name: e.target.value, kind } })
-                      }
+                      onChange={(v) => patch({ attribution: { mode: "new", name: v, kind } })}
+                      entities={db.voices.map((vc) => ({
+                        id: vc.id,
+                        name: vc.name,
+                        sublabel: VOICE_KIND_LABELS[vc.kind].toLowerCase(),
+                      }))}
+                      onSelect={(e) => {
+                        const v = db.voices.find((x) => x.id === e.id);
+                        if (v)
+                          patch({
+                            attribution: {
+                              mode: "match",
+                              voice: v,
+                              channelId: v.channels?.[0]?.id ?? "",
+                            },
+                          });
+                      }}
                       placeholder="Name (person or organization)"
                       className="h-9"
+                      ariaLabel="Attribute to a Vessel"
                     />
                     <div className="flex gap-1">
                       {(["individual", "organization"] as const).map((k) => (

@@ -53,6 +53,7 @@ import {
   quotesFromItem,
   voiceFromLink,
 } from "@/lib/prayer/knowledge";
+import { EntitySuggestInput } from "@/components/knowledge/EntitySuggestInput";
 import { OpenInBibleLink } from "@/components/knowledge/OpenInBibleLink";
 import { QuoteSourcePicker } from "@/components/knowledge/QuoteSourcePicker";
 import { ScriptureCitationField } from "@/components/knowledge/ScriptureCitationField";
@@ -466,13 +467,28 @@ function KnowledgeRecordPage() {
                   {VOICE_LABEL_SINGULAR.toLowerCase()} from this link
                 </Button>
               ) : null}
+              {/* Type a name: it suggests Vessels you already have so accepting one
+                  LINKS to it (no duplicate); the + button creates a new Vessel when
+                  the name is genuinely new (ACTS-186 connected-entity sweep). */}
               <div className="flex items-center gap-2 pt-1">
-                <Input
-                  value={newVoiceName}
-                  onChange={(e) => setNewVoiceName(e.target.value)}
-                  placeholder={`New ${VOICE_LABEL_SINGULAR.toLowerCase()} by name (e.g. an author)`}
-                  className="h-9"
-                />
+                <div className="flex-1">
+                  <EntitySuggestInput
+                    value={newVoiceName}
+                    onChange={setNewVoiceName}
+                    entities={voices.map((v) => ({
+                      id: v.id,
+                      name: v.name,
+                      sublabel: VOICE_KIND_LABELS[v.kind].toLowerCase(),
+                    }))}
+                    onSelect={(e) => {
+                      save({ voice_id: e.id, channel_id: undefined });
+                      setNewVoiceName("");
+                    }}
+                    placeholder={`New ${VOICE_LABEL_SINGULAR.toLowerCase()} by name (e.g. an author)`}
+                    className="h-9"
+                    ariaLabel={`Link or add a ${VOICE_LABEL_SINGULAR.toLowerCase()}`}
+                  />
+                </div>
                 <Button
                   size="icon"
                   variant="secondary"
