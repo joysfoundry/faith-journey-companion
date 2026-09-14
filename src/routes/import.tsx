@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -18,6 +18,8 @@ import {
 } from "@/components/prayer/PrayerFields";
 import { MediaEditor } from "@/components/media/MediaEditor";
 import { PhotoDropzone, type LocalPhoto } from "@/components/media/PhotoDropzone";
+import { SourceAttributionInput } from "@/components/knowledge/SourceAttributionInput";
+import { sourceAttributionSuggestions } from "@/lib/prayer/knowledge";
 import { useApp } from "@/lib/prayer/store";
 import {
   analyzeText,
@@ -155,12 +157,18 @@ function AddPrayerPage() {
   // Single-prayer state
   const [draft, setDraft] = useState<PrayerDraft>(EMPTY_PRAYER_DRAFT);
   const [sourceName, setSourceName] = useState("");
+  const [sourceVoiceId, setSourceVoiceId] = useState("");
   const [reviewingSingle, setReviewingSingle] = useState(false);
 
   // Devotion (bundle) state
   const [devotionName, setDevotionName] = useState("");
   const [devDescription, setDevDescription] = useState("");
   const [devSourceName, setDevSourceName] = useState("");
+  const [devSourceVoiceId, setDevSourceVoiceId] = useState("");
+  const sourceSuggestions = useMemo(
+    () => sourceAttributionSuggestions(db.voices, db.sources),
+    [db.voices, db.sources],
+  );
   const [devSourceUrl, setDevSourceUrl] = useState("");
   const [raw, setRaw] = useState("");
   const [notes, setNotes] = useState("");
@@ -243,6 +251,7 @@ function AddPrayerPage() {
       name: sourceName.trim() || (url.trim() ? "Fetched from a link" : "Added by me"),
       created_at: new Date().toISOString(),
       ...(url.trim() ? { url: url.trim() } : {}),
+      ...(sourceVoiceId && sourceName.trim() ? { attribution_voice_id: sourceVoiceId } : {}),
       ...(photos.length ? { metadata: { photo_count: String(photos.length) } } : {}),
     };
     addSource(src);
@@ -288,6 +297,9 @@ function AddPrayerPage() {
       name: devSourceName.trim() || devotionName.trim(),
       attribution,
       created_at: new Date().toISOString(),
+      ...(devSourceVoiceId && devSourceName.trim()
+        ? { attribution_voice_id: devSourceVoiceId }
+        : {}),
       ...(sourceUrl ? { url: sourceUrl } : {}),
       ...(photos.length ? { metadata: { photo_count: String(photos.length) } } : {}),
     };
@@ -681,13 +693,19 @@ function AddPrayerPage() {
               <PrayerFields draft={draft} onChange={setDraft} />
               <div>
                 <Label htmlFor="ssource">Source (optional)</Label>
-                <Input
-                  id="ssource"
-                  value={sourceName}
-                  onChange={(e) => setSourceName(e.target.value)}
-                  placeholder="USCCB, a booklet, a website…"
-                  className="mt-1 h-12"
-                />
+                <div className="mt-1">
+                  <SourceAttributionInput
+                    id="ssource"
+                    name={sourceName}
+                    onNameChange={setSourceName}
+                    voiceId={sourceVoiceId}
+                    onVoiceIdChange={setSourceVoiceId}
+                    entities={sourceSuggestions}
+                    placeholder="USCCB, a booklet, a website…"
+                    className="h-12"
+                    ariaLabel="Source"
+                  />
+                </div>
               </div>
               <MediaEditor
                 media={draft.media}
@@ -731,13 +749,19 @@ function AddPrayerPage() {
               <div className="grid gap-2 sm:grid-cols-2">
                 <div>
                   <Label htmlFor="dsrcname">Source (optional)</Label>
-                  <Input
-                    id="dsrcname"
-                    value={devSourceName}
-                    onChange={(e) => setDevSourceName(e.target.value)}
-                    placeholder="USCCB, a booklet…"
-                    className="mt-1 h-12"
-                  />
+                  <div className="mt-1">
+                    <SourceAttributionInput
+                      id="dsrcname"
+                      name={devSourceName}
+                      onNameChange={setDevSourceName}
+                      voiceId={devSourceVoiceId}
+                      onVoiceIdChange={setDevSourceVoiceId}
+                      entities={sourceSuggestions}
+                      placeholder="USCCB, a booklet…"
+                      className="h-12"
+                      ariaLabel="Devotion source"
+                    />
+                  </div>
                 </div>
                 <div>
                   <Label htmlFor="dsrcurl">Source link (optional)</Label>

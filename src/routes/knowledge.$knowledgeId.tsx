@@ -1,5 +1,5 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   BookMarked,
   Check,
@@ -41,6 +41,7 @@ import {
   contentTitle,
   detectCategory,
   detectPlatform,
+  allTags,
   hasStatus,
   QUOTE_KIND_LABELS,
   QUOTE_KIND_OPTIONS,
@@ -54,6 +55,7 @@ import {
   voiceFromLink,
 } from "@/lib/prayer/knowledge";
 import { EntitySuggestInput } from "@/components/knowledge/EntitySuggestInput";
+import { TagSuggestInput } from "@/components/knowledge/TagSuggestInput";
 import { OpenInBibleLink } from "@/components/knowledge/OpenInBibleLink";
 import { QuoteSourcePicker } from "@/components/knowledge/QuoteSourcePicker";
 import { ScriptureCitationField } from "@/components/knowledge/ScriptureCitationField";
@@ -126,6 +128,10 @@ function KnowledgeRecordPage() {
   }
 
   const voices = db.voices;
+  const tagSuggestions = useMemo(
+    () => allTags(db.knowledge_items, db.prayers),
+    [db.knowledge_items, db.prayers],
+  );
   const voice = item.voice_id ? voices.find((v) => v.id === item.voice_id) : undefined;
   const channel = channelOf(item, voice);
   const links = item.links ?? [];
@@ -522,9 +528,9 @@ function KnowledgeRecordPage() {
               <QuoteSourcePicker item={item} />
             ) : null}
 
-            <Input
+            <TagSuggestInput
               value={tagsDraft ?? (item.tags ?? []).join(", ")}
-              onChange={(e) => setTagsDraft(e.target.value)}
+              onChange={setTagsDraft}
               onBlur={() => {
                 if (tagsDraft === null) return;
                 const list = tagsDraft
@@ -534,6 +540,7 @@ function KnowledgeRecordPage() {
                 save({ tags: list.length ? list : undefined });
                 setTagsDraft(null);
               }}
+              suggestions={tagSuggestions}
               placeholder="Tags (comma-separated) — praying, becomingcatholic"
               className="h-10"
             />

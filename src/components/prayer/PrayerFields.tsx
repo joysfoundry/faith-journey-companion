@@ -1,3 +1,5 @@
+import { useMemo } from "react";
+
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,6 +12,9 @@ import {
 } from "@/domain/taxonomy";
 import type { Prayer, PrayerMedia, PrayerVersion } from "@/lib/prayer/types";
 import { newId } from "@/lib/prayer/compiler";
+import { allTags } from "@/lib/prayer/knowledge";
+import { useApp } from "@/lib/prayer/store";
+import { TagSuggestInput } from "@/components/knowledge/TagSuggestInput";
 
 export interface PrayerDraft {
   title: string;
@@ -113,6 +118,11 @@ export function PrayerFields({
   rows = 10,
   showTitle = true,
 }: PrayerFieldsProps) {
+  const { db } = useApp();
+  const tagSuggestions = useMemo(
+    () => allTags(db.knowledge_items, db.prayers),
+    [db.knowledge_items, db.prayers],
+  );
   return (
     <div className="space-y-4">
       {showTitle ? (
@@ -143,10 +153,11 @@ export function PrayerFields({
       />
       <div>
         <Label htmlFor={`${idPrefix}-tags`}>Tags</Label>
-        <Input
+        <TagSuggestInput
           id={`${idPrefix}-tags`}
           value={draft.tags.join(", ")}
-          onChange={(e) => onChange({ ...draft, tags: e.target.value.split(",").map((t) => t.trimStart()) })}
+          onChange={(next) => onChange({ ...draft, tags: next.split(",").map((t) => t.trimStart()) })}
+          suggestions={tagSuggestions}
           placeholder="marian, rosary, healing"
           className="mt-1 h-12"
         />

@@ -62,14 +62,38 @@ function fallbackTitle(url: string, siteName: string, author: Author): string {
   }
 }
 
+/** The bare brand host for an org name fallback: "ascensionpress.com". */
+function hostBrand(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "";
+  }
+}
+
 /**
- * Pre-fill for the Vessel's `name` — the *who*. Prefer the account's **@handle**
- * (from the channel-home URL, else the pasted URL) so a YouTube import defaults to
- * `@username` rather than the channel/show title — the page's `author.name` is the
- * channel *title* ("AfterMass with Ana Munley"), which belongs on the Channel, not
- * the Vessel. The user edits this to the actual person if they want.
+ * Pre-fill for the Vessel's `name` — the *who*.
+ *
+ * For an **organization** use its brand / site name (og:site_name, e.g. "Ascension
+ * Press"), never an @handle: a website has no real @username, and a path segment
+ * ("/products/…", "/pages/program/…") is not one — prefilling "@product" / "@program"
+ * is wrong. For an **individual** (and true handle platforms) prefer the account's
+ * **@handle** — a YouTube import should default to `@username`, not the channel
+ * *title* ("AfterMass with Ana Munley"), which belongs on the Channel. The user can
+ * always edit this.
  */
-function vesselNamePrefill(author: Author, channelUrl: string, url: string): string {
+function vesselNamePrefill(
+  author: Author,
+  channelUrl: string,
+  url: string,
+  siteName: string,
+  kind: VoiceKind,
+): string {
+  if (kind === "organization") {
+    if (siteName.trim()) return siteName.trim();
+    if (author.name.trim()) return author.name.trim();
+    return hostBrand(url) || voiceFromLink(url).name;
+  }
   const id = identityFromUrl(channelUrl) ?? identityFromUrl(url);
   if (id?.handle) return `@${id.handle}`;
   if (author.handle) return `@${author.handle}`;
@@ -143,11 +167,14 @@ export function QuickAddLink() {
       channelLabel: channelLabelFor(platform, author),
       attribution: match
         ? { mode: "match", voice: match.voice, channelId: match.channel.id }
-        : {
-            mode: "new",
-            name: vesselNamePrefill(author, channelUrl, raw),
-            kind: detectVoiceKind(channelUrl || raw),
-          },
+        : (() => {
+            const kind = detectVoiceKind(channelUrl || raw);
+            return {
+              mode: "new" as const,
+              name: vesselNamePrefill(author, channelUrl, raw, siteName, kind),
+              kind,
+            };
+          })(),
       pin: false,
     });
   }
@@ -348,17 +375,24 @@ export function QuickAddLink() {
                 attributed.{" "}
                 <button
                   type="button"
-                  onClick={() =>
+                  onClick={() => {
+                    // Same defaults as the initial lookup: an @handle for an
+                    // individual, the brand/site name for an organization.
+                    const kind = detectVoiceKind(staged.channelUrl || staged.url);
                     patch({
                       attribution: {
                         mode: "new",
-                        // Same @handle-first default as the initial lookup, so
-                        // re-attributing lands on `@username`, not the bare host.
-                        name: vesselNamePrefill(NO_AUTHOR, staged.channelUrl, staged.url),
-                        kind: detectVoiceKind(staged.channelUrl || staged.url),
+                        name: vesselNamePrefill(
+                          NO_AUTHOR,
+                          staged.channelUrl,
+                          staged.url,
+                          staged.siteName,
+                          kind,
+                        ),
+                        kind,
                       },
-                    })
-                  }
+                    });
+                  }}
                   className="text-xs underline hover:text-foreground"
                 >
                   Attribute to someone

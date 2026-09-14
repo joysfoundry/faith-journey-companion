@@ -5,7 +5,9 @@ import type {
   KnowledgeItem,
   KnowledgeStatus,
   LinkPlatform,
+  Prayer,
   QuoteKind,
+  Source,
   Voice,
   VoiceKind,
 } from "./types";
@@ -16,6 +18,50 @@ import type {
  */
 export const VOICE_LABEL = "Vessels";
 export const VOICE_LABEL_SINGULAR = "Vessel";
+
+/**
+ * Every distinct tag already used across content and prayers, de-duped
+ * case-insensitively (first-seen spelling wins) and sorted. Feeds the tag
+ * autocomplete so the vocabulary stays connected instead of fragmenting
+ * (ACTS-186). Tags are still loose strings — a real Tag entity is ACTS-203.
+ */
+export function allTags(items: KnowledgeItem[], prayers: Prayer[]): string[] {
+  const seen = new Map<string, string>();
+  const add = (t: string) => {
+    const trimmed = t.trim();
+    const key = trimmed.toLowerCase();
+    if (trimmed && !seen.has(key)) seen.set(key, trimmed);
+  };
+  for (const it of items) (it.tags ?? []).forEach(add);
+  for (const p of prayers) (p.tags ?? []).forEach(add);
+  return [...seen.values()].sort((a, b) => a.localeCompare(b));
+}
+
+/**
+ * Suggestions for a provenance "Source" field (ACTS-186): the Vessels you
+ * already have (so a source can LINK to its publisher, e.g. USCCB) plus the
+ * distinct Source names you've used before (so the same provenance isn't retyped
+ * differently). Voice ids are prefixed `voice:`; source-name-only suggestions
+ * `src:` — the caller reads the prefix to decide whether to store a link.
+ */
+export function sourceAttributionSuggestions(
+  voices: Voice[],
+  sources: Source[],
+): { id: string; name: string; sublabel?: string | undefined }[] {
+  const out: { id: string; name: string; sublabel?: string | undefined }[] = [];
+  const voiceNames = new Set(voices.map((v) => v.name.trim().toLowerCase()));
+  for (const v of voices) {
+    out.push({ id: `voice:${v.id}`, name: v.name, sublabel: VOICE_KIND_LABELS[v.kind].toLowerCase() });
+  }
+  const seen = new Set<string>();
+  for (const s of sources) {
+    const key = s.name.trim().toLowerCase();
+    if (!key || seen.has(key) || voiceNames.has(key)) continue;
+    seen.add(key);
+    out.push({ id: `src:${s.name.trim()}`, name: s.name.trim(), sublabel: "source" });
+  }
+  return out;
+}
 
 /**
  * The user-facing name for the whole *section* (Home card, nav, page title,

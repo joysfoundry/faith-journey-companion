@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DevotionItemsEditor, ordinal } from "@/components/prayer/DevotionItemsEditor";
+import { SourceAttributionInput } from "@/components/knowledge/SourceAttributionInput";
+import { sourceAttributionSuggestions } from "@/lib/prayer/knowledge";
 import { useApp } from "@/lib/prayer/store";
 import { allMysteryBodies, generatePrayerSession, newId } from "@/lib/prayer/compiler";
 import {
@@ -117,6 +119,11 @@ function TemplateBuilder() {
   const [media, setMedia] = useState<PrayerMedia[]>(existing?.media ?? []);
   const [sourceName, setSourceName] = useState(existingSource?.name ?? "");
   const [sourceUrl, setSourceUrl] = useState(existingSource?.url ?? "");
+  const [sourceVoiceId, setSourceVoiceId] = useState(existingSource?.attribution_voice_id ?? "");
+  const sourceSuggestions = useMemo(
+    () => sourceAttributionSuggestions(db.voices, db.sources),
+    [db.voices, db.sources],
+  );
   // Default schedule this devotion suggests (calendar-style recurrence + hour).
   const initialRec = recurrenceFields(existing?.default_recurrence);
   const [freq, setFreq] = useState<Frequency>(initialRec.freq);
@@ -187,6 +194,7 @@ function TemplateBuilder() {
         created_at: existingSource?.created_at ?? new Date().toISOString(),
         ...(sourceUrl.trim() ? { url: sourceUrl.trim() } : {}),
         ...(existingSource?.attribution ? { attribution: existingSource.attribution } : {}),
+        ...(sourceVoiceId ? { attribution_voice_id: sourceVoiceId } : {}),
       });
     }
 
@@ -337,13 +345,19 @@ function TemplateBuilder() {
             <Label htmlFor="src-name" className="text-xs text-muted-foreground">
               Where it&apos;s from
             </Label>
-            <Input
-              id="src-name"
-              value={sourceName}
-              onChange={(e) => setSourceName(e.target.value)}
-              placeholder="USCCB, a booklet, a parish…"
-              className="mt-1 h-11"
-            />
+            <div className="mt-1">
+              <SourceAttributionInput
+                id="src-name"
+                name={sourceName}
+                onNameChange={setSourceName}
+                voiceId={sourceVoiceId}
+                onVoiceIdChange={setSourceVoiceId}
+                entities={sourceSuggestions}
+                placeholder="USCCB, a booklet, a parish…"
+                className="h-11"
+                ariaLabel="Where it's from"
+              />
+            </div>
           </div>
           <div>
             <Label htmlFor="src-url" className="text-xs text-muted-foreground">
