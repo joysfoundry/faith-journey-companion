@@ -83,7 +83,7 @@ export function OnlineBibleLink() {
  * because they belong with the Word. Renders flat rows inside the Word card.
  */
 export function WordSection({ onReflect }: { onReflect: (linkId: string) => void }) {
-  const { db, addMassExperience } = useApp();
+  const { db, addMassExperience, upsertVoice } = useApp();
   const readingPrograms = db.knowledge_items
     .filter((i) => isScriptureProgram(i) && i.status !== "finished")
     .sort(byStatusThenTitle);
@@ -104,14 +104,31 @@ export function WordSection({ onReflect }: { onReflect: (linkId: string) => void
 
   function saveMass() {
     if (!church.trim() && !celebrant.trim() && !transcript.trim()) return;
+    // A celebrant is a person, so resolve them to a Vessel: use the one linked
+    // from the suggestion, else match an existing Voice by name, else create a new
+    // individual Vessel — so the priest (and their homilies) thread (ACTS-186).
+    const name = celebrant.trim();
+    let voiceId = celebrantVoiceId;
+    if (!voiceId && name) {
+      const existing = db.voices.find((v) => v.name.trim().toLowerCase() === name.toLowerCase());
+      if (existing) {
+        voiceId = existing.id;
+      } else {
+        voiceId = newId("voice");
+        upsertVoice({
+          id: voiceId,
+          name,
+          kind: "individual",
+          created_at: new Date().toISOString(),
+        });
+      }
+    }
     addMassExperience({
       id: newId("mass"),
       date: todayISO(),
       church: church.trim() || undefined,
-      celebrant: celebrant.trim() || undefined,
-      ...(celebrantVoiceId && celebrant.trim()
-        ? { celebrant_voice_id: celebrantVoiceId }
-        : {}),
+      celebrant: name || undefined,
+      ...(voiceId && name ? { celebrant_voice_id: voiceId } : {}),
       transcript: transcript.trim() || undefined,
       transcript_status: transcript.trim() ? "ready" : "none",
       created_at: new Date().toISOString(),
