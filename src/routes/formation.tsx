@@ -40,7 +40,6 @@ import {
   STATUS_STEPS,
   VOICE_LABEL,
   VOICE_LABEL_SINGULAR,
-  byStatusThenTitle,
   contentTitle,
   groupOf,
   hasStatus,
@@ -131,6 +130,15 @@ function itemPlatform(item: KnowledgeItem, voiceById: Map<string, Voice>): LinkP
   }
   const links = item.links ?? [];
   return (links.find((l) => l.pinned) ?? links[0])?.platform;
+}
+
+/**
+ * Alphabetical by title (case-insensitive). The Vessels page orders everything
+ * alpha — vessels, filters, and the items within each — while content-first
+ * ordering is kept only on Home (JC, ACTS-205).
+ */
+function byTitle(a: KnowledgeItem, b: KnowledgeItem): number {
+  return (a.title ?? "").localeCompare(b.title ?? "", undefined, { sensitivity: "base" });
 }
 
 /** A platform (or the virtual No-channel bucket) with its content, for the By-Channel view. */
@@ -248,7 +256,7 @@ function KnowledgePage() {
     const base = filter === "all" ? items : items.filter((i) => groupOf(i.category) === filter);
     return base
       .filter((i) => contentMatches(i, voiceNameById.get(i.voice_id ?? ""), q))
-      .sort(byStatusThenTitle);
+      .sort(byTitle);
   }, [items, filter, q, voiceNameById]);
   const visibleVoices = useMemo(
     () =>
@@ -284,21 +292,20 @@ function KnowledgePage() {
     for (const v of voices) {
       // Skip drafts and empty-name Voices (never render an "Untitled" group).
       if (v.id === draftVoiceId || !(v.name || "").trim()) continue;
-      const all = items.filter((i) => attributedTo(i) === v.id).sort(byStatusThenTitle);
+      const all = items.filter((i) => attributedTo(i) === v.id).sort(byTitle);
       const voiceHit = !q || v.name.toLowerCase().includes(q);
       const shown = voiceHit ? all : all.filter((i) => contentMatches(i, v.name, q));
       if (voiceHit || shown.length)
         groups.push({ id: v.id, name: v.name, voice: v, items: shown });
     }
-    groups.sort((a, b) => {
-      const byHas = Number(b.items.length > 0) - Number(a.items.length > 0);
-      return byHas !== 0 ? byHas : a.name.localeCompare(b.name);
-    });
+    // Vessels page: pure alphabetical (JC) — content-first ordering is kept only
+    // on Home. Bible-book buckets and General are appended after, below.
+    groups.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
     // Unattributed content: scripture quotes → virtual per-book buckets (a Bible
     // book isn't a Voice, so no real Vessel is minted); everything else → General.
     const unattributed = items.filter((i) => !attributedTo(i) && contentMatches(i, undefined, q));
     const byBook = new Map<string, KnowledgeItem[]>();
-    for (const i of unattributed.filter(isScriptureQuote).sort(byStatusThenTitle)) {
+    for (const i of unattributed.filter(isScriptureQuote).sort(byTitle)) {
       const book = bibleBookName(i.scripture_ref) ?? "Scripture";
       (byBook.get(book) ?? byBook.set(book, []).get(book)!).push(i);
     }
@@ -310,7 +317,7 @@ function KnowledgePage() {
     // buckets (by citation).
     const general = unattributed
       .filter((i) => !isScriptureQuote(i) && !isBibleBookId(i.id))
-      .sort(byStatusThenTitle);
+      .sort(byTitle);
     if (general.length) groups.push({ id: GENERAL_ID, name: "General", items: general });
     return groups;
   }, [voices, items, draftVoiceId, q]);
@@ -334,7 +341,7 @@ function KnowledgePage() {
         id: platform,
         name: LINK_PLATFORM_LABELS[platform],
         platform,
-        items: its.sort(byStatusThenTitle),
+        items: its.sort(byTitle),
       }))
       .sort((a, b) => a.name.localeCompare(b.name));
     return groups;
@@ -354,7 +361,9 @@ function KnowledgePage() {
       const quotes = bookHit ? all : all.filter((qi) => contentMatches(qi, undefined, q));
       if (bookHit || quotes.length) groups.push({ book, quotes });
     }
-    return groups.sort((a, b) => byStatusThenTitle(a.book, b.book));
+    return groups.sort((a, b) =>
+      (a.book.title ?? "").localeCompare(b.book.title ?? "", undefined, { sensitivity: "base" }),
+    );
   }, [filter, items, q, voiceNameById, db.knowledge_items]);
 
   const contentHandlers = {
