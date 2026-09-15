@@ -385,24 +385,38 @@ export function matchVoice(
   return undefined;
 }
 
-/** Known org/company/reference hosts → an organization Voice by default. */
-const ORG_HOSTS = [
-  "hallow.com",
-  "usccb.org",
-  "vatican.va",
-  "magnificat.com",
-  "ewtn.com",
-  "catholic.com",
-  "ascensionpress.com",
-  "bible.com",
-  "youversion",
-];
+/**
+ * Known org/company/reference hosts → the **brand name** to use for the Vessel,
+ * so a pasted link resolves to one well-named organization no matter which
+ * subdomain or path it came from (`ascensionpress.com`, `app.ascensionpress.com/…`
+ * both → "Ascension Press"). Match is by registrable domain (substring), so
+ * subdomains are covered. Extend as new orgs come up.
+ */
+const ORG_BRANDS: Record<string, string> = {
+  "hallow.com": "Hallow",
+  "usccb.org": "USCCB",
+  "vatican.va": "Vatican",
+  "magnificat.com": "Magnificat",
+  "ewtn.com": "EWTN",
+  "catholic.com": "Catholic Answers",
+  "ascensionpress.com": "Ascension Press",
+  "bible.com": "YouVersion",
+  "youversion.com": "YouVersion",
+};
+
+/** The brand name for a known org host, or null if the host isn't a known org. */
+export function orgBrandName(url?: string): string | null {
+  const { host } = hostAndPath(url);
+  if (!host) return null;
+  for (const [domain, brand] of Object.entries(ORG_BRANDS)) {
+    if (host.includes(domain)) return brand;
+  }
+  return null;
+}
 
 /** Best-guess kind for a Voice created from a pasted URL. */
 export function detectVoiceKind(url?: string): VoiceKind {
-  const { host } = hostAndPath(url);
-  if (ORG_HOSTS.some((h) => host.includes(h))) return "organization";
-  return "individual";
+  return orgBrandName(url) ? "organization" : "individual";
 }
 
 /** A Voice seed built from a single pasted link — the "create from this URL" tap. */
@@ -498,10 +512,8 @@ export function detectCategory(url?: string, _title?: string): KnowledgeCategory
   if ((host.includes("bible.com") || host.includes("youversion")) && /reading-plans?/.test(path)) {
     return "program";
   }
-  if (host.includes("ascensionpress.com") || /reading-plans?|\/plan(s)?\//.test(path)) {
-    return "program";
-  }
 
+  // Host-specific media platforms.
   if (host.includes("youtube.com") || host.includes("youtu.be") || host.includes("vimeo.com")) {
     return "video";
   }
@@ -516,6 +528,17 @@ export function detectCategory(url?: string, _title?: string): KnowledgeCategory
     return "post";
   }
   if (host.includes("amazon.") || host.includes("a.co") || host.includes("audible.")) return "book";
+
+  // Path-aware for org/app sites that host many content types under one domain
+  // (Ascension: podcasts, video series, programs/studies, a book shop). Key off
+  // the PATH, not the host — one Ascension link is not always a "program".
+  if (/\/(videos?|watch|series|episodes?)(\/|$)/.test(path)) return "video";
+  if (/\/podcasts?(\/|$)/.test(path)) return "podcast";
+  if (/reading-plans?|\/(programs?|plans?|study|studies|courses?)(\/|$)/.test(path)) {
+    return "program";
+  }
+  if (/\/(shop|store|products?|books?)(\/|$)/.test(path)) return "book";
+
   return "article";
 }
 

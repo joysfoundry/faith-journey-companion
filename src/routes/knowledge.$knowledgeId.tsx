@@ -109,6 +109,11 @@ function KnowledgeRecordPage() {
   const [editing, setEditing] = useState(!!edit);
   const [tagsDraft, setTagsDraft] = useState<string | null>(null);
   const [newVoiceName, setNewVoiceName] = useState("");
+  // Must run before the early returns below — hooks can't be conditional.
+  const tagSuggestions = useMemo(
+    () => allTags(db.knowledge_items, db.prayers),
+    [db.knowledge_items, db.prayers],
+  );
 
   if (!ready) {
     return (
@@ -128,10 +133,6 @@ function KnowledgeRecordPage() {
   }
 
   const voices = db.voices;
-  const tagSuggestions = useMemo(
-    () => allTags(db.knowledge_items, db.prayers),
-    [db.knowledge_items, db.prayers],
-  );
   const voice = item.voice_id ? voices.find((v) => v.id === item.voice_id) : undefined;
   const channel = channelOf(item, voice);
   const links = item.links ?? [];

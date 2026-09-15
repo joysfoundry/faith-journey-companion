@@ -15,6 +15,7 @@ import {
   identityFromUrl,
   isHandlePlatform,
   matchVoice,
+  orgBrandName,
   VOICE_KIND_LABELS,
   voiceFromLink,
 } from "@/lib/prayer/knowledge";
@@ -44,6 +45,12 @@ type Staged = {
   channelUrl: string;
   /** The channel's own name/username — kept on the Channel, not the Vessel. */
   channelLabel: string;
+  /**
+   * When attributing to an *existing* Vessel, whether to also add this link's
+   * channel URL to that Vessel (so e.g. Ascension Press gains its homilies
+   * channel alongside its website). Ignored in "new" mode.
+   */
+  addChannel: boolean;
   attribution: Attribution;
   pin: boolean;
 };
@@ -62,10 +69,11 @@ function fallbackTitle(url: string, siteName: string, author: Author): string {
   }
 }
 
-/** The bare brand host for an org name fallback: "ascensionpress.com". */
+/** The bare brand host for an org name fallback: app/m/www subdomains stripped
+ * ("app.ascensionpress.com" → "ascensionpress.com"). */
 function hostBrand(url: string): string {
   try {
-    return new URL(url).hostname.replace(/^www\./, "");
+    return new URL(url).hostname.replace(/^(www|app|m)\./, "");
   } catch {
     return "";
   }
@@ -90,6 +98,10 @@ function vesselNamePrefill(
   kind: VoiceKind,
 ): string {
   if (kind === "organization") {
+    // A known org resolves to its canonical brand name regardless of subdomain
+    // or path, so every Ascension link lands on one "Ascension Press".
+    const brand = orgBrandName(url);
+    if (brand) return brand;
     if (siteName.trim()) return siteName.trim();
     if (author.name.trim()) return author.name.trim();
     return hostBrand(url) || voiceFromLink(url).name;
@@ -149,14 +161,28 @@ export function QuickAddLink() {
     setLoading(false);
     // A post URL often omits the handle (an IG reel is just /reel/<id>/), so match
     // by the URL first, then by the author's profile page from the metadata.
-    const match =
+    const urlMatch =
       matchVoice(raw, db.voices) ||
       (author.profileUrl ? matchVoice(author.profileUrl, db.voices) : undefined);
-    // The channel is the account's HOME page, never the pasted content URL — a
-    // video/post link is the Content's link, not a channel (ACTS-178). If the
-    // preview couldn't read the account's profile, we create the Vessel with no
-    // channel rather than misfiling the video URL as one.
-    const channelUrl = author.profileUrl || "";
+    const kind = detectVoiceKind(author.profileUrl || raw);
+    const prefillName = vesselNamePrefill(author, author.profileUrl || "", raw, siteName, kind);
+    // If we don't match by URL, still catch an existing Vessel by name — a known
+    // org resolves to one brand name ("Ascension Press") no matter the subdomain,
+    // so a second Ascension link attributes to the same Vessel instead of making a
+    // duplicate. (Exact-name matches are hidden by the suggest box, so auto-link.)
+    const byName = urlMatch
+      ? undefined
+      : db.voices.find((v) => v.name.trim().toLowerCase() === prefillName.trim().toLowerCase());
+    const matched = urlMatch
+      ? { voice: urlMatch.voice, channelId: urlMatch.channel.id }
+      : byName
+        ? { voice: byName, channelId: byName.channels?.[0]?.id ?? "" }
+        : undefined;
+    // In "new" mode the channel is the account HOME only (never the content URL,
+    // ACTS-178). But when we MATCH an existing Vessel, the user may want to add
+    // this exact link as one of that Vessel's channels (its homilies section,
+    // say), so default the editable channel URL to the account home or the link.
+    const channelUrl = matched ? author.profileUrl || raw : author.profileUrl || "";
     setStaged({
       url: raw,
       title: title || fallbackTitle(raw, siteName, author),
@@ -165,16 +191,10 @@ export function QuickAddLink() {
       siteName,
       channelUrl,
       channelLabel: channelLabelFor(platform, author),
-      attribution: match
-        ? { mode: "match", voice: match.voice, channelId: match.channel.id }
-        : (() => {
-            const kind = detectVoiceKind(channelUrl || raw);
-            return {
-              mode: "new" as const,
-              name: vesselNamePrefill(author, channelUrl, raw, siteName, kind),
-              kind,
-            };
-          })(),
+      addChannel: Boolean(matched),
+      attribution: matched
+        ? { mode: "match", voice: matched.voice, channelId: matched.channelId }
+        : { mode: "new", name: prefillName, kind },
       pin: false,
     });
   }
@@ -185,8 +205,33 @@ export function QuickAddLink() {
     let channelId: string | undefined;
 
     if (staged.attribution.mode === "match") {
-      voiceId = staged.attribution.voice.id;
+      const vessel = staged.attribution.voice;
+      voiceId = vessel.id;
       channelId = staged.attribution.channelId;
+      // Optionally add this link's channel to the existing Vessel — unless that
+      // channel is already there (match by identity), in which case reuse it.
+      const chanUrl = staged.channelUrl.trim();
+      if (staged.addChannel && chanUrl) {
+        const existing = matchVoice(chanUrl, [vessel])?.channel;
+        if (existing) {
+          channelId = existing.id;
+        } else {
+          const newChanId = newId("chan");
+          upsertVoice({
+            ...vessel,
+            channels: [
+              ...(vessel.channels ?? []),
+              {
+                id: newChanId,
+                platform: detectPlatform(chanUrl),
+                url: chanUrl,
+                label: staged.channelLabel.trim() || undefined,
+              },
+            ],
+          });
+          channelId = newChanId;
+        }
+      }
     } else if (staged.attribution.mode === "new") {
       // Channel = the account's HOME page, so a later post from the same account
       // matches this Vessel; the item's own link stays the specific post below.
@@ -298,16 +343,65 @@ export function QuickAddLink() {
           <div className="space-y-1.5">
             <label className="text-xs uppercase tracking-wide text-muted-foreground">From</label>
             {staged.attribution.mode === "match" ? (
-              <p className="text-sm">
-                Saving to <span className="font-medium">{staged.attribution.voice.name}</span>{" "}
-                <button
-                  type="button"
-                  onClick={() => patch({ attribution: { mode: "none" } })}
-                  className="text-xs text-muted-foreground underline hover:text-foreground"
-                >
-                  change
-                </button>
-              </p>
+              (() => {
+                const vessel = staged.attribution.voice;
+                const chanUrl = staged.channelUrl.trim();
+                const alreadyHas = chanUrl
+                  ? Boolean(matchVoice(chanUrl, [vessel])?.channel)
+                  : false;
+                return (
+                  <>
+                    <p className="text-sm">
+                      Saving to <span className="font-medium">{vessel.name}</span>{" "}
+                      <button
+                        type="button"
+                        onClick={() => patch({ attribution: { mode: "none" } })}
+                        className="text-xs text-muted-foreground underline hover:text-foreground"
+                      >
+                        change
+                      </button>
+                    </p>
+                    {/* One Vessel, many channels: add this link's channel URL to the
+                        existing Vessel (e.g. Ascension Press gains its homilies
+                        channel) while staying attributed to it (ACTS-186). */}
+                    {chanUrl && !alreadyHas ? (
+                      <div className="space-y-1.5 rounded-md border border-border/60 bg-background p-2">
+                        <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <input
+                            type="checkbox"
+                            checked={staged.addChannel}
+                            onChange={(e) => patch({ addChannel: e.target.checked })}
+                            className="size-4"
+                          />
+                          Add this as a channel of {vessel.name}
+                        </label>
+                        {staged.addChannel ? (
+                          <>
+                            <Input
+                              value={staged.channelLabel}
+                              onChange={(e) => patch({ channelLabel: e.target.value })}
+                              placeholder="Channel name (e.g. Homilies)"
+                              aria-label="New channel name"
+                              className="h-8"
+                            />
+                            <Input
+                              value={staged.channelUrl}
+                              onChange={(e) => patch({ channelUrl: e.target.value })}
+                              placeholder="https://…"
+                              aria-label="New channel URL"
+                              className="h-8"
+                            />
+                          </>
+                        ) : null}
+                      </div>
+                    ) : alreadyHas ? (
+                      <p className="text-xs text-muted-foreground">
+                        This channel is already on {vessel.name}.
+                      </p>
+                    ) : null}
+                  </>
+                );
+              })()
             ) : staged.attribution.mode === "new" ? (
               (() => {
                 // Destructure the narrowed variant into primitives so the
@@ -330,12 +424,17 @@ export function QuickAddLink() {
                       onSelect={(e) => {
                         const v = db.voices.find((x) => x.id === e.id);
                         if (v)
+                          // Seed the channel-add with this link so the matched
+                          // Vessel can gain the pasted link's channel (e.g. its
+                          // homilies section), not just be attributed.
                           patch({
                             attribution: {
                               mode: "match",
                               voice: v,
                               channelId: v.channels?.[0]?.id ?? "",
                             },
+                            channelUrl: staged.channelUrl.trim() || staged.url,
+                            addChannel: true,
                           });
                       }}
                       placeholder="Name (person or organization)"
