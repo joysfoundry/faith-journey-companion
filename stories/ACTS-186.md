@@ -60,8 +60,10 @@ link · could-be = related but a model gap or genuinely optional.
   but "Attribute to someone" → plain `<Input>`, no autocomplete → duplicate Vessel risk. **[wiring — this session]**
 - `knowledge.$knowledgeId.tsx:470` — "New Vessel by name" add box → `createVoiceByName` always
   creates, no dedupe. (Connected `<select>` sits beside it; the box is the stray part.) **[wiring — this session]**
-- `WordSection.tsx:181` — Mass **"Celebrant"** (priest) stored as loose text; should resolve to a
-  Voice. **[deferred — needs a homily→Voice decision]**
+- `WordSection.tsx:181` — Mass **"Celebrant"** (priest) → **WIRED.** `EntitySuggestInput` over
+  Voices; accepting links via new `MassExperience.celebrant_voice_id` (additive, back-compat) so a
+  priest's homilies thread to them; a new name stays plain text. Verified: "Fr. Mi" → "Fr. Mike
+  Schmitz" → saved Mass has `celebrant_voice_id: voice-fr-mike`.
 
 ### 🟡 Could be connected — dispositions (JC, 2026-09-14)
 - `mystery-version.$bodyKey.tsx:229` — **"Attribution — author/publisher/book"** → **WIRED
@@ -121,8 +123,9 @@ homilies + catechism — not a Vessel per subdomain, and **no merge** (test data
   was after the `ready`/`!item` early returns → "rendered fewer hooks"; moved above the returns.
 **Split out:** Church/parish → ACTS-201; author-vs-publisher (Fr. Mike/Ascension, Pope/Vatican,
 channel↔Voice many-to-many) → ACTS-202; real Tag entity → ACTS-203.
-**Closed:** Prayed-for (leave). **Remaining under 186:** Celebrant → Voice (needs a homily→Voice
-call), then the sweep can be judged complete.
+**Closed:** Prayed-for (leave). **Celebrant → Voice: DONE** (session 02, `MassExperience.celebrant_voice_id`).
+**Sweep complete** — every stray box wired and every could-be dispositioned; deeper model work
+lives in the spun-out stories (201/202/203/204). Ready to close.
 
 ## Tests
 No runner yet (ACTS-92). Per-surface: verify autocomplete suggests existing entities, accept
