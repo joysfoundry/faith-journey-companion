@@ -55,12 +55,19 @@ its `category`. **Gaps:**
    channel *and* his own. Ties to [[ACTS-202]] (channel↔Voice many-to-many). Likely a
    `channel.host_voice_id` (or per-item author) alongside the owning Vessel.
 
-7. **Containers have no status; only content does (JC, 2026-09-15).** A channel/series (Sunday
-   Homilies — "like being hosted on YouTube") is a **container**, so it must **not** show
-   Not started / In progress / Finished. A **content item** *within* it (one homily video) is
-   completable — viewed or not — so it carries status. Current bug (screenshot): "Sunday Homilies"
-   renders as a Program **with** status pills because it's stored as a completable KnowledgeItem
-   rather than a channel. Fix falls out of modeling channels as containers: `hasStatus` (see
+7. **Containers have no status; only content does (JC, 2026-09-15).** A channel/series is a
+   **container**, so it must **not** show Not started / In progress / Finished; a **content item**
+   *within* it is completable (viewed/not) and carries status. This is uniform across kinds:
+   - **Video** — Sunday Homilies (the show) = container, no status; one homily video = content,
+     has status. Like a YouTube channel vs a video on it.
+   - **Podcast** — the podcast (Spotify / Apple / Ascension) = container, no status; an episode =
+     content, has status.
+   - **Program** — the program/series = container; a lesson/part = content with status.
+
+   **Root cause of the screenshot bug (JC):** "Sunday Homilies" is **mislabeled as a Program** —
+   a *completable content category* — so it inherited status pills. It should be a **channel
+   (container)**, which has none. So the fix is the model itself (a series is a channel, not a
+   KnowledgeItem with a completable category), not a per-item pill toggle. `hasStatus` (see
    `knowledge.ts`) applies to content items, never to a channel/series.
 
 6. **Prayers thread to a Vessel via their Source (JC, 2026-09-15).** A prayer/devotion already has
