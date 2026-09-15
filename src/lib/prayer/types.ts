@@ -862,6 +862,13 @@ export interface MassExperience {
   date: string; // yyyy-mm-dd
   church?: string | undefined;
   celebrant?: string | undefined;
+  /**
+   * When the celebrant resolves to a Vessel already in the app, the linked
+   * `Voice.id` — so homilies thread to that priest rather than duplicating the
+   * name (ACTS-186 connected-entity sweep). `celebrant` keeps the display text
+   * for back-compat and for an un-linked free-text name.
+   */
+  celebrant_voice_id?: string | undefined;
   mass_time?: string | undefined;
   location?: string | undefined;
   notes?: string | undefined;

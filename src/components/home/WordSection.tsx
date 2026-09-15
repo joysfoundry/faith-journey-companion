@@ -13,11 +13,13 @@ import { todaysWord } from "@/domain/placeholderData";
 import { newId, todayISO } from "@/lib/prayer/compiler";
 import {
   SECTION_LABEL,
+  VOICE_KIND_LABELS,
   byStatusThenTitle,
   isScriptureProgram,
   knowledgeSubtitle,
   primaryUrl,
 } from "@/lib/prayer/knowledge";
+import { EntitySuggestInput } from "@/components/knowledge/EntitySuggestInput";
 import { getLiturgicalDay, type LiturgicalDay } from "@/lib/liturgical/calendar";
 import { useApp } from "@/lib/prayer/store";
 
@@ -93,6 +95,10 @@ export function WordSection({ onReflect }: { onReflect: (linkId: string) => void
   const [massOpen, setMassOpen] = useState(false);
   const [church, setChurch] = useState("");
   const [celebrant, setCelebrant] = useState("");
+  // Links the celebrant to a Vessel when the name matches one already in the app,
+  // so a priest's homilies thread to them (ACTS-186). Cleared when the text is
+  // edited so the link can't drift from the shown name.
+  const [celebrantVoiceId, setCelebrantVoiceId] = useState("");
   const [transcript, setTranscript] = useState("");
   const [massSaved, setMassSaved] = useState(false);
 
@@ -103,12 +109,16 @@ export function WordSection({ onReflect }: { onReflect: (linkId: string) => void
       date: todayISO(),
       church: church.trim() || undefined,
       celebrant: celebrant.trim() || undefined,
+      ...(celebrantVoiceId && celebrant.trim()
+        ? { celebrant_voice_id: celebrantVoiceId }
+        : {}),
       transcript: transcript.trim() || undefined,
       transcript_status: transcript.trim() ? "ready" : "none",
       created_at: new Date().toISOString(),
     });
     setChurch("");
     setCelebrant("");
+    setCelebrantVoiceId("");
     setTranscript("");
     setMassSaved(true);
   }
@@ -178,15 +188,27 @@ export function WordSection({ onReflect }: { onReflect: (linkId: string) => void
                 <Label htmlFor="mass-priest" className="text-xs text-muted-foreground">
                   Celebrant
                 </Label>
-                <Input
-                  id="mass-priest"
-                  className="h-9"
-                  placeholder="Who celebrated?"
+                {/* Suggest Vessels you already have so a priest's homilies thread
+                    to them; a new name stays plain text (ACTS-186). */}
+                <EntitySuggestInput
                   value={celebrant}
-                  onChange={(e) => {
-                    setCelebrant(e.target.value);
+                  onChange={(v) => {
+                    setCelebrant(v);
+                    if (celebrantVoiceId) setCelebrantVoiceId("");
                     setMassSaved(false);
                   }}
+                  entities={db.voices.map((vc) => ({
+                    id: vc.id,
+                    name: vc.name,
+                    sublabel: VOICE_KIND_LABELS[vc.kind].toLowerCase(),
+                  }))}
+                  onSelect={(e) => {
+                    setCelebrantVoiceId(e.id);
+                    setMassSaved(false);
+                  }}
+                  placeholder="Who celebrated?"
+                  className="h-9"
+                  ariaLabel="Celebrant"
                 />
               </div>
             </div>
