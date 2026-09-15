@@ -98,9 +98,27 @@ link · could-be = related but a model gap or genuinely optional.
 **Session 02 wiring (JC "set up the could-bes"):** tags (soft autocomplete) + provenance Source
 (name autocomplete **+** Voice link). Channel left as is. Hour-tags were already `<select>`s.
 **Session 02 fix (JC testing):** QuickAddLink Vessel-name prefill — an **organization** now
-prefills its brand/site name (og:site_name), never an `@handle` scraped from the URL path
+prefills its brand/site name, never an `@handle` scraped from the URL path
 (`ascensionpress.com/products/…` was becoming `@product` / `@program`). `@handle` is reserved for
-individuals + true handle platforms. Verified live on both Ascension URLs → "Ascension" (org).
+individuals + true handle platforms.
+
+**Session 02 — one org, many channels (JC testing, the app-subdomain case).** JC's model: **one
+Vessel (Ascension Press) that owns multiple channels** — its website + `app.ascensionpress.com/…`
+homilies + catechism — not a Vessel per subdomain, and **no merge** (test data). Shipped:
+- `orgBrandName(url)` — a known-org **brand map** (`ORG_BRANDS`, registrable-domain / substring
+  match) resolves any Ascension URL/subdomain to "Ascension Press"; `detectVoiceKind` derives from
+  it. Replaced the old `ORG_HOSTS` list.
+- `hostBrand` now strips `app.`/`m.` (not just `www.`) for the **name** fallback (channel URLs keep
+  their full subdomain — subdomains matter there).
+- QuickAddLink **match-by-name**: when a paste doesn't URL-match but the derived name equals an
+  existing Vessel, auto-attribute to it (an exact name is hidden by the suggest box, so this
+  prevents a silent duplicate).
+- QuickAddLink **match-mode channel add**: attributing to an existing Vessel now shows "Add this as
+  a channel of X" (editable label + URL, prefilled from the link), appended on save unless that
+  channel identity already exists. Verified: pasting `app.ascensionpress.com/podcasts/homily` →
+  attributes to the single "Ascension Press", adds a "Homilies" channel, no duplicate Vessel.
+- **Bug caught + fixed in testing:** the tag-suggestions `useMemo` in `knowledge.$knowledgeId.tsx`
+  was after the `ready`/`!item` early returns → "rendered fewer hooks"; moved above the returns.
 **Split out:** Church/parish → ACTS-201; author-vs-publisher (Fr. Mike/Ascension, Pope/Vatican,
 channel↔Voice many-to-many) → ACTS-202; real Tag entity → ACTS-203.
 **Closed:** Prayed-for (leave). **Remaining under 186:** Celebrant → Voice (needs a homily→Voice
