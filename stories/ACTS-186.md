@@ -2,15 +2,15 @@
 id: ACTS-186
 title: Threads — app-wide connected-entity sweep (no stray text boxes)
 spine:
-status: In Progress
+status: Done
 origin: human-directed
 approved_by: JC
 depends_on: []
 relates_to: [ACTS-185, ACTS-183, ACTS-181, ACTS-201, ACTS-202, ACTS-203, ACTS-204]
 started_at: 2026-09-10T12:42:51-0700
-updated:    2026-09-15T13:19:31-0700
-latest_handoff: stories/ACTS-186/session-01.md
-sessions: 1
+updated:    2026-09-15T13:31:56-0700
+latest_handoff: stories/ACTS-186/session-02.md
+sessions: 2
 ---
 
 ## Goal
