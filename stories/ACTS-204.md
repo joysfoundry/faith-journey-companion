@@ -2,7 +2,7 @@
 id: ACTS-204
 title: One org, many typed channels — content files under its channel/series (the Ascension model)
 spine:
-status: To Do
+status: In Progress
 origin: human-directed
 approved_by: JC
 depends_on: []
@@ -48,8 +48,27 @@ its `category`. **Gaps:**
    video under a "podcasts" path — so leave the category editable.)
 4. **Prayers route to the Prayer/Devotion model**, not the library — a novena/litany paste should
    become a devotion, not an "article". (Cross-model routing — its own decision.)
-5. **Author ≠ publisher** — "Sunday Homilies with Fr. Mike Schmitz": the channel's author is Fr.
-   Mike, the publisher is Ascension. Ties to [[ACTS-202]] (channel↔Voice many-to-many).
+5. **Author ≠ publisher, and a channel can be tied to an individual** — "Sunday Homilies with Fr.
+   Mike Schmitz": the channel is published by Ascension (org) but **hosted/recorded by Fr. Mike**
+   (individual). So a channel may carry its own **host/author Voice** distinct from the Vessel that
+   owns it — an org can host many people's shows, and one person (Fr. Mike) appears across an org
+   channel *and* his own. Ties to [[ACTS-202]] (channel↔Voice many-to-many). Likely a
+   `channel.host_voice_id` (or per-item author) alongside the owning Vessel.
+
+7. **Containers have no status; only content does (JC, 2026-09-15).** A channel/series (Sunday
+   Homilies — "like being hosted on YouTube") is a **container**, so it must **not** show
+   Not started / In progress / Finished. A **content item** *within* it (one homily video) is
+   completable — viewed or not — so it carries status. Current bug (screenshot): "Sunday Homilies"
+   renders as a Program **with** status pills because it's stored as a completable KnowledgeItem
+   rather than a channel. Fix falls out of modeling channels as containers: `hasStatus` (see
+   `knowledge.ts`) applies to content items, never to a channel/series.
+
+6. **Prayers thread to a Vessel via their Source (JC, 2026-09-15).** A prayer/devotion already has
+   a **Source**, and ACTS-186 gave `Source.attribution_voice_id`. So USCCB — which has **both**
+   programs (library content under the USCCB Vessel) **and** prayers (devotions) — threads both to
+   the one USCCB Vessel: the prayer's Source links to the USCCB Voice. Prayer routing should set
+   that link so a novena/litany from USCCB (or Ascension) shows under the same Vessel as its
+   content.
 
 ## Make it easier (paste-flow UX)
 Infer, don't interrogate: paste → recognize the **org** (brand map, done) → recognize the **type**
@@ -58,9 +77,11 @@ if it's a new section root, offer it as a **channel**. The user shouldn't have t
 
 ## Acceptance criteria
 - [ ] Channel gains a `kind`; a Vessel's channels render by type.
+- [ ] A channel/series shows **no status**; only content items are completable (viewed/not).
+- [ ] A channel can carry a **host/author Voice** distinct from the owning Vessel (Fr. Mike).
 - [ ] Pasting an item under an existing channel files it as content of that channel (path match).
 - [ ] Channel-vs-content is inferred in the paste flow (minimal decisions).
-- [ ] Prayer/novena/litany routing decided (and, if in scope, routed to the Prayer model).
+- [ ] Prayer/novena/litany routing decided; prayer Source links to its Vessel (USCCB case).
 - [ ] No reset; existing channels/content migrate cleanly.
 
 ## Tests
