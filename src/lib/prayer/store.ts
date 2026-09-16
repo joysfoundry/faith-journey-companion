@@ -412,8 +412,6 @@ const VOICE_KINDS: VoiceKind[] = ["individual", "organization", "ministry"];
 const CONTENT_CATEGORIES: KnowledgeCategory[] = [
   "book",
   "article",
-  "video",
-  "podcast",
   "post",
   "quote",
   "program",
@@ -474,11 +472,15 @@ const coerceChannelKind = (k: unknown, platform: LinkPlatform): ChannelKind =>
 
 const MEDIA_FORMATS: MediaFormat[] = ["text", "audio", "video", "image"];
 
-/** Backfill a media format from the legacy content category (ACTS-204). Mirrors
- *  `mediaFromCategory` in knowledge.ts (kept local to the persistence layer). */
-const mediaFromCategoryLocal = (category: KnowledgeCategory): MediaFormat => {
-  switch (category) {
+/** Backfill a media format from a legacy content-type string (ACTS-204) — sees
+ *  the retired `video`/`podcast` (and older `sermon`/`show`) values so an item's
+ *  format survives even as those stop being categories. */
+const mediaFromLegacyType = (t: string): MediaFormat => {
+  switch (t) {
     case "video":
+    case "sermon":
+    case "show":
+    case "newsletter":
       return "video";
     case "podcast":
       return "audio";
@@ -489,11 +491,11 @@ const mediaFromCategoryLocal = (category: KnowledgeCategory): MediaFormat => {
   }
 };
 
-/** Keep a stored media format if valid, else backfill it from the category. */
-const coerceMedia = (m: unknown, category: KnowledgeCategory): MediaFormat =>
+/** Keep a stored media format if valid, else backfill it from the legacy type. */
+const coerceMedia = (m: unknown, legacyType: string): MediaFormat =>
   typeof m === "string" && (MEDIA_FORMATS as string[]).includes(m)
     ? (m as MediaFormat)
-    : mediaFromCategoryLocal(category);
+    : mediaFromLegacyType(legacyType);
 
 const genId = (prefix: string): string => `${prefix}-${Math.random().toString(36).slice(2)}`;
 
@@ -606,7 +608,7 @@ function voiceFromLegacyItem(raw: Record<string, unknown>): Voice {
 /** Coerce a stored/legacy record into a valid Content KnowledgeItem. */
 function normalizeContent(raw: Record<string, unknown>): KnowledgeItem {
   const candidate = strOf(raw, "category") ?? strOf(raw, "content_type") ?? "book";
-  const mapped =
+  let mapped =
     candidate === "sermon" || candidate === "show" || candidate === "newsletter"
       ? "video"
       : candidate === "course"
@@ -614,6 +616,10 @@ function normalizeContent(raw: Record<string, unknown>): KnowledgeItem {
         : candidate === "other"
           ? "article"
           : candidate;
+  // Media backfill reflects the format BEFORE video/podcast are retired below.
+  const media = coerceMedia(raw["media"], mapped);
+  // ACTS-204: video/podcast are formats now (carried by `media`), not categories.
+  if (mapped === "video" || mapped === "podcast") mapped = "post";
   const category = (CONTENT_CATEGORIES as string[]).includes(mapped)
     ? (mapped as KnowledgeCategory)
     : "book";
@@ -646,8 +652,8 @@ function normalizeContent(raw: Record<string, unknown>): KnowledgeItem {
     // A quote has no title (its text lives in `body`); don't fabricate one.
     title: strOf(raw, "title") ?? (category === "quote" ? "" : "Untitled"),
     category,
-    // ACTS-204: the media format. Backfilled from category for pre-204 items.
-    media: coerceMedia(raw["media"], category),
+    // ACTS-204: the media format (computed above; backfilled for pre-204 items).
+    media,
     voice_id: strOf(raw, "voice_id") ?? strOf(raw, "author_id"),
     channel_id: strOf(raw, "channel_id"),
     body: strOf(raw, "body"),

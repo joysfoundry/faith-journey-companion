@@ -28,6 +28,7 @@ import {
   isHandlePlatform,
   kindFromPlatform,
   mediaFromCategory,
+  detectMedia,
 } from "@/lib/prayer/knowledge";
 import { newId } from "@/lib/prayer/compiler";
 import { useApp } from "@/lib/prayer/store";
@@ -136,8 +137,9 @@ export function VoiceEditor({ voiceId }: { voiceId: string }) {
       title: isQ ? "" : addTitle.trim(),
       body: isQ ? addTitle.trim() : undefined,
       category: addCategory,
-      // ACTS-204: default the media format from the category; editable later.
-      media: mediaFromCategory(addCategory),
+      // ACTS-204: media format — from the link if there is one (more accurate),
+      // else from the category. Editable later.
+      media: addUrl.trim() ? detectMedia(addUrl) : mediaFromCategory(addCategory),
       quote_kind: isQ ? addQuoteKind : undefined,
       scripture_ref: isScripture ? ref || undefined : undefined,
       source: quoteTakesSource ? addSource.trim() || undefined : undefined,
@@ -402,7 +404,7 @@ export function VoiceEditor({ voiceId }: { voiceId: string }) {
                   </div>
                   {/* Only completable content carries status — references
                       (article/post/quote) and containers never do (ACTS-204). */}
-                  {hasStatus(item.category) ? (
+                  {hasStatus(item.category, item.media) ? (
                     <div className="mt-1.5 flex flex-wrap gap-1">
                       {STATUS_STEPS.map((s) => (
                         <button

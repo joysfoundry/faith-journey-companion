@@ -666,11 +666,14 @@ export type KnowledgeStatus = "not_started" | "in_progress" | "finished";
  * (apps/sites) with no completion, surfaced on Home only when favorited.
  */
 /**
- * Content kinds — the *what* you read/watch/listen to. The *who* behind it is a
- * separate `Voice` record (see below), referenced by `KnowledgeItem.voice_id`.
+ * Content form — the *kind of thing* a piece is (ACTS-204), decoupled from its
+ * `media` FORMAT (video/audio/text/image) and from its Collection. `video` and
+ * `podcast` were retired here — they're formats, carried by `media`; a video or
+ * episode's noun comes from its Collection. The surviving forms are the ones a
+ * format can't express. The *who* is a separate `Voice` (`voice_id`).
  */
 export type KnowledgeCategory =
-  "book" | "article" | "video" | "podcast" | "post" | "quote" | "program";
+  "book" | "article" | "post" | "quote" | "program";
 
 /**
  * The kind of a keepable `quote` (ACTS-181) — a typed passage. Drives which

@@ -86,19 +86,16 @@ export const SECTION_LABEL_LONG = "Vessels of Knowledge";
 export const CATEGORY_LABELS: Record<KnowledgeCategory, string> = {
   book: "Book",
   article: "Article",
-  video: "Video",
-  podcast: "Podcast",
   post: "Post",
   quote: "Quote",
   program: "Program",
 };
 
-/** The content categories offered in the Add form, in menu order. */
+/** The content categories offered in the Add form, in menu order (ACTS-204:
+ *  `video`/`podcast` retired — those are FORMATS, carried by `media`). */
 export const CATEGORY_OPTIONS: KnowledgeCategory[] = [
   "book",
   "article",
-  "video",
-  "podcast",
   "post",
   "quote",
   "program",
@@ -117,14 +114,17 @@ export const GROUP_LABELS: Record<KnowledgeGroup, string> = {
   quote: "Quotes",
 };
 
-export const GROUP_ORDER: KnowledgeGroup[] = ["program", "book", "media", "quote"];
+// ACTS-204: the "Media" catch-all filter is retired — format is its own axis
+// (`media`) now, so article/post are just references reachable via All/Voices.
+// "media" stays as an internal group bucket (no pill).
+export const GROUP_ORDER: KnowledgeGroup[] = ["program", "book", "quote"];
 
 /** Which display group a content item belongs to. */
 export function groupOf(category: KnowledgeCategory): KnowledgeGroup {
   if (category === "program") return "program";
   if (category === "book") return "book";
   if (category === "quote") return "quote";
-  return "media"; // video | podcast | article | post
+  return "media"; // article | post — references (no filter pill, ACTS-204)
 }
 
 /** A quote = content whose payload is text (`body`), not a title or a link. */
@@ -371,10 +371,6 @@ export function mediaFromChannelKind(kind: ChannelKind | undefined): MediaFormat
  */
 export function mediaFromCategory(category: KnowledgeCategory): MediaFormat {
   switch (category) {
-    case "video":
-      return "video";
-    case "podcast":
-      return "audio";
     case "post":
       return "image";
     case "book":
@@ -384,6 +380,29 @@ export function mediaFromCategory(category: KnowledgeCategory): MediaFormat {
     default:
       return "text";
   }
+}
+
+/**
+ * Best-guess media format from a URL (ACTS-204) — used when creating content from
+ * a pasted link, more accurate than guessing from the category. YouTube/Vimeo/
+ * TikTok/a reel → video; a podcast host → audio; Instagram (non-reel) → image;
+ * else text. Editable afterward.
+ */
+export function detectMedia(url?: string): MediaFormat {
+  const { host, path } = hostAndPath(url);
+  if (!host) return "text";
+  if (
+    host.includes("youtube.com") ||
+    host.includes("youtu.be") ||
+    host.includes("vimeo.com") ||
+    host.includes("tiktok.com") ||
+    /\/reel\//.test(path)
+  ) {
+    return "video";
+  }
+  if (host.includes("podcasts.apple.com") || host.includes("open.spotify.com")) return "audio";
+  if (host.includes("instagram.com")) return "image";
+  return "text";
 }
 
 /**
@@ -603,20 +622,21 @@ export function isEmptyDraftVoice(
  * you don't "finish" a website, so they carry no status and sink below the
  * things you're working through.
  */
-export function hasStatus(category: KnowledgeCategory): boolean {
-  return (
-    category === "book" || category === "program" || category === "video" || category === "podcast"
-  );
+export function hasStatus(category: KnowledgeCategory, media?: MediaFormat): boolean {
+  // A book/program is completable; and anything you get *through* — a video you
+  // watch or audio you listen to (ACTS-204: video/podcast are now `media`, not a
+  // category). Articles/posts/quotes are references — no status.
+  return category === "book" || category === "program" || media === "audio" || media === "video";
 }
 
 /**
- * Order content: status-bearing items (books, programs, video, podcast) first —
- * regardless of whether they've been started — then the status-less references
- * (articles/posts/quotes). Alphabetical by title within each tier.
+ * Order content: status-bearing items (books, programs, things you watch/listen
+ * to) first — regardless of whether they've been started — then the status-less
+ * references (articles/posts/quotes). Alphabetical by title within each tier.
  */
 export function byStatusThenTitle(a: KnowledgeItem, b: KnowledgeItem): number {
-  const aHas = hasStatus(a.category);
-  const bHas = hasStatus(b.category);
+  const aHas = hasStatus(a.category, a.media);
+  const bHas = hasStatus(b.category, b.media);
   if (aHas !== bHas) return aHas ? -1 : 1;
   return (a.title ?? "").localeCompare(b.title ?? "", undefined, { sensitivity: "base" });
 }
@@ -659,11 +679,12 @@ export function detectCategory(url?: string, _title?: string): KnowledgeCategory
     return "program";
   }
 
-  // Host-specific media platforms.
+  // Host-specific media platforms → `post` (a media piece); the video/audio
+  // distinction now lives in `media` (see `detectMedia`), not the category.
   if (host.includes("youtube.com") || host.includes("youtu.be") || host.includes("vimeo.com")) {
-    return "video";
+    return "post";
   }
-  if (host.includes("podcasts.apple.com") || host.includes("open.spotify.com")) return "podcast";
+  if (host.includes("podcasts.apple.com") || host.includes("open.spotify.com")) return "post";
   if (
     host.includes("instagram.com") ||
     host.includes("x.com") ||
@@ -678,8 +699,7 @@ export function detectCategory(url?: string, _title?: string): KnowledgeCategory
   // Path-aware for org/app sites that host many content types under one domain
   // (Ascension: podcasts, video series, programs/studies, a book shop). Key off
   // the PATH, not the host — one Ascension link is not always a "program".
-  if (/\/(videos?|watch|series|episodes?)(\/|$)/.test(path)) return "video";
-  if (/\/podcasts?(\/|$)/.test(path)) return "podcast";
+  if (/\/(videos?|watch|series|episodes?|podcasts?)(\/|$)/.test(path)) return "post";
   if (/reading-plans?|\/(programs?|plans?|study|studies|courses?)(\/|$)/.test(path)) {
     return "program";
   }

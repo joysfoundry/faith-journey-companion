@@ -270,7 +270,7 @@ function VoiceHubPage() {
                     </div>
                     {/* Only completable content carries status — references
                         (article/post/quote) never do (ACTS-204). */}
-                    {hasStatus(item.category) ? (
+                    {hasStatus(item.category, item.media) ? (
                       <div className="mt-1.5 flex flex-wrap gap-1">
                         {STATUS_STEPS.map((s) => (
                           <button

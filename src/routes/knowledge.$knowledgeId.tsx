@@ -801,7 +801,7 @@ function KnowledgeRecordPage() {
 
         {/* Status — only for completable works (a book/program/video/podcast).
             Articles, posts, and quotes are references with no progress. */}
-        {hasStatus(item.category) ? (
+        {hasStatus(item.category, item.media) ? (
           <div className="flex flex-wrap gap-1.5">
             {STATUS_STEPS.map((s) => (
               <button

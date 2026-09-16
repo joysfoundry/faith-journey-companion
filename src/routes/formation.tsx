@@ -899,7 +899,7 @@ function ContentRow({
             ))}
           </div>
         ) : null}
-        {hasStatus(item.category) ? (
+        {hasStatus(item.category, item.media) ? (
           <div className="mt-2 flex flex-wrap gap-1">
             {STATUS_STEPS.map((s) => (
               <button

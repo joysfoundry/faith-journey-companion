@@ -16,7 +16,7 @@ import {
   isHandlePlatform,
   kindFromPlatform,
   matchVoice,
-  mediaFromCategory,
+  detectMedia,
   orgBrandName,
   VOICE_KIND_LABELS,
   voiceFromLink,
@@ -264,8 +264,8 @@ export function QuickAddLink() {
       id: newId("know"),
       title: staged.title.trim() || fallbackTitle(staged.url, staged.siteName, NO_AUTHOR),
       category: staged.category,
-      // ACTS-204: default the media format from the category; editable later.
-      media: mediaFromCategory(staged.category),
+      // ACTS-204: media format detected from the link (editable later).
+      media: detectMedia(staged.url),
       voice_id: voiceId,
       channel_id: channelId,
       links: [{ platform: staged.platform, url: staged.url }],
