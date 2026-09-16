@@ -80,14 +80,14 @@ export const Route = createFileRoute("/formation")({
   component: KnowledgePage,
 });
 
-type FilterKey = "all" | KnowledgeGroup | "voice" | "channel";
+type FilterKey = "all" | KnowledgeGroup | "voice" | "platform";
 
 const FILTERS: { key: FilterKey; label: string }[] = [
   // Grouped-view pills, no "By" prefix (JC): the person/org grouping is a Voice,
-  // the platform grouping a Collection. (The section umbrella "Vessels" is unchanged
+  // the other groups content by Platform. (The section umbrella "Vessels" is unchanged
   // — the Vessel-vs-Voice concept is still being worked out.)
   { key: "voice", label: "Voices" },
-  { key: "channel", label: "Channel" },
+  { key: "platform", label: "Platform" },
   ...GROUP_ORDER.map((g) => ({ key: g, label: GROUP_LABELS[g] })),
   { key: "all", label: "All" },
 ];
@@ -120,9 +120,9 @@ interface VoiceGroup {
 }
 
 /**
- * The platform a content item lives on, for the By-Collection view: the specific
+ * The platform a content item lives on, for the By-Platform view: the specific
  * channel it came from (`collection_id`), else its pinned/first link's platform,
- * else none (→ the No-channel bucket). Quotes and linkless items have none.
+ * else none (→ the No-platform bucket). Quotes and linkless items have none.
  */
 function itemPlatform(item: KnowledgeItem, voiceById: Map<string, Voice>): LinkPlatform | undefined {
   if (item.collection_id && item.voice_id) {
@@ -142,11 +142,11 @@ function byTitle(a: KnowledgeItem, b: KnowledgeItem): number {
   return (a.title ?? "").localeCompare(b.title ?? "", undefined, { sensitivity: "base" });
 }
 
-/** A platform (or the virtual No-channel bucket) with its content, for the By-Collection view. */
-interface ChannelGroup {
+/** A platform (or the virtual No-platform bucket) with its content, for the By-Platform view. */
+interface PlatformGroup {
   id: string;
   name: string;
-  platform?: LinkPlatform; // absent = the No-channel bucket
+  platform?: LinkPlatform; // absent = the No-platform bucket
   items: KnowledgeItem[];
 }
 
@@ -327,17 +327,17 @@ function KnowledgePage() {
   // sections alphabetical by platform label (all Instagrams together, all
   // YouTubes together). Content on no resolvable platform is omitted (JC).
   // Search filters within.
-  const channelGroups = useMemo<ChannelGroup[]>(() => {
-    // By-Collection only shows content that actually lives on a channel — items with
+  const platformGroups = useMemo<PlatformGroup[]>(() => {
+    // By-Platform only shows content that actually lives on a platform — items with
     // none (quotes, linkless saves) are simply omitted, the way the Books filter
-    // shows only books (JC). No "No channel" catch-all bucket.
+    // shows only books (JC). No "No platform" catch-all bucket.
     const byPlatform = new Map<LinkPlatform, KnowledgeItem[]>();
     for (const i of items) {
       if (!contentMatches(i, voiceNameById.get(i.voice_id ?? ""), q)) continue;
       const p = itemPlatform(i, voiceById);
       if (p) (byPlatform.get(p) ?? byPlatform.set(p, []).get(p)!).push(i);
     }
-    const groups: ChannelGroup[] = [...byPlatform.entries()]
+    const groups: PlatformGroup[] = [...byPlatform.entries()]
       .map(([platform, its]) => ({
         id: platform,
         name: LINK_PLATFORM_LABELS[platform],
@@ -555,22 +555,22 @@ function KnowledgePage() {
                 })}
               </div>
             )
-          ) : filter === "channel" ? (
+          ) : filter === "platform" ? (
             /* GROUPED BY CHANNEL (platform) ----------------------------- */
-            channelGroups.length === 0 ? (
+            platformGroups.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 {q ? "Nothing matches that search." : "Nothing here yet — add content from the Add tab."}
               </p>
             ) : (
               <div className="space-y-3">
                 {(() => {
-                  const anyCollapsed = channelGroups.some((g) => collapsed.has(g.id));
+                  const anyCollapsed = platformGroups.some((g) => collapsed.has(g.id));
                   return (
                     <div className="flex justify-end">
                       <button
                         onClick={() =>
                           setCollapsed(
-                            anyCollapsed ? new Set() : new Set(channelGroups.map((g) => g.id)),
+                            anyCollapsed ? new Set() : new Set(platformGroups.map((g) => g.id)),
                           )
                         }
                         className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
@@ -585,7 +585,7 @@ function KnowledgePage() {
                     </div>
                   );
                 })()}
-                {channelGroups.map((g) => {
+                {platformGroups.map((g) => {
                   const isCollapsed = collapsed.has(g.id);
                   const Icon = g.platform ? PLATFORM_ICON[g.platform] : undefined;
                   return (
