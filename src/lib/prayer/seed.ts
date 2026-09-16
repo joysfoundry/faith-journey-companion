@@ -2459,8 +2459,8 @@ export function createSeedDatabase(): Database {
         channels: [
           {
             id: "chan-usccb-web",
-            platform: "website",
-            url: "https://www.usccb.org",
+            platforms: [{ platform: "website", url: "https://www.usccb.org" }],
+            kind: "other",
             pinned: true,
           },
         ],
@@ -2471,7 +2471,12 @@ export function createSeedDatabase(): Database {
         name: "Hallow",
         kind: "organization",
         channels: [
-          { id: "chan-hallow-web", platform: "website", url: "https://hallow.com", pinned: true },
+          {
+            id: "chan-hallow-web",
+            platforms: [{ platform: "website", url: "https://hallow.com" }],
+            kind: "other",
+            pinned: true,
+          },
         ],
         created_at: now,
       },
@@ -2480,7 +2485,11 @@ export function createSeedDatabase(): Database {
         name: "YouVersion",
         kind: "organization",
         channels: [
-          { id: "chan-youversion-web", platform: "website", url: "https://www.bible.com" },
+          {
+            id: "chan-youversion-web",
+            platforms: [{ platform: "website", url: "https://www.bible.com" }],
+            kind: "other",
+          },
         ],
         created_at: now,
       },

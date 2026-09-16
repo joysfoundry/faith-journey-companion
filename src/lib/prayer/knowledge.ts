@@ -1,10 +1,13 @@
 import type {
   Channel,
+  ChannelKind,
+  ChannelPlatform,
   ID,
   KnowledgeCategory,
   KnowledgeItem,
   KnowledgeStatus,
   LinkPlatform,
+  MediaFormat,
   Prayer,
   QuoteKind,
   Source,
@@ -262,9 +265,149 @@ export const LINK_PLATFORM_LABELS: Record<LinkPlatform, string> = {
   other: "Link",
 };
 
-/** Display label for a channel — its human note if set, else the platform name. */
+/**
+ * A channel's primary distribution (ACTS-204) — the first {platform, url}, which
+ * Home/pins open and which drives the icon/label. undefined only for a malformed
+ * channel with no platforms.
+ */
+export function channelPrimary(channel: Channel): ChannelPlatform | undefined {
+  return channel.platforms[0];
+}
+
+/** Every {platform, url} a channel is distributed on. */
+export function channelPlatforms(channel: Channel): ChannelPlatform[] {
+  return channel.platforms;
+}
+
+/** Display label for a channel — its show name if set, else the primary platform. */
 export function channelLabel(channel: Channel): string {
-  return channel.label?.trim() || LINK_PLATFORM_LABELS[channel.platform];
+  const primary = channelPrimary(channel);
+  return channel.label?.trim() || (primary ? LINK_PLATFORM_LABELS[primary.platform] : "Channel");
+}
+
+/**
+ * The user-facing word for a channel's KIND (ACTS-204) — how the middle tier is
+ * shown so the loaded word "channel" never surfaces: "Sunday Homilies · Show".
+ * `video` reads as "Show" (a video show), which is friendlier than "Video".
+ */
+export const CHANNEL_KIND_LABELS: Record<ChannelKind, string> = {
+  podcast: "Podcast",
+  video: "Show",
+  program: "Program",
+  social: "Social",
+  articles: "Articles",
+  store: "Store",
+  other: "Channel",
+};
+
+/** Channel kinds offered in the editor, in menu order. */
+export const CHANNEL_KIND_OPTIONS: ChannelKind[] = [
+  "video",
+  "podcast",
+  "program",
+  "social",
+  "articles",
+  "store",
+  "other",
+];
+
+/**
+ * What a channel's CONTENT is called, derived from its kind (ACTS-204) — the
+ * container names its children. A "lesson" is a lesson because it sits in a
+ * program, even when the lesson is really a video; a "post" may be a reel or a
+ * picture. `count` picks the plural. The underlying media can still vary.
+ */
+export function contentNoun(kind: ChannelKind | undefined, count = 1): string {
+  const nouns: Record<ChannelKind, [string, string]> = {
+    podcast: ["episode", "episodes"],
+    video: ["video", "videos"],
+    program: ["lesson", "lessons"],
+    social: ["post", "posts"],
+    articles: ["article", "articles"],
+    store: ["product", "products"],
+    other: ["item", "items"],
+  };
+  const pair = nouns[kind ?? "other"];
+  return count === 1 ? pair[0] : pair[1];
+}
+
+/** Display label for a media format (ACTS-204). */
+export const MEDIA_LABELS: Record<MediaFormat, string> = {
+  text: "Text",
+  audio: "Audio",
+  video: "Video",
+  image: "Image",
+};
+
+/** Media formats offered in the editor, in menu order. */
+export const MEDIA_OPTIONS: MediaFormat[] = ["text", "audio", "video", "image"];
+
+/**
+ * The default media format for a channel kind (ACTS-204) — a podcast is audio, a
+ * show is video, articles are text. A starting guess the user can change (a
+ * program lesson may be text or video; a social post may be image or video).
+ */
+export function mediaFromChannelKind(kind: ChannelKind | undefined): MediaFormat {
+  switch (kind) {
+    case "podcast":
+      return "audio";
+    case "video":
+      return "video";
+    case "program":
+      return "video";
+    case "social":
+      return "image";
+    case "articles":
+      return "text";
+    default:
+      return "text";
+  }
+}
+
+/**
+ * Backfill a media format from the legacy content `category` (ACTS-204) — so
+ * items saved before the media axis existed still filter by format. A best
+ * guess, editable afterward.
+ */
+export function mediaFromCategory(category: KnowledgeCategory): MediaFormat {
+  switch (category) {
+    case "video":
+      return "video";
+    case "podcast":
+      return "audio";
+    case "post":
+      return "image";
+    case "book":
+    case "article":
+    case "quote":
+    case "program":
+    default:
+      return "text";
+  }
+}
+
+/**
+ * Infer a channel's kind from its platform (ACTS-204) — the load-time backfill
+ * for channels saved before `kind` existed, and the starting guess when a new
+ * channel is added. A best guess only: a `/podcasts/` URL can hold a video show
+ * (Ascension's homilies), so the kind stays editable.
+ */
+export function kindFromPlatform(platform: LinkPlatform): ChannelKind {
+  switch (platform) {
+    case "podcast":
+      return "podcast";
+    case "youtube":
+      return "video";
+    case "store":
+      return "store";
+    case "instagram":
+    case "tiktok":
+    case "x":
+    case "facebook":
+      return "social";
+    default:
+      return "other";
+  }
 }
 
 /** The channel a content item came from, resolved against its Voice (if any). */
@@ -378,8 +521,11 @@ export function matchVoice(
   if (!id) return undefined;
   for (const voice of voices) {
     for (const channel of voice.channels ?? []) {
-      const ci = identityFromUrl(channel.url);
-      if (ci && sameIdentity(ci, id)) return { voice, channel };
+      // A channel may be distributed on several platforms — match any of them.
+      for (const p of channel.platforms) {
+        const ci = identityFromUrl(p.url);
+        if (ci && sameIdentity(ci, id)) return { voice, channel };
+      }
     }
   }
   return undefined;
@@ -624,13 +770,14 @@ export function pinnedLinks(voices: Voice[], items: KnowledgeItem[]): PinnedLink
   const out: PinnedLink[] = [];
   for (const v of voices) {
     for (const c of v.channels ?? []) {
-      if (c.pinned)
+      const primary = channelPrimary(c);
+      if (c.pinned && primary)
         out.push({
           ownerId: v.id,
           ownerName: v.name,
           ownerType: "voice",
-          platform: c.platform,
-          url: c.url,
+          platform: primary.platform,
+          url: primary.url,
           label: c.label,
         });
     }

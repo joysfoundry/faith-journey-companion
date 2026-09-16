@@ -14,7 +14,9 @@ import {
   detectVoiceKind,
   identityFromUrl,
   isHandlePlatform,
+  kindFromPlatform,
   matchVoice,
+  mediaFromCategory,
   orgBrandName,
   VOICE_KIND_LABELS,
   voiceFromLink,
@@ -223,8 +225,8 @@ export function QuickAddLink() {
               ...(vessel.channels ?? []),
               {
                 id: newChanId,
-                platform: detectPlatform(chanUrl),
-                url: chanUrl,
+                platforms: [{ platform: detectPlatform(chanUrl), url: chanUrl }],
+                kind: kindFromPlatform(detectPlatform(chanUrl)),
                 label: staged.channelLabel.trim() || undefined,
               },
             ],
@@ -244,8 +246,8 @@ export function QuickAddLink() {
         channelId = newId("chan");
         channels.push({
           id: channelId,
-          platform: detectPlatform(chanUrl),
-          url: chanUrl,
+          platforms: [{ platform: detectPlatform(chanUrl), url: chanUrl }],
+          kind: kindFromPlatform(detectPlatform(chanUrl)),
           label: staged.channelLabel.trim() || undefined,
         });
       }
@@ -262,6 +264,8 @@ export function QuickAddLink() {
       id: newId("know"),
       title: staged.title.trim() || fallbackTitle(staged.url, staged.siteName, NO_AUTHOR),
       category: staged.category,
+      // ACTS-204: default the media format from the category; editable later.
+      media: mediaFromCategory(staged.category),
       voice_id: voiceId,
       channel_id: channelId,
       links: [{ platform: staged.platform, url: staged.url }],

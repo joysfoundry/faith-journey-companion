@@ -42,6 +42,7 @@ import {
   VOICE_LABEL_SINGULAR,
   contentTitle,
   groupOf,
+  channelPrimary,
   hasStatus,
   isEmptyDraftVoice,
   isQuote,
@@ -126,7 +127,7 @@ interface VoiceGroup {
 function itemPlatform(item: KnowledgeItem, voiceById: Map<string, Voice>): LinkPlatform | undefined {
   if (item.channel_id && item.voice_id) {
     const channel = voiceById.get(item.voice_id)?.channels?.find((c) => c.id === item.channel_id);
-    if (channel) return channel.platform;
+    if (channel) return channelPrimary(channel)?.platform;
   }
   const links = item.links ?? [];
   return (links.find((l) => l.pinned) ?? links[0])?.platform;
@@ -751,15 +752,17 @@ function ChannelChips({
   return (
     <div className="mt-1.5 flex flex-wrap gap-1">
       {channels.map((c) => {
-        const Icon = PLATFORM_ICON[c.platform];
+        const primary = channelPrimary(c);
+        if (!primary) return null;
+        const Icon = PLATFORM_ICON[primary.platform];
         return (
         <span key={c.id} className="inline-flex items-center">
           <ExtLink
-            href={c.url}
+            href={primary.url}
             className="inline-flex items-center gap-1 rounded-l-full bg-secondary py-0.5 pl-2 pr-1 text-[11px] font-medium text-muted-foreground hover:text-primary"
           >
             <Icon className="size-3" aria-hidden />
-            {LINK_PLATFORM_LABELS[c.platform]}
+            {LINK_PLATFORM_LABELS[primary.platform]}
             <ExternalLink className="size-3" aria-hidden />
           </ExtLink>
           <button

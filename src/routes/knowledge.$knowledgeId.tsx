@@ -43,6 +43,10 @@ import {
   detectPlatform,
   allTags,
   hasStatus,
+  kindFromPlatform,
+  mediaFromCategory,
+  MEDIA_LABELS,
+  MEDIA_OPTIONS,
   QUOTE_KIND_LABELS,
   QUOTE_KIND_OPTIONS,
   isQuote,
@@ -67,7 +71,12 @@ import {
 } from "@/lib/bible/apps";
 import { newId } from "@/lib/prayer/compiler";
 import { BIBLE_BOOK_ID, bibleVersionBookId, useApp } from "@/lib/prayer/store";
-import type { KnowledgeCategory, KnowledgeItem, LinkPlatform } from "@/lib/prayer/types";
+import type {
+  KnowledgeCategory,
+  KnowledgeItem,
+  LinkPlatform,
+  MediaFormat,
+} from "@/lib/prayer/types";
 
 /**
  * Format a session's context date for display. A `yyyy-mm-dd` string parses as UTC
@@ -200,7 +209,13 @@ function KnowledgeRecordPage() {
       id,
       name: seed.name,
       kind: seed.kind,
-      channels: [{ id: chanId, platform: seed.platform, url: url.trim() }],
+      channels: [
+        {
+          id: chanId,
+          platforms: [{ platform: seed.platform, url: url.trim() }],
+          kind: kindFromPlatform(seed.platform),
+        },
+      ],
       created_at: new Date().toISOString(),
     });
     save({ voice_id: id, channel_id: chanId });
@@ -278,6 +293,26 @@ function KnowledgeRecordPage() {
                 ))}
               </select>
             </div>
+            {/* Media format (ACTS-204) — how you take it in (text/audio/video/image). */}
+            {!isQuote(item) ? (
+              <div className="space-y-1">
+                <label className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Media
+                </label>
+                <select
+                  value={item.media ?? mediaFromCategory(item.category)}
+                  onChange={(e) => save({ media: e.target.value as MediaFormat })}
+                  aria-label="Media"
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                >
+                  {MEDIA_OPTIONS.map((m) => (
+                    <option key={m} value={m}>
+                      {MEDIA_LABELS[m]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
             {isQuote(item) ? (
               <div className="space-y-2">
                 {/* Kind chooser (ACTS-181): what sort of passage this is. */}

@@ -19,13 +19,16 @@ import { PLATFORM_ICON } from "@/components/knowledge/platform-icon";
 import {
   CATEGORY_LABELS,
   CATEGORY_OPTIONS,
+  CHANNEL_KIND_LABELS,
   LINK_PLATFORM_LABELS,
   SECTION_LABEL,
+  channelLabel,
   STATUS_STEPS,
   VOICE_KIND_LABELS,
   VOICE_LABEL_SINGULAR,
   byStatusThenTitle,
   detectPlatform,
+  hasStatus,
   voiceSubtitle,
 } from "@/lib/prayer/knowledge";
 import { newId } from "@/lib/prayer/compiler";
@@ -163,38 +166,45 @@ function VoiceHubPage() {
             <h2 className="eyebrow">Channels</h2>
             <div className="overflow-hidden rounded-lg border border-border/60">
               <ul className="divide-y divide-border/60">
-                {voice!.channels.map((c) => {
-                  const Icon = PLATFORM_ICON[c.platform];
-                  return (
-                  <li key={c.id} className="flex items-center gap-2 px-4 py-3">
-                    <ExtLink
-                      href={c.url}
-                      className="flex min-w-0 flex-1 items-center gap-2 transition-colors hover:text-primary"
-                    >
-                      <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                {voice!.channels.map((c) => (
+                  <li key={c.id} className="space-y-2 px-4 py-3">
+                    <div className="flex items-center gap-2">
                       <span className="min-w-0 flex-1">
-                        <span className="block text-sm font-medium">
-                          {LINK_PLATFORM_LABELS[c.platform]}
-                        </span>
-                        <span className="block truncate text-xs text-muted-foreground">
-                          {c.label ? `${c.label} · ${c.url}` : c.url}
+                        <span className="block text-sm font-medium">{channelLabel(c)}</span>
+                        <span className="block text-xs text-muted-foreground">
+                          {CHANNEL_KIND_LABELS[c.kind ?? "other"]}
                         </span>
                       </span>
-                      <ExternalLink className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-                    </ExtLink>
-                    <button
-                      onClick={() => toggleChannelPin(voice!.id, c.id)}
-                      aria-label={c.pinned ? "Unpin from Home" : "Pin to Home"}
-                      className="shrink-0 p-1"
-                    >
-                      <Pin
-                        className={`size-4 ${c.pinned ? "fill-primary text-primary" : "text-muted-foreground"}`}
-                        aria-hidden
-                      />
-                    </button>
+                      <button
+                        onClick={() => toggleChannelPin(voice!.id, c.id)}
+                        aria-label={c.pinned ? "Unpin from Home" : "Pin to Home"}
+                        className="shrink-0 p-1"
+                      >
+                        <Pin
+                          className={`size-4 ${c.pinned ? "fill-primary text-primary" : "text-muted-foreground"}`}
+                          aria-hidden
+                        />
+                      </button>
+                    </div>
+                    {/* Every platform this show is distributed on (ACTS-204). */}
+                    <div className="flex flex-wrap gap-1.5">
+                      {c.platforms.map((p, i) => {
+                        const Icon = PLATFORM_ICON[p.platform];
+                        return (
+                          <ExtLink
+                            key={i}
+                            href={p.url}
+                            className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium text-muted-foreground hover:text-primary"
+                          >
+                            <Icon className="size-3" aria-hidden />
+                            {LINK_PLATFORM_LABELS[p.platform]}
+                            <ExternalLink className="size-3" aria-hidden />
+                          </ExtLink>
+                        );
+                      })}
+                    </div>
                   </li>
-                  );
-                })}
+                ))}
               </ul>
             </div>
           </section>
@@ -258,21 +268,25 @@ function VoiceHubPage() {
                         </button>
                       ) : null}
                     </div>
-                    <div className="mt-1.5 flex flex-wrap gap-1">
-                      {STATUS_STEPS.map((s) => (
-                        <button
-                          key={s.key}
-                          onClick={() => setKnowledgeStatus(item.id, s.key)}
-                          className={`rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors ${
-                            item.status === s.key
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-secondary text-muted-foreground hover:text-foreground"
-                          }`}
-                        >
-                          {s.label}
-                        </button>
-                      ))}
-                    </div>
+                    {/* Only completable content carries status — references
+                        (article/post/quote) never do (ACTS-204). */}
+                    {hasStatus(item.category) ? (
+                      <div className="mt-1.5 flex flex-wrap gap-1">
+                        {STATUS_STEPS.map((s) => (
+                          <button
+                            key={s.key}
+                            onClick={() => setKnowledgeStatus(item.id, s.key)}
+                            className={`rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors ${
+                              item.status === s.key
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-secondary text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
+                            {s.label}
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
                   </li>
                 ))}
               </ul>

@@ -15,7 +15,10 @@ import type {
   KnowledgeStatus,
   MassExperience,
   Channel,
+  ChannelKind,
+  ChannelPlatform,
   KnowledgeLink,
+  MediaFormat,
   LinkPlatform,
   MysteryContent,
   Prayer,
@@ -431,6 +434,67 @@ const detectPlatformSimple = (url: string): LinkPlatform => {
   return "website";
 };
 
+const CHANNEL_KINDS: ChannelKind[] = [
+  "podcast",
+  "video",
+  "program",
+  "social",
+  "articles",
+  "store",
+  "other",
+];
+
+/** Infer a channel kind from its platform — the load-time backfill for channels
+ *  saved before `kind` existed (ACTS-204). Mirrors `kindFromPlatform` in
+ *  knowledge.ts (kept local to the persistence layer, like `detectPlatformSimple`).
+ *  A starting guess only; the kind stays editable. */
+const channelKindFromPlatform = (p: LinkPlatform): ChannelKind => {
+  switch (p) {
+    case "podcast":
+      return "podcast";
+    case "youtube":
+      return "video";
+    case "store":
+      return "store";
+    case "instagram":
+    case "tiktok":
+    case "x":
+    case "facebook":
+      return "social";
+    default:
+      return "other";
+  }
+};
+
+/** Keep a stored channel kind if valid, else backfill it from the platform. */
+const coerceChannelKind = (k: unknown, platform: LinkPlatform): ChannelKind =>
+  typeof k === "string" && (CHANNEL_KINDS as string[]).includes(k)
+    ? (k as ChannelKind)
+    : channelKindFromPlatform(platform);
+
+const MEDIA_FORMATS: MediaFormat[] = ["text", "audio", "video", "image"];
+
+/** Backfill a media format from the legacy content category (ACTS-204). Mirrors
+ *  `mediaFromCategory` in knowledge.ts (kept local to the persistence layer). */
+const mediaFromCategoryLocal = (category: KnowledgeCategory): MediaFormat => {
+  switch (category) {
+    case "video":
+      return "video";
+    case "podcast":
+      return "audio";
+    case "post":
+      return "image";
+    default:
+      return "text"; // book, article, quote, program
+  }
+};
+
+/** Keep a stored media format if valid, else backfill it from the category. */
+const coerceMedia = (m: unknown, category: KnowledgeCategory): MediaFormat =>
+  typeof m === "string" && (MEDIA_FORMATS as string[]).includes(m)
+    ? (m as MediaFormat)
+    : mediaFromCategoryLocal(category);
+
 const genId = (prefix: string): string => `${prefix}-${Math.random().toString(36).slice(2)}`;
 
 const strOf = (raw: Record<string, unknown>, k: string): string | undefined =>
@@ -454,9 +518,17 @@ function normalizeLinks(raw: unknown): KnowledgeLink[] {
     }));
 }
 
-/** Normalize raw channels (links with a stable id). */
+/** Normalize raw channels (links with a stable id). Each becomes a one-platform
+ *  channel; kind is inferred from the platform — these come from legacy
+ *  `person.links` that predate `kind` and multi-platform (ACTS-204). */
 function normalizeChannels(raw: unknown): Channel[] {
-  return normalizeLinks(raw).map((l) => ({ ...l, id: genId("chan") }));
+  return normalizeLinks(raw).map((l) => ({
+    id: genId("chan"),
+    platforms: [{ platform: l.platform, url: l.url }],
+    kind: channelKindFromPlatform(l.platform),
+    label: l.label,
+    pinned: l.pinned,
+  }));
 }
 
 /** Normalize a stored Voice record. */
@@ -467,11 +539,20 @@ function normalizeVoice(raw: Record<string, unknown>): Voice {
     ? (raw["channels"] as unknown[]).map((c) => {
         const rec = c as Record<string, unknown>;
         const id = strOf(rec, "id") ?? genId("chan");
-        const url = strOf(rec, "url") ?? "";
+        // Multi-platform (ACTS-204): read the new `platforms` list, else migrate
+        // the pre-204 scalar `platform`/`url` into a one-item list.
+        const platforms: ChannelPlatform[] = Array.isArray(rec["platforms"])
+          ? (rec["platforms"] as unknown[]).map((p) => {
+              const pr = p as Record<string, unknown>;
+              return { platform: coercePlatform(pr["platform"]), url: strOf(pr, "url") ?? "" };
+            })
+          : [{ platform: coercePlatform(rec["platform"]), url: strOf(rec, "url") ?? "" }];
+        const primaryPlatform = platforms[0]?.platform ?? "other";
         return {
           id,
-          platform: coercePlatform(rec["platform"]),
-          url,
+          platforms,
+          // Keep a saved kind; backfill from the primary platform for pre-204 channels.
+          kind: coerceChannelKind(rec["kind"], primaryPlatform),
           label: strOf(rec, "label"),
           pinned: Boolean(rec["pinned"] ?? rec["favorite"]) || undefined,
         };
@@ -501,7 +582,13 @@ function voiceFromLegacyItem(raw: Record<string, unknown>): Voice {
   const channels: Channel[] = normalizeChannels(raw["links"]);
   const url = strOf(raw, "url");
   if (url) {
-    channels.push({ id: genId("chan"), platform: detectPlatformSimple(url), url, pinned });
+    const platform = detectPlatformSimple(url);
+    channels.push({
+      id: genId("chan"),
+      platforms: [{ platform, url }],
+      kind: channelKindFromPlatform(platform),
+      pinned,
+    });
   } else if (pinned && channels[0]) {
     // A pinned person had no scalar url — keep it on Home via its first channel.
     channels[0] = { ...channels[0], pinned: true };
@@ -559,6 +646,8 @@ function normalizeContent(raw: Record<string, unknown>): KnowledgeItem {
     // A quote has no title (its text lives in `body`); don't fabricate one.
     title: strOf(raw, "title") ?? (category === "quote" ? "" : "Untitled"),
     category,
+    // ACTS-204: the media format. Backfilled from category for pre-204 items.
+    media: coerceMedia(raw["media"], category),
     voice_id: strOf(raw, "voice_id") ?? strOf(raw, "author_id"),
     channel_id: strOf(raw, "channel_id"),
     body: strOf(raw, "body"),

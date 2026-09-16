@@ -692,16 +692,67 @@ export type LinkPlatform =
   "instagram" | "tiktok" | "youtube" | "x" | "facebook" | "podcast" | "website" | "store" | "other";
 
 /**
- * A Channel — the middle level. A Voice's account/presence on one platform
- * (its Instagram, its podcast, its website). A Voice has many. `pinned` pins
- * this one channel to Home ("show me their podcast") — the same "Pin to Home"
- * concept as `KnowledgeItem.pinned` and `KnowledgeLink.pinned` (ACTS-177).
+ * A Channel's *kind* — WHAT the named body of work is (a show, a podcast, a
+ * study program, a social account, an article feed, a store), as distinct from
+ * its `platform` (WHERE it's distributed — YouTube/Spotify/Instagram/its own
+ * app). The two are different axes: Ascension's "Sunday Homilies" is a `video`
+ * kind distributed on their app AND YouTube AND Spotify; a solo creator's
+ * YouTube presence is a `video` kind on the one YouTube platform (they only
+ * *look* like one thing). The kind also NAMES a channel's content — see
+ * `contentNoun` in `knowledge.ts` (podcast→episode, video→video, program→lesson,
+ * social→post, articles→article, store→product). A channel is a *container*, so
+ * it carries no completion status; only the content items within it do (ACTS-204).
+ */
+export type ChannelKind =
+  "podcast" | "video" | "program" | "social" | "articles" | "store" | "other";
+
+/**
+ * A content item's *media* — its sensory FORMAT (ACTS-204), the axis your
+ * reference calls "media": how you take it in, distinct from the channel's kind
+ * (what series it belongs to) and its content category (what form it is). A
+ * podcast episode is `audio`; a homily video is `video`; an article is `text`; a
+ * reel/photo is `image`. Optional; `loadDatabase` backfills it from the legacy
+ * `category` so nothing resets, and it defaults from the channel kind when set.
+ */
+export type MediaFormat = "text" | "audio" | "video" | "image";
+
+/**
+ * One place a Channel is distributed (ACTS-204) — a {platform, url} pair. A
+ * single show lists several: Ascension's "Sunday Homilies" on their app AND
+ * YouTube AND Spotify. The first entry is the primary (what Home/pins open) —
+ * see `channelPrimary` in `knowledge.ts`.
+ */
+export interface ChannelPlatform {
+  platform: LinkPlatform;
+  url: string;
+}
+
+/**
+ * A Channel — the middle level. A Voice's named body of work (a show, a podcast,
+ * a program, an account). Shown to users *as its `kind`* (Show/Podcast/Program/…),
+ * never with the bare word "channel", which is reserved for the distribution
+ * sense people know (a "YouTube channel"). A Voice has many. `pinned` pins this
+ * one channel to Home ("show me their podcast") — the same "Pin to Home" concept
+ * as `KnowledgeItem.pinned` and `KnowledgeLink.pinned` (ACTS-177).
  */
 export interface Channel {
   id: ID;
-  platform: LinkPlatform;
-  url: string;
-  /** Optional human note ("main channel", "Spanish account"). */
+  /**
+   * Where the show is distributed — one or more {platform, url} pairs
+   * (app + YouTube + Spotify), matching the four-tier model's "Platform(s)"
+   * (ACTS-204). The first is the primary. Pre-multi-platform channels stored a
+   * scalar `platform`/`url`; `loadDatabase` migrates that to a one-item list.
+   */
+  platforms: ChannelPlatform[];
+  /**
+   * What this channel *is* (ACTS-204). Optional for back-compat; `loadDatabase`
+   * backfills it from the primary platform at load (podcast→podcast,
+   * youtube→video, store→store, instagram/tiktok/x/facebook→social, else→other)
+   * so nothing resets. Editable — a `/podcasts/` path may actually be a video
+   * show (Ascension's homilies), so the inferred kind is a starting point.
+   */
+  kind?: ChannelKind | undefined;
+  /** The show name ("After Sunday Mass"), else the primary platform's label. */
   label?: string | undefined;
   /** Pinned to Home. Pinning is per-channel, not per-Voice. */
   pinned?: boolean | undefined;
@@ -783,6 +834,13 @@ export interface KnowledgeItem {
   id: ID;
   title: string;
   category: KnowledgeCategory;
+  /**
+   * The sensory FORMAT of this item (ACTS-204) — text/audio/video/image, the
+   * axis distinct from `category` (what form) and the channel's kind (what
+   * series). Optional; `loadDatabase` backfills it from `category` so nothing
+   * resets, and the editor defaults it from the channel kind when there is one.
+   */
+  media?: MediaFormat | undefined;
   /** The Voice this content is attributed to. Optional — content can be unattributed. */
   voice_id?: ID | undefined;
   /** Which of the Voice's channels this came from (e.g. their Instagram). Optional. */
