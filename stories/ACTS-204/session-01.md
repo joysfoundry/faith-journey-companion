@@ -60,11 +60,31 @@ No unsaved code (working tree clean before this handoff).
 
 ## Next
 
-Model is done. Remaining work, in JC's target-view order:
+**START HERE → slice (d), the paste-flow resolver.** End-of-session test surfaced the
+concrete gap: pasting **`https://app.ascensionpress.com/podcasts`** saved a **Post** ("Podcasts |
+The Ascension Web App") under Ascension — it should be a **Collection (Podcast)**. Cause:
+`QuickAddLink` **always** calls `addKnowledgeItem` (creates Content); it has **no
+Collection-vs-Content detection**. The model is right; the resolver isn't built.
+
+Plan (proposed; JC dismissed the scope question — reopen it fresh):
+- Add `detectSourceType(url)` → `"collection" | "content"` by URL shape:
+  - **Collection roots:** `/@handle`, `instagram.com/username`, `/podcasts`, `/podcasts/<show>`,
+    `youtube.com/@…`/`/channel/…`, a bare site, a show/series landing.
+  - **Content items:** `watch?v=`, `/reel/`, `?episodeId=`, `/p/<id>`, a specific article/episode.
+- A **collection-root** paste → add a **Collection** to the Vessel (kind from the path,
+  `/podcasts`→podcast), NOT a content Post. Item URLs → today's content path.
+- Scope options offered (pick in the fresh chat): **core detection now** / **full slice d**
+  (+ "Part of" autocomplete, canonical/original URL stripping `utm_*`/`stkn`/`entryPoint`,
+  confirmation card) / just-fix-the-label stopgap. Plus: auto-apply vs a resolved-and-editable
+  staged card (JC leaned unstated — recommend editable).
+
+Then the three views (unchanged from below), then ACTS-187.
+
+Remaining work, in JC's target-view order:
 1. **Platform → Collection → Content** — today it's Platform → Content (flat); add the Collection nesting.
 2. **Collection → Content** — a new "Collections" view (the named show with its content nested). Not built.
 3. **Voice → Collection and Content** — today's "Voices" view; largely there. Decide: an item whose `voice_id` (Fr. Mike) differs from its collection owner (Ascension) should surface under **both** (JC).
-4. **URL resolver / paste flow** (slice d) — implement the URL-shape rule above: Collection-vs-Content detection, "Part of" autocomplete, canonical/original URL. Pattern-only.
+4. **URL resolver / paste flow** (slice d) — see START HERE above.
 5. **host/co-attribution many-to-many** = ACTS-202 (deferred).
 6. **Reclassification** of any legacy "series-as-content" into Collections — deferred (none pressing; Bible in a Year is correctly a program+audio content item for now).
 7. Then **ACTS-187** (unified add form) per the roadmap.
