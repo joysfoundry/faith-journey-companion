@@ -42,7 +42,7 @@ import {
   VOICE_LABEL_SINGULAR,
   contentTitle,
   groupOf,
-  channelPrimary,
+  collectionPrimary,
   hasStatus,
   isEmptyDraftVoice,
   isQuote,
@@ -58,7 +58,7 @@ import {
 import { bibleBookName } from "@/lib/bible/apps";
 import { isBibleBookId, isBibleBookVisible, useApp } from "@/lib/prayer/store";
 import type {
-  Channel,
+  Collection,
   KnowledgeItem,
   KnowledgeStatus,
   LinkPlatform,
@@ -84,7 +84,7 @@ type FilterKey = "all" | KnowledgeGroup | "voice" | "channel";
 
 const FILTERS: { key: FilterKey; label: string }[] = [
   // Grouped-view pills, no "By" prefix (JC): the person/org grouping is a Voice,
-  // the platform grouping a Channel. (The section umbrella "Vessels" is unchanged
+  // the platform grouping a Collection. (The section umbrella "Vessels" is unchanged
   // — the Vessel-vs-Voice concept is still being worked out.)
   { key: "voice", label: "Voices" },
   { key: "channel", label: "Channel" },
@@ -95,7 +95,7 @@ const FILTERS: { key: FilterKey; label: string }[] = [
 /** The virtual bucket id for content with no Voice. */
 const GENERAL_ID = "general";
 
-/** "1 piece of content" / "3 pieces of content" — counts saved content, not channels. */
+/** "1 piece of content" / "3 pieces of content" — counts saved content, not collections. */
 const contentCountLabel = (n: number) => `${n} ${n === 1 ? "piece" : "pieces"} of content`;
 
 /**
@@ -120,14 +120,14 @@ interface VoiceGroup {
 }
 
 /**
- * The platform a content item lives on, for the By-Channel view: the specific
- * channel it came from (`channel_id`), else its pinned/first link's platform,
+ * The platform a content item lives on, for the By-Collection view: the specific
+ * channel it came from (`collection_id`), else its pinned/first link's platform,
  * else none (→ the No-channel bucket). Quotes and linkless items have none.
  */
 function itemPlatform(item: KnowledgeItem, voiceById: Map<string, Voice>): LinkPlatform | undefined {
-  if (item.channel_id && item.voice_id) {
-    const channel = voiceById.get(item.voice_id)?.channels?.find((c) => c.id === item.channel_id);
-    if (channel) return channelPrimary(channel)?.platform;
+  if (item.collection_id && item.voice_id) {
+    const channel = voiceById.get(item.voice_id)?.collections?.find((c) => c.id === item.collection_id);
+    if (channel) return collectionPrimary(channel)?.platform;
   }
   const links = item.links ?? [];
   return (links.find((l) => l.pinned) ?? links[0])?.platform;
@@ -142,7 +142,7 @@ function byTitle(a: KnowledgeItem, b: KnowledgeItem): number {
   return (a.title ?? "").localeCompare(b.title ?? "", undefined, { sensitivity: "base" });
 }
 
-/** A platform (or the virtual No-channel bucket) with its content, for the By-Channel view. */
+/** A platform (or the virtual No-channel bucket) with its content, for the By-Collection view. */
 interface ChannelGroup {
   id: string;
   name: string;
@@ -165,7 +165,7 @@ function KnowledgePage() {
     toggleContentLinkPin,
     toggleItemPinned,
     deleteVoice,
-    toggleChannelPin,
+    toggleCollectionPin,
     upsertVoice,
   } = useApp();
   const { add } = Route.useSearch();
@@ -323,12 +323,12 @@ function KnowledgePage() {
     return groups;
   }, [voices, items, draftVoiceId, q]);
 
-  // Grouped view (By Channel): content bucketed by the platform it lives on,
+  // Grouped view (By Collection): content bucketed by the platform it lives on,
   // sections alphabetical by platform label (all Instagrams together, all
   // YouTubes together). Content on no resolvable platform is omitted (JC).
   // Search filters within.
   const channelGroups = useMemo<ChannelGroup[]>(() => {
-    // By-Channel only shows content that actually lives on a channel — items with
+    // By-Collection only shows content that actually lives on a channel — items with
     // none (quotes, linkless saves) are simply omitted, the way the Books filter
     // shows only books (JC). No "No channel" catch-all bucket.
     const byPlatform = new Map<LinkPlatform, KnowledgeItem[]>();
@@ -403,7 +403,7 @@ function KnowledgePage() {
             Done
           </Button>
           <p className="mt-2 text-center text-[11px] text-muted-foreground">
-            Add the {VOICE_LABEL_SINGULAR.toLowerCase()}&apos;s channels and content above. An empty{" "}
+            Add the {VOICE_LABEL_SINGULAR.toLowerCase()}&apos;s collections and content above. An empty{" "}
             {VOICE_LABEL_SINGULAR.toLowerCase()} is discarded.
           </p>
         </TabsContent>
@@ -516,11 +516,11 @@ function KnowledgePage() {
                               .filter(Boolean)
                               .join(" · ")}
                           </p>
-                          {g.voice?.channels?.length ? (
-                            <ChannelChips
+                          {g.voice?.collections?.length ? (
+                            <CollectionChips
                               voiceId={g.voice.id}
-                              channels={g.voice.channels}
-                              toggle={toggleChannelPin}
+                              collections={g.voice.collections}
+                              toggle={toggleCollectionPin}
                             />
                           ) : null}
                         </div>
@@ -714,11 +714,11 @@ function KnowledgePage() {
                       {v.name || "Untitled"}
                     </Link>
                     <p className="truncate text-xs text-muted-foreground">{voiceSubtitle(v)}</p>
-                    {v.channels?.length ? (
-                      <ChannelChips
+                    {v.collections?.length ? (
+                      <CollectionChips
                         voiceId={v.id}
-                        channels={v.channels}
-                        toggle={toggleChannelPin}
+                        collections={v.collections}
+                        toggle={toggleCollectionPin}
                       />
                     ) : null}
                   </div>
@@ -740,19 +740,19 @@ function KnowledgePage() {
 /** A Voice's channel chips (pinnable), shared by the flat list and grouped header.
  *  A chip reads as the channel — its platform icon + name — not a free-text label
  *  (ACTS-178); the channel's own name still lives on its detail page. */
-function ChannelChips({
+function CollectionChips({
   voiceId,
-  channels,
+  collections,
   toggle,
 }: {
   voiceId: string;
-  channels: Channel[];
-  toggle: (voiceId: string, channelId: string) => void;
+  collections: Collection[];
+  toggle: (voiceId: string, collectionId: string) => void;
 }) {
   return (
     <div className="mt-1.5 flex flex-wrap gap-1">
-      {channels.map((c) => {
-        const primary = channelPrimary(c);
+      {collections.map((c) => {
+        const primary = collectionPrimary(c);
         if (!primary) return null;
         const Icon = PLATFORM_ICON[primary.platform];
         return (

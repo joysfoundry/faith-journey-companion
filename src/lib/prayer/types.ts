@@ -688,14 +688,14 @@ export type KnowledgeCategory =
 export type QuoteKind = "open" | "scripture" | "book" | "article";
 
 /**
- * The platform a Channel or a Content link points at. Drives the icon/label and
+ * The platform a Collection or a Content link points at. Drives the icon/label and
  * the auto-detect that matches a pasted URL back to a Voice's channel.
  */
 export type LinkPlatform =
   "instagram" | "tiktok" | "youtube" | "x" | "facebook" | "podcast" | "website" | "store" | "other";
 
 /**
- * A Channel's *kind* — WHAT the named body of work is (a show, a podcast, a
+ * A Collection's *kind* — WHAT the named body of work is (a show, a podcast, a
  * study program, a social account, an article feed, a store), as distinct from
  * its `platform` (WHERE it's distributed — YouTube/Spotify/Instagram/its own
  * app). The two are different axes: Ascension's "Sunday Homilies" is a `video`
@@ -706,7 +706,7 @@ export type LinkPlatform =
  * social→post, articles→article, store→product). A channel is a *container*, so
  * it carries no completion status; only the content items within it do (ACTS-204).
  */
-export type ChannelKind =
+export type CollectionKind =
   "podcast" | "video" | "program" | "social" | "articles" | "store" | "other";
 
 /**
@@ -720,33 +720,33 @@ export type ChannelKind =
 export type MediaFormat = "text" | "audio" | "video" | "image";
 
 /**
- * One place a Channel is distributed (ACTS-204) — a {platform, url} pair. A
+ * One place a Collection is distributed (ACTS-204) — a {platform, url} pair. A
  * single show lists several: Ascension's "Sunday Homilies" on their app AND
  * YouTube AND Spotify. The first entry is the primary (what Home/pins open) —
- * see `channelPrimary` in `knowledge.ts`.
+ * see `collectionPrimary` in `knowledge.ts`.
  */
-export interface ChannelPlatform {
+export interface CollectionPlatform {
   platform: LinkPlatform;
   url: string;
 }
 
 /**
- * A Channel — the middle level. A Voice's named body of work (a show, a podcast,
+ * A Collection — the middle level. A Voice's named body of work (a show, a podcast,
  * a program, an account). Shown to users *as its `kind`* (Show/Podcast/Program/…),
  * never with the bare word "channel", which is reserved for the distribution
  * sense people know (a "YouTube channel"). A Voice has many. `pinned` pins this
  * one channel to Home ("show me their podcast") — the same "Pin to Home" concept
  * as `KnowledgeItem.pinned` and `KnowledgeLink.pinned` (ACTS-177).
  */
-export interface Channel {
+export interface Collection {
   id: ID;
   /**
    * Where the show is distributed — one or more {platform, url} pairs
    * (app + YouTube + Spotify), matching the four-tier model's "Platform(s)"
-   * (ACTS-204). The first is the primary. Pre-multi-platform channels stored a
+   * (ACTS-204). The first is the primary. Pre-multi-platform collections stored a
    * scalar `platform`/`url`; `loadDatabase` migrates that to a one-item list.
    */
-  platforms: ChannelPlatform[];
+  platforms: CollectionPlatform[];
   /**
    * What this channel *is* (ACTS-204). Optional for back-compat; `loadDatabase`
    * backfills it from the primary platform at load (podcast→podcast,
@@ -754,7 +754,7 @@ export interface Channel {
    * so nothing resets. Editable — a `/podcasts/` path may actually be a video
    * show (Ascension's homilies), so the inferred kind is a starting point.
    */
-  kind?: ChannelKind | undefined;
+  kind?: CollectionKind | undefined;
   /** The show name ("After Sunday Mass"), else the primary platform's label. */
   label?: string | undefined;
   /** Pinned to Home. Pinning is per-channel, not per-Voice. */
@@ -771,9 +771,9 @@ export interface Channel {
 
 /**
  * Where a specific piece of Content lives — an Amazon / Audible page, a YouTube
- * video, an episode link. Distinct from a Channel (a Voice's ongoing account):
+ * video, an episode link. Distinct from a Collection (a Voice's ongoing account):
  * this points at the one work. `pinned` pins the link to Home — the same
- * "Pin to Home" concept as `Channel.pinned` and `KnowledgeItem.pinned` (ACTS-177).
+ * "Pin to Home" concept as `Collection.pinned` and `KnowledgeItem.pinned` (ACTS-177).
  */
 export interface KnowledgeLink {
   platform: LinkPlatform;
@@ -796,7 +796,7 @@ export type VoiceKind = "individual" | "organization" | "ministry";
 /**
  * A Voice = the *who* behind content: a person, an organization/company, or a
  * ministry you follow (Fr. Mike, the Vatican, Sisters of Life, Hallow). It owns
- * its `channels` (accounts on each platform) and is the parent of any
+ * its `collections` (accounts on each platform) and is the parent of any
  * `KnowledgeItem` attributed to it. The display label for the whole concept
  * ("Voices") lives in a single constant in `knowledge.ts` for easy renaming.
  */
@@ -805,7 +805,7 @@ export interface Voice {
   name: string;
   kind: VoiceKind;
   /** This Voice's accounts, one per platform presence. */
-  channels?: Channel[] | undefined;
+  collections?: Collection[] | undefined;
   notes?: string | undefined;
   created_at: string;
 }
@@ -814,7 +814,7 @@ export interface Voice {
  * One piece of Content in the library — a book, article, video, podcast, post,
  * or guided program (the *what*). It may belong to a `Voice` (`voice_id`, the
  * *who* — optional; content can sit unattributed), may name the specific
- * `channel_id` it came from, and may carry its own `links` (where to get it —
+ * `collection_id` it came from, and may carry its own `links` (where to get it —
  * an Amazon page, a video), or be linkless.
  * - `status` (not_started → in_progress → finished) tracks progress;
  * - `start_date`/`target_date` apply to programs (absent = open-ended plan);
@@ -846,8 +846,8 @@ export interface KnowledgeItem {
   media?: MediaFormat | undefined;
   /** The Voice this content is attributed to. Optional — content can be unattributed. */
   voice_id?: ID | undefined;
-  /** Which of the Voice's channels this came from (e.g. their Instagram). Optional. */
-  channel_id?: ID | undefined;
+  /** Which of the Voice's collections this came from (e.g. their Instagram). Optional. */
+  collection_id?: ID | undefined;
   /**
    * The quotation text — the primary payload of a `quote`, which has no title,
    * link, or progress. Empty for other categories.

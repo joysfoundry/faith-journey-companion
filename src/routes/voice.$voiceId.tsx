@@ -19,10 +19,10 @@ import { PLATFORM_ICON } from "@/components/knowledge/platform-icon";
 import {
   CATEGORY_LABELS,
   CATEGORY_OPTIONS,
-  CHANNEL_KIND_LABELS,
+  COLLECTION_KIND_LABELS,
   LINK_PLATFORM_LABELS,
   SECTION_LABEL,
-  channelLabel,
+  collectionLabel,
   STATUS_STEPS,
   VOICE_KIND_LABELS,
   VOICE_LABEL_SINGULAR,
@@ -56,7 +56,7 @@ function VoiceHubPage() {
     db,
     ready,
     deleteVoice,
-    toggleChannelPin,
+    toggleCollectionPin,
     addKnowledgeItem,
     setKnowledgeStatus,
     deleteKnowledgeItem,
@@ -161,22 +161,22 @@ function VoiceHubPage() {
         )}
 
         {/* Channels (view) */}
-        {!isGeneral && voice!.channels?.length ? (
+        {!isGeneral && voice!.collections?.length ? (
           <section className="space-y-2">
-            <h2 className="eyebrow">Channels</h2>
+            <h2 className="eyebrow">Collections</h2>
             <div className="overflow-hidden rounded-lg border border-border/60">
               <ul className="divide-y divide-border/60">
-                {voice!.channels.map((c) => (
+                {voice!.collections.map((c) => (
                   <li key={c.id} className="space-y-2 px-4 py-3">
                     <div className="flex items-center gap-2">
                       <span className="min-w-0 flex-1">
-                        <span className="block text-sm font-medium">{channelLabel(c)}</span>
+                        <span className="block text-sm font-medium">{collectionLabel(c)}</span>
                         <span className="block text-xs text-muted-foreground">
-                          {CHANNEL_KIND_LABELS[c.kind ?? "other"]}
+                          {COLLECTION_KIND_LABELS[c.kind ?? "other"]}
                         </span>
                       </span>
                       <button
-                        onClick={() => toggleChannelPin(voice!.id, c.id)}
+                        onClick={() => toggleCollectionPin(voice!.id, c.id)}
                         aria-label={c.pinned ? "Unpin from Home" : "Pin to Home"}
                         className="shrink-0 p-1"
                       >

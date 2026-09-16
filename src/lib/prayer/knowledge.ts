@@ -1,7 +1,7 @@
 import type {
-  Channel,
-  ChannelKind,
-  ChannelPlatform,
+  Collection,
+  CollectionKind,
+  CollectionPlatform,
   ID,
   KnowledgeCategory,
   KnowledgeItem,
@@ -270,19 +270,19 @@ export const LINK_PLATFORM_LABELS: Record<LinkPlatform, string> = {
  * Home/pins open and which drives the icon/label. undefined only for a malformed
  * channel with no platforms.
  */
-export function channelPrimary(channel: Channel): ChannelPlatform | undefined {
+export function collectionPrimary(channel: Collection): CollectionPlatform | undefined {
   return channel.platforms[0];
 }
 
 /** Every {platform, url} a channel is distributed on. */
-export function channelPlatforms(channel: Channel): ChannelPlatform[] {
+export function collectionPlatforms(channel: Collection): CollectionPlatform[] {
   return channel.platforms;
 }
 
 /** Display label for a channel — its show name if set, else the primary platform. */
-export function channelLabel(channel: Channel): string {
-  const primary = channelPrimary(channel);
-  return channel.label?.trim() || (primary ? LINK_PLATFORM_LABELS[primary.platform] : "Channel");
+export function collectionLabel(channel: Collection): string {
+  const primary = collectionPrimary(channel);
+  return channel.label?.trim() || (primary ? LINK_PLATFORM_LABELS[primary.platform] : "Collection");
 }
 
 /**
@@ -290,18 +290,18 @@ export function channelLabel(channel: Channel): string {
  * shown so the loaded word "channel" never surfaces: "Sunday Homilies · Show".
  * `video` reads as "Show" (a video show), which is friendlier than "Video".
  */
-export const CHANNEL_KIND_LABELS: Record<ChannelKind, string> = {
+export const COLLECTION_KIND_LABELS: Record<CollectionKind, string> = {
   podcast: "Podcast",
   video: "Show",
   program: "Program",
   social: "Social",
   articles: "Articles",
   store: "Store",
-  other: "Channel",
+  other: "Collection",
 };
 
-/** Channel kinds offered in the editor, in menu order. */
-export const CHANNEL_KIND_OPTIONS: ChannelKind[] = [
+/** Collection kinds offered in the editor, in menu order. */
+export const COLLECTION_KIND_OPTIONS: CollectionKind[] = [
   "video",
   "podcast",
   "program",
@@ -317,8 +317,8 @@ export const CHANNEL_KIND_OPTIONS: ChannelKind[] = [
  * program, even when the lesson is really a video; a "post" may be a reel or a
  * picture. `count` picks the plural. The underlying media can still vary.
  */
-export function contentNoun(kind: ChannelKind | undefined, count = 1): string {
-  const nouns: Record<ChannelKind, [string, string]> = {
+export function contentNoun(kind: CollectionKind | undefined, count = 1): string {
+  const nouns: Record<CollectionKind, [string, string]> = {
     podcast: ["episode", "episodes"],
     video: ["video", "videos"],
     program: ["lesson", "lessons"],
@@ -347,7 +347,7 @@ export const MEDIA_OPTIONS: MediaFormat[] = ["text", "audio", "video", "image"];
  * show is video, articles are text. A starting guess the user can change (a
  * program lesson may be text or video; a social post may be image or video).
  */
-export function mediaFromChannelKind(kind: ChannelKind | undefined): MediaFormat {
+export function mediaFromCollectionKind(kind: CollectionKind | undefined): MediaFormat {
   switch (kind) {
     case "podcast":
       return "audio";
@@ -407,11 +407,11 @@ export function detectMedia(url?: string): MediaFormat {
 
 /**
  * Infer a channel's kind from its platform (ACTS-204) — the load-time backfill
- * for channels saved before `kind` existed, and the starting guess when a new
+ * for collections saved before `kind` existed, and the starting guess when a new
  * channel is added. A best guess only: a `/podcasts/` URL can hold a video show
  * (Ascension's homilies), so the kind stays editable.
  */
-export function kindFromPlatform(platform: LinkPlatform): ChannelKind {
+export function kindFromPlatform(platform: LinkPlatform): CollectionKind {
   switch (platform) {
     case "podcast":
       return "podcast";
@@ -430,9 +430,9 @@ export function kindFromPlatform(platform: LinkPlatform): ChannelKind {
 }
 
 /** The channel a content item came from, resolved against its Voice (if any). */
-export function channelOf(item: KnowledgeItem, voice: Voice | undefined): Channel | undefined {
-  if (!voice || !item.channel_id) return undefined;
-  return voice.channels?.find((c) => c.id === item.channel_id);
+export function collectionOf(item: KnowledgeItem, voice: Voice | undefined): Collection | undefined {
+  if (!voice || !item.collection_id) return undefined;
+  return voice.collections?.find((c) => c.id === item.collection_id);
 }
 
 /** Platforms offered in the channel/link editor, in menu order. */
@@ -477,7 +477,7 @@ export function detectPlatform(url?: string): LinkPlatform {
 /**
  * Platforms whose channel is identified by an @username (Instagram, TikTok, X,
  * podcast) rather than a channel/show/site *name* (YouTube, website, …). Drives
- * the channel-name field's style and placeholder ("@username" vs "Channel name").
+ * the channel-name field's style and placeholder ("@username" vs "Collection name").
  */
 export function isHandlePlatform(p: LinkPlatform): boolean {
   return p === "instagram" || p === "tiktok" || p === "x" || p === "podcast";
@@ -529,17 +529,17 @@ function sameIdentity(
 
 /**
  * Find the saved Voice (and matching channel) a URL belongs to, by matching the
- * URL's identity against each Voice's channels. Powers auto-linking a pasted
+ * URL's identity against each Voice's collections. Powers auto-linking a pasted
  * post to its Voice.
  */
 export function matchVoice(
   url: string | undefined,
   voices: Voice[],
-): { voice: Voice; channel: Channel } | undefined {
+): { voice: Voice; channel: Collection } | undefined {
   const id = identityFromUrl(url);
   if (!id) return undefined;
   for (const voice of voices) {
-    for (const channel of voice.channels ?? []) {
+    for (const channel of voice.collections ?? []) {
       // A channel may be distributed on several platforms — match any of them.
       for (const p of channel.platforms) {
         const ci = identityFromUrl(p.url);
@@ -608,7 +608,7 @@ export function isEmptyDraftVoice(
   // an older hydration (see normalizeVoice). Treat it as untouched so it can be
   // pruned like any other empty draft.
   const untouchedName = !v.name.trim() || v.name === "New voice" || v.name === "Untitled";
-  const noChannels = !(v.channels ?? []).length;
+  const noChannels = !(v.collections ?? []).length;
   const noContent = !items.some((i) => i.voice_id === voiceId);
   return untouchedName && noChannels && noContent;
 }
@@ -748,9 +748,9 @@ export function primaryUrl(item: KnowledgeItem): string | undefined {
 
 /** Pretty one-line detail for a Voice row. */
 export function voiceSubtitle(voice: Voice): string {
-  const count = voice.channels?.length ?? 0;
-  const channels = count ? `${count} ${count === 1 ? "channel" : "channels"}` : undefined;
-  return [VOICE_KIND_LABELS[voice.kind], channels].filter(Boolean).join(" · ");
+  const count = voice.collections?.length ?? 0;
+  const collections = count ? `${count} ${count === 1 ? "collection" : "collections"}` : undefined;
+  return [VOICE_KIND_LABELS[voice.kind], collections].filter(Boolean).join(" · ");
 }
 
 /* -------------------------------- Home ----------------------------------- */
@@ -789,8 +789,8 @@ export interface PinnedLink {
 export function pinnedLinks(voices: Voice[], items: KnowledgeItem[]): PinnedLink[] {
   const out: PinnedLink[] = [];
   for (const v of voices) {
-    for (const c of v.channels ?? []) {
-      const primary = channelPrimary(c);
+    for (const c of v.collections ?? []) {
+      const primary = collectionPrimary(c);
       if (c.pinned && primary)
         out.push({
           ownerId: v.id,

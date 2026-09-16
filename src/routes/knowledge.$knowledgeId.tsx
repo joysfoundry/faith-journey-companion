@@ -36,8 +36,8 @@ import {
   STATUS_STEPS,
   VOICE_KIND_LABELS,
   VOICE_LABEL_SINGULAR,
-  channelLabel,
-  channelOf,
+  collectionLabel,
+  collectionOf,
   contentTitle,
   detectCategory,
   detectPlatform,
@@ -143,7 +143,7 @@ function KnowledgeRecordPage() {
 
   const voices = db.voices;
   const voice = item.voice_id ? voices.find((v) => v.id === item.voice_id) : undefined;
-  const channel = channelOf(item, voice);
+  const channel = collectionOf(item, voice);
   const links = item.links ?? [];
   // ACTS-183: the content this quote was saved from (forward), and — for a
   // content item — the quotes saved from it (reverse).
@@ -196,7 +196,7 @@ function KnowledgeRecordPage() {
     let patch: Partial<KnowledgeItem> = { links: next };
     if (i === 0 && !item!.voice_id) {
       const m = matchVoice(url, voices);
-      if (m) patch = { ...patch, voice_id: m.voice.id, channel_id: m.channel.id };
+      if (m) patch = { ...patch, voice_id: m.voice.id, collection_id: m.channel.id };
     }
     save(patch);
   }
@@ -209,7 +209,7 @@ function KnowledgeRecordPage() {
       id,
       name: seed.name,
       kind: seed.kind,
-      channels: [
+      collections: [
         {
           id: chanId,
           platforms: [{ platform: seed.platform, url: url.trim() }],
@@ -218,7 +218,7 @@ function KnowledgeRecordPage() {
       ],
       created_at: new Date().toISOString(),
     });
-    save({ voice_id: id, channel_id: chanId });
+    save({ voice_id: id, collection_id: chanId });
   }
   function createVoiceByName() {
     if (!newVoiceName.trim()) return;
@@ -229,7 +229,7 @@ function KnowledgeRecordPage() {
       kind: "individual",
       created_at: new Date().toISOString(),
     });
-    save({ voice_id: id, channel_id: undefined });
+    save({ voice_id: id, collection_id: undefined });
     setNewVoiceName("");
   }
 
@@ -455,7 +455,7 @@ function KnowledgeRecordPage() {
               <select
                 value={item.voice_id ?? ""}
                 onChange={(e) =>
-                  save({ voice_id: e.target.value || undefined, channel_id: undefined })
+                  save({ voice_id: e.target.value || undefined, collection_id: undefined })
                 }
                 aria-label={VOICE_LABEL_SINGULAR}
                 className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
@@ -467,21 +467,21 @@ function KnowledgeRecordPage() {
                   </option>
                 ))}
               </select>
-              {voice && (voice.channels?.length ?? 0) > 0 ? (
+              {voice && (voice.collections?.length ?? 0) > 0 ? (
                 <div className="space-y-1">
                   <label className="text-xs uppercase tracking-wide text-muted-foreground">
                     From which channel
                   </label>
                   <select
-                    value={item.channel_id ?? ""}
-                    onChange={(e) => save({ channel_id: e.target.value || undefined })}
-                    aria-label="Channel"
+                    value={item.collection_id ?? ""}
+                    onChange={(e) => save({ collection_id: e.target.value || undefined })}
+                    aria-label="Collection"
                     className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                   >
                     <option value="">— Not specified —</option>
-                    {voice.channels!.map((c) => (
+                    {voice.collections!.map((c) => (
                       <option key={c.id} value={c.id}>
-                        {channelLabel(c)}
+                        {collectionLabel(c)}
                       </option>
                     ))}
                   </select>
@@ -491,7 +491,7 @@ function KnowledgeRecordPage() {
                 <button
                   type="button"
                   onClick={() =>
-                    save({ voice_id: voiceMatch.voice.id, channel_id: voiceMatch.channel.id })
+                    save({ voice_id: voiceMatch.voice.id, collection_id: voiceMatch.channel.id })
                   }
                   className="text-xs text-primary hover:underline"
                 >
@@ -523,7 +523,7 @@ function KnowledgeRecordPage() {
                       sublabel: VOICE_KIND_LABELS[v.kind].toLowerCase(),
                     }))}
                     onSelect={(e) => {
-                      save({ voice_id: e.id, channel_id: undefined });
+                      save({ voice_id: e.id, collection_id: undefined });
                       setNewVoiceName("");
                     }}
                     placeholder={`New ${VOICE_LABEL_SINGULAR.toLowerCase()} by name (e.g. an author)`}
@@ -664,7 +664,7 @@ function KnowledgeRecordPage() {
                   {voice.name}
                 </Link>
                 <span className="text-xs"> · {VOICE_KIND_LABELS[voice.kind]}</span>
-                {channel ? <span className="text-xs"> · from {channelLabel(channel)}</span> : null}
+                {channel ? <span className="text-xs"> · from {collectionLabel(channel)}</span> : null}
               </p>
             ) : item.creator ? (
               <p className="text-sm text-muted-foreground">by {item.creator}</p>

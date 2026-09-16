@@ -14,9 +14,9 @@ import type {
   KnowledgeItem,
   KnowledgeStatus,
   MassExperience,
-  Channel,
-  ChannelKind,
-  ChannelPlatform,
+  Collection,
+  CollectionKind,
+  CollectionPlatform,
   KnowledgeLink,
   MediaFormat,
   LinkPlatform,
@@ -179,7 +179,7 @@ export function normalizeVariants(db: Database): Database {
   });
 
   // Knowledge library: migrate the store onto the three-level model
-  // (Voice → Channel → Content). Legacy `person`/`resource` knowledge_items
+  // (Voice → Collection → Content). Legacy `person`/`resource` knowledge_items
   // become Voices; the rest stay Content (with `author_id` → `voice_id` and
   // `url` folded into `links`). Also handles legacy `learning_items`. Idempotent.
   const legacy = (db as { learning_items?: unknown }).learning_items;
@@ -432,7 +432,7 @@ const detectPlatformSimple = (url: string): LinkPlatform => {
   return "website";
 };
 
-const CHANNEL_KINDS: ChannelKind[] = [
+const COLLECTION_KINDS: CollectionKind[] = [
   "podcast",
   "video",
   "program",
@@ -442,11 +442,11 @@ const CHANNEL_KINDS: ChannelKind[] = [
   "other",
 ];
 
-/** Infer a channel kind from its platform — the load-time backfill for channels
+/** Infer a channel kind from its platform — the load-time backfill for collections
  *  saved before `kind` existed (ACTS-204). Mirrors `kindFromPlatform` in
  *  knowledge.ts (kept local to the persistence layer, like `detectPlatformSimple`).
  *  A starting guess only; the kind stays editable. */
-const channelKindFromPlatform = (p: LinkPlatform): ChannelKind => {
+const collectionKindFromPlatform = (p: LinkPlatform): CollectionKind => {
   switch (p) {
     case "podcast":
       return "podcast";
@@ -465,10 +465,10 @@ const channelKindFromPlatform = (p: LinkPlatform): ChannelKind => {
 };
 
 /** Keep a stored channel kind if valid, else backfill it from the platform. */
-const coerceChannelKind = (k: unknown, platform: LinkPlatform): ChannelKind =>
-  typeof k === "string" && (CHANNEL_KINDS as string[]).includes(k)
-    ? (k as ChannelKind)
-    : channelKindFromPlatform(platform);
+const coerceCollectionKind = (k: unknown, platform: LinkPlatform): CollectionKind =>
+  typeof k === "string" && (COLLECTION_KINDS as string[]).includes(k)
+    ? (k as CollectionKind)
+    : collectionKindFromPlatform(platform);
 
 const MEDIA_FORMATS: MediaFormat[] = ["text", "audio", "video", "image"];
 
@@ -520,14 +520,14 @@ function normalizeLinks(raw: unknown): KnowledgeLink[] {
     }));
 }
 
-/** Normalize raw channels (links with a stable id). Each becomes a one-platform
+/** Normalize raw collections (links with a stable id). Each becomes a one-platform
  *  channel; kind is inferred from the platform — these come from legacy
  *  `person.links` that predate `kind` and multi-platform (ACTS-204). */
-function normalizeChannels(raw: unknown): Channel[] {
+function normalizeCollections(raw: unknown): Collection[] {
   return normalizeLinks(raw).map((l) => ({
     id: genId("chan"),
     platforms: [{ platform: l.platform, url: l.url }],
-    kind: channelKindFromPlatform(l.platform),
+    kind: collectionKindFromPlatform(l.platform),
     label: l.label,
     pinned: l.pinned,
   }));
@@ -537,13 +537,16 @@ function normalizeChannels(raw: unknown): Channel[] {
 function normalizeVoice(raw: Record<string, unknown>): Voice {
   const kindRaw = strOf(raw, "kind") ?? "";
   const kind = (VOICE_KINDS as string[]).includes(kindRaw) ? (kindRaw as VoiceKind) : "individual";
-  const channels = Array.isArray(raw["channels"])
-    ? (raw["channels"] as unknown[]).map((c) => {
+  // ACTS-204: Channel was renamed Collection. Read the new `collections` key,
+  // falling back to the legacy `channels` so existing data loads unchanged.
+  const rawCollections = raw["collections"] ?? raw["channels"];
+  const collections = Array.isArray(rawCollections)
+    ? (rawCollections as unknown[]).map((c) => {
         const rec = c as Record<string, unknown>;
         const id = strOf(rec, "id") ?? genId("chan");
         // Multi-platform (ACTS-204): read the new `platforms` list, else migrate
         // the pre-204 scalar `platform`/`url` into a one-item list.
-        const platforms: ChannelPlatform[] = Array.isArray(rec["platforms"])
+        const platforms: CollectionPlatform[] = Array.isArray(rec["platforms"])
           ? (rec["platforms"] as unknown[]).map((p) => {
               const pr = p as Record<string, unknown>;
               return { platform: coercePlatform(pr["platform"]), url: strOf(pr, "url") ?? "" };
@@ -553,8 +556,8 @@ function normalizeVoice(raw: Record<string, unknown>): Voice {
         return {
           id,
           platforms,
-          // Keep a saved kind; backfill from the primary platform for pre-204 channels.
-          kind: coerceChannelKind(rec["kind"], primaryPlatform),
+          // Keep a saved kind; backfill from the primary platform for pre-204 collections.
+          kind: coerceCollectionKind(rec["kind"], primaryPlatform),
           label: strOf(rec, "label"),
           pinned: Boolean(rec["pinned"] ?? rec["favorite"]) || undefined,
         };
@@ -570,7 +573,7 @@ function normalizeVoice(raw: Record<string, unknown>): Voice {
         ? (raw["name"] as string)
         : (strOf(raw, "title") ?? "Untitled"),
     kind,
-    channels: channels.length ? channels : undefined,
+    collections: collections.length ? collections : undefined,
     notes: strOf(raw, "notes"),
     created_at: strOf(raw, "created_at") ?? new Date().toISOString(),
   };
@@ -581,25 +584,25 @@ function voiceFromLegacyItem(raw: Record<string, unknown>): Voice {
   const isOrg = Boolean(raw["is_organization"]) || strOf(raw, "category") === "resource";
   const pinned = Boolean(raw["pinned"] ?? raw["favorite"]) || undefined;
   // person: accounts came in `links`; resource: a single `url`.
-  const channels: Channel[] = normalizeChannels(raw["links"]);
+  const collections: Collection[] = normalizeCollections(raw["links"]);
   const url = strOf(raw, "url");
   if (url) {
     const platform = detectPlatformSimple(url);
-    channels.push({
+    collections.push({
       id: genId("chan"),
       platforms: [{ platform, url }],
-      kind: channelKindFromPlatform(platform),
+      kind: collectionKindFromPlatform(platform),
       pinned,
     });
-  } else if (pinned && channels[0]) {
+  } else if (pinned && collections[0]) {
     // A pinned person had no scalar url — keep it on Home via its first channel.
-    channels[0] = { ...channels[0], pinned: true };
+    collections[0] = { ...collections[0], pinned: true };
   }
   return {
     id: strOf(raw, "id") ?? genId("voice"),
     name: strOf(raw, "title") ?? strOf(raw, "name") ?? "Untitled",
     kind: isOrg ? "organization" : "individual",
-    channels: channels.length ? channels : undefined,
+    collections: collections.length ? collections : undefined,
     notes: strOf(raw, "notes"),
     created_at: strOf(raw, "created_at") ?? new Date().toISOString(),
   };
@@ -655,7 +658,8 @@ function normalizeContent(raw: Record<string, unknown>): KnowledgeItem {
     // ACTS-204: the media format (computed above; backfilled for pre-204 items).
     media,
     voice_id: strOf(raw, "voice_id") ?? strOf(raw, "author_id"),
-    channel_id: strOf(raw, "channel_id"),
+    // ACTS-204: read the new key, falling back to the legacy `channel_id`.
+    collection_id: strOf(raw, "collection_id") ?? strOf(raw, "channel_id"),
     body: strOf(raw, "body"),
     creator: strOf(raw, "creator"),
     quote_kind,
@@ -798,7 +802,7 @@ export interface AppStore {
   toggleContentLinkPin: (itemId: ID, linkIndex: number) => void;
   upsertVoice: (voice: Voice) => void;
   deleteVoice: (id: ID) => void;
-  toggleChannelPin: (voiceId: ID, channelId: ID) => void;
+  toggleCollectionPin: (voiceId: ID, collectionId: ID) => void;
   addMassExperience: (mass: MassExperience) => void;
   /** Pin the devotion the Home "daily" prayer card starts; undefined = the default Rosary. */
   setDailyTemplate: (templateId: ID | undefined) => void;
@@ -1943,20 +1947,20 @@ export const mutations = {
       voices: db.voices.filter((v) => v.id !== id),
       // Orphan any content that pointed at this Voice, rather than delete it.
       knowledge_items: db.knowledge_items.map((i) =>
-        i.voice_id === id ? { ...i, voice_id: undefined, channel_id: undefined } : i,
+        i.voice_id === id ? { ...i, voice_id: undefined, collection_id: undefined } : i,
       ),
     };
   },
   /** Toggle a Home pin on one Voice channel (by voice + channel id). ACTS-177. */
-  toggleChannelPin(db: Database, voiceId: ID, channelId: ID): Database {
+  toggleCollectionPin(db: Database, voiceId: ID, collectionId: ID): Database {
     return {
       ...db,
       voices: db.voices.map((v) =>
         v.id === voiceId
           ? {
               ...v,
-              channels: (v.channels ?? []).map((c) =>
-                c.id === channelId ? { ...c, pinned: !c.pinned } : c,
+              collections: (v.collections ?? []).map((c) =>
+                c.id === collectionId ? { ...c, pinned: !c.pinned } : c,
               ),
             }
           : v,

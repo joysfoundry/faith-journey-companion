@@ -2450,13 +2450,13 @@ export function createSeedDatabase(): Database {
     reflections: [],
     mass_experiences: [],
     // Voices = the who behind content (individual/org/ministry), each with its
-    // channels. Pinned channels surface on Home.
+    // collections. Pinned collections surface on Home.
     voices: [
       {
         id: "voice-usccb",
         name: "USCCB",
         kind: "organization",
-        channels: [
+        collections: [
           {
             id: "chan-usccb-web",
             platforms: [{ platform: "website", url: "https://www.usccb.org" }],
@@ -2470,7 +2470,7 @@ export function createSeedDatabase(): Database {
         id: "voice-hallow",
         name: "Hallow",
         kind: "organization",
-        channels: [
+        collections: [
           {
             id: "chan-hallow-web",
             platforms: [{ platform: "website", url: "https://hallow.com" }],
@@ -2484,7 +2484,7 @@ export function createSeedDatabase(): Database {
         id: "voice-youversion",
         name: "YouVersion",
         kind: "organization",
-        channels: [
+        collections: [
           {
             id: "chan-youversion-web",
             platforms: [{ platform: "website", url: "https://www.bible.com" }],

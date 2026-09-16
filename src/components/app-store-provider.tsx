@@ -188,8 +188,8 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       upsertVoice: (v: Parameters<typeof mutations.upsertVoice>[1]) =>
         setDb((d) => mutations.upsertVoice(d, v)),
       deleteVoice: (id: string) => setDb((d) => mutations.deleteVoice(d, id)),
-      toggleChannelPin: (voiceId: string, channelId: string) =>
-        setDb((d) => mutations.toggleChannelPin(d, voiceId, channelId)),
+      toggleCollectionPin: (voiceId: string, collectionId: string) =>
+        setDb((d) => mutations.toggleCollectionPin(d, voiceId, collectionId)),
       addMassExperience: (m: Parameters<typeof mutations.addMassExperience>[1]) =>
         setDb((d) => mutations.addMassExperience(d, m)),
       setDailyTemplate: (templateId: string | undefined) =>
