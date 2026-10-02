@@ -2,13 +2,13 @@
 id: ACTS-206
 title: Devotion editor — "Review & save" doesn't persist devotion edits
 spine:
-status: To Do
+status: Done
 origin: human-directed
 approved_by: JC
 depends_on: []
 relates_to: [ACTS-207]
 started_at: 2026-10-02T10:58:08-0700
-updated:    2026-10-02T10:58:08-0700
+updated:    2026-10-02T11:00:55-0700
 latest_handoff: null
 sessions: 0
 ---
@@ -16,6 +16,11 @@ sessions: 0
 ## Goal
 As someone editing a devotion (including a seeded one like the Caro Family Rosary), I want
 **Review & save → Save devotion** to actually keep my changes, so edits made in the app stick.
+
+## Resolution
+Closed 2026-10-02 — **not a bug / not reproducible.** JC re-tested: Review & save → Save
+devotion persists edits (used it to finish the ACTS-207 Caro Rosary edit). The earlier "skip"
+was a one-off, cause unknown. Reopen with repro steps if it recurs. No code change.
 
 ## Report
 JC, 2026-10-02: "review and save is broken — we need a way to save devotion updates."
