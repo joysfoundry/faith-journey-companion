@@ -8,7 +8,7 @@ approved_by: JC
 depends_on: []
 relates_to: [ACTS-186, ACTS-202]
 started_at: 2026-09-15T00:00:00-0700
-updated:    2026-09-16T10:16:23-0700
+updated:    2026-10-02T11:45:00-0700
 latest_handoff: stories/ACTS-204/session-01.md
 sessions: 1
 ---
@@ -86,11 +86,17 @@ if it's a new section root, offer it as a **channel**. The user shouldn't have t
 - [ ] Channel gains a `kind`; a Vessel's channels render by type.
 - [ ] A channel/series shows **no status**; only content items are completable (viewed/not).
 - [ ] A channel can carry a **host/author Voice** distinct from the owning Vessel (Fr. Mike).
-- [ ] Pasting an item under an existing channel files it as content of that channel (path match).
-- [ ] Channel-vs-content is inferred in the paste flow (minimal decisions).
+- [x] Pasting an item under an existing channel files it as content of that channel (path match). *(slice d, 2026-10-02: `resolveCollection`, most-specific path wins)*
+- [x] Channel-vs-content is inferred in the paste flow (minimal decisions). *(slice d: `detectSourceType` + editable card — One item/Collection toggle, "Part of" autocomplete, canonical/original URL)*
 - [ ] Prayer/novena/litany routing decided; prayer Source links to its Vessel (USCCB case).
 - [ ] No reset; existing channels/content migrate cleanly.
 
 ## Tests
-No runner yet (ACTS-92). Verify: an episode URL files under its show; a section root becomes a
+No runner yet (ACTS-92). **Slice d verified 2026-10-02** (tsx script + dev preview): show URL
+`…/podcasts/homily?utm_source=…` → Collection (Podcast) under new org Ascension Press, tracking
+stripped; episode `…/podcasts/homily?episodeId=…&stkn=…&entryPoint=…` → One item, Part of Sunday
+Homilies, `original_url` kept + survives reload; re-paste of the show → "Already saved" (save
+disabled); `…/podcasts` (the session-01 bug) → Collection matched to Ascension Press by brand;
+YouTube `watch?v=` → content with a new-collection prefill at the uploader's `@handle`; "Part of"
+autocomplete re-points From to the collection's owner. Verify: an episode URL files under its show; a section root becomes a
 channel; category by path; a shop link → book; existing data still loads.
