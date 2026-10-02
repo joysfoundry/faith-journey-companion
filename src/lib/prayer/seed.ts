@@ -1570,12 +1570,19 @@ function rosaryItems(templateId: string, extras: { fatima: boolean; peace: boole
 const rosaryItemsList = rosaryItems("tpl-rosary", { fatima: true, peace: false });
 
 /**
- * The Caro Family Rosary, as the family prays it: it opens with the three family
- * consecration prayers, keeps the Fatima Prayer + Prayer for Peace after every
- * decade, and sings a verse of the Fatima Hymn (with its chorus) after decades
- * 1–4 — the hymn's four verses across the first four decades, the fifth decade
- * left un-sung.
+ * The Caro Family Rosary, as the family prays it (JC's in-app edit, ACTS-207): it
+ * opens with the two family consecrations (Sacred Heart, then Immaculate Heart),
+ * keeps the Fatima Prayer + Prayer for Peace after every decade, and sings the
+ * Fatima Hymn's chorus then a verse after decades 1–4 — the hymn's four verses
+ * across the first four decades, the fifth decade left un-sung. It closes with
+ * the Hail Holy Queen, the Memorare, the Family Prayer, and the family's
+ * intentions.
+ *
+ * Existing installs get this version once via `applySeedUpdates` in store.ts,
+ * keyed by `CARO_ROSARY_SEED_UPDATE` — a further change needs a new key.
  */
+export const CARO_ROSARY_SEED_UPDATE = "acts-207-caro-rosary";
+
 function caroRosaryItems(): TemplateItem[] {
   const templateId = "tpl-caro-rosary";
   const items: TemplateItem[] = [];
@@ -1584,9 +1591,8 @@ function caroRosaryItems(): TemplateItem[] {
     items.push(ti(templateId, p++, partial));
 
   add({ kind: "prayer", prayer_id: "sign-of-the-cross" });
-  add({ kind: "prayer", prayer_id: "family-consecration-immaculate-heart" });
   add({ kind: "prayer", prayer_id: "consecration-family-sacred-heart" });
-  add({ kind: "prayer", prayer_id: "family-prayer" });
+  add({ kind: "prayer", prayer_id: "family-consecration-immaculate-heart" });
   add({ kind: "prayer", prayer_id: "apostles-creed" });
   add({ kind: "prayer", prayer_id: "our-father" });
   add({ kind: "prayer", prayer_id: "hail-mary", repetition_count: 3 });
@@ -1598,10 +1604,17 @@ function caroRosaryItems(): TemplateItem[] {
     add({ kind: "prayer", prayer_id: "glory-be" });
     add({ kind: "prayer", prayer_id: "fatima-prayer" });
     add({ kind: "prayer", prayer_id: "prayer-for-peace" });
-    // Verse d + chorus (ordinal 5) after decades 1–4; the fifth decade is un-sung.
-    if (d <= 4) add({ kind: "song", prayer_id: "fatima-hymn", song_segments: [d, 5] });
+    // Chorus (ordinal 5) then verse d after decades 1–4; the fifth decade is un-sung.
+    if (d <= 4) add({ kind: "song", prayer_id: "fatima-hymn", song_segments: [5, d] });
   }
   add({ kind: "prayer", prayer_id: "hail-holy-queen" });
+  add({ kind: "prayer", prayer_id: "memorare" });
+  add({ kind: "prayer", prayer_id: "family-prayer" });
+  add({
+    kind: "intention",
+    label: "Intentions",
+    body: "Grandma leads us through intentions followed by Hail Mary's.",
+  });
   add({ kind: "prayer", prayer_id: "sign-of-the-cross" });
   return items;
 }
@@ -2036,7 +2049,13 @@ const materDeiRosaryItemsList = materDeiRosaryItems();
 
 export function createSeedDatabase(): Database {
   return {
-    settings: { bible_app_id: "youversion", bible_translation: "NIV" },
+    settings: {
+      bible_app_id: "youversion",
+      bible_translation: "NIV",
+      // A fresh install already has every seed update, so none re-applies over
+      // later edits (see `applySeedUpdates` in store.ts).
+      seed_updates_applied: [CARO_ROSARY_SEED_UPDATE],
+    },
     sources: [
       {
         id: "src-tradition",
@@ -2397,8 +2416,7 @@ export function createSeedDatabase(): Database {
       {
         id: "tpl-mater-dei-weekly-rosary",
         name: "Mater Dei Catholic Church Weekly Rosary",
-        description:
-          "Rosary led by ministry after each Sunday Mass and before Mass on Saturday.",
+        description: "Rosary led by ministry after each Sunday Mass and before Mass on Saturday.",
         kind: "rosary",
         mystery_presentation: "title_and_description",
         default_mystery_body: "mater-dei-catholic-church",

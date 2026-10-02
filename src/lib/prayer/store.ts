@@ -44,7 +44,7 @@ import {
   shownBibleVersionIds,
   type BibleTranslation,
 } from "@/lib/bible/apps";
-import { createSeedDatabase, LECTIO_TEMPLATE_ID } from "./seed";
+import { CARO_ROSARY_SEED_UPDATE, createSeedDatabase, LECTIO_TEMPLATE_ID } from "./seed";
 import { detectRepetitionCount, stripRepetition } from "./importer";
 import {
   completeSessionItem,
@@ -409,13 +409,7 @@ const LINK_PLATFORMS: LinkPlatform[] = [
 
 const VOICE_KINDS: VoiceKind[] = ["individual", "organization", "ministry"];
 
-const CONTENT_CATEGORIES: KnowledgeCategory[] = [
-  "book",
-  "article",
-  "post",
-  "quote",
-  "program",
-];
+const CONTENT_CATEGORIES: KnowledgeCategory[] = ["book", "article", "post", "quote", "program"];
 
 const coercePlatform = (p: unknown): LinkPlatform =>
   typeof p === "string" && (LINK_PLATFORMS as string[]).includes(p) ? (p as LinkPlatform) : "other";
@@ -696,13 +690,54 @@ function normalizeContent(raw: Record<string, unknown>): KnowledgeItem {
   };
 }
 
+/**
+ * One-time seed updates for existing installs (ACTS-207). A seed change alone
+ * never reaches stored data — `{...seed, ...parsed}` keeps each stored
+ * collection whole — and a STORAGE_KEY bump would reset everyone. Instead each
+ * update runs once, then its key is recorded in `settings.seed_updates_applied`
+ * so a later user edit is never overwritten. Fresh installs carry every key in
+ * their seed settings already.
+ */
+function applySeedUpdates(db: Database, seed: Database): Database {
+  const applied = db.settings?.seed_updates_applied ?? [];
+  if (applied.includes(CARO_ROSARY_SEED_UPDATE)) return db;
+  let next = db;
+  // Re-seed the Caro Family Rosary's steps with the family's current order.
+  // A deleted copy stays deleted; the template record (name etc.) is kept.
+  const caroId = "tpl-caro-rosary";
+  if (db.templates.some((t) => t.id === caroId)) {
+    const items = seed.template_items.filter((i) => i.template_id === caroId);
+    const needed = new Set(items.map((i) => i.prayer_id).filter(Boolean));
+    const missing = seed.prayers.filter(
+      (p) => needed.has(p.id) && !db.prayers.some((q) => q.id === p.id),
+    );
+    const missingIds = new Set(missing.map((p) => p.id));
+    next = {
+      ...db,
+      prayers: [...db.prayers, ...missing],
+      prayer_versions: [
+        ...db.prayer_versions,
+        ...seed.prayer_versions.filter(
+          (v) => missingIds.has(v.prayer_id) && !db.prayer_versions.some((w) => w.id === v.id),
+        ),
+      ],
+      template_items: [...db.template_items.filter((i) => i.template_id !== caroId), ...items],
+    };
+  }
+  return {
+    ...next,
+    settings: { ...next.settings, seed_updates_applied: [...applied, CARO_ROSARY_SEED_UPDATE] },
+  };
+}
+
 export function loadDatabase(): Database {
   if (typeof window === "undefined") return normalizeVariants(createSeedDatabase());
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return normalizeVariants(createSeedDatabase());
     const parsed = JSON.parse(raw) as Partial<Database>;
-    return normalizeVariants({ ...createSeedDatabase(), ...parsed });
+    const seed = createSeedDatabase();
+    return normalizeVariants(applySeedUpdates({ ...seed, ...parsed }, seed));
   } catch {
     return normalizeVariants(createSeedDatabase());
   }

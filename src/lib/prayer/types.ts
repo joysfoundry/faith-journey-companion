@@ -672,8 +672,7 @@ export type KnowledgeStatus = "not_started" | "in_progress" | "finished";
  * episode's noun comes from its Collection. The surviving forms are the ones a
  * format can't express. The *who* is a separate `Voice` (`voice_id`).
  */
-export type KnowledgeCategory =
-  "book" | "article" | "post" | "quote" | "program";
+export type KnowledgeCategory = "book" | "article" | "post" | "quote" | "program";
 
 /**
  * The kind of a keepable `quote` (ACTS-181) — a typed passage. Drives which
@@ -1009,6 +1008,13 @@ export interface AppSettings {
    * `STORAGE_KEY` bump.
    */
   last_export_at?: string | undefined;
+  /**
+   * Keys of one-time seed updates already applied to this install (ACTS-207),
+   * e.g. a re-seeded built-in devotion. Each runs once on load, so later user
+   * edits are never overwritten. Absent = none applied. Additive: no
+   * `STORAGE_KEY` bump.
+   */
+  seed_updates_applied?: string[] | undefined;
 }
 
 export interface Database {
