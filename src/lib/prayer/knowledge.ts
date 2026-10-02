@@ -54,7 +54,11 @@ export function sourceAttributionSuggestions(
   const out: { id: string; name: string; sublabel?: string | undefined }[] = [];
   const voiceNames = new Set(voices.map((v) => v.name.trim().toLowerCase()));
   for (const v of voices) {
-    out.push({ id: `voice:${v.id}`, name: v.name, sublabel: VOICE_KIND_LABELS[v.kind].toLowerCase() });
+    out.push({
+      id: `voice:${v.id}`,
+      name: v.name,
+      sublabel: VOICE_KIND_LABELS[v.kind].toLowerCase(),
+    });
   }
   const seen = new Set<string>();
   for (const s of sources) {
@@ -430,7 +434,10 @@ export function kindFromPlatform(platform: LinkPlatform): CollectionKind {
 }
 
 /** The channel a content item came from, resolved against its Voice (if any). */
-export function collectionOf(item: KnowledgeItem, voice: Voice | undefined): Collection | undefined {
+export function collectionOf(
+  item: KnowledgeItem,
+  voice: Voice | undefined,
+): Collection | undefined {
   if (!voice || !item.collection_id) return undefined;
   return voice.collections?.find((c) => c.id === item.collection_id);
 }
@@ -548,6 +555,215 @@ export function matchVoice(
     }
   }
   return undefined;
+}
+
+/* --------------------- Paste resolver (ACTS-204 slice d) -------------------- */
+
+/**
+ * Query params that only track a share/click — never part of what the link
+ * *is*. Stripped for the canonical URL; the pasted original is kept alongside.
+ */
+const TRACKING_PARAM =
+  /^(utm_[a-z_]+|stkn|entrypoint|si|igsh|igshid|fbclid|gclid|dclid|mc_cid|mc_eid|ref_src|feature)$/i;
+
+/**
+ * The canonical form of a pasted link (ACTS-204): tracking params stripped
+ * (`utm_*`, `stkn`, `entryPoint`, `si`, `igsh`, `fbclid`…), the fragment and a
+ * trailing slash dropped. Identity-bearing params (`v=`, `episodeId=`, `list=`,
+ * `i=`) stay. Path case is preserved (paths are case-sensitive). An unparseable
+ * string comes back trimmed and untouched.
+ */
+export function canonicalUrl(url: string): string {
+  const raw = url.trim();
+  try {
+    const u = new URL(raw);
+    for (const key of [...u.searchParams.keys()]) {
+      if (TRACKING_PARAM.test(key)) u.searchParams.delete(key);
+    }
+    u.hash = "";
+    if (u.pathname.length > 1) u.pathname = u.pathname.replace(/\/+$/, "");
+    return u.toString();
+  } catch {
+    return raw;
+  }
+}
+
+/** Host (no www) + path segments + params of a URL, case-preserving. */
+function urlParts(url?: string): { host: string; segs: string[]; params: URLSearchParams } {
+  try {
+    const u = new URL((url ?? "").trim());
+    return {
+      host: u.hostname.toLowerCase().replace(/^www\./, ""),
+      segs: u.pathname.split("/").filter(Boolean),
+      params: u.searchParams,
+    };
+  } catch {
+    return { host: "", segs: [], params: new URLSearchParams() };
+  }
+}
+
+/** Query params that name ONE item on a site (an episode, a lesson, a post). */
+const ITEM_PARAM = /^(episodeid|episode|lessonid|lesson|postid|post|articleid|itemid|id|v|p|i)$/i;
+
+/** Section words whose root AND a named child are containers (/podcasts, /podcasts/homily). */
+const SERIES_SECTION = /^(podcasts?|shows?|series|programs?|courses?|channels?|playlists?)$/i;
+/** Section words whose root is a container but whose children are items (/articles/foo). */
+const LIST_SECTION =
+  /^(videos?|articles?|blog|news|shop|store|products?|books?|posts?|prayers?|episodes?|watch)$/i;
+
+/**
+ * Collection or Content? (ACTS-204) — decided by the URL's SHAPE, pattern-only
+ * (no fetch). An account root, a show/series page or a bare site is a
+ * **Collection**; a specific video/reel/episode/article is **Content**. A best
+ * guess the paste card lets the user flip.
+ */
+export function detectSourceType(url?: string): "collection" | "content" {
+  const { host, segs, params } = urlParts(url);
+  if (!host) return "content";
+  const platform = detectPlatform(url);
+  const first = segs[0] ?? "";
+
+  if (platform === "youtube") {
+    if (host.includes("youtu.be")) return "content";
+    if (/^(watch|shorts|live|embed)$/i.test(first)) return "content";
+    if (first === "playlist" && params.has("list")) return "collection";
+    // /@handle, /c/x, /channel/x, /user/x (+ an optional tab like /videos).
+    return segs.length ? "collection" : "content";
+  }
+  if (
+    platform === "instagram" ||
+    platform === "tiktok" ||
+    platform === "x" ||
+    platform === "facebook"
+  ) {
+    if (POST_PATH.test(`/${segs.join("/")}/`)) return "content";
+    return segs.length === 1 ? "collection" : "content";
+  }
+  if (host.includes("open.spotify.com")) return first === "show" ? "collection" : "content";
+  if (host.includes("podcasts.apple.com")) return params.has("i") ? "content" : "collection";
+  if (platform === "store") return "content";
+
+  // Generic site / org app.
+  if ([...params.keys()].some((k) => ITEM_PARAM.test(k))) return "content";
+  if (segs.length === 0) return "collection";
+  if (SERIES_SECTION.test(first) && segs.length <= 2) return "collection";
+  if (LIST_SECTION.test(first) && segs.length === 1) return "collection";
+  return "content";
+}
+
+/**
+ * Best-guess Collection kind from a URL (ACTS-204) — the path first
+ * (`/podcasts` → podcast, `/programs` → program, `/articles` → articles, a shop →
+ * store), else from the platform. Editable: Ascension's homilies are a video
+ * show under a `/podcasts/` path.
+ */
+export function collectionKindFromUrl(url?: string): CollectionKind {
+  const { host, segs } = urlParts(url);
+  if (host.includes("open.spotify.com") || host.includes("podcasts.apple.com")) return "podcast";
+  const platform = detectPlatform(url);
+  if (platform !== "website") return kindFromPlatform(platform);
+  const path = `/${segs.join("/").toLowerCase()}/`;
+  if (/\/podcasts?\//.test(path)) return "podcast";
+  if (/\/(programs?|courses?|study|studies|reading-plans?)\//.test(path)) return "program";
+  if (/\/(videos?|shows?|series|watch|channels?)\//.test(path)) return "video";
+  if (/\/(articles?|blog|news|posts?)\//.test(path)) return "articles";
+  if (/\/(shop|store|products?|books?)\//.test(path)) return "store";
+  return "other";
+}
+
+/**
+ * Where a piece of Content's parent Collection most likely lives (ACTS-204) —
+ * pre-fills "Part of → new collection". An item named by a query param
+ * (`/podcasts/homily?episodeId=…`) → the path without it (`/podcasts/homily`);
+ * a social post → the account home; a deeper site path → its parent. "" when
+ * the URL doesn't name its container (a bare YouTube `watch?v=`).
+ */
+export function collectionRootOf(url?: string): string {
+  const { host, segs, params } = urlParts(url);
+  if (!host) return "";
+  const platform = detectPlatform(url);
+  if (platform === "youtube" || platform === "store" || host.includes("open.spotify.com"))
+    return "";
+  if (
+    platform === "instagram" ||
+    platform === "tiktok" ||
+    platform === "x" ||
+    platform === "facebook"
+  ) {
+    const id = identityFromUrl(url);
+    if (!id) return "";
+    const lead = segs[0] ?? "";
+    return `https://${host}/${lead.startsWith("@") ? lead : id.handle}`;
+  }
+  if (host.includes("podcasts.apple.com")) {
+    const u = new URL((url ?? "").trim());
+    u.search = "";
+    return canonicalUrl(u.toString());
+  }
+  const origin = (() => {
+    try {
+      return new URL((url ?? "").trim()).origin;
+    } catch {
+      return "";
+    }
+  })();
+  if ([...params.keys()].some((k) => ITEM_PARAM.test(k))) {
+    return segs.length ? `${origin}/${segs.join("/")}` : "";
+  }
+  if (segs.length >= 2) return `${origin}/${segs.slice(0, -1).join("/")}`;
+  return "";
+}
+
+/** Collapse a URL to `host/path` (no www, no query/hash/trailing slash) for path matching. */
+function pathKey(url?: string): { host: string; path: string } {
+  const { host, segs } = urlParts(url);
+  return { host, path: segs.join("/").toLowerCase() };
+}
+
+/**
+ * Find the Collection a pasted URL belongs to (ACTS-204). Site links match by
+ * **path prefix** on the same host — the most specific collection wins, so an
+ * episode `…/podcasts/homily?episodeId=…` files under "Sunday Homilies"
+ * (`…/podcasts/homily`) rather than under the broader `…/podcasts` or the bare
+ * site. Social/YouTube links fall back to account identity (`matchVoice`).
+ * `exact` reports whether the URL IS the collection (a duplicate collection
+ * paste). A bare-site collection only identifies the Vessel for a deep link — the
+ * shop book isn't "part of" the website — so `channel` is then undefined.
+ */
+export function resolveCollection(
+  url: string | undefined,
+  voices: Voice[],
+): { voice: Voice; channel?: Collection | undefined; exact: boolean } | undefined {
+  const target = pathKey(url);
+  if (!target.host) return undefined;
+  const isCollectionUrl = detectSourceType(url) === "collection";
+  let best: { voice: Voice; channel: Collection; len: number } | undefined;
+  for (const voice of voices) {
+    for (const channel of voice.collections ?? []) {
+      for (const p of channel.platforms) {
+        const c = pathKey(p.url);
+        if (c.host !== target.host) continue;
+        const prefix = !c.path || target.path === c.path || target.path.startsWith(`${c.path}/`);
+        if (!prefix) continue;
+        const len = c.path ? c.path.split("/").length : 0;
+        if (!best || len > best.len) best = { voice, channel, len };
+      }
+    }
+  }
+  if (best) {
+    const samePath = best.channel.platforms.some((p) => {
+      const c = pathKey(p.url);
+      return c.host === target.host && c.path === target.path;
+    });
+    const exact = samePath && isCollectionUrl;
+    if (best.len > 0 || exact) return { voice: best.voice, channel: best.channel, exact };
+  }
+  // Identity (platform + @handle) only means something on account platforms; a
+  // website "handle" is just its first path segment, which collides across hosts.
+  const platform = detectPlatform(url);
+  const byIdentity = platform === "website" ? undefined : matchVoice(url, voices);
+  if (byIdentity) return { ...byIdentity, exact: isCollectionUrl };
+  return best ? { voice: best.voice, channel: undefined, exact: false } : undefined;
 }
 
 /**

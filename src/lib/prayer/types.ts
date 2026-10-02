@@ -776,7 +776,13 @@ export interface Collection {
  */
 export interface KnowledgeLink {
   platform: LinkPlatform;
+  /** The canonical link — tracking params (`utm_*`, `stkn`, `entryPoint`…) stripped (ACTS-204). */
   url: string;
+  /**
+   * The link exactly as pasted, kept only when it differs from the canonical `url`
+   * (ACTS-204) — so nothing the user pasted is lost. Optional; older links lack it.
+   */
+  original_url?: string | undefined;
   label?: string | undefined;
   /** Pinned to Home. */
   pinned?: boolean | undefined;

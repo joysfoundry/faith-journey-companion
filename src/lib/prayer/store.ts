@@ -511,6 +511,8 @@ function normalizeLinks(raw: unknown): KnowledgeLink[] {
       url: l["url"] as string,
       label: typeof l["label"] === "string" && l["label"] ? (l["label"] as string) : undefined,
       pinned: Boolean(l["pinned"] ?? l["favorite"]) || undefined,
+      // ACTS-204: the link as pasted (tracking params and all), when `url` was cleaned.
+      original_url: strOf(l, "original_url"),
     }));
 }
 
