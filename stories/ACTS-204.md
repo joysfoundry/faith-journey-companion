@@ -8,9 +8,9 @@ approved_by: JC
 depends_on: []
 relates_to: [ACTS-186, ACTS-202]
 started_at: 2026-09-15T00:00:00-0700
-updated:    2026-10-02T11:45:00-0700
-latest_handoff: stories/ACTS-204/session-01.md
-sessions: 1
+updated:    2026-11-08T15:40:00-0800
+latest_handoff: stories/ACTS-204/session-02.md
+sessions: 2
 ---
 
 ## Goal
@@ -83,8 +83,8 @@ Infer, don't interrogate: paste → recognize the **org** (brand map, done) → 
 if it's a new section root, offer it as a **channel**. The user shouldn't have to name the tier.
 
 ## Acceptance criteria
-- [ ] Channel gains a `kind`; a Vessel's channels render by type.
-- [ ] A channel/series shows **no status**; only content items are completable (viewed/not).
+- [ ] Channel gains a `kind`; a Vessel's channels render by type. *(kind ✅ session 01; render-by-type = the views, open)*
+- [x] A channel/series shows **no status**; only content items are completable (viewed/not). *(session 01, `d02dd60`)*
 - [ ] A channel can carry a **host/author Voice** distinct from the owning Vessel (Fr. Mike).
 - [x] Pasting an item under an existing channel files it as content of that channel (path match). *(slice d, 2026-10-02: `resolveCollection`, most-specific path wins)*
 - [x] Channel-vs-content is inferred in the paste flow (minimal decisions). *(slice d: `detectSourceType` + editable card — One item/Collection toggle, "Part of" autocomplete, canonical/original URL)*
