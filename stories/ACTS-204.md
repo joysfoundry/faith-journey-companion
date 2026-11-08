@@ -8,9 +8,9 @@ approved_by: JC
 depends_on: []
 relates_to: [ACTS-186, ACTS-202]
 started_at: 2026-09-15T00:00:00-0700
-updated:    2026-11-08T15:16:06-0800
-latest_handoff: stories/ACTS-204/session-02.md
-sessions: 2
+updated:    2026-10-02T11:45:00-0700
+latest_handoff: stories/ACTS-204/session-01.md
+sessions: 1
 ---
 
 ## Goal
